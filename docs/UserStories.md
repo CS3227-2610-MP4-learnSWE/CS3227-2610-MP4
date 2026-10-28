@@ -4,6 +4,8 @@ These proposed stories describe user goals within the capabilities in [FeatureLi
 
 Story IDs use `US-<feature ID>-<story number>` to preserve traceability. These replace the original broad one-story-per-feature draft. Stories may depend on shared capabilities or earlier stories; they need not be implemented in isolation.
 
+The student, teacher and admin sections define MVP stories. The separate optional section is outside the MVP.
+
 ## Student
 
 ### STU-01 — Study materials
@@ -19,12 +21,12 @@ Acceptance criteria:
 
 #### US-STU-01-02 — Record lesson completion
 
-As a student, I want to mark a lesson as completed so that I can keep track of what I have studied.
+As a student, I want to mark a lesson as complete or incomplete so that I can track my study and correct accidental changes.
 
 Acceptance criteria:
 
-- The selected lesson is recorded as completed for my account.
-- Completion persists after signing in again and appears in my progress view.
+- I can mark an incomplete lesson complete and a completed lesson incomplete.
+- Either status persists after signing in again and updates my completion totals and progress view.
 
 ### STU-02 — Practice questions
 
@@ -34,8 +36,10 @@ As a student, I want to answer and submit a published practice set so that I can
 
 Acceptance criteria:
 
-- I can answer multiple-choice and short code-reading questions.
-- Submission saves my answers and score against the question and answer-key version used.
+- I complete all multiple-choice and short code-reading questions, then submit the whole set in one action; incomplete sets are rejected with the missing questions identified.
+- I can revise answers before whole-set submission; there is no per-question submission, score or immediate correctness feedback.
+- Successful submission saves the complete attempt, answers and set score against the question and answer-key version used, then makes results available.
+- Failed submission does not unlock results or full AI solutions and preserves my entered answers for retry.
 - Submission does not execute student code.
 
 #### US-STU-02-02 — Review a practice attempt
@@ -44,18 +48,21 @@ As a student, I want to review a saved attempt so that I can understand my mista
 
 Acceptance criteria:
 
-- I can see my submitted answers, score, correct answers and teacher-approved explanations.
+- Only after successful whole-set submission can I see my submitted answers, set score, correct answers and teacher-approved explanations.
+- Direct requests cannot retrieve answer keys or solution explanations for an unsubmitted attempt.
 - I cannot retrieve another student’s private attempts.
 
 ### STU-03 — AI learning assistant
 
 #### US-STU-03-01 — Ask for a course explanation
 
-As a student, I want to ask AI to explain course material so that I can understand a concept I find difficult.
+As a student, I want to receive guided AI explanations that build on what I already understand so that I can identify conceptual gaps and solve questions independently.
 
 Acceptance criteria:
 
-- Answers use published material I am authorised to access and reference the supporting sources.
+- The assistant uses guiding questions and explanations to address the gap I describe, asking what I have tried or understood when needed.
+- Guidance is grounded in authorised published materials, with source references that do not expose protected solutions.
+- For unsubmitted practice, explanations remain hints only, including when the question is pasted into a general chat.
 - When material does not support an answer, the assistant states the limitation instead of inventing a source.
 - A service failure or rate limit leaves my typed question available to retry.
 
@@ -65,8 +72,19 @@ As a student, I want to request a hint for a practice question so that I can mak
 
 Acceptance criteria:
 
-- The initial response gives guidance without revealing the full answer.
-- I can explicitly request a full explanation afterwards.
+- Until the whole set is successfully submitted, every response gives hints or guiding questions without revealing or confirming correct answers, full solutions or equivalent solution code.
+- Explicit requests for answers, repeated hints, answer-checking requests and teaching preferences do not override this rule.
+- The server checks my attempt status and excludes protected answer keys and solution explanations from pre-submission context; hints and source links are checked for answer leakage.
+
+#### US-STU-03-03 — Understand a submitted solution
+
+As a student, I want to ask for a full explanation after submitting a practice set so that I can learn from my mistakes.
+
+Acceptance criteria:
+
+- Full solution help is available only after the server verifies successful whole-set submission for my own attempt.
+- Explanations correspond to that attempt’s question and answer-key version.
+- A previous submission does not unlock answers for a new unsubmitted attempt; retry and question-reuse rules must address already-seen answers.
 
 ### STU-04 — Progress dashboard
 
@@ -100,7 +118,7 @@ Acceptance criteria:
 - Required fields are validated and submission is confirmed.
 - The saved response belongs to the correct form and is unavailable to other students.
 
-### STU-06 — View responses
+### STU-06 — Student inbox
 
 #### US-STU-06-01 — Read student follow-up
 
@@ -108,8 +126,27 @@ As a student, I want to read admin messages and relevant announcements so that I
 
 Acceptance criteria:
 
-- I can read messages addressed to me or an audience I belong to, with sender and sent time.
+- My in-app inbox contains admin survey requests, feedback responses and announcements addressed to me or an audience I belong to, with sender and sent time.
 - Messages intended for other users or groups remain inaccessible.
+
+#### US-STU-06-02 — Open survey requests
+
+As a student, I want to open a survey request from my inbox so that I can respond to the relevant form.
+
+Acceptance criteria:
+
+- Opening a request leads to the associated form, subject to audience checks.
+- Closed or unavailable forms show a clear status and reject submissions.
+
+#### US-STU-06-03 — Track unread messages
+
+As a student, I want to distinguish read and unread inbox messages so that I can identify requests needing attention.
+
+Acceptance criteria:
+
+- New messages are unread, and opening a message marks it read for my account.
+- Read status persists after signing in again, and the unread count matches unread messages I can access.
+- Email and push delivery are outside the MVP.
 
 ## Teacher
 
@@ -163,7 +200,7 @@ As a teacher, I want to preview draft content so that I can check its accuracy b
 
 Acceptance criteria:
 
-- I can inspect notes, questions, answers and explanations for my managed courses.
+- I can preview generated study notes, practice questions, answer keys and explanations for my managed courses before approval or publication.
 - Previewing does not make drafts visible to students.
 
 #### US-TEA-03-02 — Edit draft notes
@@ -191,7 +228,8 @@ As a teacher, I want to explicitly publish reviewed content so that I can make a
 Acceptance criteria:
 
 - Publication validates required content fields and requires my explicit action.
-- Authorised students can access the published version while other drafts stay hidden.
+- Authorised students can access published notes and practice questions while other drafts stay hidden.
+- Publishing does not expose answer keys or solution explanations before successful whole-set submission.
 
 ### TEA-04 — Manage practice sets
 
@@ -233,7 +271,7 @@ Acceptance criteria:
 - Results cover only courses I manage and identify the reporting period.
 - Missed-question calculations are documented and no attempts shows an empty state.
 
-### TEA-06 — Feedback participation
+### TEA-06 — Feedback and teacher inbox
 
 #### US-TEA-06-01 — Submit teacher feedback
 
@@ -250,8 +288,27 @@ As a teacher, I want to read admin follow-up messages so that I can understand w
 
 Acceptance criteria:
 
-- Messages addressed to me or my group display sender, sent time and content.
+- My in-app inbox contains admin survey requests, feedback responses and announcements addressed to me or my group, with sender, sent time and content.
 - Other users’ private messages remain inaccessible.
+
+#### US-TEA-06-03 — Open survey requests
+
+As a teacher, I want to open a survey request from my inbox so that I can respond to the relevant form.
+
+Acceptance criteria:
+
+- Opening a request leads to the associated form, subject to audience checks.
+- Closed or unavailable forms show a clear status and reject submissions.
+
+#### US-TEA-06-04 — Track unread messages
+
+As a teacher, I want to distinguish read and unread inbox messages so that I can identify requests needing attention.
+
+Acceptance criteria:
+
+- New messages are unread, and opening a message marks it read for my account.
+- Read status persists after signing in again, and the unread count matches unread messages I can access.
+- Email and push delivery are outside the MVP.
 
 ## Admin
 
@@ -293,6 +350,7 @@ As an admin, I want to choose a student or teacher audience and publish a form s
 Acceptance criteria:
 
 - The selected audience is shown before publication.
+- Publishing delivers an in-app inbox request with a form link to intended recipients.
 - Only intended recipients can access and submit the open form.
 
 #### US-ADM-02-03 — Close feedback collection
@@ -343,7 +401,7 @@ As an admin, I want to compose, review and send a response to a feedback submitt
 Acceptance criteria:
 
 - I can review the message and intended recipient before sending.
-- The sent message is saved and visible to that recipient in the app.
+- The sent message is saved in that recipient’s inbox as unread.
 - Other respondents’ private feedback is not automatically included.
 
 #### US-ADM-04-02 — Send a targeted announcement
@@ -353,7 +411,7 @@ As an admin, I want to review and send an announcement to a selected student or 
 Acceptance criteria:
 
 - The message and audience are shown before sending.
-- The saved announcement is accessible only to intended recipients.
+- The saved announcement appears as unread in intended recipients’ inboxes and is accessible only to them.
 
 ### ADM-05 — User and access management
 
@@ -404,15 +462,58 @@ Acceptance criteria:
 - Available measurements identify their feature and reporting period.
 - Unavailable measurements are labelled explicitly rather than presented as estimated facts.
 
+## Nice-to-have stories — outside the MVP
+
+### OPT-01 — Run code against test cases
+
+#### US-OPT-01-01 — Run practice code
+
+As a student, I want to run code against teacher-defined tests so that I can check its behaviour.
+
+Acceptance criteria:
+
+- Execution is isolated with enforced time and memory limits, without access to app secrets, other users’ data or unrestricted network resources.
+- Results explain execution failures and limit breaches; security and abuse tests are required before release.
+- Pre-submission output does not reveal protected solutions or circumvent the hints-only policy.
+
+### OPT-02 — Student AI teaching preferences
+
+#### US-OPT-02-01 — Choose explanation preferences
+
+As a student, I want to choose preset explanation length, formatting and teaching style so that I can learn in a way I find useful.
+
+Acceptance criteria:
+
+- Presets include concise/detailed explanations, bullets/paragraphs and hints/worked examples; saved choices apply to subsequent help.
+- Before submission, hints-only safeguards override worked-example preferences; examples cannot disclose the current question’s answer or equivalent solution.
+- Preferences cannot override fixed rules, access permissions or privacy protections, and do not allow editing system prompts.
+
+### OPT-03 — Teacher AI generation preferences
+
+#### US-OPT-03-01 — Choose generation preferences
+
+As a teacher, I want to choose preset audience level, tone and detail so that I can generate drafts suited to my students.
+
+Acceptance criteria:
+
+- Saved presets are applied to subsequent content-generation requests.
+- Generated notes and questions still require teacher review and explicit publication.
+- Preferences cannot override fixed rules, permissions or privacy protections, and do not allow editing system prompts.
+
+Free-text teaching-style input is deferred beyond these presets. If introduced later, it must be treated as untrusted input, never inserted into the system prompt. Filtering contradictory instructions is not a substitute for server-side data and action controls.
+
 ## Shared acceptance criteria
 
 The following apply across all relevant stories and map to SHR-01 through SHR-05 in the feature list:
 
 - Unauthenticated requests are rejected, and server-side checks enforce role, course and record access for every protected operation.
-- AI context contains only authorised records; instructions embedded in uploads, feedback or chat cannot override access controls or reveal secrets.
+- AI context contains only authorised records; instructions embedded in uploads, feedback, chat or preferences cannot override access controls or reveal secrets.
+- The server verifies successful whole-set submission before releasing protected answers or solutions. Pre-submission context excludes answer keys and solution explanations. Tests cover direct access, pasted questions, prompt injection, repeated hints, answer confirmation and source/output leakage; prompts alone do not enforce the boundary.
 - User input and generated output are validated and rendered safely; AI services do not receive credentials or unnecessary personal data.
 - Requests have bounded input/output sizes and configured quotas. Rate limits and temporary failures are handled without uncontrolled retries.
-- Interfaces provide accessible labels and understandable loading, empty, success and error states.
+- Interfaces follow a Google-inspired, distraction-free visual direction with consistent spacing and typography and clear navigation.
+- Mobile and desktop layouts remain usable without obscured controls; forms have accessible labels and keyboard access.
+- Loading feedback, contextual empty states and recoverable errors explain what is happening and what action to take; animations respect reduced-motion preferences.
 - Private student progress and feedback remain visible only to authorised users. Raw feedback is restricted to admins unless a different sharing policy is explicitly agreed.
 
 ## Decisions to resolve before implementation
@@ -420,6 +521,6 @@ The following apply across all relevant stories and map to SHR-01 through SHR-05
 - Initial programming subject and learner level.
 - Supported upload formats and file-size limits.
 - How users join courses and how teacher accounts are approved.
-- Short-answer matching rules, repeat-attempt scoring and the rule for identifying weak topics.
+- Short-answer matching rules, repeat-attempt scoring, question reuse after answers have been seen, and the rule for identifying weak topics. The fixed policy is hints only until each whole-set attempt is successfully submitted.
 - Whether feedback is identified or anonymous, together with retention and deletion rules.
 - Exact SoC LLM quotas, model configuration and resource measurements available to the app.
