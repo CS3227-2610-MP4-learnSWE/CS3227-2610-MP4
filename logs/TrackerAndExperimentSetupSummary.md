@@ -22,6 +22,10 @@ The switch itself cost 2.69 USD over 5 requests, mostly from rewriting the promp
 
 The user asked how "Variant A and B" related to the "5 vs 3" agents they had agreed. The AI explained that A is the 5-agent workflow (counting the shared spec-writer) and B the 3-agent one (build phase only), and that it had added a single-session baseline as a third run, which the user had accepted without that being made explicit. The user agreed to keep three runs and asked to be kept in the loop on every addition or change. Agreed plan: runs branch from `exp/stu02-setup` directly; the baseline is a reference only because the assignment requires multi-agent SE; after the comparison only the winning run's feature code and tests are merged, and the chosen variant becomes the team's only workflow, with the record of the comparison kept.
 
+## Pilot run
+
+The user asked what an endpoint was and why a pilot was needed; the AI explained the pilot as a cheap rehearsal of the process (building two of the six STU-02 endpoints), whose code is thrown away. The user approved a two-endpoint pilot of Variant A, run in a separate fresh Sonnet session started from the agreed start commit. The AI then checked the result itself rather than relying on the session's report: tests passed, the relevant hidden acceptance checks passed, and the tracker attributed all five agents to the run by session, for 1.46 USD in total (the Opus security reviewer cost about as much as the orchestrator). The pilot exposed five process problems: the test-designer's worktree lacked the spec, a reviewer instruction contradicted itself, an agent staged another agent's file, an unverifiable lint trigger, and the security reviewer's logging. The user approved all five fixes, which were applied to the agent definitions, `coordination.md` and `AGENTS.md`.
+
 ## Not done
 
-No pilot or experiment run, so the agent definitions remain untested. Absolute token totals are not checked against the apps. This summary was written by the AI and should be checked by a team member.
+The three experiment runs have not happened yet; only the pilot has run. Absolute token totals are not checked against the apps. This summary was written by the AI and should be checked by a team member.

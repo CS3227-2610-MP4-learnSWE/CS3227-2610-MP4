@@ -2,6 +2,12 @@
 
 Newest entry first. Use `templates/handoff.md`.
 
+## 2026-10-29: Variant A pilot (two endpoints) and process fixes
+- Done: pilot of Variant A on STU-02 endpoints 1-2 (AC1, AC2, AC11) in a fresh sonnet session, branch `claude/stu02-pilot-ab66d7` (discarded, not merged). Checked independently: 59 tests pass (1 strict xfail for an unbounded student-id length), the 5 relevant hidden acceptance checks pass, and the tracker attributed all 5 agents to the run by session (11 of 66 requests came from the test-designer's worktree branch and would have been missed by branch alone). Cost 1.46 USD: orchestrator 0.57, security-reviewer (opus) 0.54, developer 0.14, test-designer 0.14, reviewer 0.08. One revision round.
+- Process problems found and fixed (user approved all five): (1) the test-designer's worktree was cut from `master`, which lacks the spec, so it read the spec from the run branch; it now resets its worktree to the start commit the orchestrator gives it. (2) The reviewer's definition said read-only and also "write to notes.md"; all read-only agents now return their handoff in their report. (3) The developer committed another agent's file with `git add -A`; all agents stage by path. (4) "Lint green" could not be checked because the backend has no linter; now "where configured". (5) The security-reviewer created a new log file; it now appends to `security/test-log.md` and marks non-applicable checks. Updated: `.claude/agents/*`, `variants/B-merged-verification/verifier.md`, `coordination.md`, `AGENTS.md`.
+- Decision: no student-id length or attempt limit added to the spec (user did not ask; header identity is a placeholder until SHR-01).
+- Next: the three real runs (A, B, baseline) from the new start commit, each in a fresh sonnet session.
+
 ## 2026-10-29: session on STU-02 experiment setup
 - Done: STU-02 practice attempt API spec, plan (fixed HTTP contract) and tasks in `specs/STU-02/`, approved by the user; price table filled; "Measuring token usage" section in `README.md`; resource-log columns aligned with the tracker. A hidden acceptance suite and the comparison tooling exist on a local branch and are withheld from run branches until all runs finish.
 - Decisions: same feature built once per condition (A, B, baseline), one run each, Claude only; the spec is shared and excluded from the comparison; each run gets a fresh session on its own branch; usage is attributed by session so subagents in their own worktrees still count.

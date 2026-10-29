@@ -15,8 +15,8 @@ The orchestrator is the session that runs the workflow: it starts the agents, pa
 
 ## Triggers
 - spec-writer: a feature is chosen from `docs/FeatureList.md`.
-- developer and test-designer: spec and plan marked Approved. They start together; the test-designer is started with worktree isolation.
-- verification: the developer has committed its work and reports ready (typecheck, lint green), and the test-designer has committed its tests on its worktree branch.
+- developer and test-designer: spec and plan marked Approved. Before starting them, the orchestrator records the start commit (`git rev-parse HEAD` on the run branch). They start together; the test-designer is started with worktree isolation and given the start commit, which it resets its worktree to first, because a new worktree may be cut from a different branch.
+- verification: the developer has committed its work and reports ready (existing tests pass, plus typecheck and lint where configured), and the test-designer has committed its tests on its worktree branch.
 - merge of tests: the test-designer has reported its suite results.
 - reviewer and security-reviewer: the tests are merged into the run branch. Read-only; they may run in parallel.
 
@@ -27,7 +27,9 @@ Enforced by separate folders, not only by instruction. The developer works in th
 Each agent reads only the files named in its definition plus the feature's folder under `specs/`. State passes through files, never assumed memory: `spec.md`, `plan.md`, `tasks.md`, and a handoff entry in `notes.md`.
 
 ## Handoff
-Every agent ends with a handoff using `templates/handoff.md` (done, next, open questions, files touched, rough resource use). Agents in the run folder prepend it to `notes.md`. The test-designer, working in a worktree, puts it in its final report and the orchestrator records it, so `notes.md` never conflicts at merge.
+Every agent ends with a handoff using `templates/handoff.md` (done, next, open questions, files touched, rough resource use). Only the developer and the orchestrator write `notes.md`. The test-designer, reviewer, security-reviewer and verifier put their handoff at the end of their report and the orchestrator records it, so read-only agents stay read-only and `notes.md` never conflicts at merge. Security cases go only into the existing `security/test-log.md`.
+
+Every agent stages files by path when committing, never `git add -A` or `git add .`, so it cannot pick up another agent's files.
 
 ## Revision loop and caps
 Verification failures return to the developer as a ranked defect list. At most 2 revision rounds; after that the human team decides. Round counts are logged in `experiments/resource-log.md`.

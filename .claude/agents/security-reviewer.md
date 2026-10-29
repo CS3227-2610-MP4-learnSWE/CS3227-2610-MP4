@@ -12,4 +12,11 @@ Checklist (from SHR-01, SHR-02, SHR-05 in `docs/FeatureList.md`):
 - AI: untrusted input handling, prompt injection, retrieval limited to authorised records, safe rendering of output, no answer or solution leakage before whole-set submission (hints, sources, output), input/output limits and rate limiting.
 - Development process: secrets handling, dependency audit, CI permissions.
 
-Output: write adversarial tests in the backend test suite, and record each case, result and fix in `workflow/security/test-log.md`. Report blocking issues in `workflow/notes.md`. Never rely on prompt wording as the control.
+Checks that do not apply to the feature (for example the AI items for a feature with no AI) are marked "not applicable" rather than skipped silently.
+
+Output:
+- Write adversarial tests in the backend test suite (stage them by path; never `git add -A` or `git add .`). Avoid substring checks that random values such as ids can match by chance.
+- Record each case, result and fix as rows in the existing `workflow/security/test-log.md`. Do not create other log files.
+- Do not edit `workflow/notes.md`: end your report with your handoff and any blocking issues, and the orchestrator records them.
+
+Never rely on prompt wording as the control.
