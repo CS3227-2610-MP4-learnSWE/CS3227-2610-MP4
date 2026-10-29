@@ -24,9 +24,10 @@ def error_response(_: Request, exc: ApiError) -> JSONResponse:
 
 
 def require_student(x_student_id: str | None = Header(default=None)) -> str:
-    if x_student_id is None or not x_student_id.strip():
+    student = (x_student_id or "").strip()
+    if not student:
         raise ApiError(401, "missing_student", "X-Student-Id header is required.")
-    return x_student_id
+    return student
 
 
 def _set_or_404(set_id: str) -> PracticeSet:
@@ -85,22 +86,24 @@ def read_attempt(attempt: Attempt = Depends(owned_attempt)) -> AttemptOut:
 
 @router.put("/attempts/{attempt_id}/answers", response_model=AnswersSaved)
 def save_answers(body: AnswersIn, attempt: Attempt = Depends(owned_attempt)) -> AnswersSaved:
-    _require_open(attempt)
-    logic.validate_answers(_set_or_404(attempt.set_id), body.answers)
-    attempt.answers.update(body.answers)
-    return AnswersSaved(attempt_id=attempt.id, status=attempt.status, answers=dict(attempt.answers))
+    with store.lock(attempt.id):
+        _require_open(attempt)
+        logic.validate_answers(_set_or_404(attempt.set_id), body.answers)
+        attempt.answers.update(body.answers)
+        return AnswersSaved(attempt_id=attempt.id, status=attempt.status, answers=dict(attempt.answers))
 
 
 @router.post("/attempts/{attempt_id}/submit", response_model=SubmitOut)
 def submit(attempt: Attempt = Depends(owned_attempt)) -> SubmitOut:
-    _require_open(attempt)
-    practice_set = _set_or_404(attempt.set_id)
-    missing = logic.missing_questions(practice_set, attempt.answers)
-    if missing:
-        raise ApiError(
-            422, "incomplete", "All questions must be answered before submitting.", missing=missing
-        )
-    attempt.status = "submitted"
+    with store.lock(attempt.id):
+        _require_open(attempt)
+        practice_set = _set_or_404(attempt.set_id)
+        missing = logic.missing_questions(practice_set, attempt.answers)
+        if missing:
+            raise ApiError(
+                422, "incomplete", "All questions must be answered before submitting.", missing=missing
+            )
+        attempt.status = "submitted"
     return SubmitOut(
         attempt_id=attempt.id,
         status=attempt.status,
