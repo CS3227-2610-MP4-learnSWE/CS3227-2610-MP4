@@ -33,3 +33,25 @@ Variant B replaces `reviewer` and `security-reviewer` with one `verifier` (`vari
 `AGENTS.md` at the repo root holds the same rules and role definitions for Codex. Edit all three places together (`CLAUDE.md`, `.claude/agents/`, `AGENTS.md`).
 
 The human team members approve each spec/plan and each PR. Nothing is committed directly to `master`.
+
+## Measuring token usage
+
+The token tracker (`tools/token-tracker/`) reads your own local Claude Code and Codex logs, so each teammate runs it on their own machine. Use it after any notable task or experiment run, on the branch the work was done on.
+
+1. See where the tokens and cost went (branch names are matched against the git branch recorded in the logs):
+
+   ```powershell
+   cd "C:\Users\yikbi\NUS\CS3227\MP4\CS3227-2610-MP4\workflow\tools\token-tracker"
+   python -m tracker report --branch <branch-name>
+   ```
+
+2. For an experiment run or any result worth keeping, save the summary and commit that file:
+
+   ```powershell
+   cd "C:\Users\yikbi\NUS\CS3227\MP4\CS3227-2610-MP4\workflow\tools\token-tracker"
+   python -m tracker report --branch <branch-name> --out ..\..\experiments\results\<name>.csv
+   ```
+
+3. Add one row to `experiments/resource-log.md` (task, agent, model, the numbers from the summary, retries and a note).
+
+Only summaries under `experiments/results/` are committed. The row-level `usage.csv` holds your whole usage history, is gitignored, and stays on your machine. Cost is API list price (see the tool's README for limits and for keeping `prices.json` current). The numbers have not been checked against the Claude or Codex apps, so quote them as measured by the tracker, not as billed.
