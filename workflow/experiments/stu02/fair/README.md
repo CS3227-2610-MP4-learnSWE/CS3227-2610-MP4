@@ -35,6 +35,11 @@ All three runs fail the same 8 scenarios:
 
 Every run's own suite caught all 62 planted bugs (only the health test was excluded, as the reference has no health endpoint).
 
+## Process notes
+- The fair baseline never saw its tests fail first: a combined shell command failed to parse, so it wrote the code and ran everything together (all passed). Its tests-first claim is therefore not verified.
+- Fair A needed no revision round; fair B used one, for documentation only.
+- In both A and B the reviewers saw the save/submit race and rated it non-blocking; the baseline's self-review did not mention concurrency.
+
 ## Decision (pre-set rule)
 All qualify (100% of the hidden grader, no leakage, ownership holds); the baseline is a reference only. A and B are within the 15% cost band (A 7% cheaper), so the tie-break is fewer revision rounds and interventions: A used 0 rounds, B 1. **The rule picks Variant A.** The blind API review preferred B (only B honoured the documented check order for wrongly shaped bodies); everything else was level.
 
