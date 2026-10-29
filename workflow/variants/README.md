@@ -25,11 +25,17 @@ Agents: developer (generator), test-designer, reviewer, security-reviewer. Build
 ```
 Agents: developer (generator), test-designer, verifier. Build phase: 3 agents. Uses `verifier.md` in place of `reviewer.md` and `security-reviewer.md`.
 
-## Baseline: single session
-One session does build and self-check, still spec-first and tests-first, with no agent split.
+## Baseline: single session (reference only)
+One session does build and self-check, still spec-first and tests-first, with no agent split. It shows what multi-agent coordination costs and buys. It is not a candidate for the project workflow, because the assignment requires multi-agent SE; the choice is between A and B.
 
-## Switching variant (experiment branches only)
-Start from the same `master` commit. For B, delete `reviewer.md` and `security-reviewer.md` from `.claude/agents/`, copy `B-merged-verification/verifier.md` in, and update the roster in `AGENTS.md`. For the baseline, remove the agent files and tell the session to follow the spec-first and tests-first rules. Never merge a switched-variant branch; copy only the results into `workflow/experiments/`.
+## Switching variant (experiment run branches only)
+Every run branches from the same commit of `exp/stu02-setup`. For B, delete `reviewer.md` and `security-reviewer.md` from `.claude/agents/`, copy `B-merged-verification/verifier.md` in, and update the roster in `AGENTS.md`. For the baseline, remove the agent files and tell the session to follow the spec-first and tests-first rules.
+
+## After the comparison
+1. Choose A or B using the decision rule, with the human team.
+2. Merge only the winning run's feature code and tests into `exp/stu02-setup` (never its agent-file changes), then into `master` by PR. The other run branches are discarded.
+3. The chosen variant becomes the only active workflow: its agent files stay in `.claude/agents/`, the other variant's definitions are deleted, and `coordination.md` and `AGENTS.md` describe only the chosen one. The change goes to `master` by PR so teammates review it.
+4. Keep this file and the results as the record of what was compared and why, for the reflection.
 
 ## What to record per run (`experiments/resource-log.md`)
 Tokens (input, cached, output, reasoning) per agent and total; revision rounds; defects the verifier or reviewers found; contract mismatches between developer and test-designer; the number of handoffs; your own review time; and a quality score against the shared rubric.

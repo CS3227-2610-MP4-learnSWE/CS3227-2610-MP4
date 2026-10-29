@@ -18,6 +18,10 @@ The user switched the session from Sonnet 5.5 to Opus 5.5 and asked for a review
 
 The switch itself cost 2.69 USD over 5 requests, mostly from rewriting the prompt cache at Opus prices, which is recorded in the resource log as a context-engineering observation.
 
+## Clarifying the comparison
+
+The user asked how "Variant A and B" related to the "5 vs 3" agents they had agreed. The AI explained that A is the 5-agent workflow (counting the shared spec-writer) and B the 3-agent one (build phase only), and that it had added a single-session baseline as a third run, which the user had accepted without that being made explicit. The user agreed to keep three runs and asked to be kept in the loop on every addition or change. Agreed plan: runs branch from `exp/stu02-setup` directly; the baseline is a reference only because the assignment requires multi-agent SE; after the comparison only the winning run's feature code and tests are merged, and the chosen variant becomes the team's only workflow, with the record of the comparison kept.
+
 ## Not done
 
 No pilot or experiment run, so the agent definitions remain untested. Absolute token totals are not checked against the apps. This summary was written by the AI and should be checked by a team member.
