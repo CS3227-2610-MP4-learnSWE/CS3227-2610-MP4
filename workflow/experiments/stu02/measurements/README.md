@@ -1,5 +1,7 @@
 # STU-02 follow-up measurements: re-run of A, edge cases, mutation testing
 
+**Superseded by the fair comparison in `../fair/README.md`.** These measurements compare runs made under different conditions (older agent definitions, a stall, one corrected re-run) with tests chosen by the AI that ran the experiment. They are kept as history and for the reflection on how an unfair setup misled us.
+
 Added after the first comparison, because every run scored 18/18 on the hidden grader and the user asked whether multi-agent work showed any benefit beyond the happy path.
 
 ## Versions measured

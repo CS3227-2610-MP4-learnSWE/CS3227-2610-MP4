@@ -2,6 +2,11 @@
 
 Newest entry first. Use `templates/handoff.md`.
 
+## 2026-10-30: fair comparison and switch to Variant A
+- Done: at the user's request A, B and a single-session baseline were re-run from `70ab114` with the same model, settings and correct agent definitions, one after another, each with the main folder on its own branch. An independent agent designed 115 edge cases and 62 planted bugs from the spec alone; a blind reviewer compared the APIs. Results: all 18/18; cost A 1.36, B 1.46, baseline 0.45 USD; edge cases 107/115 each (same eight failures, including the save/submit race); planted bugs 62/62 each; API review B, baseline, A. See `experiments/stu02/fair/README.md`.
+- Decision (pre-set rule, user pre-approved applying it): Variant A, because A and B were within the 15% cost band and A needed no revision round. PR 3 now carries the fair A run's code with the race fixed and the student id trimmed (70 backend tests pass), and the workflow files are switched back to A with a severity rule for the security-reviewer. `experiments/results/stu02-decision.md` and `docs/Reflections.md` rewritten.
+- Open: the independent battery's ID-05 disagrees with our trimming choice (spec silent); six check-order cases fail because FastAPI validates bodies before the handler; OpenAPI does not document error responses; frontend integration still to do.
+
 ## 2026-10-29: STU-02 merged from Run B, fixes, and switch to Variant B
 - Done: Run B's feature code and tests applied (no agent-file changes), with the experiment's hidden grader kept as permanent tests under `src/backend/tests/grader/`. Fixed the save/submit race (per-attempt lock in the store; save and submit re-read and change the attempt inside it) and trimmed `X-Student-Id`; new tests in `tests/test_stu02_fixes.py` reproduced both defects first (the race deterministically by slowing validation). One Run B test asserted the old untrimmed behaviour and was updated. Backend: 62 tests pass.
 - Workflow switched to Variant B: `reviewer.md` and `security-reviewer.md` removed; `verifier.md` added with a severity rule and robustness checks (concurrency, input normalisation); spec template asks for both; developer updates docs with behaviour changes; `coordination.md`, `AGENTS.md`, `workflow/README.md`, task template and developer guide updated; `variants/README.md` records the outcome.

@@ -1,5 +1,7 @@
 # STU-02 workflow comparison: findings
 
+**Superseded:** this file describes the first, unfair comparison. The decision now rests on the fair re-runs in `../stu02/fair/README.md` and is recorded in `stu02-decision.md` (Variant A).
+
 | Run | Grader | Own tests | Requests | Cost USD | Wall time | Revision rounds | Interventions |
 |---|---|---|---|---|---|---|---|
 | A, split verification (5 agents) | 18/18 | 44 | 87 | 2.76 | 2 h 37 min (1 h 40 min stalled) | 1 | 1 |

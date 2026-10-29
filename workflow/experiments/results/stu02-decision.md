@@ -1,35 +1,34 @@
-# Decision: Variant B (merged verification) becomes the team workflow
+# Decision: Variant A (split verification) is the team workflow
 
-Decided by the user on 29 Oct 2026, after the STU-02 comparison. To be confirmed with the team in the PR that switches the workflow.
+Decided on 30 Oct 2026 by the pre-set decision rule, applied to a fair comparison. This replaces an earlier choice of Variant B. To be confirmed with the team in the PR.
 
-## Evidence
-| | Run A, split verification (5 agents) | Run B, merged verification (3 agents) | Baseline, single session (reference) |
+## What changed and why
+- **First comparison (29 Oct): B chosen.** A cost 2.76 USD against B's 1.56 USD. That gap came from a setup flaw (both runs loaded older agent definitions from the main project folder) and a 1 h 40 min stall in A that expired its prompt cache.
+- **Re-run of A alone:** with the correct definitions A cost 1.58 USD, the same as B, which removed the reason for choosing B.
+- **Fair comparison (29-30 Oct):** at the user's request, A, B and a single-session baseline were all re-run from the same commit, with the same model, settings and correct definitions, the workflow being the only difference. Edge cases and planted bugs were set by an independent reviewer. Details: `../stu02/fair/README.md`.
+
+## Fair results
+| | A (5 agents) | B (3 agents) | Baseline |
 |---|---|---|---|
 | Hidden grader | 18/18 | 18/18 | 18/18 |
-| Own tests | 44 | 42 | 32 |
-| Cost (API list prices) | 2.76 USD | 1.56 USD | 0.52 USD |
-| Requests | 87 | 54 | 14 |
-| Revision rounds | 1 | 1 | 0 |
-| Interventions | 1 (stalled security-reviewer) | 0 | 0 |
-| Save/submit race | found and fixed | found, rated non-blocking, left open | double-submit race fixed |
-| Student id trimming | yes | no | not checked |
-| Blind API usability review | preferred narrowly (typed status, trimmed id) | slightly clearer messages | not reviewed |
+| Cost | 1.36 USD | 1.46 USD | 0.45 USD |
+| Wall time | 6.3 min | 7.8 min | 2.2 min |
+| Revision rounds | 0 | 1 | 0 |
+| Interventions | 0 | 0 | 0 |
+| Independent edge cases (115) | 107 | 107 | 107 |
+| Planted bugs caught by own tests (62) | 62 | 62 | 62 |
+| Blind API review | 3rd | 1st | 2nd |
 
-## Why B
-1. The decision rule: all runs qualify (100% of the hidden grader, no leakage or ownership failure); the baseline is a reference only because the assignment requires multi-agent SE; between A and B, B is 43% cheaper, well outside the 15% tie band.
-2. The quality gap is small and fixable: B's two known defects (save/submit race, untrimmed student id) are small code changes, and the blind API review found A and B behaviourally identical against the contract.
-3. B finished without a stall or intervention, in about 8 minutes, and re-verified after its fix round, which A did not.
+## Why A
+1. All three qualify. The baseline is a reference only, because the assignment requires multi-agent SE.
+2. A and B are within the 15% cost band (A about 7% cheaper), so the rule's tie-break applies: fewer revision rounds and interventions. A needed 0 rounds and B needed 1.
+3. Quality was otherwise level: the same independent edge-case score, the same failures, and every planted bug caught by both suites. The blind API review preferred B for following the documented check order on wrongly shaped bodies. We record this, but the rule does not weigh it.
 
-## What B gives up, and how we compensate
-B's single verifier noticed both defects but rated them non-blocking, while A's dedicated security-reviewer insisted the race be fixed. Merging the reviewers spreads one agent's attention across code quality, docs, security and tests. Three gaps allowed this:
-1. The STU-02 spec did not state concurrency safety or identity normalisation, so neither the grader nor the verifier treated them as required.
-2. The verifier's definition gives no guidance on severity: a violation of an acceptance criterion under concurrent requests should be blocking.
-3. The independent API review sent one request at a time, so it could not observe the race.
+## What neither workflow caught
+Every run, including the baseline, shipped the save/submit race, and in the fair runs both A's security-reviewer and B's verifier saw it and rated it non-blocking. That is the clearest lesson: having a reviewer is not enough if severity is left to judgement. The chosen workflow's security-reviewer now carries a severity rule (any request sequence, including concurrent requests, that breaks an acceptance criterion, leaks data or lets one user act as another is blocking), and the spec template asks for concurrency and input normalisation.
 
-Compensations to apply with the switch (proposed, not yet done): fix B's race and trimming before merging its code; add a severity rule to the verifier (any way to break an acceptance criterion, including concurrent requests, is blocking); add concurrency and input normalisation to the spec template's security section; consider a dedicated security pass for features touching authentication or AI.
-
-## Shared problems to fix whichever version is merged
-OpenAPI does not document the 401/403/404/409 responses or their codes; `X-Student-Id` shows as optional with no description; business and body-shape 422 errors have different shapes; messages do not name the offending question or choice.
+## What multi-agent coordination bought here
+On this small, precisely specified feature, little: the baseline matched both variants on correctness, edge cases and planted bugs at a third of the cost, and ranked second in the API review. Earlier unfair runs suggested a dedicated security reviewer makes code more robust, but that did not hold up in the fair runs. We use Variant A because the assignment requires multi-agent SE and A was the cheaper of the two; single sessions stay allowed for small fixes and docs (`../../coordination.md`).
 
 ## Limits
-One run per condition. Runs A and B used older agent definitions loaded from the main folder (documented in `../stu02/procedure.md`); B's verifier ran as a general-purpose agent. A's cost includes a stall. Review minutes and human quality scores were not measured. Costs are tracker estimates at API list prices.
+One run per condition. The independent tests were designed by an AI agent, not a person. Costs are tracker estimates at API list prices. Review time and human code-quality scores were not measured (user decision).

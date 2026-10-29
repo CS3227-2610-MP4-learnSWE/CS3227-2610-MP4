@@ -13,6 +13,10 @@ One hand-written row per notable task. Take the numbers from a token-tracker sum
 | 2026-10-29 | STU-02 Run B, full feature | claude/stu02-run-b-223ec1 | Variant B (3 agents) | sonnet; opus verifier | 122 | 3,034,735 | 41,342 | 3,530 | 1.56 | 1 | Grader 18/18; verifier ran as general-purpose agent |
 | 2026-10-29 | STU-02 baseline, full feature | claude/stu02-run-baseline-e1c0af | single session (reference) | sonnet | 28 | 1,183,177 | 21,681 | 1,021 | 0.52 | 0 | Grader 18/18; 14 requests, 3 min |
 | 2026-10-29 | Coordinating session for the whole experiment (setup, pilot and run checks, grading, reviews, deck, fixes) | exp/stu02-setup + exp/stu02-grader | single session (orchestrating the runs) | sonnet, then opus | 594 | 91,374,027 | 240,105 | 55,811 | 29.18 | n/a | Partial, measured mid-session. Cost far above the runs themselves, mostly after the switch to opus: long context re-read on every turn |
+| 2026-10-29 | STU-02 re-run of A (correct definitions) | claude/stu02-run-a2-7746e5 | Variant A (5 agents) | sonnet; opus security-reviewer | 140 | 2,499,290 | 53,940 | 6,840 | 1.58 | 1 | Grader 18/18; 10 min |
+| 2026-10-29 | STU-02 fair run A | claude/stu02-fair-a-568aa7 | Variant A (5 agents) | sonnet; opus security-reviewer | 108 | 1,891,652 | 50,465 | 4,805 | 1.36 | 0 | Fair comparison; grader 18/18; 6.3 min |
+| 2026-10-29 | STU-02 fair run B | claude/stu02-fair-b-adf005 | Variant B (3 agents) | sonnet; opus verifier | 140 | 3,170,798 | 47,088 | 2,835 | 1.46 | 1 | Fair comparison; grader 18/18; 7.8 min |
+| 2026-10-29 | STU-02 fair baseline | claude/stu02-fair-baseline-d40701 | single session (reference) | sonnet | n/a | n/a | 19,645 | 1,108 | 0.45 | 0 | Fair comparison; grader 18/18; 2.2 min; 10 requests |
 
 Cache reads dominate token volume (millions per task) but are cheap per token; output and cache writes dominate cost. Switching model mid-session is expensive because the whole context is written to cache again.
 
