@@ -11,6 +11,8 @@ Everything about how this project is built. The default agent definitions live i
 | `specs/<feature-id>/` | Per-feature spec, plan and tasks (spec-driven development). |
 | `experiments/context-engineering.md` | Context-engineering experiments and results. |
 | `experiments/resource-log.md` | Per-task model, token, revision-round and retry records. |
+| `experiments/results/` | Committed per-run usage summaries produced by the token tracker. |
+| `tools/token-tracker/` | Token usage tracker for Claude Code and Codex logs; see its README. |
 | `security/threat-model.md` | AI and development-process threats and controls. |
 | `security/test-log.md` | Security test cases, outcomes and fixes. |
 | `checklist.md` | Submission and setup checklist with owners. |

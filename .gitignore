@@ -10,3 +10,6 @@ playwright-report/
 test-results/
 .DS_Store
 *.tsbuildinfo
+
+# Local token-tracker output (personal usage history; commit only per-run summaries)
+workflow/tools/token-tracker/usage*.csv
