@@ -26,6 +26,10 @@ The user asked how "Variant A and B" related to the "5 vs 3" agents they had agr
 
 The user asked what an endpoint was and why a pilot was needed; the AI explained the pilot as a cheap rehearsal of the process (building two of the six STU-02 endpoints), whose code is thrown away. The user approved a two-endpoint pilot of Variant A, run in a separate fresh Sonnet session started from the agreed start commit. The AI then checked the result itself rather than relying on the session's report: tests passed, the relevant hidden acceptance checks passed, and the tracker attributed all five agents to the run by session, for 1.46 USD in total (the Opus security reviewer cost about as much as the orchestrator). The pilot exposed five process problems: the test-designer's worktree lacked the spec, a reviewer instruction contradicted itself, an agent staged another agent's file, an unverifiable lint trigger, and the security reviewer's logging. The user approved all five fixes, which were applied to the agent definitions, `coordination.md` and `AGENTS.md`.
 
+## The three runs
+
+With the user's standing approval for the remaining experiment steps, the AI started Runs A, B and the baseline in fresh Sonnet sessions, graded each with the hidden suite and measured each by session. All three passed 18/18; costs were 2.76, 1.56 and 0.52 USD. Run A's security reviewer stalled and was resumed after the user approved a nudge. While Run B ran, the AI found that subagent definitions load from the main project folder, which held older agent files, so Runs A and B used older instructions; the user chose to accept and document this rather than re-run, and the baseline was started with the main folder on its own branch. The user also decided not to measure review minutes or a human quality score. By the decision rule B wins; the findings note that A's dedicated security review fixed a race that B left open.
+
 ## Not done
 
-The three experiment runs have not happened yet; only the pilot has run. Absolute token totals are not checked against the apps. This summary was written by the AI and should be checked by a team member.
+The choice between A and B, the merge of the winning feature code and the workflow switch are not done yet. Absolute token totals are not checked against the apps. This summary was written by the AI and should be checked by a team member.
