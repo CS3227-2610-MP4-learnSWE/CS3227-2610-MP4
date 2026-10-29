@@ -1,6 +1,6 @@
 # Spec: STU-02 Practice attempt API (server-side core)
 
-Status: Draft for approval. Slice of STU-02 covering US-STU-02-01 and US-STU-02-02 on the server. Shared input for the workflow comparison; every variant builds exactly this.
+Status: Approved by the user in chat (29 Oct 2026). Slice of STU-02 covering US-STU-02-01 and US-STU-02-02 on the server. Shared input for the workflow comparison; every variant builds exactly this.
 
 ## Goal
 A student starts an attempt on a practice set, answers and revises single-answer MCQs, submits the whole set once, and only then can see the score, correct answers and explanations. The server alone decides what is released.

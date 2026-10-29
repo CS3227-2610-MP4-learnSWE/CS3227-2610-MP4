@@ -2,6 +2,18 @@
 
 Newest entry first. Use `templates/handoff.md`.
 
+## 2026-10-29: session on STU-02 experiment setup
+- Done: STU-02 practice attempt API spec, plan (fixed HTTP contract) and tasks in `specs/STU-02/`, approved by the user; price table filled; "Measuring token usage" section in `README.md`; resource-log columns aligned with the tracker. A hidden acceptance suite and the comparison tooling exist on a local branch and are withheld from run branches until all runs finish.
+- Decisions: same feature built once per condition (A, B, baseline), one run each, Claude only; the spec is shared and excluded from the comparison; each run gets a fresh session on its own branch; usage is attributed by session so subagents in their own worktrees still count.
+- Next: user review of the open procedure points (test-designer isolation, per-variant run prompts), then a small pilot run of Variant A, then the three runs.
+- Open: subagent attribution not yet seen on a real run in this repo; agent definitions never run; absolute totals unchecked against the apps.
+- Resource use: see `experiments/resource-log.md`.
+
+## 2026-10-29: session on TRK-01 token tracker
+- Done: tracker in `tools/token-tracker/` (spec, failing tests first, then code; 25 tests), merged by PR 2. Verified on real logs that repeated Claude log lines for one message carry the same usage, so each message is counted once.
+- Next: fill prices (done in the setup session).
+- Open: Codex input/cached convention unchecked against billing.
+
 ## 2026-10-28: scaffolding (session)
 - Done: CLAUDE.md, AGENTS.md, agent definitions, coordination pattern, variants A and B, templates, reflection skeleton, checklist.
 - Design decisions: generator-verifier with an independent test-designer running in parallel and isolated from `src/`; the spec step is shared and excluded from the comparison; revision loop capped at 2 rounds; changes go to `master` by PR only; experiments run on separate branches cut from the same `master` commit and are not merged.
