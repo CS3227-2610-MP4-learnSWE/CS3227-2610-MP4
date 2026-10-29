@@ -5,18 +5,22 @@ We compare ways of splitting build and verification work. The spec step is share
 ## Shared pre-step (all variants)
 `spec-writer` produces `spec.md`, `plan.md` and `tasks.md`. The plan must fix the contract (endpoint paths, request/response schemas, function signatures, error codes) because the developer and test-designer work in parallel without seeing each other's output. A human approves the spec and plan.
 
+In both multi-agent variants the developer works in the run folder and the test-designer in its own git worktree, so neither sees the other's files. When the developer has committed and reported ready, the test-designer merges the run branch into its worktree and runs its suite; the orchestrator then merges the tests into the run branch. See `../coordination.md`.
+
 ## Variant A: split verification (default, `.claude/agents/`)
 ```
-[approved spec + plan] -> developer || test-designer (parallel, isolated)
-  -> test-designer runs the suite -> reviewer -> security-reviewer
+[approved spec + plan] -> developer (run folder) || test-designer (own worktree)
+  -> test-designer runs the suite -> tests merged into the run branch
+  -> reviewer -> security-reviewer
   -> developer fixes (max 2 rounds) -> [human approves PR]
 ```
 Agents: developer (generator), test-designer, reviewer, security-reviewer. Build phase: 4 agents; 5 with the spec-writer.
 
 ## Variant B: merged verification (`B-merged-verification/`)
 ```
-[approved spec + plan] -> developer || test-designer (parallel, isolated)
-  -> verifier (reviews diff, security checks, runs the suite)
+[approved spec + plan] -> developer (run folder) || test-designer (own worktree)
+  -> test-designer runs the suite -> tests merged into the run branch
+  -> verifier (reviews the diff, security checks, re-runs the suite)
   -> developer fixes (max 2 rounds) -> [human approves PR]
 ```
 Agents: developer (generator), test-designer, verifier. Build phase: 3 agents. Uses `verifier.md` in place of `reviewer.md` and `security-reviewer.md`.

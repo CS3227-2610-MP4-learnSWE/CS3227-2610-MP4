@@ -5,7 +5,8 @@ Newest entry first. Use `templates/handoff.md`.
 ## 2026-10-29: session on STU-02 experiment setup
 - Done: STU-02 practice attempt API spec, plan (fixed HTTP contract) and tasks in `specs/STU-02/`, approved by the user; price table filled; "Measuring token usage" section in `README.md`; resource-log columns aligned with the tracker. A hidden acceptance suite and the comparison tooling exist on a local branch and are withheld from run branches until all runs finish.
 - Decisions: same feature built once per condition (A, B, baseline), one run each, Claude only; the spec is shared and excluded from the comparison; each run gets a fresh session on its own branch; usage is attributed by session so subagents in their own worktrees still count.
-- Next: user review of the open procedure points (test-designer isolation, per-variant run prompts), then a small pilot run of Variant A, then the three runs.
+- Decision (user, 29 Oct): the test-designer runs in its own git worktree, so isolation is enforced by separate folders. At verification it merges the run branch into its worktree and runs the suite; the orchestrator then merges the tests into the run branch. Only agents in the run folder edit `notes.md`; the test-designer reports its handoff to the orchestrator. Updated: `coordination.md`, `variants/README.md`, `.claude/agents/test-designer.md`, `.claude/agents/developer.md`, `AGENTS.md`.
+- Next: a small pilot run of Variant A to check the worktree flow and usage attribution, then the three runs.
 - Open: subagent attribution not yet seen on a real run in this repo; agent definitions never run; absolute totals unchecked against the apps.
 - Resource use: see `experiments/resource-log.md`.
 

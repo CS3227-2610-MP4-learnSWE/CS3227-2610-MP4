@@ -4,31 +4,36 @@ Generator-verifier with an independent test designer. The default (Variant A) is
 
 ```
 feature ID -> spec-writer -> [human approves spec + plan/contract]
-  -> developer (generator) || test-designer (parallel, isolated)
-  -> test-designer runs the suite -> reviewer -> security-reviewer
+  -> developer (generator, run folder) || test-designer (own worktree)
+  -> test-designer merges the run branch into its worktree and runs the suite
+  -> orchestrator merges the tests into the run branch
+  -> reviewer -> security-reviewer
   -> developer fixes (max 2 rounds) -> [human approves PR]
 ```
 
+The orchestrator is the session that runs the workflow: it starts the agents, passes messages between them, does the merges and writes `notes.md`.
+
 ## Triggers
 - spec-writer: a feature is chosen from `docs/FeatureList.md`.
-- developer and test-designer: spec and plan marked Approved. They start together.
-- verification: the developer reports ready (typecheck, lint green) and the tests are committed.
-- reviewer and security-reviewer: the suite has been run. Read-only; they may run in parallel.
+- developer and test-designer: spec and plan marked Approved. They start together; the test-designer is started with worktree isolation.
+- verification: the developer has committed its work and reports ready (typecheck, lint green), and the test-designer has committed its tests on its worktree branch.
+- merge of tests: the test-designer has reported its suite results.
+- reviewer and security-reviewer: the tests are merged into the run branch. Read-only; they may run in parallel.
 
 ## Isolation
-The test-designer works only from the spec, plan contract and threat model, and does not read `src/` until verification. The developer builds from the spec and does not read the tests until it has reported ready. The plan's contract (paths, schemas, signatures, error codes) is the only shared interface; a mismatch is reported as a contract defect, not patched by editing a test.
+Enforced by separate folders, not only by instruction. The developer works in the run's folder on the run branch. The test-designer works in its own git worktree on its own branch, from the spec, plan contract and threat model only, so neither can see the other's files. At verification the test-designer merges the run branch into its worktree and runs its tests; only then does the orchestrator merge the test branch into the run branch. The plan's contract (paths, schemas, signatures, error codes) is the only shared interface; a mismatch is reported as a contract defect, not patched by editing a test.
 
 ## Context management
 Each agent reads only the files named in its definition plus the feature's folder under `specs/`. State passes through files, never assumed memory: `spec.md`, `plan.md`, `tasks.md`, and a handoff entry in `notes.md`.
 
 ## Handoff
-Every agent ends by prepending an entry to `notes.md` using `templates/handoff.md` (done, next, open questions, files touched, rough resource use).
+Every agent ends with a handoff using `templates/handoff.md` (done, next, open questions, files touched, rough resource use). Agents in the run folder prepend it to `notes.md`. The test-designer, working in a worktree, puts it in its final report and the orchestrator records it, so `notes.md` never conflicts at merge.
 
 ## Revision loop and caps
 Verification failures return to the developer as a ranked defect list. At most 2 revision rounds; after that the human team decides. Round counts are logged in `experiments/resource-log.md`.
 
 ## Resource sharing
-One working tree per feature branch; only the developer writes `src/`. The test-designer writes only test files; reviewers are read-only. The SoC LLM quota is shared: tests use mocks, and no agent runs live calls against it without approval.
+The run folder belongs to the developer, the only agent that writes `src/` outside tests. The test-designer writes only test files, in its own worktree. Reviewers are read-only. No two agents write in the same folder at the same time. The SoC LLM quota is shared: tests use mocks, and no agent runs live calls against it without approval.
 
 ## Conflict resolution
 A disagreement between agents goes in `notes.md` as blocking or non-blocking. Blocking findings go to the developer. Contract disputes go back to the spec-writer to amend `plan.md`. Unresolved cases go to the human team and the decision is recorded in `plan.md`.
