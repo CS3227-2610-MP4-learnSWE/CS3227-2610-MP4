@@ -1,6 +1,6 @@
 # Workflow variants
 
-**Outcome (30 Oct 2026): Variant A was chosen** after a fair comparison (all three conditions re-run from the same commit with the same model and settings and the correct agent definitions), replacing an earlier choice of B that rested on an unfair cost difference. A is now the only active workflow (`.claude/agents/`, `../coordination.md`); B's verifier definition was removed from `.claude/agents/`. The active security-reviewer adds a severity rule and robustness checks. See `../experiments/results/stu02-decision.md`.
+**Outcome (30 Oct 2026): Variant B was chosen** after a fair comparison (all three conditions re-run from the same commit with the same model, settings and correct agent definitions). The pre-set tie-break pointed to A, because B used one revision round, but that round fixed stale documentation that A's reviewer had rated non-blocking and left in place, so the team overrode it. B is now the only active workflow (`.claude/agents/`, `../coordination.md`); A's reviewer and security-reviewer definitions were removed. The active verifier (`.claude/agents/verifier.md`) adds a severity rule and robustness checks that the experiment's `B-merged-verification/verifier.md` did not have. See `../experiments/results/stu02-decision.md`.
 
 We compare ways of splitting build and verification work. The spec step is shared and excluded from the comparison: write and approve the spec and plan once per task, then give the same files to every run.
 

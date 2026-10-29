@@ -18,17 +18,16 @@ Everything about how this project is built. The default agent definitions live i
 | `checklist.md` | Submission and setup checklist with owners. |
 | `AppShellPlan.md` | Execution record of the first app-shell phase. |
 
-## Agent roster, Variant A (`.claude/agents/`)
+## Agent roster, Variant B (`.claude/agents/`)
 
 | Agent | Model | Job |
 |---|---|---|
 | `spec-writer` | sonnet | Feature ID to spec, plan (with contract), tasks. Shared pre-step. |
 | `developer` | sonnet | Generator: implements from the spec; fixes defects. |
 | `test-designer` | sonnet | Independent tests from the spec; runs the suite at verification. |
-| `reviewer` | sonnet | Read-only review against spec and docs. |
-| `security-reviewer` | opus | Adversarial tests and security checklist; severity rule for concurrency and normalisation. |
+| `verifier` | opus | Read-only code, docs and security review in one pass; re-runs the suite; severity rule for concurrency and normalisation. |
 
-This is Variant A (split verification), chosen after a fair comparison in which A, B and a single-session baseline ran from the same commit with the same model and settings (`experiments/results/stu02-decision.md`). Variant B's verifier was removed; its record stays in `variants/` and `experiments/`.
+This is Variant B (merged verification), chosen after a fair comparison in which A, B and a single-session baseline ran from the same commit with the same model and settings (`experiments/results/stu02-decision.md`). Variant A's separate reviewer and security-reviewer were removed; their record stays in `variants/` and `experiments/`.
 
 `AGENTS.md` at the repo root holds the same rules and role definitions for Codex. Edit all three places together (`CLAUDE.md`, `.claude/agents/`, `AGENTS.md`).
 
