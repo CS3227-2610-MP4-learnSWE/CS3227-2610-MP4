@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -29,12 +30,12 @@ def git(*args: str, cwd: Path = REPO) -> str:
     return subprocess.run(["git", *args], cwd=cwd, check=True, capture_output=True, text=True).stdout
 
 
-def backend_python() -> str:
-    """Interpreter that has the backend dependencies (the main checkout's venv)."""
-    for candidate in (REPO / "src/backend/.venv/Scripts/python.exe", REPO / "src/backend/.venv/bin/python"):
-        if candidate.is_file():
-            return str(candidate)
-    return sys.executable
+def pytest_command() -> list[str]:
+    """Run pytest in the run's own locked environment, so a dependency the run added is installed."""
+    if shutil.which("uv"):
+        return ["uv", "run", "--frozen", "--quiet", "python", "-m", "pytest"]
+    print("warning: uv not found; using this Python, which may lack the run's dependencies", file=sys.stderr)
+    return [sys.executable, "-m", "pytest"]
 
 
 def run_pytest(backend: Path, targets: list[str], extra: list[str]) -> dict:
@@ -42,7 +43,7 @@ def run_pytest(backend: Path, targets: list[str], extra: list[str]) -> dict:
     with tempfile.TemporaryDirectory() as tmp:
         report = Path(tmp) / "report.xml"
         subprocess.run(
-            [backend_python(), "-m", "pytest", *targets, *extra, "-q", f"--junitxml={report}"],
+            [*pytest_command(), *targets, *extra, "-q", f"--junitxml={report}"],
             cwd=backend,
             capture_output=True,
             text=True,

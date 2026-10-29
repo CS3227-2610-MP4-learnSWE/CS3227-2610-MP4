@@ -16,12 +16,15 @@ The orchestrating session uses sonnet in A and B and its tokens count toward the
 ## Setup (before any run)
 1. Merge `exp/stu02-setup` (spec, plan, tasks, prices) to `master` by PR. Every run branches from that merge commit.
 2. The grader branch `exp/stu02-grader` stays local and unpushed until all three runs are graded.
-3. Each run is a fresh session, in its own git worktree, started from the same commit. One session is one run, so the tracker can attribute usage by branch.
+3. Each run is a fresh session, in its own git worktree, started from the same commit. One session is one run: `compare.py` counts every request of every session that worked on the run branch, including subagents that log a different branch from their own worktree. Never reuse a session across runs.
 
 ## Running one condition
 1. Create the branch from the setup commit: `git switch -c exp/stu02-<X> <setup-commit>` (or a worktree on it).
 2. For B: delete `.claude/agents/reviewer.md` and `.claude/agents/security-reviewer.md`, copy in `workflow/variants/B-merged-verification/verifier.md`, and update the roster in `AGENTS.md`. For the baseline: delete the agent files and tell the session to follow the spec-first, tests-first rules itself.
-3. Give the session this prompt, and nothing else about the experiment: "Implement the STU-02 practice attempt API as specified in workflow/specs/STU-02. Follow the workflow in CLAUDE.md." Variant A and B sessions use the coordination in `workflow/coordination.md`.
+3. Give the session exactly the prompt for its condition, and nothing else about the experiment. Shared instructions (`CLAUDE.md`, `coordination.md`) describe Variant A as the default, so the prompt must name the variant:
+   - A: "Implement the STU-02 practice attempt API as specified in workflow/specs/STU-02. Use Variant A (split verification) exactly as described in workflow/coordination.md and workflow/variants/README.md."
+   - B: "Implement the STU-02 practice attempt API as specified in workflow/specs/STU-02. Use Variant B (merged verification) exactly as described in workflow/variants/README.md: one verifier replaces the reviewer and security-reviewer."
+   - baseline: "Implement the STU-02 practice attempt API as specified in workflow/specs/STU-02. Work alone in this session without subagents, spec-first and tests-first, as described for the baseline in workflow/variants/README.md."
 4. Do not help beyond the 2 revision rounds. Note every point where you had to step in.
 5. When the run says it is done, commit its work on the run branch. Record your review time in minutes (time you spend reading and fixing the result, excluding waiting).
 6. Run order: A, then B, then baseline. Note any learning effect.

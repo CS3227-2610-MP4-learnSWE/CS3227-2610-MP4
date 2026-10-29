@@ -1,6 +1,7 @@
 import unittest
+from types import SimpleNamespace
 
-from compare import build_row, cell, render_markdown, COLUMNS
+from compare import build_row, cell, render_markdown, run_rows, COLUMNS
 
 TOTAL = {
     "requests": 10, "input_tokens": 100, "cache_read_tokens": 1000,
@@ -28,6 +29,16 @@ class CompareTest(unittest.TestCase):
     def test_zero_passes_does_not_divide_by_zero(self):
         row = build_row("A", TOTAL, {"grader": {"passed": 0, "total": 18}}, {})
         self.assertIsNone(row["cost_per_grader_pass_usd"])
+
+    def test_run_rows_include_subagents_logged_on_another_branch(self):
+        rows = [
+            SimpleNamespace(session_id="s1", branch="exp/stu02-A"),
+            SimpleNamespace(session_id="s1", branch="worktree-agent-x"),
+            SimpleNamespace(session_id="s2", branch="exp/stu02-B"),
+            SimpleNamespace(session_id="s3", branch="master"),
+        ]
+        picked = run_rows(rows, "exp/stu02-A")
+        self.assertEqual([r.branch for r in picked], ["exp/stu02-A", "worktree-agent-x"])
 
     def test_markdown_has_header_and_one_line_per_run(self):
         text = render_markdown([build_row("A", TOTAL, GRADE, {}), build_row("B", TOTAL, GRADE, {})])

@@ -77,6 +77,17 @@ def render_markdown(rows: list[dict]) -> str:
     return "\n".join(lines)
 
 
+def run_rows(rows: list, branch: str) -> list:
+    """All requests of every session that worked on the run branch.
+
+    Subagents share their parent's session id, so a subagent working in its own
+    worktree (and logging a different branch) still counts toward the run. This
+    relies on each run having its own fresh session.
+    """
+    sessions = {r.session_id for r in rows if r.branch == branch}
+    return [r for r in rows if r.session_id in sessions]
+
+
 def load_json(path: Path) -> dict:
     return json.loads(path.read_text(encoding="utf-8")) if path.is_file() else {}
 
@@ -86,10 +97,11 @@ def main() -> int:
     all_rows = collect_rows(Path.home() / ".claude", Path.home() / ".codex", prices)
     table, buckets, agents = [], {}, {}
     for label, branch in RUNS:
-        summary = summarise(all_rows, branch)
+        rows = run_rows(all_rows, branch)
+        summary = summarise(rows)
         table.append(build_row(label, summary[-1], load_json(RESULTS / f"stu02-{label}-grade.json") or None,
                                load_json(RESULTS / f"stu02-{label}-notes.json")))
-        buckets[label] = bucket_costs([r for r in all_rows if r.branch == branch], prices)
+        buckets[label] = bucket_costs(rows, prices)
         agents[label] = agent_costs(summary[:-1])
     RESULTS.mkdir(parents=True, exist_ok=True)
     with (RESULTS / "stu02-comparison.csv").open("w", newline="", encoding="utf-8") as handle:
