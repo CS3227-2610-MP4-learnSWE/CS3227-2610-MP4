@@ -36,7 +36,8 @@ As a student, I want to answer and submit a published practice set so that I can
 
 Acceptance criteria:
 
-- I complete all multiple-choice and short code-reading questions, then submit the whole set in one action; incomplete sets are rejected with the missing questions identified.
+- I complete all single-answer multiple-choice questions (MCQs), then submit the whole set in one action; incomplete sets are rejected with the missing questions identified.
+- Every question supplies choices with exactly one correct answer; I select one choice per question. Code snippets may appear in a question, but there is no free-text answer input.
 - I can revise answers before whole-set submission; there is no per-question submission, score or immediate correctness feedback.
 - Successful submission saves the complete attempt, answers and set score against the question and answer-key version used, then makes results available.
 - Failed submission does not unlock results or full AI solutions and preserves my entered answers for retry.
@@ -85,6 +86,29 @@ Acceptance criteria:
 - Full solution help is available only after the server verifies successful whole-set submission for my own attempt.
 - Explanations correspond to that attempt’s question and answer-key version.
 - A previous submission does not unlock answers for a new unsubmitted attempt; retry and question-reuse rules must address already-seen answers.
+
+#### US-STU-03-04 — Keep a conversation while learning
+
+As a student, I want a floating study companion available while navigating lessons and practice so that I can ask for guidance without leaving my current page.
+
+Acceptance criteria:
+
+- A bottom-right icon opens a bottom-right chat box on student pages, with accessible labels and mobile/light/dark support.
+- Close minimises to the icon without clearing history or the unsent draft; reopening restores the conversation. Escape also minimises and restores focus to the icon.
+- History remains scoped to the same authenticated account across page changes and reload until logout or explicit clear; account switching cannot expose another account’s conversation.
+- The refresh/clear control removes conversation history and the unsent draft and starts a new conversation without reloading the page.
+- Logout removes the active account’s chat from the client session. This requirement is not permission to implement cross-account chat storage.
+
+#### US-STU-03-05 — Get guidance in the current page’s context
+
+As a student, I want the companion to understand the page I am viewing so that I do not have to repeatedly explain the lesson or question.
+
+Acceptance criteria:
+
+- Current page context updates as I navigate and includes relevant authorised, student-visible lesson or question content, not just the URL.
+- The backend revalidates access and submission status before retrieving context. Answer keys, protected solution explanations, drafts and other users’ data are excluded before submission.
+- Page content and prior chat are untrusted input, cannot override fixed rules, and are bounded to the relevant context rather than indiscriminately scraping the entire app.
+- This UI preview only displays a current-page label and fixed replies; real context-aware responses and account-session persistence are not implemented yet. Local history survives navigation/minimise but resets on page reload, login or demo role switching.
 
 ### STU-04 — Progress dashboard
 
@@ -188,7 +212,7 @@ As a teacher, I want to generate practice questions from selected source materia
 
 Acceptance criteria:
 
-- Generated drafts include questions, suggested answers and explanations.
+- Generated drafts contain MCQs only, with answer choices, exactly one correct choice and an explanation per question; no free-text answer questions.
 - Unusable output is identified clearly and failed requests preserve existing work.
 - Generated questions remain unpublished until reviewed and explicitly published.
 
@@ -218,8 +242,8 @@ As a teacher, I want to edit draft questions, answer keys and explanations so th
 
 Acceptance criteria:
 
-- I can save corrections to each question and its associated answer and explanation.
-- Required fields are validated and corrections persist when reopened.
+- I can review and correct each MCQ’s wording, answer choices, single correct choice and explanation.
+- Required fields and the single correct choice are validated; corrections persist when reopened.
 
 #### US-TEA-03-04 — Publish reviewed content
 
@@ -239,7 +263,7 @@ As a teacher, I want to select questions for a topic-based practice set so that 
 
 Acceptance criteria:
 
-- I can save a set with selected questions and a topic in a course I manage.
+- I can save a set containing MCQs only and a topic in a course I manage.
 - I can review the set before publishing it through the content publication workflow.
 
 #### US-TEA-04-02 — Maintain practice answers
@@ -521,6 +545,6 @@ The following apply across all relevant stories and map to SHR-01 through SHR-05
 - Initial programming subject and learner level.
 - Supported upload formats and file-size limits.
 - How users join courses and how teacher accounts are approved.
-- Short-answer matching rules, repeat-attempt scoring, question reuse after answers have been seen, and the rule for identifying weak topics. The fixed policy is hints only until each whole-set attempt is successfully submitted.
+- Repeat-attempt scoring, question reuse after answers have been seen, and the rule for identifying weak topics. The fixed policy is hints only until each whole-set attempt is successfully submitted.
 - Whether feedback is identified or anonymous, together with retention and deletion rules.
 - Exact SoC LLM quotas, model configuration and resource measurements available to the app.

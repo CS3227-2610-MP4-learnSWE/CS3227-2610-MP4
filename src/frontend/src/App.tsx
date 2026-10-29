@@ -10,6 +10,7 @@ import {
 } from "@mui/material";
 import { DemoProvider } from "./state";
 import Login from "./pages/Login";
+import { CompanionProvider } from "./components/StudyCompanion";
 import Shell from "./components/Shell";
 import Student from "./pages/Student";
 import Teacher from "./pages/Teacher";
@@ -79,7 +80,11 @@ export default function App() {
           />
           <Route
             path="/student"
-            element={<Shell role="student" dark={dark} toggle={toggle} />}
+            element={
+              <CompanionProvider>
+                <Shell role="student" dark={dark} toggle={toggle} />
+              </CompanionProvider>
+            }
           >
             <Route index element={<Navigate to="overview" replace />} />
             <Route path="inbox" element={<InboxPage role="student" />} />

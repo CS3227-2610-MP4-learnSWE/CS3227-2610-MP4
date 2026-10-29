@@ -13,7 +13,6 @@ export const navigation: Record<
     { path: "overview", label: "Overview", icon: "overview" },
     { path: "materials", label: "Study materials", icon: "book" },
     { path: "practice", label: "Practice", icon: "code" },
-    { path: "assistant", label: "AI study companion", icon: "sparkles" },
     { path: "inbox", label: "Inbox", icon: "inbox" },
   ],
   teacher: [
@@ -100,6 +99,7 @@ export const questions = [
     id: "loop",
     text: "What does this Python code print?",
     code: "values = [1, 2, 3]\nprint(len(values))",
+    options: ["1", "2", "3"],
     answer: "3",
     explanation:
       "len returns the number of items. The list contains three items.",

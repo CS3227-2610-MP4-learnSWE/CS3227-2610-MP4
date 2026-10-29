@@ -20,6 +20,7 @@ import {
 import { Brand, Icon, ThemeToggle } from "./ui";
 import { navigation, names, roles, type Role } from "../data";
 import { useDemo } from "../state";
+import StudyCompanion, { CompanionTrigger } from "./StudyCompanion";
 
 function Health() {
   const [status, setStatus] = useState("Checking backend");
@@ -127,23 +128,22 @@ export default function Shell({
                 ? "Turn your materials into meaningful learning."
                 : "Turn feedback into a better experience."}
           </p>
-          <Link
-            to={
-              role === "student"
-                ? "/student/assistant"
-                : role === "teacher"
-                  ? "/teacher/generate"
-                  : "/admin/responses"
-            }
-          >
-            Explore{" "}
-            {role === "admin"
-              ? "insights"
-              : role === "teacher"
-                ? "the studio"
-                : "AI companion"}
-            <ArrowUpRight size={14} />
-          </Link>
+          {role === "student" ? (
+            <CompanionTrigger
+              className="sidebar-companion-trigger"
+              onOpen={() => setOpen(false)}
+            >
+              Open companion
+              <ArrowUpRight size={14} />
+            </CompanionTrigger>
+          ) : (
+            <Link
+              to={role === "teacher" ? "/teacher/generate" : "/admin/responses"}
+            >
+              Explore {role === "admin" ? "insights" : "the studio"}
+              <ArrowUpRight size={14} />
+            </Link>
+          )}
         </div>
         <div className="sidebar-user">
           <Avatar
@@ -242,6 +242,7 @@ export default function Shell({
             Login preview
           </Button>
         </footer>
+        {role === "student" && <StudyCompanion />}
       </div>
     </div>
   );

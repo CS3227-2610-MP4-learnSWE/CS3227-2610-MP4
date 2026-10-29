@@ -12,16 +12,16 @@ The sun/moon button toggles light/dark mode. The initial theme follows your oper
 
 - Overview shows illustrative progress, activity and course suggestions.
 - Study materials supports topic filters and title search. Open a lesson, mark it complete, then mark it incomplete if desired. Completion updates the overview until refresh.
-- Practice contains three questions. Answer every question and submit the whole set in one action. An incomplete attempt is rejected. After submission, view the score, answer keys and explanations; start another demo attempt to reset.
-- AI study companion returns fixed, labelled sample responses. Before practice submission it gives hints only. After successful submission it can explain the sample answers. It is not connected to an LLM.
+- Practice contains three single-answer MCQs; code snippets can appear in a question, but answers are selected choices, never free text. Answer every question and submit the whole set in one action. An incomplete attempt is rejected. After submission, view the score, answer keys and explanations; start another demo attempt to reset.
+- The study companion is a bottom-right chat icon on every student page. Click it to open the chat box; Close or Escape minimises it and preserves messages and the unsent draft. The refresh icon clears both and starts fresh without reloading the page. Messages survive navigation within the student workspace; browser reload, returning to login or switching demo roles clears this temporary chat. The widget shows the current page label and fixed preview replies, not real AI or page-content retrieval. Before submission it never reveals or confirms answers. In the future authenticated app, chat should remain account-scoped until logout/explicit clear, including across reload, and use relevant authorised content from the current page.
 - Inbox starts with two unread messages. Opening one marks it read and updates the count. Open the survey link to see a sample feedback form. Its submission button shows a preview message without saving anything.
 
 ## Teacher
 
 - Overview displays sample participation and draft-review information.
 - Materials library supports search. Upload material opens a file-picker preview; only the filename is displayed, with no reading or upload.
-- AI content studio lets you select source and draft type. Preview generation shows fixed sample notes or questions; changing the source does not generate different content.
-- Review & publish offers tabs for notes and practice questions/answer keys/explanations. Edit locally and preview publication; nothing is saved or published.
+- AI content studio lets you select source and draft type. Preview generation shows fixed sample notes or MCQs, including answer choices; changing the source does not generate different content.
+- Review & publish offers tabs for notes and MCQs, their choices, answer keys and explanations. Edit locally and preview publication; nothing is saved or published.
 - Practice sets lets you edit the title/topic and select questions. The preview action does not save a set.
 - Inbox and feedback follow the same preview behaviour as the student workspace.
 

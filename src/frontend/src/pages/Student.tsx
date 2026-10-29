@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Link, useLocation } from "react-router";
+import { useEffect, useState } from "react";
+import { Link, Navigate, useLocation } from "react-router";
 import {
   Alert,
   Button,
@@ -16,7 +16,6 @@ import {
   Clock3,
   Flame,
   Lightbulb,
-  Send,
   Sparkles,
   Target,
 } from "lucide-react";
@@ -35,9 +34,11 @@ import {
 } from "../components/ui";
 import { lessons, questions, weeklyActivity } from "../data";
 import { useDemo } from "../state";
+import { useCompanion } from "../components/StudyCompanion";
 
 function Overview() {
   const { completed } = useDemo();
+  const { setOpen } = useCompanion();
   return (
     <>
       <PageHeading
@@ -157,8 +158,7 @@ function Overview() {
           <p>Get a thoughtful hint from your AI study companion.</p>
         </div>
         <Button
-          component={Link}
-          to="/student/assistant"
+          onClick={() => setOpen(true)}
           endIcon={<ArrowRight size={16} />}
         >
           Let’s think it through
@@ -261,6 +261,7 @@ function Materials() {
 }
 function Lesson({ id }: { id: string }) {
   const lesson = lessons.find((item) => item.id === id);
+  const { setOpen } = useCompanion();
   const { completed, toggleCompleted } = useDemo();
   if (!lesson)
     return (
@@ -355,8 +356,7 @@ function Lesson({ id }: { id: string }) {
             <hr />
             <p>Need another perspective?</p>
             <Button
-              component={Link}
-              to="/student/assistant"
+              onClick={() => setOpen(true)}
               startIcon={<Sparkles size={16} />}
             >
               Ask your companion
@@ -388,7 +388,7 @@ export function Practice() {
             <div>
               <Tag tone="purple">SOFTWARE ENGINEERING ESSENTIALS</Tag>
               <h2>Clear code, confident changes</h2>
-              <p>3 questions · About 5 minutes · Whole-set submission</p>
+              <p>3 MCQs · About 5 minutes · Whole-set submission</p>
             </div>
             <span className="icon-box purple">
               <Target size={25} />
@@ -415,7 +415,7 @@ export function Practice() {
             <Panel key={q.id} className="question-panel">
               <div className="question-number">
                 QUESTION {String(i + 1).padStart(2, "0")}
-                <span>{q.options ? "Choose one" : "Short answer"}</span>
+                <span>Choose one</span>
               </div>
               <h3>{q.text}</h3>
               {q.code && (
@@ -423,7 +423,7 @@ export function Practice() {
                   <code>{q.code}</code>
                 </pre>
               )}
-              {q.options ? (
+              {
                 <RadioGroup
                   aria-label={q.text}
                   value={answers[q.id] || ""}
@@ -440,14 +440,7 @@ export function Practice() {
                     />
                   ))}
                 </RadioGroup>
-              ) : (
-                <TextField
-                  label="Your answer"
-                  value={answers[q.id] || ""}
-                  onChange={(e) => answer(q.id, e.target.value)}
-                  disabled={submitted}
-                />
-              )}
+              }
               {submitted && (
                 <div className="solution">
                   <strong>Correct answer: {q.answer}</strong>
@@ -525,111 +518,12 @@ export function Practice() {
     </>
   );
 }
-function Assistant() {
-  const [input, setInput] = useState("");
-  const [chat, setChat] = useState<{ from: string; text: string }[]>([]);
-  const { submitted } = useDemo();
-  const send = (text: string) => {
-    if (!text.trim()) return;
-    setChat((items) => [
-      ...items,
-      { from: "you", text },
-      {
-        from: "companion",
-        text: submitted
-          ? "You have submitted the sample set. Let’s reflect: a focused responsibility makes functions easier to understand, tests catch regressions, and len counts the items in a collection. Which idea would you like to revisit?"
-          : "Let’s work through the concept together. What have you tried so far, and where does your reasoning feel uncertain? Start by describing the goal in your own words, then break it into small steps. I’ll keep to hints until you submit the whole practice set.",
-      },
-    ]);
-    setInput("");
-  };
-  return (
-    <>
-      <PageHeading
-        eyebrow="CURIOSITY WELCOME HERE"
-        title="Let’s think it through."
-        description="A study companion that helps you find your own way to understanding."
-      />
-      <Panel className="chat-panel">
-        <div className="chat-header">
-          <span className="icon-box purple">
-            <Sparkles size={22} />
-          </span>
-          <div>
-            <strong>Your study companion</strong>
-            <small>Guidance first. Understanding always.</small>
-          </div>
-          <Tag tone="purple">Scripted preview</Tag>
-        </div>
-        <div className="chat-messages" aria-live="polite">
-          <div className="companion-message">
-            <span className="chat-avatar">
-              <Sparkles size={17} />
-            </span>
-            <div>
-              <p>Hi Alex. What are you curious about today?</p>
-              <p>
-                Tell me what you already understand and where you’re getting
-                stuck. We’ll build from there, one step at a time.
-              </p>
-              <small>
-                Grounded in sample course materials · Hints before submission
-              </small>
-            </div>
-          </div>
-          {chat.length === 0 && (
-            <div className="chat-suggestions">
-              {[
-                "How can I make my functions clearer?",
-                "Help me think about a testing strategy",
-                "I’m stuck on the practice set",
-              ].map((text) => (
-                <Button
-                  variant="outlined"
-                  key={text}
-                  onClick={() => send(text)}
-                >
-                  {text}
-                  <ArrowRight size={14} />
-                </Button>
-              ))}
-            </div>
-          )}
-          {chat.map((message, i) => (
-            <div key={i} className={`chat-message ${message.from}`}>
-              <span>{message.from === "you" ? "You" : "Study companion"}</span>
-              <p>{message.text}</p>
-            </div>
-          ))}
-        </div>
-        <form
-          className="chat-input"
-          onSubmit={(event) => {
-            event.preventDefault();
-            send(input);
-          }}
-        >
-          <TextField
-            label="What would you like to understand?"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-          />
-          <Button
-            type="submit"
-            variant="contained"
-            aria-label="Send question"
-            disabled={!input.trim()}
-          >
-            <Send size={19} />
-          </Button>
-        </form>
-        <PreviewNote>
-          Responses are prewritten demonstrations. No external AI service is
-          connected.
-        </PreviewNote>
-      </Panel>
-    </>
-  );
+function LegacyAssistant() {
+  const { setOpen } = useCompanion();
+  useEffect(() => {
+    setOpen(true);
+  }, [setOpen]);
+  return <Navigate to="/student/overview" replace />;
 }
 export default function Student() {
   const path = useLocation().pathname.split("/");
@@ -641,7 +535,7 @@ export default function Student() {
     case "practice":
       return <Practice />;
     case "assistant":
-      return <Assistant />;
+      return <LegacyAssistant />;
     default:
       return (
         <EmptyState title="This page isn’t here">

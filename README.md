@@ -30,14 +30,14 @@ The frontend works without the backend and reports its connection status in the 
 
 ## What you can explore
 
-- **Student:** overview, topic/search filtering, sample lessons with reversible completion, whole-set practice submission and results, scripted hints, inbox read status and a feedback-form preview.
+- **Student:** overview, topic/search filtering, sample lessons with reversible completion, MCQ-only whole-set practice submission and results, a floating study companion, inbox read status and a feedback-form preview.
 - **Teacher:** overview, materials library, file-picker preview, sample AI content studio, editable draft notes/questions/answer keys, practice-set selection and inbox.
 - **Admin:** illustrative analytics, feedback-form builder and audience preview, sample feedback and analysis references, announcement preview, role-filtered people table and illustrative AI usage.
 - **Shared:** responsive navigation, role switching, light/dark mode, keyboard focus, reduced-motion support and direct browser routes.
 
-Changes exist in memory only and reset on refresh. Some editor drafts reset when leaving their screen. All figures, records and AI responses are illustrative. There are no AI calls, uploads, messages, registrations, persistence or real permission changes. Browser file selection displays a filename only; the file is not read or uploaded. PostgreSQL is planned but not configured.
+Changes exist in memory only and reset on browser refresh. The student companion opens from the bottom-right chat icon on any student page. Close/Escape minimises without losing messages or the unsent draft; its refresh icon clears both without refreshing the page. Chat survives student-page navigation, but returning to login or switching demo roles ends that temporary conversation. Some editor drafts reset when leaving their screen. All figures, records and AI responses are illustrative. There are no AI calls, uploads, messages, registrations, persistence or real permission changes. Browser file selection displays a filename only; the file is not read or uploaded. PostgreSQL is planned but not configured.
 
-**Practice boundary:** complete every question and submit the whole set before scores and solutions are shown. Before submission, the companion gives scripted hints. Sample answer keys ship in frontend code and the demo role switcher is unrestricted; neither is a security boundary. Production answer protection and authorisation must be implemented on the server later.
+**Practice boundary:** complete every question and submit the whole set before scores and solutions are shown. Before submission, the practice hint and companion previews never reveal or confirm answers. The widget displays the current page label and fixed demonstration replies; it does not retrieve page contents or call AI. Authenticated, account-scoped conversation persistence until logout (including browser reload) and secure current-page content retrieval remain future requirements. Sample answer keys ship in frontend code and the demo role switcher is unrestricted; neither is a security boundary. Production answer protection and authorisation must be implemented on the server later.
 
 ## Health API
 
