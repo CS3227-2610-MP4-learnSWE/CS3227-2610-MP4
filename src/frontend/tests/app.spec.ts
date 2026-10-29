@@ -192,6 +192,8 @@ test("teacher actions and admin messages are explicit previews", async ({
 test("desktop and mobile layouts render without overflow in both themes", async ({
   page,
 }) => {
+  // 19 routes x 2 widths x 2 themes takes over a minute; the 30 s default fails it.
+  test.setTimeout(180_000);
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
   for (const theme of ["light", "dark"] as const) {
