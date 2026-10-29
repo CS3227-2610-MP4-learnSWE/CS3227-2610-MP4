@@ -14,12 +14,12 @@ This folder is kept off the run branches. The runs must not see the grader or th
 The orchestrating session uses sonnet in A and B and its tokens count toward the run. Revision loops: at most 2 rounds.
 
 ## Setup (before any run)
-1. Runs branch from `exp/stu02-setup` at commit `9bc4aed` (spec, plan, tasks, prices, worktree isolation). It does not need to be merged to `master` first; what matters is that every run starts from the same commit.
+1. Runs branch from `exp/stu02-setup` at commit `70ab114` (spec, plan, tasks, prices, worktree isolation, pilot fixes). It does not need to be merged to `master` first; what matters is that every run starts from the same commit.
 2. The grader branch `exp/stu02-grader` stays local and unpushed until all three runs are graded.
 3. Each run is a fresh session, in its own git worktree, started from the same commit. One session is one run: `compare.py` counts every request of every session that worked on the run branch, including subagents that log a different branch from their own worktree. Never reuse a session across runs.
 
 ## Running one condition
-1. Create the run branch from the start commit: `git switch -c exp/stu02-<X> 9bc4aed` (or a worktree on it).
+1. Create the run branch from the start commit: `git switch -c exp/stu02-<X> 70ab114` (or a worktree on it).
 2. For B: delete `.claude/agents/reviewer.md` and `.claude/agents/security-reviewer.md`, copy in `workflow/variants/B-merged-verification/verifier.md`, and update the roster in `AGENTS.md`. For the baseline: delete the agent files and tell the session to follow the spec-first, tests-first rules itself.
 3. Give the session exactly the prompt for its condition, and nothing else about the experiment. Shared instructions (`CLAUDE.md`, `coordination.md`) describe Variant A as the default, so the prompt must name the variant:
    - A: "Implement the STU-02 practice attempt API as specified in workflow/specs/STU-02. Use Variant A (split verification) exactly as described in workflow/coordination.md and workflow/variants/README.md."
