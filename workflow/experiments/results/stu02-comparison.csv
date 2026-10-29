@@ -1,0 +1,4 @@
+run,grader_passed,grader_total,grader_pct,own_tests_passed,own_tests_total,requests,input_tokens,cache_read_tokens,cache_write_tokens,output_tokens,reasoning_tokens,total_tokens,cost_usd,cost_per_grader_pass_usd,revision_rounds,review_minutes,quality_score
+A,18,18,100.0,44,44,87,190,4487467,327597,76915,8599,4892169,2.7647565,0.15359758333333332,1,,
+B,18,18,100.0,42,42,54,122,3034735,172111,41342,3530,3248310,1.5617805,0.08676558333333334,1,,
+baseline,18,18,100.0,32,32,14,28,1183177,45511,21681,1021,1250397,0.5172277,0.02873487222222222,0,,

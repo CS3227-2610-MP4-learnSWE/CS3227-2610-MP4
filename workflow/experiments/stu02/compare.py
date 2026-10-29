@@ -29,7 +29,12 @@ from tracker.report import summarise  # noqa: E402
 from html_report import agent_costs, bucket_costs, render_html  # noqa: E402
 
 RESULTS = REPO / "workflow" / "experiments" / "results"
-RUNS = [("A", "exp/stu02-A"), ("B", "exp/stu02-B"), ("baseline", "exp/stu02-baseline")]
+# The branches the run sessions actually worked on (each session names its own worktree branch).
+RUNS = [
+    ("A", "claude/stu02-run-a-eba95d"),
+    ("B", "claude/stu02-run-b-223ec1"),
+    ("baseline", "claude/stu02-run-baseline-e1c0af"),
+]
 COLUMNS = [
     "run", "grader_passed", "grader_total", "grader_pct", "own_tests_passed", "own_tests_total",
     "requests", "input_tokens", "cache_read_tokens", "cache_write_tokens", "output_tokens",
