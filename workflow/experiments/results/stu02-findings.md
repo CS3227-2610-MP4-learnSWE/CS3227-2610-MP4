@@ -17,5 +17,8 @@ Full table and charts: `stu02-comparison.csv`, `.md`, `.html`.
 - Opus verification is the largest single cost in both multi-agent runs (A security-reviewer 1.13, B verifier 0.68).
 - The orchestrator's own share is large (A 0.89, B 0.52): coordination overhead.
 
+## Independent API usability review (blind)
+Behaviour and contract were identical in A and B. Scores were close: A was preferred narrowly for typed `status` values and a trimmed student header; B had slightly clearer error messages. Both lack documented error responses in OpenAPI. See `stu02-api-review.md`.
+
 ## Limits
 One run per condition. Agent definitions loaded from the main folder were older copies for A and B (see `procedure.md`). A's cost includes a stall and a nudge. Review minutes and human quality scores were not measured (user decision). Absolute totals are tracker estimates at API list prices, not checked against the apps.
