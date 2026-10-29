@@ -1,0 +1,109 @@
+# Continuous integration: runs every check on pull requests into master and on pushes to master.
+# Plan and decisions: workflow/specs/CI-01/plan.md
+name: CI
+
+on:
+  pull_request:
+    branches: [master]
+  push:
+    branches: [master]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: src/backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+      - run: uv sync --frozen
+      - run: uv run pytest -q
+
+  frontend:
+    name: Frontend checks and browser tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: src/frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: src/frontend/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm run format:check
+      - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - run: npm test
+      - name: Upload Playwright report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-results
+          path: src/frontend/test-results/
+          retention-days: 7
+
+  workflow-tools:
+    name: Workflow tool tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Token tracker
+        working-directory: workflow/tools/token-tracker
+        run: python -m unittest discover -s tests
+      - name: Experiment scripts (when present)
+        run: |
+          if [ -d workflow/experiments/stu02 ]; then
+            cd workflow/experiments/stu02
+            python -m unittest test_compare test_html_report
+          else
+            echo "No experiment scripts on this branch"
+          fi
+
+  dependency-audit:
+    name: Dependency audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Backend runtime dependencies (blocking)
+        working-directory: src/backend
+        run: |
+          uv export --frozen --no-dev --no-emit-project > "$RUNNER_TEMP/runtime.txt"
+          uvx pip-audit -r "$RUNNER_TEMP/runtime.txt" --disable-pip
+      - name: Frontend runtime dependencies (blocking)
+        working-directory: src/frontend
+        run: npm audit --omit=dev --audit-level=high
+      - name: Backend dev dependencies (reported only)
+        working-directory: src/backend
+        continue-on-error: true
+        run: |
+          uv export --frozen --no-emit-project > "$RUNNER_TEMP/all.txt"
+          uvx pip-audit -r "$RUNNER_TEMP/all.txt" --disable-pip
+      - name: Frontend all dependencies (reported only)
+        working-directory: src/frontend
+        continue-on-error: true
+        run: npm audit --audit-level=high

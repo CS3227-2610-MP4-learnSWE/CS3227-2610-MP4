@@ -20,6 +20,8 @@ Practice uses single-answer MCQs only, including code-reading questions expresse
 
 ## Development and verification
 
+Continuous integration (`.github/workflows/ci.yml`) runs on every pull request into `master` and every push to it: backend tests; frontend typecheck, lint, format check, build and Playwright tests; the token tracker's and experiment scripts' unit tests; and a dependency audit that blocks on known vulnerabilities in runtime dependencies and only reports dev-only ones. It uses read-only permissions and no secrets. Plan and decisions: `workflow/specs/CI-01/plan.md`. Deployment is not built yet; options and open decisions are in `workflow/deployment.md`.
+
 Use the startup/check commands in [README.md](../README.md). `package-lock.json` and `uv.lock` pin resolved dependencies. No credentials are required. Ignore rules exclude local env files, generated output, virtual environments, browser traces and dependency directories. Use `npm run format` to format frontend files and `npm run format:check` to check them.
 
 Playwright exercises real UI behaviour with intercepted health responses. Backend tests independently verify the real API. Visual checks cover desktop/mobile and light/dark modes. Native form validation is used where appropriate; accessible labels, visible focus, a skip link, reduced-motion CSS and a mobile navigation drawer are included. This is not a full accessibility certification.
@@ -46,6 +48,8 @@ Spec-driven, multi-agent scaffolding. Contents are templates and drafts until fe
 | `workflow/tools/token-tracker/` | Standard-library Python tool that reads Claude Code and Codex session logs and reports token use and cost per agent and model (spec: `workflow/specs/TRK-01/`). |
 | `workflow/security/` | Threat model and security test log. |
 | `workflow/checklist.md` | Setup and submission checklist. |
+| `.github/workflows/ci.yml` | Continuous integration on pull requests and pushes to `master` (plan: `workflow/specs/CI-01/plan.md`). |
+| `workflow/deployment.md` | Deployment options, the SoC LLM network question, and open hosting decisions. |
 | `docs/Reflections.md` | Reflection skeleton, to be filled from experiment results. |
 
 ## Acknowledgements

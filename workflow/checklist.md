@@ -9,7 +9,9 @@ Deadline: 13 Nov 2026, 2pm SGT, `master` as pulled. Owners to be assigned.
 - [ ] SoC LLM access obtained; quota and rate limits documented
 - [ ] Decide subject and learner level
 - [ ] Choose hosting and set up dev and production environments
-- [ ] GitHub Actions: CI (tests, lint, audit), deploy to dev, gated deploy to prod
+- [x] GitHub Actions CI: tests, lint, format, build, browser tests, dependency audit (`.github/workflows/ci.yml`)
+- [ ] Deployment: dev on merge, gated prod (blocked on hosting and SoC LLM reachability; see `workflow/deployment.md`)
+- [ ] Upgrade pytest past the dev-only advisory (pinned below 9; fix in 9.0.3)
 - [ ] Secrets in GitHub environments, not in repo
 
 ## Deliverables
