@@ -14,6 +14,6 @@ What the user can do and sees.
 ## Out of scope
 
 ## Security and AI safeguards
-Access rules, untrusted inputs, answer-release rules, limits.
+Access rules, untrusted inputs, answer-release rules, limits. Also state: what must hold when two requests for the same record arrive at the same time, and how identifiers and other inputs are normalised (for example trimming whitespace) before comparison.
 
 ## Open questions

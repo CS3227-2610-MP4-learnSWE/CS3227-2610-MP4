@@ -10,13 +10,13 @@ The widget derives a current-page label from routes and sample lesson metadata o
 
 BrowserRouter enables direct URLs and history. For future production hosting, configure SPA fallback and route `/api` to FastAPI. Vite proxies `/api` locally to `API_PROXY_TARGET` (default `http://127.0.0.1:8000`). Only the health indicator fetches backend data; it handles checking, successful JSON, failed/malformed responses and a four-second timeout. No UI action calls an AI or business service.
 
-FastAPI exposes `/api/health` and `/api/health/ready`, with process-only semantics. OpenAPI/docs are framework-generated. No database or authentication dependency is present. PostgreSQL remains the agreed future database. Backend tests use HTTPX ASGI transport against the real application.
+FastAPI exposes `/api/health` and `/api/health/ready` (process-only semantics) and the STU-02 practice attempt API: `GET /api/practice-sets/{set_id}`, `POST /api/practice-sets/{set_id}/attempts`, `GET /api/attempts/{attempt_id}`, `PUT /api/attempts/{attempt_id}/answers`, `POST /api/attempts/{attempt_id}/submit` and `GET /api/attempts/{attempt_id}/results`. The student is identified by the placeholder `X-Student-Id` header (to be replaced by SHR-01 authentication); other students' attempts return 404. Attempts live in an in-memory store behind the `AttemptStore` interface; save and submit hold a per-attempt lock from the store so a save cannot land after a concurrent submit, and the header value is trimmed before use. Modules in `src/backend/`: `practice_data` (fixture and answer key), `practice_schemas`, `practice_logic` (validation and scoring), `practice_routes` (HTTP, shared header check) and `attempt_store`; `main.py` only wires the router. The key and explanations are released only in results of a submitted attempt. OpenAPI/docs are framework-generated. No database or real authentication dependency is present. PostgreSQL remains the agreed future database. Backend tests use HTTPX ASGI transport against the real application.
 
 ## State and preview actions
 
 The app stores no tokens, credentials or user data in browser storage. Login fields are uncontrolled and never read by application code. Sign-in/registration display a notice. Role switching is a demonstration control, not authorisation. Form drafts and selections use local React state. Uploaded files are not read or transmitted. Preview messages explicitly state that no save, generation, publication, access change or delivery occurs.
 
-Practice uses single-answer MCQs only, including code-reading questions expressed as choices. Teachers see sample choices and select a correct option in the review preview. Practice has a single in-memory attempt shared between the practice screen and companion. Incomplete submissions are rejected; successful whole-set submission unlocks local sample results. Starting another attempt resets answers and submission status. Answers are bundled in frontend fixtures; this is display logic only and cannot protect answers from inspection. Production must implement server-side attempt verification, role/course access and filtered AI context before this becomes a real feature.
+Practice uses single-answer MCQs only, including code-reading questions expressed as choices. Teachers see sample choices and select a correct option in the review preview. Practice has a single in-memory attempt shared between the practice screen and companion. Incomplete submissions are rejected; successful whole-set submission unlocks local sample results. Starting another attempt resets answers and submission status. Answers are bundled in frontend fixtures; this is display logic only and cannot protect answers from inspection. A server-side attempt API now exists (in-memory, placeholder identity) but the frontend does not use it yet. Production must still connect the frontend to it, add real authentication, role/course access, persistence and filtered AI context before this becomes a real feature.
 
 ## Development and verification
 
@@ -28,7 +28,7 @@ Playwright exercises real UI behaviour with intercepted health responses. Backen
 
 ## Workflow records
 
-`workflow/AppShellPlan.md` records scope, execution decisions and verification. `logs/AppShellSummary.md` summarises the development conversation and tool outcomes. `logs/WorkflowScaffoldingSummary.md` records the design discussion for the multi-agent workflow, including the variants (A split verification, B merged verification, single-session baseline) that will be compared in planned experiments; no experiment has been run yet. These are initial process artefacts, not a claim that all assignment requirements for multi-agent SE, context-engineering experiments or reflections have been completed. No deployment automation or product website is created in this phase.
+`workflow/AppShellPlan.md` records scope, execution decisions and verification. `logs/AppShellSummary.md` summarises the development conversation and tool outcomes. `logs/WorkflowScaffoldingSummary.md` records the design discussion for the multi-agent workflow, including the variants (A split verification, B merged verification, single-session baseline) that will be compared in planned experiments; no experiment has been run yet. `logs/TrackerAndExperimentSetupSummary.md` covers the token tracker, the STU-02 experiment setup and a review of earlier work. These are initial process artefacts, not a claim that all assignment requirements for multi-agent SE, context-engineering experiments or reflections have been completed. No deployment automation or product website is created in this phase.
 
 ## Workflow files
 
@@ -38,9 +38,9 @@ Spec-driven, multi-agent scaffolding. Contents are templates and drafts until fe
 |---|---|
 | `CLAUDE.md` | Project rules and read order for Claude Code. |
 | `AGENTS.md` | The same rules plus all agent role definitions, for Codex. Keep in sync with `CLAUDE.md` and `.claude/agents/`. |
-| `.claude/agents/*.md` | Claude Code agent definitions for Variant A: spec-writer, developer, test-designer, reviewer, security-reviewer. |
+| `.claude/agents/*.md` | Claude Code agent definitions for the chosen workflow (Variant B): spec-writer, developer, test-designer, verifier. |
 | `workflow/coordination.md` | Generator-verifier coordination pattern with an independent test designer, isolation rules, handoffs, revision caps, conflict resolution and how adherence is verified. |
-| `workflow/variants/` | The workflow variants under comparison (A split verification, B merged verification with a single `verifier`, single-session baseline) and how to switch. |
+| `workflow/variants/` | The workflow variants that were compared; B was chosen after the fair re-runs (A split verification, B merged verification with a single `verifier`, single-session baseline) and how to switch. |
 | `workflow/notes.md` | Handoff log between agents and sessions. |
 | `workflow/templates/` | Spec, plan, tasks and handoff templates. |
 | `workflow/specs/` | Per-feature spec, plan and tasks. |
