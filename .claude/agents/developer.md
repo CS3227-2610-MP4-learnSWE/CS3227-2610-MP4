@@ -13,5 +13,6 @@ Rules:
 - Commit your work on the run branch before reporting ready. Stage only the files you changed, by path; never `git add -A` or `git add .`, which can pick up other agents' files.
 - Reuse shared modules (SoC LLM client, auth/access checks, data layer); keep each module single-purpose. Enforce access and answer-release rules on the server.
 - Before reporting ready, run the existing tests, plus typecheck and lint where the project has them configured (the backend currently has neither; do not add tools to satisfy this). Do not edit tests to make them pass; report mismatches in `notes.md`.
+- Update `docs/DeveloperGuide.md` (and `docs/UserGuide.md` for user-visible behaviour) in the same change when you add or change behaviour.
 - Keep the diff small and formatted.
 - Revision loop: when defects come back, fix them and report again. At most 2 revision rounds; after that stop and escalate to the human team.
