@@ -26,7 +26,7 @@ The orchestrating session uses sonnet in A and B and its tokens count toward the
    - B: "Implement the STU-02 practice attempt API as specified in workflow/specs/STU-02. Use Variant B (merged verification) exactly as described in workflow/variants/README.md: one verifier replaces the reviewer and security-reviewer."
    - baseline: "Implement the STU-02 practice attempt API as specified in workflow/specs/STU-02. Work alone in this session without subagents, spec-first and tests-first, as described for the baseline in workflow/variants/README.md."
 4. Do not help beyond the 2 revision rounds. Note every point where you had to step in.
-5. When the run says it is done, commit its work on the run branch. Record your review time in minutes (time you spend reading and fixing the result, excluding waiting).
+5. When the run says it is done, check its work is committed on the run branch. Record every intervention (cause and time).
 6. Run order: A, then B, then baseline. Note any learning effect.
 
 ## Grading one run (after it is committed)
@@ -42,10 +42,10 @@ This applies the hidden grader to a temporary checkout of the run branch (the br
 Then record the hand-measured facts for each run in `workflow/experiments/results/stu02-<label>-notes.json`:
 
 ```json
-{"revision_rounds": 1, "review_minutes": 25, "quality_score": 4}
+{"revision_rounds": 1}
 ```
 
-`quality_score` is your 1 to 5 rating of the code against the criteria below.
+Decision (user, 29 Oct 2026): review minutes and a human quality score are not measured in this experiment. They show as n/a in the comparison, and the write-up states that human review effort and code quality were not assessed.
 
 ## The comparison to record
 ```powershell
@@ -62,13 +62,13 @@ Token usage is read from the local Claude logs by branch name. Cost uses `workfl
 ## Rubric
 Quality is judged on three things, in this order:
 1. **Grader score** (primary): percent of the hidden suite passed. Covers correctness, validation, ownership and answer leakage.
-2. **Code quality** (1 to 5, rated by a team member against written criteria, not knowing which condition made it if practical): single-responsibility modules as the plan describes; no duplicated header or ownership checks; clear names; the store behind an interface; no dead code; tests readable and named per criterion.
+2. **Code quality:** not scored by a human (user decision). Defects found by each run's own reviewers or verifier are reported instead, as a weaker substitute.
 3. **Process facts:** revision rounds used, defects found by reviewers, contract mismatches between developer and test-designer, and the number of times a human had to step in.
 
 ## Decision rule (fixed before running)
 1. A run qualifies only if it passes at least 90% of the grader suite and has no answer-leakage or ownership failure.
 2. Among qualifying runs, the cheapest in USD wins.
-3. If qualifying runs are within about 15% of each other in cost, prefer the one with fewer revision rounds and less review time.
+3. If qualifying runs are within about 15% of each other in cost, prefer the one with fewer revision rounds and fewer interventions.
 4. If quality differs a lot but cost does not, say so and consider a second run before deciding.
 
 ## Limits to state in the write-up
