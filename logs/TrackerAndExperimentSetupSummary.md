@@ -30,6 +30,10 @@ The user asked what an endpoint was and why a pilot was needed; the AI explained
 
 With the user's standing approval for the remaining experiment steps, the AI started Runs A, B and the baseline in fresh Sonnet sessions, graded each with the hidden suite and measured each by session. All three passed 18/18; costs were 2.76, 1.56 and 0.52 USD. Run A's security reviewer stalled and was resumed after the user approved a nudge. While Run B ran, the AI found that subagent definitions load from the main project folder, which held older agent files, so Runs A and B used older instructions; the user chose to accept and document this rather than re-run, and the baseline was started with the main folder on its own branch. The user also decided not to measure review minutes or a human quality score. By the decision rule B wins; the findings note that A's dedicated security review fixed a race that B left open.
 
+## Reviews and decision
+
+At the user's request an independent subagent reviewed the A and B backends blind, as a frontend developer would: behaviour and contract were identical, and it preferred A narrowly (typed status values, trimmed student id) while B's messages were slightly clearer. The user asked how to try both; the AI explained that the runs built only the backend, so the frontend is unchanged, and gave commands to run both servers and use each one's `/docs` page with a step-by-step test list. The user then chose Variant B. Asked why B's flaws were not caught, the AI explained that B's verifier did notice the race and the untrimmed id but rated them non-blocking, because the AI-written spec did not require concurrency safety or id normalisation and the verifier had no severity rule; this is recorded as the main quality cost of merging the reviewers, with proposed compensations.
+
 ## Not done
 
-The choice between A and B, the merge of the winning feature code and the workflow switch are not done yet. Absolute token totals are not checked against the apps. This summary was written by the AI and should be checked by a team member.
+B was chosen; the fixes to B, the merge of its feature code, the workflow switch and the frontend integration are not done yet. Absolute token totals are not checked against the apps. This summary was written by the AI and should be checked by a team member.

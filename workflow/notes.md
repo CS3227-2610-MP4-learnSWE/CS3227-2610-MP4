@@ -2,6 +2,12 @@
 
 Newest entry first. Use `templates/handoff.md`.
 
+## 2026-10-29: decision for Variant B
+- Decision (user): Variant B (merged verification, 3 agents) becomes the team workflow, to be confirmed with the team in the switch PR. Reason: same hidden-grader score as A at 43% lower cost (1.56 vs 2.76 USD), no stall, re-verified after its fix round. A blind API usability review found A and B behaviourally identical; it preferred A narrowly.
+- Known cost of B: its verifier saw the save/submit race and the untrimmed student id but rated them non-blocking, because the spec did not require concurrency safety or id normalisation and the verifier has no severity rule for criteria broken under concurrent requests. A's dedicated security-reviewer had insisted on the race fix.
+- Next (each needs the user's go-ahead): fix B's race and trimming, then merge B's feature code by PR; make B the only workflow (delete A's reviewer definitions, update `coordination.md` and `AGENTS.md`) with a verifier severity rule and concurrency/normalisation in the spec template; fix the shared OpenAPI gaps; write the frontend integration spec; clean up run branches and worktrees.
+- Records: `experiments/results/stu02-decision.md` and the rest of the results on the local branch `exp/stu02-grader`.
+
 ## 2026-10-29: STU-02 workflow comparison runs (A, B, baseline)
 - Done: three runs of the full STU-02 feature from start commit `70ab114`, each in a fresh sonnet session, graded with the hidden acceptance suite and measured by session with the tracker. All three pass 18/18. Cost: A (5 agents) 2.76 USD, B (3 agents) 1.56 USD, baseline (single session, reference only) 0.52 USD. Revision rounds: A 1, B 1, baseline 0. Interventions: A 1 (security-reviewer stalled for 1 h 40 min, nudged at the user's request), B 0, baseline 0.
 - Findings: by the decision rule B wins (43% cheaper than A, same grader score). A's security-reviewer found and fixed a save/submit race that B's verifier rated non-blocking and left open; the grader has no concurrency test. Opus verification was the largest single cost in both multi-agent runs.
