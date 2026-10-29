@@ -2,6 +2,12 @@
 
 Newest entry first. Use `templates/handoff.md`.
 
+## 2026-10-30: continuous integration (CI-01)
+- Done: `.github/workflows/ci.yml` on branch `chore/ci` from `master`: backend tests, frontend checks and Playwright, workflow tool tests, dependency audit (runtime blocking, dev reported). Read-only permissions, no secrets. Every step was run locally first. Playwright: 180 s timeout for the layout-matrix test, 2 workers and 1 retry on CI (the route test failed once under parallel load). Plan: `specs/CI-01/plan.md`.
+- Found: the SoC docs host resolves to a private NUS address, so the SoC LLM may be reachable only inside NUS; this decides hosting (`deployment.md`).
+- Next: user reviews, then push and PR; confirm SoC LLM reachability and hosting, then build deployment; upgrade pytest past the dev advisory.
+- Not verified: the workflow has not run on GitHub yet (it runs once the branch is pushed and a PR is opened).
+
 ## 2026-10-30: decision changed to Variant B (override of the tie-break)
 - Decision (user): Variant B. The pre-set rule pointed to A (costs within 15%, A 0 revision rounds vs B 1), but B's one round fixed the stale developer guide that A's reviewer had rated non-blocking and left; that round (about 0.21 USD) was the whole cost difference. B also led the blind API review. Recorded in `experiments/results/stu02-decision.md`, `experiments/stu02/fair/README.md` and `docs/Reflections.md`.
 - Done: PR 3 now carries the fair B run's code with the race fixed (per-attempt lock) and the student id trimmed (60 backend tests pass; independent edge cases 107/115, race passing); A's security tests dropped; workflow files back to B, with the verifier's severity rule now also ruling out the "placeholder store" excuse; comparison image and deck updated.

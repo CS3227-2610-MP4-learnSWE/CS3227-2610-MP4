@@ -17,6 +17,8 @@ Everything about how this project is built. The default agent definitions live i
 | `security/test-log.md` | Security test cases, outcomes and fixes. |
 | `checklist.md` | Submission and setup checklist with owners. |
 | `AppShellPlan.md` | Execution record of the first app-shell phase. |
+| `deployment.md` | Deployment (CD) options and open hosting decisions. |
+| `../.github/workflows/ci.yml` | Continuous integration; plan in `specs/CI-01/plan.md`. |
 
 ## Agent roster, Variant B (`.claude/agents/`)
 
