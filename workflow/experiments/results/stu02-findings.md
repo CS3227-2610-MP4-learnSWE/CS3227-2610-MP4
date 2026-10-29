@@ -20,5 +20,8 @@ Full table and charts: `stu02-comparison.csv`, `.md`, `.html`.
 ## Independent API usability review (blind)
 Behaviour and contract were identical in A and B. Scores were close: A was preferred narrowly for typed `status` values and a trimmed student header; B had slightly clearer error messages. Both lack documented error responses in OpenAPI. See `stu02-api-review.md`.
 
+## Why B's verifier left the race open
+B's verifier saw the save/submit race and the untrimmed student id and rated both non-blocking. The spec did not require concurrency safety or id normalisation, the verifier has no severity rule for criteria broken under concurrent requests, and one merged verifier covers code quality, docs, security and tests in a single pass. A's dedicated security-reviewer insisted on the race fix. This is the main quality cost of merging the reviewers. Decision and compensations: `stu02-decision.md`.
+
 ## Limits
 One run per condition. Agent definitions loaded from the main folder were older copies for A and B (see `procedure.md`). A's cost includes a stall and a nudge. Review minutes and human quality scores were not measured (user decision). Absolute totals are tracker estimates at API list prices, not checked against the apps.
