@@ -42,7 +42,8 @@ Spec-driven, multi-agent scaffolding. Contents are templates and drafts until fe
 | `workflow/notes.md` | Handoff log between agents and sessions. |
 | `workflow/templates/` | Spec, plan, tasks and handoff templates. |
 | `workflow/specs/` | Per-feature spec, plan and tasks. |
-| `workflow/experiments/` | Context-engineering experiments and the resource log. |
+| `workflow/experiments/` | Context-engineering experiments, the resource log, and per-run usage summaries under `results/`. |
+| `workflow/tools/token-tracker/` | Standard-library Python tool that reads Claude Code and Codex session logs and reports token use and cost per agent and model (spec: `workflow/specs/TRK-01/`). |
 | `workflow/security/` | Threat model and security test log. |
 | `workflow/checklist.md` | Setup and submission checklist. |
 | `docs/Reflections.md` | Reflection skeleton, to be filled from experiment results. |
