@@ -1,4 +1,6 @@
 """Request and response schemas for the practice attempt API."""
+from typing import Literal
+
 from pydantic import BaseModel
 
 
@@ -23,7 +25,7 @@ class PracticeSetOut(BaseModel):
 class AttemptOut(BaseModel):
     attempt_id: str
     set_id: str
-    status: str
+    status: Literal["in_progress", "submitted"]
     answers: dict[str, str]
 
 
@@ -33,7 +35,7 @@ class AnswersIn(BaseModel):
 
 class AnswersSavedOut(BaseModel):
     attempt_id: str
-    status: str
+    status: Literal["in_progress"]
     answers: dict[str, str]
 
 
@@ -44,7 +46,7 @@ class Score(BaseModel):
 
 class SubmitOut(BaseModel):
     attempt_id: str
-    status: str
+    status: Literal["submitted"]
     score: Score
 
 

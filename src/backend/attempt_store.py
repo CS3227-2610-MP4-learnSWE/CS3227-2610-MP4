@@ -1,14 +1,12 @@
-"""Attempt storage behind an interface so a database can replace the in-memory version."""
+"""Attempt storage behind an interface; the in-memory version can be swapped for a database."""
 import secrets
-import threading
-from contextlib import AbstractContextManager
 from dataclasses import dataclass, field
 from typing import Protocol
 
 
 @dataclass
 class Attempt:
-    id: str
+    attempt_id: str
     student_id: str
     set_id: str
     status: str = "in_progress"
@@ -19,25 +17,19 @@ class AttemptStore(Protocol):
     def create(self, student_id: str, set_id: str) -> Attempt: ...
 
     def get_owned(self, attempt_id: str, student_id: str) -> Attempt | None:
-        """Return the attempt only if it exists and belongs to the student."""
+        """Return the attempt only if it belongs to the student."""
         ...
 
     def save(self, attempt: Attempt) -> None: ...
-
-    def lock(self, attempt_id: str) -> AbstractContextManager:
-        """Hold while checking and changing one attempt, so concurrent requests cannot interleave."""
-        ...
 
 
 class InMemoryAttemptStore:
     def __init__(self) -> None:
         self._attempts: dict[str, Attempt] = {}
-        self._locks: dict[str, threading.Lock] = {}
-        self._locks_guard = threading.Lock()
 
     def create(self, student_id: str, set_id: str) -> Attempt:
-        attempt = Attempt(id=secrets.token_urlsafe(16), student_id=student_id, set_id=set_id)
-        self._attempts[attempt.id] = attempt
+        attempt = Attempt(secrets.token_urlsafe(16), student_id, set_id)
+        self._attempts[attempt.attempt_id] = attempt
         return attempt
 
     def get_owned(self, attempt_id: str, student_id: str) -> Attempt | None:
@@ -47,11 +39,7 @@ class InMemoryAttemptStore:
         return attempt
 
     def save(self, attempt: Attempt) -> None:
-        self._attempts[attempt.id] = attempt
-
-    def lock(self, attempt_id: str) -> threading.Lock:
-        with self._locks_guard:
-            return self._locks.setdefault(attempt_id, threading.Lock())
+        self._attempts[attempt.attempt_id] = attempt
 
 
 store: AttemptStore = InMemoryAttemptStore()

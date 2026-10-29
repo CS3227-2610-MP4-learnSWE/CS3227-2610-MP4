@@ -1,9 +1,31 @@
 """STU-02 fixes after the workflow comparison: save/submit race and student id trimming."""
+import asyncio
 import threading
 import time
+import uuid
 
+import httpx
 import practice_logic
-from test_stu02_attempts import CORRECT, SET_ID, call, sid
+from main import app
+
+SET_ID = "intro-se-1"
+CORRECT = {"q1": "a", "q2": "b", "q3": "c"}
+
+
+def call(method, path, student=None, body=None):
+    headers = {"X-Student-Id": student} if student is not None else {}
+
+    async def send():
+        async with httpx.AsyncClient(
+            transport=httpx.ASGITransport(app=app, raise_app_exceptions=False), base_url="http://test"
+        ) as client:
+            return await client.request(method, path, headers=headers, json=body)
+
+    return asyncio.run(send())
+
+
+def sid():
+    return "student-" + uuid.uuid4().hex
 
 
 def start(student):
@@ -20,9 +42,9 @@ def test_stu02_save_racing_submit_cannot_change_a_submitted_attempt(monkeypatch)
 
     real_validate = practice_logic.validate_answers
 
-    def slow_validate(practice_set, answers):
+    def slow_validate(*args, **kwargs):
         time.sleep(0.3)  # widen the gap between the state check and the write
-        return real_validate(practice_set, answers)
+        return real_validate(*args, **kwargs)
 
     monkeypatch.setattr(practice_logic, "validate_answers", slow_validate)
     results = {}
@@ -40,13 +62,12 @@ def test_stu02_save_racing_submit_cannot_change_a_submitted_attempt(monkeypatch)
     save.join()
     submit.join()
 
+    assert results["save"].status_code in (200, 409), results["save"].text
     submitted_score = results["submit"].json()["score"]
     final = call("GET", f"/api/attempts/{attempt}/results", student).json()
     assert final["score"] == submitted_score
     if results["save"].status_code == 200:
         assert submitted_score == {"correct": 3, "total": 3}
-    else:
-        assert results["save"].status_code == 409
 
 
 def test_stu02_padded_and_plain_student_id_are_the_same_student():

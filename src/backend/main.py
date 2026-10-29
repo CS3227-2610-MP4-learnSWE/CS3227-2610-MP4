@@ -1,4 +1,4 @@
-"""Health endpoints plus the STU-02 practice attempt API (in-memory, placeholder identity)."""
+"""Health endpoints and the practice attempt API (in-memory, header identity)."""
 from fastapi import FastAPI
 
 from practice_routes import router as practice_router

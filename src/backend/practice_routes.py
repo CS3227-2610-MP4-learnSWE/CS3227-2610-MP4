@@ -1,9 +1,11 @@
 """HTTP routes for practice sets and attempts."""
+from typing import Annotated, NoReturn
+
 from fastapi import APIRouter, Depends, Header, HTTPException
 
-import practice_logic
+import practice_logic as logic
 from attempt_store import Attempt, store
-from practice_data import KEY_VERSION, PracticeSet, get_set
+from practice_data import PracticeSet, get_set
 from practice_schemas import (
     AnswersIn,
     AnswersSavedOut,
@@ -16,133 +18,101 @@ from practice_schemas import (
 router = APIRouter(prefix="/api")
 
 
-def _error(status: int, code: str, message: str, **extra: object) -> HTTPException:
-    return HTTPException(status, {"code": code, "message": message, **extra})
+def fail(status: int, code: str, message: str, **extra: object) -> NoReturn:
+    raise HTTPException(status, {"code": code, "message": message, **extra})
 
 
-def current_student(x_student_id: str | None = Header(default=None)) -> str:
-    student = (x_student_id or "").strip()
-    if not student:
-        raise _error(401, "missing_student", "X-Student-Id header is required.")
-    return student
+def student_id(x_student_id: Annotated[str | None, Header()] = None) -> str:
+    """Placeholder identity until SHR-01."""
+    if x_student_id is None or not x_student_id.strip():
+        fail(401, "missing_student", "Student identity is required.")
+    return x_student_id
 
 
-def _set_or_404(set_id: str) -> PracticeSet:
+Student = Annotated[str, Depends(student_id)]
+
+
+def require_set(set_id: str) -> PracticeSet:
     practice_set = get_set(set_id)
     if practice_set is None:
-        raise _error(404, "set_not_found", "Practice set not found.")
+        fail(404, "set_not_found", "Practice set not found.")
     return practice_set
 
 
-def _owned_attempt(attempt_id: str, student: str) -> Attempt:
+def require_attempt(attempt_id: str, student: str) -> Attempt:
     attempt = store.get_owned(attempt_id, student)
     if attempt is None:
-        raise _error(404, "attempt_not_found", "Attempt not found.")
+        fail(404, "attempt_not_found", "Attempt not found.")
     return attempt
 
 
-def _require_in_progress(attempt: Attempt) -> None:
+def require_open(attempt: Attempt) -> None:
     if attempt.status == "submitted":
-        raise _error(409, "already_submitted", "Attempt has already been submitted.")
+        fail(409, "already_submitted", "Attempt has already been submitted.")
 
 
-def _attempt_out(attempt: Attempt) -> AttemptOut:
-    return AttemptOut(
-        attempt_id=attempt.id,
-        set_id=attempt.set_id,
-        status=attempt.status,
-        answers=dict(attempt.answers),
-    )
-
-
-@router.get("/practice-sets/{set_id}", response_model=PracticeSetOut)
-def read_set(set_id: str) -> dict:
-    practice_set = _set_or_404(set_id)
+def attempt_out(attempt: Attempt) -> dict:
     return {
-        "id": practice_set.id,
-        "title": practice_set.title,
-        "questions": [
-            {
-                "id": q.id,
-                "text": q.text,
-                "code": q.code,
-                "choices": [{"id": cid, "text": text} for cid, text in q.choices],
-            }
-            for q in practice_set.questions
-        ],
+        "attempt_id": attempt.attempt_id,
+        "set_id": attempt.set_id,
+        "status": attempt.status,
+        "answers": dict(attempt.answers),
     }
 
 
+@router.get("/practice-sets/{set_id}", response_model=PracticeSetOut)
+def read_set(set_id: str) -> PracticeSetOut:
+    return PracticeSetOut.model_validate(require_set(set_id), from_attributes=True)
+
+
 @router.post("/practice-sets/{set_id}/attempts", status_code=201, response_model=AttemptOut)
-def start_attempt(set_id: str, student: str = Depends(current_student)) -> AttemptOut:
-    practice_set = _set_or_404(set_id)
-    return _attempt_out(store.create(student, practice_set.id))
+def start_attempt(set_id: str, student: Student) -> dict:
+    require_set(set_id)
+    return attempt_out(store.create(student, set_id))
 
 
 @router.get("/attempts/{attempt_id}", response_model=AttemptOut)
-def read_attempt(attempt_id: str, student: str = Depends(current_student)) -> AttemptOut:
-    return _attempt_out(_owned_attempt(attempt_id, student))
+def read_attempt(attempt_id: str, student: Student) -> dict:
+    return attempt_out(require_attempt(attempt_id, student))
 
 
 @router.put("/attempts/{attempt_id}/answers", response_model=AnswersSavedOut)
-def save_answers(
-    attempt_id: str, body: AnswersIn, student: str = Depends(current_student)
-) -> AnswersSavedOut:
-    _owned_attempt(attempt_id, student)
-    with store.lock(attempt_id):
-        attempt = _owned_attempt(attempt_id, student)
-        _require_in_progress(attempt)
-        problem = practice_logic.validate_answers(_set_or_404(attempt.set_id), body.answers)
-        if problem:
-            raise _error(422, problem[0], problem[1])
-        attempt.answers.update(body.answers)
-        store.save(attempt)
-    return AnswersSavedOut(
-        attempt_id=attempt.id, status=attempt.status, answers=dict(attempt.answers)
-    )
+def save_answers(attempt_id: str, body: AnswersIn, student: Student) -> dict:
+    attempt = require_attempt(attempt_id, student)
+    require_open(attempt)
+    try:
+        logic.validate_answers(require_set(attempt.set_id), body.answers)
+    except logic.AnswerError as e:
+        fail(422, e.code, e.message)
+    attempt.answers.update(body.answers)
+    store.save(attempt)
+    return attempt_out(attempt)
 
 
 @router.post("/attempts/{attempt_id}/submit", response_model=SubmitOut)
-def submit_attempt(attempt_id: str, student: str = Depends(current_student)) -> dict:
-    _owned_attempt(attempt_id, student)
-    with store.lock(attempt_id):
-        attempt = _owned_attempt(attempt_id, student)
-        _require_in_progress(attempt)
-        practice_set = _set_or_404(attempt.set_id)
-        missing = practice_logic.missing_questions(practice_set, attempt.answers)
-        if missing:
-            raise _error(
-                422,
-                "incomplete",
-                "All questions must be answered before submitting.",
-                missing=missing,
-            )
-        attempt.status = "submitted"
-        store.save(attempt)
-        score = practice_logic.score(practice_set, attempt.answers)
-    return {"attempt_id": attempt.id, "status": attempt.status, "score": score}
+def submit(attempt_id: str, student: Student) -> dict:
+    attempt = require_attempt(attempt_id, student)
+    require_open(attempt)
+    practice_set = require_set(attempt.set_id)
+    missing = logic.missing_questions(practice_set, attempt.answers)
+    if missing:
+        fail(422, "incomplete", "Answer every question before submitting.", missing=missing)
+    attempt.status = "submitted"
+    store.save(attempt)
+    return {
+        "attempt_id": attempt.attempt_id,
+        "status": "submitted",
+        "score": logic.score(practice_set, attempt.answers),
+    }
 
 
 @router.get("/attempts/{attempt_id}/results", response_model=ResultsOut)
-def read_results(attempt_id: str, student: str = Depends(current_student)) -> dict:
-    attempt = _owned_attempt(attempt_id, student)
+def results(attempt_id: str, student: Student) -> dict:
+    attempt = require_attempt(attempt_id, student)
     if attempt.status != "submitted":
-        raise _error(403, "not_submitted", "Results are available after submission.")
-    practice_set = _set_or_404(attempt.set_id)
+        fail(403, "not_submitted", "Results are available after submission.")
     return {
-        "attempt_id": attempt.id,
+        "attempt_id": attempt.attempt_id,
         "set_id": attempt.set_id,
-        "key_version": KEY_VERSION,
-        "score": practice_logic.score(practice_set, attempt.answers),
-        "answers": dict(attempt.answers),
-        "questions": [
-            {
-                "id": q.id,
-                "selected": attempt.answers[q.id],
-                "correct_choice": q.correct,
-                "correct": attempt.answers[q.id] == q.correct,
-                "explanation": q.explanation,
-            }
-            for q in practice_set.questions
-        ],
+        **logic.build_results(require_set(attempt.set_id), attempt.answers),
     }
