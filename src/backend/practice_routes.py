@@ -21,9 +21,10 @@ def _error(status: int, code: str, message: str, **extra: object) -> HTTPExcepti
 
 
 def current_student(x_student_id: str | None = Header(default=None)) -> str:
-    if x_student_id is None or not x_student_id.strip():
+    student = (x_student_id or "").strip()
+    if not student:
         raise _error(401, "missing_student", "X-Student-Id header is required.")
-    return x_student_id
+    return student
 
 
 def _set_or_404(set_id: str) -> PracticeSet:
@@ -87,13 +88,15 @@ def read_attempt(attempt_id: str, student: str = Depends(current_student)) -> At
 def save_answers(
     attempt_id: str, body: AnswersIn, student: str = Depends(current_student)
 ) -> AnswersSavedOut:
-    attempt = _owned_attempt(attempt_id, student)
-    _require_in_progress(attempt)
-    problem = practice_logic.validate_answers(_set_or_404(attempt.set_id), body.answers)
-    if problem:
-        raise _error(422, problem[0], problem[1])
-    attempt.answers.update(body.answers)
-    store.save(attempt)
+    _owned_attempt(attempt_id, student)
+    with store.lock(attempt_id):
+        attempt = _owned_attempt(attempt_id, student)
+        _require_in_progress(attempt)
+        problem = practice_logic.validate_answers(_set_or_404(attempt.set_id), body.answers)
+        if problem:
+            raise _error(422, problem[0], problem[1])
+        attempt.answers.update(body.answers)
+        store.save(attempt)
     return AnswersSavedOut(
         attempt_id=attempt.id, status=attempt.status, answers=dict(attempt.answers)
     )
@@ -101,24 +104,23 @@ def save_answers(
 
 @router.post("/attempts/{attempt_id}/submit", response_model=SubmitOut)
 def submit_attempt(attempt_id: str, student: str = Depends(current_student)) -> dict:
-    attempt = _owned_attempt(attempt_id, student)
-    _require_in_progress(attempt)
-    practice_set = _set_or_404(attempt.set_id)
-    missing = practice_logic.missing_questions(practice_set, attempt.answers)
-    if missing:
-        raise _error(
-            422,
-            "incomplete",
-            "All questions must be answered before submitting.",
-            missing=missing,
-        )
-    attempt.status = "submitted"
-    store.save(attempt)
-    return {
-        "attempt_id": attempt.id,
-        "status": attempt.status,
-        "score": practice_logic.score(practice_set, attempt.answers),
-    }
+    _owned_attempt(attempt_id, student)
+    with store.lock(attempt_id):
+        attempt = _owned_attempt(attempt_id, student)
+        _require_in_progress(attempt)
+        practice_set = _set_or_404(attempt.set_id)
+        missing = practice_logic.missing_questions(practice_set, attempt.answers)
+        if missing:
+            raise _error(
+                422,
+                "incomplete",
+                "All questions must be answered before submitting.",
+                missing=missing,
+            )
+        attempt.status = "submitted"
+        store.save(attempt)
+        score = practice_logic.score(practice_set, attempt.answers)
+    return {"attempt_id": attempt.id, "status": attempt.status, "score": score}
 
 
 @router.get("/attempts/{attempt_id}/results", response_model=ResultsOut)

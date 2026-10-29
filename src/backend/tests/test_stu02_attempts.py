@@ -507,7 +507,8 @@ def test_stu02_ac9_attempt_ids_opaque_and_unique():
 def test_stu02_ac9_student_id_case_and_prefix_not_confused():
     owner = sid()
     aid = start(owner)
-    for other in (owner.upper(), owner + "x", owner[:-1], " " + owner):
+    # Surrounding spaces are trimmed (same student); see test_stu02_fixes.py.
+    for other in (owner.upper(), owner + "x", owner[:-1]):
         assert call("GET", f"/api/attempts/{aid}", other).status_code == 404
 
 
