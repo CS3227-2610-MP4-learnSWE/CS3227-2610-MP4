@@ -76,3 +76,8 @@ One run per condition. Absolute totals are not checked against the apps. The aut
 
 ## After the decision
 The baseline is a reference only (the assignment requires multi-agent SE), so the choice is A or B. Merge only the winning run's feature code and tests into `exp/stu02-setup`, never its agent-file changes, and then to `master` by PR. Make the chosen variant the only active workflow and keep this folder and the results as the record. See `workflow/variants/README.md`.
+
+## Setup flaw found during the runs (accepted by the user, 29 Oct 2026)
+Claude Code loads subagent definitions from the main project folder, not from a run's worktree. During Runs A and B the main folder was on `exp/stu02-grader`, whose `.claude/agents/` were older copies, so both runs' agents received older instructions; Run B's `verifier` was not registered and ran as a general-purpose agent following `verifier.md`. The orchestrators applied the current `coordination.md` themselves, so isolation still worked and the build step is comparable, but the verification step is not perfectly equal. The user chose to keep both runs and document this rather than re-run them.
+
+Fix for later runs: before starting a run session, check out that run's branch (or one with identical `.claude/agents/`) in the main project folder, and confirm the registered agent types at the start of the run. The baseline was started this way.
