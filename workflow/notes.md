@@ -2,6 +2,11 @@
 
 Newest entry first. Use `templates/handoff.md`.
 
+## 2026-10-30: decision changed to Variant B (override of the tie-break)
+- Decision (user): Variant B. The pre-set rule pointed to A (costs within 15%, A 0 revision rounds vs B 1), but B's one round fixed the stale developer guide that A's reviewer had rated non-blocking and left; that round (about 0.21 USD) was the whole cost difference. B also led the blind API review. Recorded in `experiments/results/stu02-decision.md`, `experiments/stu02/fair/README.md` and `docs/Reflections.md`.
+- Done: PR 3 now carries the fair B run's code with the race fixed (per-attempt lock) and the student id trimmed (60 backend tests pass; independent edge cases 107/115, race passing); A's security tests dropped; workflow files back to B, with the verifier's severity rule now also ruling out the "placeholder store" excuse; comparison image and deck updated.
+- Lesson: "fewer revision rounds" rewarded skipping a fix; future rules compare what was delivered before counting rounds.
+
 ## 2026-10-30: fair comparison and switch to Variant A
 - Done: at the user's request A, B and a single-session baseline were re-run from `70ab114` with the same model, settings and correct agent definitions, one after another, each with the main folder on its own branch. An independent agent designed 115 edge cases and 62 planted bugs from the spec alone; a blind reviewer compared the APIs. Results: all 18/18; cost A 1.36, B 1.46, baseline 0.45 USD; edge cases 107/115 each (same eight failures, including the save/submit race); planted bugs 62/62 each; API review B, baseline, A. See `experiments/stu02/fair/README.md`.
 - Decision (pre-set rule, user pre-approved applying it): Variant A, because A and B were within the 15% cost band and A needed no revision round. PR 3 now carries the fair A run's code with the race fixed and the student id trimmed (70 backend tests pass), and the workflow files are switched back to A with a severity rule for the security-reviewer. `experiments/results/stu02-decision.md` and `docs/Reflections.md` rewritten.

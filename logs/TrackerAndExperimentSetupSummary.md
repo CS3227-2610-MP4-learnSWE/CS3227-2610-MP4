@@ -42,6 +42,10 @@ The user asked for the comparison and the reasons for choosing B in the reflecti
 
 The user questioned the evidence: why every run scored the same, why A's wall time included a stall, and why A had been re-run with different instructions. The AI explained that the original runs had accidentally loaded older agent definitions and that the re-run of A used the correct ones. The user then asked for all three conditions to be re-run with the workflow as the only difference, for an independent reviewer to set the edge cases, and for all earlier tests to be repeated, and pre-approved applying the decision rule. The app required a message from the user to start each run session. In the fair runs all three scored 18/18 on the hidden grader, 107/115 on the independent edge cases and 62/62 on planted bugs; A cost 1.36, B 1.46 and the baseline 0.45 USD. The rule picked A (within the cost band, no revision round). Every run shipped the save/submit race, which both reviewers rated non-blocking; the merged code fixes it and the security-reviewer now has a severity rule. The reflection concludes that on this small, precise feature multi-agent coordination bought little over a single session.
 
+## Choosing B over the rule's tie-break
+
+Asked to explain the choice of A, the AI showed that the rule had decided on a thin margin. Asked whether B cost more because of its docs revision, it measured that round at about 0.21 USD, the whole cost difference, and found that A's reviewer had seen the same stale developer guide and let it ship. The user chose B for the long run. PR 3 was switched to the fair B run's code with the race and id fixes, the workflow files went back to B, and the override and its reasoning were recorded in the decision record, the reflection and the presentation.
+
 ## Not done
 
 The frontend integration, documenting error responses in OpenAPI, and cleaning up the run branches are not done yet. Absolute token totals are not checked against the apps. This summary was written by the AI and should be checked by a team member.

@@ -40,11 +40,11 @@ Every run's own suite caught all 62 planted bugs (only the health test was exclu
 - Fair A needed no revision round; fair B used one, for documentation only.
 - In both A and B the reviewers saw the save/submit race and rated it non-blocking; the baseline's self-review did not mention concurrency.
 
-## Decision (pre-set rule)
-All qualify (100% of the hidden grader, no leakage, ownership holds); the baseline is a reference only. A and B are within the 15% cost band (A 7% cheaper), so the tie-break is fewer revision rounds and interventions: A used 0 rounds, B 1. **The rule picks Variant A.** The blind API review preferred B (only B honoured the documented check order for wrongly shaped bodies); everything else was level.
+## Decision
+The pre-set rule pointed to A: all qualify, A and B are within the 15% cost band (A 7% cheaper), and A used 0 revision rounds against B's 1. The team overrode the tie-break and chose **B**: B's single round (about 0.21 USD, the whole cost difference) fixed the out-of-date developer guide, which A's reviewer had seen, rated non-blocking and left stale. B also led the blind API review. Full reasoning: `../../results/stu02-decision.md`.
 
 ## What reached the PR
-The fair A run's code, with the race fixed (per-attempt lock around save and submit) and the student id trimmed. On the final code the independent battery scores 107/115: the race now passes; ID-05 fails by design, because the reviewer read the silent spec as "padded ids are different students" while we chose to trim; the other seven are the shared FastAPI check-order and echo cases.
+The fair B run's code, with the race fixed (per-attempt lock around save and submit) and the student id trimmed. On the final code the independent battery scores 107/115: the race now passes; ID-05 fails by design, because the reviewer read the silent spec as "padded ids are different students" while we chose to trim; the other seven are the shared FastAPI check-order and echo cases.
 
 ## Files
 `api-review.md` (blind review, unblinded), `raw/` (edge and mutation results per run and for the final PR code), `mutate_indep.py` (mutation runner using the independent reference), `independent-tests/`.
