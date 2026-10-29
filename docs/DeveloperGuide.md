@@ -26,7 +26,7 @@ Playwright exercises real UI behaviour with intercepted health responses. Backen
 
 ## Workflow records
 
-`workflow/AppShellPlan.md` records scope, execution decisions and verification. `logs/AppShellSummary.md` summarises the development conversation and tool outcomes. These are initial process artefacts, not a claim that all assignment requirements for multi-agent SE, context-engineering experiments or reflections have been completed. No deployment automation or product website is created in this phase.
+`workflow/AppShellPlan.md` records scope, execution decisions and verification. `logs/AppShellSummary.md` summarises the development conversation and tool outcomes. `logs/WorkflowScaffoldingSummary.md` records the design discussion for the multi-agent workflow, including the variants (A split verification, B merged verification, single-session baseline) that will be compared in planned experiments; no experiment has been run yet. These are initial process artefacts, not a claim that all assignment requirements for multi-agent SE, context-engineering experiments or reflections have been completed. No deployment automation or product website is created in this phase.
 
 ## Workflow files
 
