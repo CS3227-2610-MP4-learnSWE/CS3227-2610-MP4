@@ -2,6 +2,12 @@
 
 Newest entry first. Use `templates/handoff.md`.
 
+## 2026-10-29: STU-02 merged from Run B, fixes, and switch to Variant B
+- Done: Run B's feature code and tests applied (no agent-file changes), with the experiment's hidden grader kept as permanent tests under `src/backend/tests/grader/`. Fixed the save/submit race (per-attempt lock in the store; save and submit re-read and change the attempt inside it) and trimmed `X-Student-Id`; new tests in `tests/test_stu02_fixes.py` reproduced both defects first (the race deterministically by slowing validation). One Run B test asserted the old untrimmed behaviour and was updated. Backend: 62 tests pass.
+- Workflow switched to Variant B: `reviewer.md` and `security-reviewer.md` removed; `verifier.md` added with a severity rule and robustness checks (concurrency, input normalisation); spec template asks for both; developer updates docs with behaviour changes; `coordination.md`, `AGENTS.md`, `workflow/README.md`, task template and developer guide updated; `variants/README.md` records the outcome.
+- Also: experiment tooling and results merged in from `exp/stu02-grader`; A vs B section and comparison image in `docs/Reflections.md`; presentation deck and image saved outside the repo in `MP4 presentation`.
+- Open: OpenAPI does not document the 401/403/404/409 errors; frontend still uses hard-coded practice data (follow-up spec needed); run branches and worktrees not cleaned up yet.
+
 ## 2026-10-29: decision for Variant B
 - Decision (user): Variant B (merged verification, 3 agents) becomes the team workflow, to be confirmed with the team in the switch PR. Reason: same hidden-grader score as A at 43% lower cost (1.56 vs 2.76 USD), no stall, re-verified after its fix round. A blind API usability review found A and B behaviourally identical; it preferred A narrowly.
 - Known cost of B: its verifier saw the save/submit race and the untrimmed student id but rated them non-blocking, because the spec did not require concurrency safety or id normalisation and the verifier has no severity rule for criteria broken under concurrent requests. A's dedicated security-reviewer had insisted on the race fix.

@@ -12,6 +12,7 @@ One hand-written row per notable task. Take the numbers from a token-tracker sum
 | 2026-10-29 | STU-02 Run A, full feature | claude/stu02-run-a-eba95d | Variant A (5 agents) | sonnet; opus security-reviewer | 190 | 4,487,467 | 76,915 | 8,599 | 2.76 | 1 | Grader 18/18; 1 intervention (stall); by session |
 | 2026-10-29 | STU-02 Run B, full feature | claude/stu02-run-b-223ec1 | Variant B (3 agents) | sonnet; opus verifier | 122 | 3,034,735 | 41,342 | 3,530 | 1.56 | 1 | Grader 18/18; verifier ran as general-purpose agent |
 | 2026-10-29 | STU-02 baseline, full feature | claude/stu02-run-baseline-e1c0af | single session (reference) | sonnet | 28 | 1,183,177 | 21,681 | 1,021 | 0.52 | 0 | Grader 18/18; 14 requests, 3 min |
+| 2026-10-29 | Coordinating session for the whole experiment (setup, pilot and run checks, grading, reviews, deck, fixes) | exp/stu02-setup + exp/stu02-grader | single session (orchestrating the runs) | sonnet, then opus | 594 | 91,374,027 | 240,105 | 55,811 | 29.18 | n/a | Partial, measured mid-session. Cost far above the runs themselves, mostly after the switch to opus: long context re-read on every turn |
 
 Cache reads dominate token volume (millions per task) but are cheap per token; output and cache writes dominate cost. Switching model mid-session is expensive because the whole context is written to cache again.
 
