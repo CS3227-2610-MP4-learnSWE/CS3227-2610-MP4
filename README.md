@@ -74,7 +74,8 @@ The production build is generated in `src/frontend/dist/`. Hosting it later requ
 - `src/frontend/`: React + TypeScript, Vite, Material UI, Emotion, Lucide and React Router. Shared components, in-memory state and sample fixtures are separate from role screens.
 - `src/backend/`: FastAPI application and HTTP-boundary tests. Dependencies are locked with uv.
 - `docs/`: proposed feature list, user stories and current release guides.
-- `workflow/`: execution decisions and verification record.
+- `workflow/`: spec-driven, multi-agent process: coordination pattern, workflow variants, templates, per-feature specs, experiment and security logs, and execution records. Start at `workflow/README.md`.
+- `CLAUDE.md`, `AGENTS.md` and `.claude/agents/`: project rules and agent role definitions for Claude Code and Codex.
 - `logs/`: human-readable development interaction summaries.
 
 The feature list and user stories describe the intended product, not completion status. See [the user guide](docs/UserGuide.md) and [developer guide](docs/DeveloperGuide.md) for the boundaries of this preview.

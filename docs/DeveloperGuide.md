@@ -26,7 +26,26 @@ Playwright exercises real UI behaviour with intercepted health responses. Backen
 
 ## Workflow records
 
-`workflow/AppShellPlan.md` records scope, execution decisions and verification. `logs/AppShellSummary.md` summarises the development conversation and tool outcomes. These are initial process artefacts, not a claim that all assignment requirements for multi-agent SE, context-engineering experiments or reflections have been completed. No deployment automation or product website is created in this phase.
+`workflow/AppShellPlan.md` records scope, execution decisions and verification. `logs/AppShellSummary.md` summarises the development conversation and tool outcomes. `logs/WorkflowScaffoldingSummary.md` records the design discussion for the multi-agent workflow, including the variants (A split verification, B merged verification, single-session baseline) that will be compared in planned experiments; no experiment has been run yet. These are initial process artefacts, not a claim that all assignment requirements for multi-agent SE, context-engineering experiments or reflections have been completed. No deployment automation or product website is created in this phase.
+
+## Workflow files
+
+Spec-driven, multi-agent scaffolding. Contents are templates and drafts until features are specified; see `workflow/README.md` for the index.
+
+| File | Purpose |
+|---|---|
+| `CLAUDE.md` | Project rules and read order for Claude Code. |
+| `AGENTS.md` | The same rules plus all agent role definitions, for Codex. Keep in sync with `CLAUDE.md` and `.claude/agents/`. |
+| `.claude/agents/*.md` | Claude Code agent definitions for Variant A: spec-writer, developer, test-designer, reviewer, security-reviewer. |
+| `workflow/coordination.md` | Generator-verifier coordination pattern with an independent test designer, isolation rules, handoffs, revision caps, conflict resolution and how adherence is verified. |
+| `workflow/variants/` | The workflow variants under comparison (A split verification, B merged verification with a single `verifier`, single-session baseline) and how to switch. |
+| `workflow/notes.md` | Handoff log between agents and sessions. |
+| `workflow/templates/` | Spec, plan, tasks and handoff templates. |
+| `workflow/specs/` | Per-feature spec, plan and tasks. |
+| `workflow/experiments/` | Context-engineering experiments and the resource log. |
+| `workflow/security/` | Threat model and security test log. |
+| `workflow/checklist.md` | Setup and submission checklist. |
+| `docs/Reflections.md` | Reflection skeleton, to be filled from experiment results. |
 
 ## Acknowledgements
 
