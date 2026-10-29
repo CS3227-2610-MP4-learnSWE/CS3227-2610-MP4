@@ -111,7 +111,7 @@ function Overview() {
               },
               {
                 title: "Testing with confidence",
-                detail: "3 practice questions · Awaiting review",
+                detail: "3 MCQs · Awaiting review",
                 path: "review",
               },
               {
@@ -398,7 +398,12 @@ function Generate() {
                     <h3>
                       {i + 1}. {q.text}
                     </h3>
-                    <p>Suggested answer: {q.answer}</p>
+                    <ul aria-label="Answer choices">
+                      {q.options.map((option) => (
+                        <li key={option}>{option}</li>
+                      ))}
+                    </ul>
+                    <p>Correct choice: {q.answer}</p>
                     <p className="muted">{q.explanation}</p>
                   </div>
                 ))
@@ -512,11 +517,23 @@ function Review({ notify }: Props) {
                   value={q.text}
                   onChange={(e) => update(i, "text", e.target.value)}
                 />
+                <ul aria-label={`Choices for question ${i + 1}`}>
+                  {questions[i].options.map((option) => (
+                    <li key={option}>{option}</li>
+                  ))}
+                </ul>
                 <TextField
+                  select
                   label={`Answer key ${i + 1}`}
                   value={q.answer}
                   onChange={(e) => update(i, "answer", e.target.value)}
-                />
+                >
+                  {questions[i].options.map((option) => (
+                    <MenuItem key={option} value={option}>
+                      {option}
+                    </MenuItem>
+                  ))}
+                </TextField>
                 <TextField
                   label={`Explanation ${i + 1}`}
                   multiline

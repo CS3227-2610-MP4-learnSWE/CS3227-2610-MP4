@@ -52,7 +52,7 @@ test("practice blocks incomplete submissions and reveals solutions only after wh
   await page
     .getByRole("radio", { name: "To catch regressions when code changes" })
     .check();
-  await page.getByLabel("Your answer").fill("3");
+  await page.getByRole("radio", { name: "3", exact: true }).check();
   await page.getByRole("button", { name: "Get a hint" }).click();
   await expect(page.getByText("Correct answer:", { exact: false })).toHaveCount(
     0,
@@ -310,4 +310,109 @@ test("lesson outline links to the corresponding section", async ({ page }) => {
   await expect(page.locator("#easy-to-change")).toHaveText(
     "02 / Make it easy to change",
   );
+});
+
+test("student companion is a persistent minimisable widget with clear history", async ({
+  page,
+}) => {
+  await page.goto("/student/overview");
+  await page.getByRole("button", { name: "Open study companion" }).click();
+  const chat = page.getByRole("dialog", { name: "Your study companion" });
+  await expect(chat).toBeVisible();
+  await page
+    .getByLabel("Message your study companion")
+    .fill("Help me understand functions");
+  await page.getByRole("button", { name: "Send question" }).click();
+  await expect(chat).toContainText("Help me understand functions");
+  await page.getByLabel("Message your study companion").fill("Unsent thought");
+  await page.getByRole("button", { name: "Minimise study companion" }).click();
+  await expect(chat).not.toBeVisible();
+  await page
+    .getByRole("link", { name: "Study materials", exact: true })
+    .click();
+  await page.getByRole("button", { name: "Open study companion" }).click();
+  await expect(chat).toContainText("Help me understand functions");
+  await expect(chat).toContainText("Current page: Study materials");
+  await expect(page.getByLabel("Message your study companion")).toHaveValue(
+    "Unsent thought",
+  );
+  await page.getByRole("button", { name: "Clear chat" }).click();
+  await expect(chat).not.toContainText("Help me understand functions");
+  await expect(page.getByLabel("Message your study companion")).toHaveValue("");
+  await expect(chat).toContainText("What are you curious about today?");
+});
+
+test("student companion history clears at login and role boundaries", async ({
+  page,
+}) => {
+  await page.goto("/student/overview");
+  await page.getByRole("button", { name: "Open study companion" }).click();
+  await page
+    .getByLabel("Message your study companion")
+    .fill("Private demo message");
+  await page.getByRole("button", { name: "Send question" }).click();
+  await page.getByRole("button", { name: "Minimise study companion" }).click();
+  await page.getByRole("link", { name: "Login preview", exact: true }).click();
+  await expect(
+    page.getByRole("button", { name: "Open study companion" }),
+  ).toHaveCount(0);
+  await page.getByRole("link", { name: "Explore student demo" }).click();
+  await page.getByRole("button", { name: "Open study companion" }).click();
+  await expect(page.getByRole("dialog")).not.toContainText(
+    "Private demo message",
+  );
+  await page
+    .getByLabel("Message your study companion")
+    .fill("Role-private message");
+  await page.getByRole("button", { name: "Send question" }).click();
+  await page.getByRole("combobox", { name: "Demo role" }).click();
+  await page.getByRole("option", { name: "Teacher", exact: true }).click();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await page.getByRole("combobox", { name: "Demo role" }).click();
+  await page.getByRole("option", { name: "Student", exact: true }).click();
+  await page.getByRole("button", { name: "Open study companion" }).click();
+  await expect(page.getByRole("dialog")).not.toContainText(
+    "Role-private message",
+  );
+});
+
+test("floating companion fits mobile and supports Escape and theme", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 700 });
+  await page.emulateMedia({ colorScheme: "dark", reducedMotion: "reduce" });
+  await page.goto("/student/practice");
+  await page.getByRole("button", { name: "Open study companion" }).click();
+  const box = await page.getByRole("dialog").boundingBox();
+  expect(box).not.toBeNull();
+  expect(box!.x).toBeGreaterThanOrEqual(0);
+  expect(box!.x + box!.width).toBeLessThanOrEqual(390);
+  expect(box!.y + box!.height).toBeLessThanOrEqual(700);
+  await page.screenshot({
+    path: "test-results/visual/widget-mobile-dark.png",
+    fullPage: true,
+  });
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("dialog")).not.toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Open study companion" }),
+  ).toBeFocused();
+});
+
+test("mobile navigation companion shortcut dismisses the drawer", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 700 });
+  await page.goto("/student/overview");
+  await page.getByRole("button", { name: "Open navigation" }).click();
+  await page
+    .getByRole("button", { name: "Open companion", exact: true })
+    .click();
+  await expect(
+    page.getByRole("dialog", { name: "Your study companion" }),
+  ).toBeVisible();
+  await expect(page.getByLabel("Message your study companion")).toBeFocused();
+  await expect(
+    page.getByRole("button", { name: "Close navigation" }),
+  ).not.toBeVisible();
 });

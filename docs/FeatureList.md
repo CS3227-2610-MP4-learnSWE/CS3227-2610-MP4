@@ -11,18 +11,25 @@ All role features below are MVP requirements. Optional extensions are listed sep
 ## Student
 
 - **STU-01 — Study materials:** Browse teacher-published lessons by course and topic, read their contents, and mark lessons as complete or incomplete; either change persists and updates progress.
-- **STU-02 — Practice questions:** Complete all questions in a practice set and submit the whole set once, then view the set score, correct answers and teacher-approved explanations. There is no per-question submission or immediate correctness feedback. Code execution is a nice-to-have, outside the MVP.
+- **STU-02 — Practice questions:** Complete all single-answer multiple-choice questions (MCQs) in a practice set and submit the whole set once, then view the set score, correct answers and teacher-approved explanations. There is no per-question submission or immediate correctness feedback. Code execution is a nice-to-have, outside the MVP.
 - **STU-03 — AI learning assistant:** Receive guided explanations on gaps in concepts or understanding, building on what the student already understands so they can solve questions independently. Use guiding questions and hints grounded in authorised published materials. Before whole-set submission, provide hints only: never reveal or confirm answers, full solutions or equivalent solution code, even on explicit request. After successful submission, provide full explanations for that submitted attempt.
 - **STU-04 — Progress dashboard:** View completed lessons, practice scores and topics needing further practice based on recorded attempts.
 - **STU-05 — Submit feedback:** Complete targeted feedback forms about lessons or app features.
 - **STU-06 — Student inbox:** Receive admin survey requests, feedback responses and announcements in an in-app inbox. Open the relevant form from a survey request; track read/unread status and an unread count. Email and push notifications are outside the MVP.
 
+### Study companion behaviour (STU-03)
+
+- Open a bottom-right chat box from the floating icon on any student page. Close minimises without losing history or the unsent draft; refresh clears both and starts fresh.
+- In the authenticated app, history belongs to one signed-in account and survives navigation and browser reload until logout or explicit clear. Logout/account switching removes it from the active session.
+- Use the current page and relevant authorised visible contents as context, updating as the student navigates. Do not include protected answer keys/solutions before submission, unpublished content or other users’ data.
+- This release previews the widget with local history, fixed replies and a page label only. Browser reload or leaving the student demo resets chat; real AI context retrieval and authenticated persistence remain future work.
+
 ## Teacher
 
 - **TEA-01 — Manage learning materials:** Upload source materials and organise them by course and topic. Supported file types and size limits will be specified before implementation.
-- **TEA-02 — AI content generation:** Generate draft study notes and practice questions from uploaded materials, including suggested answers and explanations.
-- **TEA-03 — Review and publish:** Preview, edit, approve and publish generated study notes, practice questions, answer keys and explanations. Students can access published notes and questions; answer keys and solution explanations are released only after successful whole-set submission. AI generation never publishes automatically.
-- **TEA-04 — Manage practice sets:** Select questions, assign practice sets to course topics and maintain answer keys and explanations.
+- **TEA-02 — AI content generation:** Generate draft study notes and single-answer MCQs from uploaded materials. Each question has answer choices, exactly one correct choice and an explanation; no free-text answer questions.
+- **TEA-03 — Review and publish:** Preview, edit, approve and publish generated study notes, MCQs, answer keys and explanations. Students can access published notes and questions; answer keys and solution explanations are released only after successful whole-set submission. AI generation never publishes automatically.
+- **TEA-04 — Manage practice sets:** Select MCQs, assign practice sets to course topics and maintain answer keys and explanations.
 - **TEA-05 — Learning overview:** View student completion rates, practice results and commonly missed questions for courses the teacher manages.
 - **TEA-06 — Feedback and teacher inbox:** Complete targeted feedback forms and receive admin survey requests, responses and announcements in an in-app inbox. Survey requests link to the relevant form; messages have read/unread status and an unread count. Email and push notifications are outside the MVP.
 

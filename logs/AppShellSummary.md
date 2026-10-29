@@ -23,3 +23,7 @@ An independent read-only review identified unstable teacher material metadata du
 Frontend tests cover preview authentication, whole-set scoring, incomplete submission, answer visibility, completion reversal/reset, inbox counts/survey links, theme switching, role routes/reload, backend outage, mobile navigation, keyboard focus/history, preview actions, material search, keyboard file selection and lesson anchors. A layout matrix covers 19 routes at desktop/mobile widths in both themes, with screenshots for visual review. This is initial workflow evidence, not the final assignment reflection or full security test suite.
 
 No secrets, real user records or material files were uploaded. No application deployment was performed.
+
+## 29 October follow-up — MCQs and floating companion
+
+The user requested teacher-created practice be MCQ-only and the student assistant move from a dedicated page to a bottom-right widget. Implemented all sample practice questions as single-answer MCQs and exposed their choices in teacher previews. The widget preserves local messages/draft across navigation and minimise, clears on its refresh action, and resets when leaving the student demo session. It supports Escape/focus return, mobile sizing and both themes. It shows the current-page label with fixed replies only: real account-session persistence and secure page-content context are explicitly future requirements in the feature list, stories and guides. No AI, auth, persistence or backend business endpoint was added.

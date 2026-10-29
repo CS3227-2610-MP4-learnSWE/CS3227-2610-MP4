@@ -24,3 +24,12 @@ Approved scope: three-role React/TypeScript preview, Material UI with light/dark
 - Production boundaries remain explicit: no auth, LLM integration, database, uploads, persistent state or delivery.
 
 Final verification: 14 Playwright tests passed; 3 backend tests passed. TypeScript, ESLint, Prettier check and Vite production build passed. Both live health endpoints returned the expected JSON through the Vite proxy. Dependencies audited with zero npm vulnerabilities. Browser runner emitted an environment colour-setting warning only; no app runtime errors were observed in the layout matrix. No full accessibility or production-security certification is claimed.
+
+## Follow-up: floating student companion and MCQ-only practice
+
+- Replace the dedicated assistant screen/navigation entry with a shared non-modal bottom-right widget. Legacy URL redirects to overview and opens it.
+- Local messages and unsent draft survive route changes/minimise; clear resets both. Student provider unmount at login/role switching ends the demo chat. Browser reload remains a documented preview reset.
+- Current-page label is illustrative; real contents and account-scoped persistence until logout/reload restoration are future authenticated-app requirements.
+- Change the last free-text sample question to MCQ and show choices/correct-choice selection in teacher previews.
+
+Follow-up verification: 18 browser tests and 3 backend tests passed, with TypeScript, lint, formatting and production build passing. Mobile drawer-to-chat regression was reproduced and fixed. New tests cover draft/history retention, clear, login and role-switch resets, current-page label, Escape focus return and mobile sizing. Dark mobile widget screenshot inspected. No backend functionality added.
