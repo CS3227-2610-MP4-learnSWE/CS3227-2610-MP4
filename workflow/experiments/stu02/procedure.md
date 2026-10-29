@@ -14,12 +14,12 @@ This folder is kept off the run branches. The runs must not see the grader or th
 The orchestrating session uses sonnet in A and B and its tokens count toward the run. Revision loops: at most 2 rounds.
 
 ## Setup (before any run)
-1. Merge `exp/stu02-setup` (spec, plan, tasks, prices) to `master` by PR. Every run branches from that merge commit.
+1. Runs branch from `exp/stu02-setup` at commit `9bc4aed` (spec, plan, tasks, prices, worktree isolation). It does not need to be merged to `master` first; what matters is that every run starts from the same commit.
 2. The grader branch `exp/stu02-grader` stays local and unpushed until all three runs are graded.
 3. Each run is a fresh session, in its own git worktree, started from the same commit. One session is one run: `compare.py` counts every request of every session that worked on the run branch, including subagents that log a different branch from their own worktree. Never reuse a session across runs.
 
 ## Running one condition
-1. Create the branch from the setup commit: `git switch -c exp/stu02-<X> <setup-commit>` (or a worktree on it).
+1. Create the run branch from the start commit: `git switch -c exp/stu02-<X> 9bc4aed` (or a worktree on it).
 2. For B: delete `.claude/agents/reviewer.md` and `.claude/agents/security-reviewer.md`, copy in `workflow/variants/B-merged-verification/verifier.md`, and update the roster in `AGENTS.md`. For the baseline: delete the agent files and tell the session to follow the spec-first, tests-first rules itself.
 3. Give the session exactly the prompt for its condition, and nothing else about the experiment. Shared instructions (`CLAUDE.md`, `coordination.md`) describe Variant A as the default, so the prompt must name the variant:
    - A: "Implement the STU-02 practice attempt API as specified in workflow/specs/STU-02. Use Variant A (split verification) exactly as described in workflow/coordination.md and workflow/variants/README.md."
@@ -73,3 +73,6 @@ Quality is judged on three things, in this order:
 
 ## Limits to state in the write-up
 One run per condition. Absolute totals are not checked against the apps. The author of the grader is an AI that also takes part in the runs, so a human should read the grader first. Order effects: later runs may benefit from a spec that has been read before.
+
+## After the decision
+The baseline is a reference only (the assignment requires multi-agent SE), so the choice is A or B. Merge only the winning run's feature code and tests into `exp/stu02-setup`, never its agent-file changes, and then to `master` by PR. Make the chosen variant the only active workflow and keep this folder and the results as the record. See `workflow/variants/README.md`.
