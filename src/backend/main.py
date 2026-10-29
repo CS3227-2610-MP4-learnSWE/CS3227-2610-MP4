@@ -1,10 +1,12 @@
-"""Health endpoints and the practice attempt API (in-memory, header identity)."""
+"""App wiring: health endpoints and the practice attempt API. No database or real authentication yet."""
 from fastapi import FastAPI
 
-from practice_routes import router as practice_router
+import practice_routes
+from errors import ApiError
 
 app = FastAPI(title="learnSWE Preview API", version="0.1.0")
-app.include_router(practice_router)
+app.include_router(practice_routes.router)
+app.add_exception_handler(ApiError, practice_routes.error_response)
 
 
 @app.get('/api/health')

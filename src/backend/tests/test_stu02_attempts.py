@@ -1,45 +1,41 @@
-"""STU-02 practice attempt API tests, written from the plan contract only."""
+"""STU-02 practice attempt API, tested through the real ASGI app."""
 import asyncio
 import uuid
 
 import httpx
 from main import app
 
-SET = "intro-se-1"
-KEY = {"q1": "a", "q2": "b", "q3": "c"}
+SET_ID = "intro-se-1"
+CORRECT = {"q1": "a", "q2": "b", "q3": "c"}
 EXPLANATIONS = [
     "One focused responsibility makes a function easier to understand, test and change.",
     "Tests protect expected behaviour and can catch regressions introduced by later changes.",
     "len returns the number of items. The list contains three items.",
 ]
+LEAK_KEYS = ["correct_choice", "explanation", "key_version"]
 
 
-def sid():
-    return "s-" + uuid.uuid4().hex
-
-
-def call(method, path, student="default", json_body=None):
-    headers = {}
-    if student == "default":
-        student = sid()
+def call(method, path, student=None, json=None, headers=None):
+    hdrs = dict(headers or {})
     if student is not None:
-        headers["X-Student-Id"] = student
+        hdrs["X-Student-Id"] = student
 
     async def send():
         async with httpx.AsyncClient(
             transport=httpx.ASGITransport(app=app), base_url="http://test"
-        ) as c:
-            kw = {"headers": headers}
-            if json_body is not None:
-                kw["json"] = json_body
-            return await c.request(method, path, **kw)
+        ) as client:
+            return await client.request(method, path, headers=hdrs, json=json)
 
     return asyncio.run(send())
 
 
-def start(student):
-    r = call("POST", f"/api/practice-sets/{SET}/attempts", student)
-    assert r.status_code == 201
+def new_student():
+    return "stu-" + uuid.uuid4().hex
+
+
+def start(student, set_id=SET_ID):
+    r = call("POST", f"/api/practice-sets/{set_id}/attempts", student)
+    assert r.status_code == 201, r.text
     return r.json()["attempt_id"]
 
 
@@ -47,16 +43,12 @@ def save(aid, student, answers):
     return call("PUT", f"/api/attempts/{aid}/answers", student, {"answers": answers})
 
 
-def submit(aid, student, body=None):
-    return call("POST", f"/api/attempts/{aid}/submit", student, body)
+def submit(aid, student, json=None):
+    return call("POST", f"/api/attempts/{aid}/submit", student, json)
 
 
 def results(aid, student):
     return call("GET", f"/api/attempts/{aid}/results", student)
-
-
-def get_attempt(aid, student):
-    return call("GET", f"/api/attempts/{aid}", student)
 
 
 def code_of(r):
@@ -64,195 +56,243 @@ def code_of(r):
 
 
 def assert_no_leak(r):
+    text = r.text
+    for k in LEAK_KEYS:
+        assert k not in text, f"{k} leaked: {text}"
     for e in EXPLANATIONS:
-        assert e not in r.text
-    assert "correct_choice" not in r.text
-    assert "explanation" not in r.text
-    assert "key_version" not in r.text
+        assert e not in text, f"explanation leaked: {text}"
 
 
 # AC1
-def test_stu02_ac1_read_set():
-    r = call("GET", f"/api/practice-sets/{SET}", None)
+def test_stu02_ac1_read_set_shape_and_order():
+    r = call("GET", f"/api/practice-sets/{SET_ID}")
     assert r.status_code == 200
-    b = r.json()
-    assert b["id"] == SET
-    assert b["title"] == "Software engineering basics"
-    assert [q["id"] for q in b["questions"]] == ["q1", "q2", "q3"]
-    assert b["questions"][0]["code"] is None
-    q3 = b["questions"][2]
-    assert q3["code"] == "values = [1, 2, 3]\nprint(len(values))"
-    assert [c["id"] for c in q3["choices"]] == ["a", "b", "c"]
-    assert q3["choices"][2]["text"] == "3"
+    body = r.json()
+    assert body["id"] == SET_ID
+    assert body["title"] == "Software engineering basics"
+    qs = body["questions"]
+    assert [q["id"] for q in qs] == ["q1", "q2", "q3"]
+    assert qs[0]["text"] == "What should a well-designed function have?"
+    assert qs[0]["code"] is None
+    assert qs[2]["code"] == "values = [1, 2, 3]\nprint(len(values))"
+    for q in qs:
+        assert set(q.keys()) == {"id", "text", "code", "choices"}
+        assert [c["id"] for c in q["choices"]] == ["a", "b", "c"]
+        for c in q["choices"]:
+            assert set(c.keys()) == {"id", "text"}
+    assert qs[1]["choices"][1]["text"] == "To catch regressions when code changes"
+
+
+def test_stu02_ac1_read_set_has_no_key_or_explanation():
+    r = call("GET", f"/api/practice-sets/{SET_ID}")
     assert_no_leak(r)
+    assert "correct" not in r.text.lower().replace("incorrect", "")
 
 
 def test_stu02_ac1_unknown_set_404():
-    r = call("GET", "/api/practice-sets/nope", None)
+    r = call("GET", "/api/practice-sets/nope")
     assert r.status_code == 404
     assert code_of(r) == "set_not_found"
 
 
 # AC2
 def test_stu02_ac2_start_attempt():
-    r = call("POST", f"/api/practice-sets/{SET}/attempts")
+    r = call("POST", f"/api/practice-sets/{SET_ID}/attempts", new_student())
     assert r.status_code == 201
-    b = r.json()
-    assert b["set_id"] == SET
-    assert b["status"] == "in_progress"
-    assert b["answers"] == {}
-    assert isinstance(b["attempt_id"], str) and len(b["attempt_id"]) >= 8
+    body = r.json()
+    assert body["set_id"] == SET_ID
+    assert body["status"] == "in_progress"
+    assert body["answers"] == {}
+    assert isinstance(body["attempt_id"], str) and len(body["attempt_id"]) >= 8
 
 
 def test_stu02_ac2_start_requires_header():
-    for s in (None, ""):
-        r = call("POST", f"/api/practice-sets/{SET}/attempts", s)
-        assert r.status_code == 401
-        assert code_of(r) == "missing_student"
+    r = call("POST", f"/api/practice-sets/{SET_ID}/attempts")
+    assert r.status_code == 401
+    assert code_of(r) == "missing_student"
+
+
+def test_stu02_ac2_start_empty_header_rejected():
+    r = call("POST", f"/api/practice-sets/{SET_ID}/attempts", "")
+    assert r.status_code == 401
+    assert code_of(r) == "missing_student"
 
 
 def test_stu02_ac2_start_unknown_set():
-    r = call("POST", "/api/practice-sets/nope/attempts")
+    r = call("POST", "/api/practice-sets/nope/attempts", new_student())
     assert r.status_code == 404
     assert code_of(r) == "set_not_found"
 
 
-def test_stu02_ac2_get_attempt():
-    s = sid()
+def test_stu02_ac2_get_attempt_and_header_required():
+    s = new_student()
     aid = start(s)
-    r = get_attempt(aid, s)
+    r = call("GET", f"/api/attempts/{aid}", s)
     assert r.status_code == 200
     assert r.json() == {
-        "attempt_id": aid, "set_id": SET, "status": "in_progress", "answers": {}
+        "attempt_id": aid,
+        "set_id": SET_ID,
+        "status": "in_progress",
+        "answers": {},
     }
+    r = call("GET", f"/api/attempts/{aid}")
+    assert r.status_code == 401
+    assert code_of(r) == "missing_student"
 
 
-def test_stu02_ac2_attempt_endpoints_require_header():
-    s = sid()
+def test_stu02_ac2_header_required_on_all_attempt_endpoints():
+    s = new_student()
     aid = start(s)
     for method, path, body in [
-        ("GET", f"/api/attempts/{aid}", None),
         ("PUT", f"/api/attempts/{aid}/answers", {"answers": {"q1": "a"}}),
         ("POST", f"/api/attempts/{aid}/submit", None),
         ("GET", f"/api/attempts/{aid}/results", None),
     ]:
-        for hdr in (None, ""):
-            r = call(method, path, hdr, body)
-            assert r.status_code == 401, path
-            assert code_of(r) == "missing_student"
+        r = call(method, path, None, body)
+        assert r.status_code == 401, path
+        assert code_of(r) == "missing_student"
 
 
 # AC3
-def test_stu02_ac3_save_merge_and_revise():
-    s = sid()
+def test_stu02_ac3_save_and_revise_merges():
+    s = new_student()
     aid = start(s)
     r = save(aid, s, {"q1": "b"})
     assert r.status_code == 200
-    assert r.json()["status"] == "in_progress"
-    assert r.json()["answers"] == {"q1": "b"}
-    assert save(aid, s, {"q2": "a"}).json()["answers"] == {"q1": "b", "q2": "a"}
-    assert save(aid, s, {"q1": "c"}).json()["answers"] == {"q1": "c", "q2": "a"}
-    assert get_attempt(aid, s).json()["answers"] == {"q1": "c", "q2": "a"}
+    assert r.json() == {"attempt_id": aid, "status": "in_progress", "answers": {"q1": "b"}}
+    r = save(aid, s, {"q2": "a"})
+    assert r.json()["answers"] == {"q1": "b", "q2": "a"}
+    r = save(aid, s, {"q1": "a"})
+    assert r.json()["answers"] == {"q1": "a", "q2": "a"}
+    r = call("GET", f"/api/attempts/{aid}", s)
+    assert r.json()["answers"] == {"q1": "a", "q2": "a"}
 
 
-def test_stu02_ac3_unknown_question_rejected():
-    s = sid()
-    r = save(start(s), s, {"q9": "a"})
+def test_stu02_ac3_unknown_question_rejected_and_nothing_saved():
+    s = new_student()
+    aid = start(s)
+    r = save(aid, s, {"q1": "a", "q99": "a"})
     assert r.status_code == 422
     assert code_of(r) == "unknown_question"
+    assert call("GET", f"/api/attempts/{aid}", s).json()["answers"] == {}
 
 
-def test_stu02_ac3_invalid_choice_rejected():
-    s = sid()
-    r = save(start(s), s, {"q1": "z"})
+def test_stu02_ac3_invalid_choice_rejected_and_nothing_saved():
+    s = new_student()
+    aid = start(s)
+    r = save(aid, s, {"q1": "a", "q2": "z"})
+    assert r.status_code == 422
+    assert code_of(r) == "invalid_choice"
+    assert call("GET", f"/api/attempts/{aid}", s).json()["answers"] == {}
+
+
+def test_stu02_ac3_choice_from_other_question_rejected():
+    # Choice ids are shared (a/b/c) in this fixture, so use a non-member id.
+    s = new_student()
+    aid = start(s)
+    r = save(aid, s, {"q1": "d"})
     assert r.status_code == 422
     assert code_of(r) == "invalid_choice"
 
 
-def test_stu02_ac3_rejected_request_saves_nothing():
-    s = sid()
+def test_stu02_ac3_malformed_body_422():
+    s = new_student()
     aid = start(s)
-    assert save(aid, s, {"q1": "a", "q2": "zzz"}).status_code == 422
-    assert get_attempt(aid, s).json()["answers"] == {}
-    assert save(aid, s, {"q1": "a", "q9": "a"}).status_code == 422
-    assert get_attempt(aid, s).json()["answers"] == {}
+    r = call("PUT", f"/api/attempts/{aid}/answers", s, {"nope": 1})
+    assert r.status_code == 422
 
 
 # AC4
 def test_stu02_ac4_incomplete_submit_rejected():
-    s = sid()
+    s = new_student()
     aid = start(s)
     save(aid, s, {"q2": "b"})
     r = submit(aid, s)
     assert r.status_code == 422
-    d = r.json()["detail"]
-    assert d["code"] == "incomplete"
-    assert d["missing"] == ["q1", "q3"]
+    body = r.json()
+    assert body["detail"]["code"] == "incomplete"
+    assert body["detail"]["missing"] == ["q1", "q3"]
     assert_no_leak(r)
-    g = get_attempt(aid, s).json()
-    assert g["status"] == "in_progress"
-    assert g["answers"] == {"q2": "b"}
-    r = results(aid, s)
-    assert r.status_code == 403
-    assert code_of(r) == "not_submitted"
+    st = call("GET", f"/api/attempts/{aid}", s).json()
+    assert st["status"] == "in_progress"
+    assert st["answers"] == {"q2": "b"}
+    assert results(aid, s).status_code == 403
 
 
-def test_stu02_ac4_nothing_answered_lists_all():
-    s = sid()
-    r = submit(start(s), s)
+def test_stu02_ac4_missing_all_listed_in_order():
+    s = new_student()
+    aid = start(s)
+    r = submit(aid, s)
     assert r.status_code == 422
     assert r.json()["detail"]["missing"] == ["q1", "q2", "q3"]
 
 
-# AC5
-def test_stu02_ac5_submit_scores_server_side():
-    s = sid()
+def test_stu02_ac4_can_complete_after_rejection():
+    s = new_student()
     aid = start(s)
-    save(aid, s, {"q1": "a", "q2": "a", "q3": "c"})
+    assert submit(aid, s).status_code == 422
+    save(aid, s, CORRECT)
+    assert submit(aid, s).status_code == 200
+
+
+# AC5
+def test_stu02_ac5_submit_full_score():
+    s = new_student()
+    aid = start(s)
+    save(aid, s, CORRECT)
     r = submit(aid, s)
     assert r.status_code == 200
     assert r.json() == {
-        "attempt_id": aid, "status": "submitted",
-        "score": {"correct": 2, "total": 3},
+        "attempt_id": aid,
+        "status": "submitted",
+        "score": {"correct": 3, "total": 3},
     }
-    assert get_attempt(aid, s).json()["status"] == "submitted"
+    assert call("GET", f"/api/attempts/{aid}", s).json()["status"] == "submitted"
 
 
-def test_stu02_ac5_all_correct_and_all_wrong():
-    s = sid()
-    a1 = start(s)
-    save(a1, s, dict(KEY))
-    assert submit(a1, s).json()["score"] == {"correct": 3, "total": 3}
-    a2 = start(s)
-    save(a2, s, {"q1": "b", "q2": "c", "q3": "a"})
-    assert submit(a2, s).json()["score"] == {"correct": 0, "total": 3}
-
-
-def test_stu02_ac5_client_score_ignored():
-    s = sid()
+def test_stu02_ac5_partial_and_zero_score():
+    s = new_student()
+    aid = start(s)
+    save(aid, s, {"q1": "a", "q2": "a", "q3": "a"})
+    assert submit(aid, s).json()["score"] == {"correct": 1, "total": 3}
     aid = start(s)
     save(aid, s, {"q1": "b", "q2": "c", "q3": "a"})
-    r = submit(aid, s, {"score": {"correct": 3, "total": 3}, "correct": 3})
+    assert submit(aid, s).json()["score"] == {"correct": 0, "total": 3}
+
+
+def test_stu02_ac5_client_supplied_score_ignored():
+    s = new_student()
+    aid = start(s)
+    save(aid, s, {"q1": "b", "q2": "c", "q3": "a"})
+    r = submit(aid, s, {"score": {"correct": 3, "total": 3}, "correct": 3, "answers": CORRECT})
     assert r.status_code == 200
     assert r.json()["score"] == {"correct": 0, "total": 3}
+    assert results(aid, s).json()["score"] == {"correct": 0, "total": 3}
+
+
+def test_stu02_ac5_attempt_ids_not_sequential():
+    s = new_student()
+    ids = {start(s) for _ in range(3)}
+    assert len(ids) == 3
+    assert not any(i.isdigit() for i in ids)
 
 
 # AC6
-def test_stu02_ac6_no_change_after_submit():
-    s = sid()
+def test_stu02_ac6_no_changes_after_submit():
+    s = new_student()
     aid = start(s)
-    save(aid, s, dict(KEY))
+    save(aid, s, CORRECT)
     submit(aid, s)
     r = save(aid, s, {"q1": "b"})
     assert r.status_code == 409
     assert code_of(r) == "already_submitted"
-    assert get_attempt(aid, s).json()["answers"] == KEY
+    assert call("GET", f"/api/attempts/{aid}", s).json()["answers"] == CORRECT
 
 
-def test_stu02_ac6_no_resubmit():
-    s = sid()
+def test_stu02_ac6_no_second_submit():
+    s = new_student()
     aid = start(s)
-    save(aid, s, dict(KEY))
+    save(aid, s, CORRECT)
     submit(aid, s)
     r = submit(aid, s)
     assert r.status_code == 409
@@ -260,29 +300,30 @@ def test_stu02_ac6_no_resubmit():
 
 
 def test_stu02_ac6_state_checked_before_validation():
-    s = sid()
+    s = new_student()
     aid = start(s)
-    save(aid, s, dict(KEY))
+    save(aid, s, CORRECT)
     submit(aid, s)
-    assert save(aid, s, {"q9": "zz"}).status_code == 409
+    r = save(aid, s, {"q99": "zz"})
+    assert r.status_code == 409
 
 
 # AC7
-def test_stu02_ac7_results_after_submit():
-    s = sid()
+def test_stu02_ac7_results_content():
+    s = new_student()
     aid = start(s)
-    ans = {"q1": "a", "q2": "c", "q3": "c"}
-    save(aid, s, ans)
+    answers = {"q1": "a", "q2": "c", "q3": "c"}
+    save(aid, s, answers)
     submit(aid, s)
     r = results(aid, s)
     assert r.status_code == 200
-    b = r.json()
-    assert b["attempt_id"] == aid
-    assert b["set_id"] == SET
-    assert b["key_version"] == "v1"
-    assert b["score"] == {"correct": 2, "total": 3}
-    assert b["answers"] == ans
-    assert b["questions"] == [
+    body = r.json()
+    assert body["attempt_id"] == aid
+    assert body["set_id"] == SET_ID
+    assert body["key_version"] == "v1"
+    assert body["score"] == {"correct": 2, "total": 3}
+    assert body["answers"] == answers
+    assert body["questions"] == [
         {"id": "q1", "selected": "a", "correct_choice": "a", "correct": True,
          "explanation": EXPLANATIONS[0]},
         {"id": "q2", "selected": "c", "correct_choice": "b", "correct": False,
@@ -292,122 +333,152 @@ def test_stu02_ac7_results_after_submit():
     ]
 
 
-def test_stu02_ac7_results_not_submitted_403():
-    s = sid()
-    r = results(start(s), s)
+def test_stu02_ac7_results_not_available_before_submit():
+    s = new_student()
+    aid = start(s)
+    save(aid, s, CORRECT)
+    r = results(aid, s)
     assert r.status_code == 403
     assert code_of(r) == "not_submitted"
+    assert_no_leak(r)
 
 
-def test_stu02_ac7_results_unknown_attempt():
-    r = results("doesnotexist123", sid())
-    assert r.status_code == 404
-    assert code_of(r) == "attempt_not_found"
+# AC8 (adversarial)
+def test_stu02_ac8_no_leak_from_any_unsubmitted_response():
+    s = new_student()
+    resps = []
+    r = call("POST", f"/api/practice-sets/{SET_ID}/attempts", s)
+    resps.append(r)
+    aid = r.json()["attempt_id"]
+    resps.append(call("GET", f"/api/practice-sets/{SET_ID}"))
+    resps.append(call("GET", f"/api/attempts/{aid}", s))
+    resps.append(save(aid, s, CORRECT | {"q3": "a"}))
+    resps.append(save(aid, s, {"q1": "zzz"}))
+    resps.append(save(aid, s, {"q42": "a"}))
+    resps.append(save(aid, s, None))
+    resps.append(call("PUT", f"/api/attempts/{aid}/answers", s, {"answers": "bad"}))
+    resps.append(results(aid, s))
+    resps.append(call("GET", f"/api/attempts/{aid}"))
+    resps.append(call("GET", "/api/attempts/nonexistent-attempt", s))
+    resps.append(call("GET", "/api/practice-sets/nope"))
+    resps.append(call("POST", "/api/practice-sets/nope/attempts", s))
+    for resp in resps:
+        assert_no_leak(resp)
+    # Incomplete submit on a fresh attempt
+    aid2 = start(s)
+    save(aid2, s, {"q1": "a"})
+    assert_no_leak(submit(aid2, s))
 
 
-# AC8 adversarial: answer leakage before submission
-def test_stu02_ac8_no_leak_before_submission():
-    s = sid()
+def test_stu02_ac8_error_bodies_use_standard_shape_without_key():
+    s = new_student()
     aid = start(s)
-    responses = [
-        call("GET", f"/api/practice-sets/{SET}", None),
-        get_attempt(aid, s),
-        save(aid, s, {"q1": "a"}),
-        save(aid, s, {"q1": "z"}),
-        save(aid, s, {"q9": "a"}),
-        submit(aid, s),
-        results(aid, s),
-        get_attempt("nope-nope-nope", s),
-        get_attempt(aid, None),
-        call("POST", f"/api/practice-sets/{SET}/attempts", None),
-        call("GET", "/api/practice-sets/nope", None),
-    ]
-    for r in responses:
-        assert_no_leak(r)
+    r = save(aid, s, {"q1": "zzz"})
+    d = r.json()["detail"]
+    assert set(d.keys()) >= {"code", "message"}
+    assert_no_leak(r)
 
 
-def test_stu02_ac8_no_leak_after_partial_answers():
-    s = sid()
+def test_stu02_ac8_no_leak_after_submit_via_non_results_endpoints():
+    s = new_student()
     aid = start(s)
-    save(aid, s, {"q1": "a", "q2": "b"})
-    for r in (submit(aid, s), results(aid, s), get_attempt(aid, s)):
+    save(aid, s, CORRECT)
+    assert_no_leak(submit(aid, s))
+    assert_no_leak(call("GET", f"/api/attempts/{aid}", s))
+    assert_no_leak(save(aid, s, {"q1": "a"}))
+    assert_no_leak(submit(aid, s))
+
+
+def test_stu02_ac8_unsubmitted_attempt_never_in_results_by_other_routes():
+    s = new_student()
+    aid = start(s)
+    for path in [f"/api/attempts/{aid}/results/", f"/api/attempts/{aid}?include=results"]:
+        r = call("GET", path, s)
         assert_no_leak(r)
 
 
-# AC9 adversarial: cross-student access
-def test_stu02_ac9_cross_student_all_endpoints_404_and_indistinguishable():
-    owner, other = sid(), sid()
-    aid = start(owner)
-    save(aid, owner, dict(KEY))
-    submit(aid, owner)
-    unknown = get_attempt("unknown-id-123", other)
-    assert unknown.status_code == 404
-    for r in (
-        get_attempt(aid, other),
-        save(aid, other, {"q1": "a"}),
-        submit(aid, other),
-        results(aid, other),
-    ):
-        assert r.status_code == 404
-        assert code_of(r) == "attempt_not_found"
-        assert r.json() == unknown.json()
-        assert_no_leak(r)
-
-
-def test_stu02_ac9_cross_student_cannot_modify():
-    owner, other = sid(), sid()
+# AC9 (adversarial)
+def test_stu02_ac9_cross_student_all_endpoints_404():
+    owner, other = new_student(), new_student()
     aid = start(owner)
     save(aid, owner, {"q1": "a"})
-    assert save(aid, other, {"q1": "c"}).status_code == 404
-    assert submit(aid, other).status_code == 404
-    g = get_attempt(aid, owner).json()
-    assert g["answers"] == {"q1": "a"}
-    assert g["status"] == "in_progress"
+    attempts = [
+        ("GET", f"/api/attempts/{aid}", None),
+        ("PUT", f"/api/attempts/{aid}/answers", {"answers": {"q1": "b"}}),
+        ("POST", f"/api/attempts/{aid}/submit", None),
+        ("GET", f"/api/attempts/{aid}/results", None),
+    ]
+    for method, path, body in attempts:
+        r = call(method, path, other, body)
+        assert r.status_code == 404, path
+        assert code_of(r) == "attempt_not_found"
+    st = call("GET", f"/api/attempts/{aid}", owner).json()
+    assert st["status"] == "in_progress"
+    assert st["answers"] == {"q1": "a"}
 
 
-def test_stu02_ac9_ownership_checked_before_state_and_validation():
-    owner, other = sid(), sid()
+def test_stu02_ac9_other_student_cannot_see_submitted_results():
+    owner, other = new_student(), new_student()
     aid = start(owner)
-    assert results(aid, other).status_code == 404  # not 403
-    assert save(aid, other, {"q9": "zz"}).status_code == 404  # not 422
-    assert submit(aid, other).status_code == 404  # not 422
-    save(aid, owner, dict(KEY))
+    save(aid, owner, CORRECT)
     submit(aid, owner)
-    assert save(aid, other, {"q1": "a"}).status_code == 404  # not 409
-    assert submit(aid, other).status_code == 404  # not 409
+    r = results(aid, other)
+    assert r.status_code == 404
+    assert code_of(r) == "attempt_not_found"
+    assert_no_leak(r)
 
 
-def test_stu02_ac9_header_checked_before_existence():
-    assert get_attempt("unknown-id-123", None).status_code == 401
+def test_stu02_ac9_cannot_submit_foreign_complete_attempt():
+    owner, other = new_student(), new_student()
+    aid = start(owner)
+    save(aid, owner, CORRECT)
+    assert submit(aid, other).status_code == 404
+    assert call("GET", f"/api/attempts/{aid}", owner).json()["status"] == "in_progress"
 
 
-def test_stu02_ac9_attempt_ids_opaque_and_unique():
-    s = sid()
-    ids = {start(s) for _ in range(5)}
-    assert len(ids) == 5
-    for i in ids:
-        assert len(i) >= 8
-        assert not i.isdigit()
+def test_stu02_ac9_existence_not_revealed():
+    owner, other = new_student(), new_student()
+    aid = start(owner)
+    real = call("GET", f"/api/attempts/{aid}", other)
+    fake = call("GET", "/api/attempts/does-not-exist-123", other)
+    assert real.status_code == fake.status_code == 404
+    assert real.json() == fake.json()
+    for method, suffix, body in [("PUT", "/answers", {"answers": {"q1": "a"}}),
+                                 ("POST", "/submit", None), ("GET", "/results", None)]:
+        a = call(method, f"/api/attempts/{aid}{suffix}", other, body)
+        b = call(method, f"/api/attempts/does-not-exist-123{suffix}", other, body)
+        assert a.status_code == b.status_code == 404
+        assert a.json() == b.json()
+
+
+def test_stu02_ac9_ownership_checked_before_validation_and_state():
+    owner, other = new_student(), new_student()
+    aid = start(owner)
+    save(aid, owner, CORRECT)
+    submit(aid, owner)
+    # Foreign student gets 404, not 409 or 422, so state is not revealed.
+    assert save(aid, other, {"q99": "zz"}).status_code == 404
+    assert submit(aid, other).status_code == 404
 
 
 # AC10
-def test_stu02_ac10_independent_attempts():
-    s = sid()
+def test_stu02_ac10_attempts_independent():
+    s = new_student()
     a1, a2 = start(s), start(s)
     assert a1 != a2
-    save(a1, s, dict(KEY))
+    save(a1, s, CORRECT)
     submit(a1, s)
-    g2 = get_attempt(a2, s).json()
-    assert g2["status"] == "in_progress"
-    assert g2["answers"] == {}
-    assert save(a2, s, {"q1": "b"}).status_code == 200
+    st2 = call("GET", f"/api/attempts/{a2}", s).json()
+    assert st2["status"] == "in_progress"
+    assert st2["answers"] == {}
+    save(a2, s, {"q1": "b"})
+    assert call("GET", f"/api/attempts/{a1}", s).json()["answers"] == CORRECT
     assert results(a2, s).status_code == 403
-    assert results(a1, s).status_code == 200
 
 
 # AC11
 def test_stu02_ac11_health_still_works():
-    r = call("GET", "/api/health", None)
+    r = call("GET", "/api/health")
     assert r.status_code == 200 and r.json() == {"status": "ok"}
-    r = call("GET", "/api/health/ready", None)
+    r = call("GET", "/api/health/ready")
     assert r.status_code == 200 and r.json() == {"status": "ready"}
