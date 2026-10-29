@@ -24,9 +24,10 @@ def fail(status: int, code: str, message: str, **extra: object) -> NoReturn:
 
 def student_id(x_student_id: Annotated[str | None, Header()] = None) -> str:
     """Placeholder identity until SHR-01."""
-    if x_student_id is None or not x_student_id.strip():
+    student = (x_student_id or "").strip()
+    if not student:
         fail(401, "missing_student", "Student identity is required.")
-    return x_student_id
+    return student
 
 
 Student = Annotated[str, Depends(student_id)]
@@ -78,32 +79,33 @@ def read_attempt(attempt_id: str, student: Student) -> dict:
 
 @router.put("/attempts/{attempt_id}/answers", response_model=AnswersSavedOut)
 def save_answers(attempt_id: str, body: AnswersIn, student: Student) -> dict:
-    attempt = require_attempt(attempt_id, student)
-    require_open(attempt)
-    try:
-        logic.validate_answers(require_set(attempt.set_id), body.answers)
-    except logic.AnswerError as e:
-        fail(422, e.code, e.message)
-    attempt.answers.update(body.answers)
-    store.save(attempt)
-    return attempt_out(attempt)
+    require_attempt(attempt_id, student)
+    with store.lock(attempt_id):
+        attempt = require_attempt(attempt_id, student)
+        require_open(attempt)
+        try:
+            logic.validate_answers(require_set(attempt.set_id), body.answers)
+        except logic.AnswerError as e:
+            fail(422, e.code, e.message)
+        attempt.answers.update(body.answers)
+        store.save(attempt)
+        return attempt_out(attempt)
 
 
 @router.post("/attempts/{attempt_id}/submit", response_model=SubmitOut)
 def submit(attempt_id: str, student: Student) -> dict:
-    attempt = require_attempt(attempt_id, student)
-    require_open(attempt)
-    practice_set = require_set(attempt.set_id)
-    missing = logic.missing_questions(practice_set, attempt.answers)
-    if missing:
-        fail(422, "incomplete", "Answer every question before submitting.", missing=missing)
-    attempt.status = "submitted"
-    store.save(attempt)
-    return {
-        "attempt_id": attempt.attempt_id,
-        "status": "submitted",
-        "score": logic.score(practice_set, attempt.answers),
-    }
+    require_attempt(attempt_id, student)
+    with store.lock(attempt_id):
+        attempt = require_attempt(attempt_id, student)
+        require_open(attempt)
+        practice_set = require_set(attempt.set_id)
+        missing = logic.missing_questions(practice_set, attempt.answers)
+        if missing:
+            fail(422, "incomplete", "Answer every question before submitting.", missing=missing)
+        attempt.status = "submitted"
+        store.save(attempt)
+        score = logic.score(practice_set, attempt.answers)
+    return {"attempt_id": attempt.attempt_id, "status": "submitted", "score": score}
 
 
 @router.get("/attempts/{attempt_id}/results", response_model=ResultsOut)

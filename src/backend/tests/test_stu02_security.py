@@ -267,7 +267,8 @@ def test_stu02_sec_other_student_cannot_read_results_of_submitted_attempt():
 def test_stu02_sec_identity_variants_do_not_match_owner():
     owner = sid()
     aid = start(owner)
-    for variant in (owner.upper(), " " + owner, owner + " ", owner + "\t", owner[:-1]):
+    # Surrounding whitespace is trimmed (same student); see test_stu02_fixes.py.
+    for variant in (owner.upper(), owner[:-1]):
         r = call("GET", f"/api/attempts/{aid}", variant)
         assert r.status_code == 404, repr(variant)
 
