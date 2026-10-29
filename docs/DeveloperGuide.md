@@ -36,9 +36,9 @@ Spec-driven, multi-agent scaffolding. Contents are templates and drafts until fe
 |---|---|
 | `CLAUDE.md` | Project rules and read order for Claude Code. |
 | `AGENTS.md` | The same rules plus all agent role definitions, for Codex. Keep in sync with `CLAUDE.md` and `.claude/agents/`. |
-| `.claude/agents/*.md` | Claude Code agent definitions for the chosen workflow (Variant B): spec-writer, developer, test-designer, verifier. |
+| `.claude/agents/*.md` | Claude Code agent definitions for the chosen workflow (Variant A): spec-writer, developer, test-designer, reviewer, security-reviewer. |
 | `workflow/coordination.md` | Generator-verifier coordination pattern with an independent test designer, isolation rules, handoffs, revision caps, conflict resolution and how adherence is verified. |
-| `workflow/variants/` | The workflow variants that were compared; B was chosen (A split verification, B merged verification with a single `verifier`, single-session baseline) and how to switch. |
+| `workflow/variants/` | The workflow variants that were compared; A was chosen after the fair re-runs (A split verification, B merged verification with a single `verifier`, single-session baseline) and how to switch. |
 | `workflow/notes.md` | Handoff log between agents and sessions. |
 | `workflow/templates/` | Spec, plan, tasks and handoff templates. |
 | `workflow/specs/` | Per-feature spec, plan and tasks. |
