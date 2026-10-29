@@ -7,7 +7,8 @@ Reads token usage from the local Claude logs through the token tracker, the grad
 results in workflow/experiments/results/stu02-<label>-grade.json, and optional
 hand-recorded facts in stu02-<label>-notes.json, for example:
     {"revision_rounds": 1, "review_minutes": 25, "quality_score": 4}
-Prints the table and writes stu02-comparison.csv and stu02-comparison.md.
+Prints the table and writes stu02-comparison.csv, .md and .html (open the .html in a
+browser). It is regenerated from the latest logs and grade files on every run.
 """
 
 from __future__ import annotations
@@ -15,6 +16,7 @@ from __future__ import annotations
 import csv
 import json
 import sys
+from datetime import datetime
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[3]
@@ -23,6 +25,8 @@ sys.path.insert(0, str(REPO / "workflow" / "tools" / "token-tracker"))
 from tracker.export import collect_rows  # noqa: E402
 from tracker.pricing import load_prices  # noqa: E402
 from tracker.report import summarise  # noqa: E402
+
+from html_report import agent_costs, bucket_costs, render_html  # noqa: E402
 
 RESULTS = REPO / "workflow" / "experiments" / "results"
 RUNS = [("A", "exp/stu02-A"), ("B", "exp/stu02-B"), ("baseline", "exp/stu02-baseline")]
@@ -80,11 +84,13 @@ def load_json(path: Path) -> dict:
 def main() -> int:
     prices = load_prices(REPO / "workflow" / "tools" / "token-tracker" / "prices.json")
     all_rows = collect_rows(Path.home() / ".claude", Path.home() / ".codex", prices)
-    table = []
+    table, buckets, agents = [], {}, {}
     for label, branch in RUNS:
-        total = summarise(all_rows, branch)[-1]
-        table.append(build_row(label, total, load_json(RESULTS / f"stu02-{label}-grade.json") or None,
+        summary = summarise(all_rows, branch)
+        table.append(build_row(label, summary[-1], load_json(RESULTS / f"stu02-{label}-grade.json") or None,
                                load_json(RESULTS / f"stu02-{label}-notes.json")))
+        buckets[label] = bucket_costs([r for r in all_rows if r.branch == branch], prices)
+        agents[label] = agent_costs(summary[:-1])
     RESULTS.mkdir(parents=True, exist_ok=True)
     with (RESULTS / "stu02-comparison.csv").open("w", newline="", encoding="utf-8") as handle:
         writer = csv.DictWriter(handle, fieldnames=COLUMNS, lineterminator="\n")
@@ -93,8 +99,10 @@ def main() -> int:
             writer.writerow({c: "" if row[c] is None else row[c] for c in COLUMNS})
     markdown = render_markdown(table)
     (RESULTS / "stu02-comparison.md").write_text(markdown + "\n", encoding="utf-8")
+    stamp = datetime.now().strftime("%Y-%m-%d %H:%M")
+    (RESULTS / "stu02-comparison.html").write_text(render_html(table, buckets, agents, stamp), encoding="utf-8")
     print(markdown)
-    print(f"\nWrote {RESULTS / 'stu02-comparison.csv'} and stu02-comparison.md")
+    print(f"\nWrote stu02-comparison.csv, .md and .html in {RESULTS}")
     return 0
 
 

@@ -50,7 +50,9 @@ cd "C:\Users\yikbi\NUS\CS3227\MP4\CS3227-2610-MP4"
 python workflow/experiments/stu02/compare.py
 ```
 
-Prints one table with, for A, B and baseline: grader score (passed, total, percent), the run's own test results, requests, input, cache-read, cache-write, output and reasoning tokens, total tokens, cost in USD, cost per passing grader test, revision rounds, review minutes and quality score. It also writes `stu02-comparison.csv` and `stu02-comparison.md` under `workflow/experiments/results/` for pasting into the reflection and slides.
+Prints one table with, for A, B and baseline: grader score (passed, total, percent), the run's own test results, requests, input, cache-read, cache-write, output and reasoning tokens, total tokens, cost in USD, cost per passing grader test, revision rounds, review minutes and quality score. It also writes `stu02-comparison.csv`, `stu02-comparison.md` and `stu02-comparison.html` under `workflow/experiments/results/`. Open the `.html` in a browser for charts (total cost, cost by token type, cost by agent, and grader score against cost; works in light and dark mode and on a phone). Use the `.csv` and `.md` for pasting into the reflection and slides.
+
+The report is regenerated from scratch each time: after any new work or a re-grade, run `compare.py` again and refresh the browser. It is not live.
 
 Token usage is read from the local Claude logs by branch name. Cost uses `workflow/tools/token-tracker/prices.json` (API-equivalent list prices).
 
