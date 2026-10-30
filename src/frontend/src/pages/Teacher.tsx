@@ -312,8 +312,10 @@ function Materials({ notify }: Props) {
       />
       <PreviewNote>
         Development identity:{" "}
-        {import.meta.env.VITE_DEMO_USER_ID || "demo-teacher"}. Local testing
-        only; this is not a real login.
+        {demoEnabled
+          ? import.meta.env.VITE_DEMO_USER_ID || "demo-teacher"
+          : "disabled (configure local .env)"}
+        . Local testing only; this is not a real login.
       </PreviewNote>
       <Panel className="library-panel">
         <div className="library-toolbar">

@@ -77,3 +77,11 @@ Keep module boundaries single-purpose; these names are the shared implementation
 - `src/backend/teacher_materials/seed.py`: `seed_demo(session: Session) -> None` and the exact rerunnable CLI `uv run python -m teacher_materials.seed` from `src/backend`; document its invocation in `docs/DeveloperGuide.md`.
 
 The test-designer must not import these internals or implementation files. The seed CLI path is fixed because the independent test fixture invokes it.
+
+## Cross-role integration and authentication handoff
+
+- These PostgreSQL users, courses, memberships and topics are the common foundation. Later student/admin work should reuse their IDs and relationships rather than create parallel teacher-specific copies.
+- A source `material` is private teacher input, **not** a published lesson or a student practice set. Future generated notes and MCQs should reference its material ID through separate draft/publication records. This increment does not create those records or release their answers.
+- Current student practice still reads the server fixture `intro-se-1` and stores attempts in the in-memory `AttemptStore`. Its placeholder `X-Student-Id` is not a foreign-key integration with these new tables. Nothing automatically migrates attempts, enrolls students or changes the existing scoring flow.
+- Real authentication must resolve the signed-in account to the shared user ID on the server and replace the demo-header resolver. Keep the teacher-role and course-membership checks; the demo role switcher/header is not proof of identity. Demo seeds are for development only, with no credentials or passwords.
+- Back up PostgreSQL and the private file directory together. A database-only restore cannot recover uploaded bytes. Storage keys remain opaque server-owned references; future object storage can replace local file resolution without exposing local paths or turning private uploads into public URLs.
