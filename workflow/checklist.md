@@ -1,9 +1,11 @@
 # Setup and submission checklist
 
-Deadline: 13 Nov 2026, 2pm SGT, `master` as pulled. Owners to be assigned.
+Deadline: 13 Nov 2026, 2pm SGT, `master` as pulled. Student owner: yikbi; teammates own Teacher and Admin. Shared login, persistence and SoC LLM client ownership still needs team agreement.
+
+Current state (30 Oct): PRs 1–5 merged. STU-02 works with placeholder identity and server-memory storage; this does not complete real authentication, persistence or any AI feature. Latest recorded local checks: mocked browser suite 65, backend 60, real-backend test 1. Not re-run during this docs update; GitHub CI status not independently checked here. Remaining technical follow-ups include pytest, OpenAPI errors, six malformed-body check-order cases, the loose locked-state assertion and an eye check of dark-mode practice colours. The historical verifier copy is now labelled. Reflection records include the frontend run; other reflection topics and final guide checks remain open.
 
 ## Setup
-- [ ] Decide team members and one role each (student/teacher/admin); N roles for N students
+- [x] Role split confirmed by the user: yikbi owns Student; teammates own Teacher and Admin
 - [ ] GitHub organisation created; repo named `CS3227-2610-MP4`, public
 - [ ] Submit organisation name on Canvas (was due 23 Oct; confirm status)
 - [ ] SoC LLM access obtained; quota and rate limits documented

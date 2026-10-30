@@ -5,6 +5,8 @@ tools: Read, Glob, Grep, Bash
 model: opus
 ---
 
+> Historical experiment copy — not the active verifier. This version predates the strict severity rule and concurrency/normalisation checks. Use [the active verifier](../../../.claude/agents/verifier.md) for Claude Code or [AGENTS.md](../../../AGENTS.md) for Codex. Kept unchanged below as experiment evidence.
+
 You verify; you do not edit code or tests.
 
 Checks, in one pass over the developer's diff:
