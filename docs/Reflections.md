@@ -68,6 +68,16 @@ A later small, single-session wrong-answer colour fix added three tests, bringin
 - **Context organisation decides which instructions are followed.** Agents followed the definitions loaded from the main folder, not the newer files in their own worktree; orchestrators followed the `coordination.md` they read directly.
 - **Measure, don't estimate.** Every run wrote token estimates into its resource log, and none matched the tracker's measured figures.
 
+### Sizing the AI companion's limits (STU-03 experiments, 30 Oct 2026)
+We measured the SoC LLM before writing the STU-03 spec instead of guessing limits: 347 live chat calls in seven phases, costing $0.066 in total by dashboard differences (details and tables in `workflow/experiments/stu03-caps/RESULTS.md`).
+- **The answer-length instruction matters more than the cap.** A short-answer instruction ("at most 3 short sentences, no markdown") cut explain cost per call from about $0.0004 to $0.0002 and let a cap of 150 tokens work where the standard instruction needed 400. Tuning the cap alone would have missed this.
+- **A deterministic usefulness rule made the comparison possible,** but it was only a proxy and we had to relax it once after seeing 24 good hints fail on a missing question mark. We report both versions, which shows that rules chosen before the data can still be wrong.
+- **Prompts are not security controls.** Under attack, both instruction variants leaked the answer or narrowed it down in roughly a third to a half of hint attempts, one obeyed a fake "SYSTEM" line, and a pasted practice question was answered in full. This supports enforcing answer release on the server, and means the cheaper instruction must not be mistaken for a safer one.
+- **Our own leak check missed most of what a human reader found** (3 of 6 in the last phase). Automated checks need to be tested against reading the replies.
+- **Fitted per-token prices predicted the next phase's cost almost exactly** (0.0513 predicted, 0.0513 measured), so a small calibration run lets us budget live calls before making them.
+- **The cheapest design combines three levers, in this order of size:** a short-answer instruction (cuts a call by 22% to 57%), then less history (each 2 messages add 4% to 16% to a call and did not make replies more useful in our tests), then the output cap, which is only a ceiling and changes cost little once it clears the natural reply length. Against our first guess (standard instruction, 4 history messages, caps up to 400) the recommended setup, which keeps 4 history messages for usefulness to students (the user's decision, not a measured benefit), is about 22%, 49% and 31% cheaper for hints, explanations and help.
+- Limits: small samples, one model alias, a proxy rule, no real rate-limit or concurrency tests, and test questions too independent to show whether history helps follow-up questions.
+
 ### Still to do
 - System prompts and skills for the agents; upfront versus retrieve-on-demand context; when more context hurt.
 - What belongs in notes and handoff documents beyond the handoff template.
