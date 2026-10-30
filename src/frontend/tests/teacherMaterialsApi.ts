@@ -56,9 +56,12 @@ export class TeacherMaterialsApi {
     const path = url.pathname + url.search;
     const body = request.postData();
     this.requests.push({ method, path, body });
-    const json = (status: number, value: unknown) => route.fulfill({ status, json: value });
+    const json = (status: number, value: unknown) =>
+      route.fulfill({ status, json: value });
     const error = (status: number, code: string) =>
-      json(status, { detail: { code, message: `Could not load materials: ${code}` } });
+      json(status, {
+        detail: { code, message: `Could not load materials: ${code}` },
+      });
 
     if (method === "GET" && url.pathname === "/api/teacher/courses") {
       if (this.failCourses-- > 0) return error(503, "service_unavailable");
@@ -67,23 +70,52 @@ export class TeacherMaterialsApi {
         { id: COURSE_B, title: "Programming", created_at: now },
       ]);
     }
-    const topics = url.pathname.match(/^\/api\/teacher\/courses\/([^/]+)\/topics$/);
+    const topics = url.pathname.match(
+      /^\/api\/teacher\/courses\/([^/]+)\/topics$/,
+    );
     if (method === "GET" && topics) {
-      return json(200, topics[1] === COURSE_A
-        ? [{ id: TOPIC_A, course_id: COURSE_A, name: "Testing", created_at: now }]
-        : [{ id: TOPIC_B, course_id: COURSE_B, name: "Basics", created_at: now }]);
+      return json(
+        200,
+        topics[1] === COURSE_A
+          ? [
+              {
+                id: TOPIC_A,
+                course_id: COURSE_A,
+                name: "Testing",
+                created_at: now,
+              },
+            ]
+          : [
+              {
+                id: TOPIC_B,
+                course_id: COURSE_B,
+                name: "Basics",
+                created_at: now,
+              },
+            ],
+      );
     }
-    const list = url.pathname.match(/^\/api\/teacher\/courses\/([^/]+)\/materials$/);
+    const list = url.pathname.match(
+      /^\/api\/teacher\/courses\/([^/]+)\/materials$/,
+    );
     if (method === "GET" && list) {
       if (this.failMaterials-- > 0) return error(503, "service_unavailable");
       const topic = url.searchParams.get("topic_id");
-      return json(200, this.materials.filter((m) => m.course_id === list[1] && (!topic || m.topic_id === topic)));
+      return json(
+        200,
+        this.materials.filter(
+          (m) => m.course_id === list[1] && (!topic || m.topic_id === topic),
+        ),
+      );
     }
     if (method === "POST" && list) {
       if (this.failUpload-- > 0) return error(503, "service_unavailable");
-      const title = body?.match(/name="title"\r?\n\r?\n([^\r\n]+)/)?.[1] ?? "Uploaded source";
+      const title =
+        body?.match(/name="title"\r?\n\r?\n([^\r\n]+)/)?.[1] ??
+        "Uploaded source";
       const filename = body?.match(/filename="([^"]+)"/)?.[1] ?? "notes.txt";
-      const topic = body?.match(/name="topic_id"\r?\n\r?\n([^\r\n]+)/)?.[1] ?? null;
+      const topic =
+        body?.match(/name="topic_id"\r?\n\r?\n([^\r\n]+)/)?.[1] ?? null;
       const created: Material = {
         ...OLD,
         id: "77777777-7777-4777-8777-777777777777",
@@ -97,12 +129,18 @@ export class TeacherMaterialsApi {
       this.materials.unshift(created);
       return json(201, created);
     }
-    const material = url.pathname.match(/^\/api\/teacher\/materials\/([^/]+)(\/file)?$/);
+    const material = url.pathname.match(
+      /^\/api\/teacher\/materials\/([^/]+)(\/file)?$/,
+    );
     if (material && method === "PATCH") {
       const index = this.materials.findIndex((m) => m.id === material[1]);
       if (index < 0) return error(404, "not_found");
       const topic_id = JSON.parse(body ?? "{}").topic_id;
-      this.materials[index] = { ...this.materials[index], topic_id, updated_at: now };
+      this.materials[index] = {
+        ...this.materials[index],
+        topic_id,
+        updated_at: now,
+      };
       return json(200, this.materials[index]);
     }
     if (material && method === "GET" && material[2] === "/file") {
@@ -111,7 +149,9 @@ export class TeacherMaterialsApi {
       return route.fulfill({
         status: 200,
         contentType: found.media_type,
-        headers: { "Content-Disposition": `attachment; filename="${found.original_filename}"` },
+        headers: {
+          "Content-Disposition": `attachment; filename="${found.original_filename}"`,
+        },
         body: "source bytes",
       });
     }
@@ -121,6 +161,9 @@ export class TeacherMaterialsApi {
 
 export async function mockTeacherMaterialsApi(page: Page) {
   const api = new TeacherMaterialsApi();
-  await page.route((url) => url.pathname.startsWith("/api/teacher/"), (route) => api.handle(route));
+  await page.route(
+    (url) => url.pathname.startsWith("/api/teacher/"),
+    (route) => api.handle(route),
+  );
   return api;
 }
