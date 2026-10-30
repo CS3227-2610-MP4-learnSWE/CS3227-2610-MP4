@@ -14,23 +14,27 @@ async function openMaterials(page: Page) {
   await expect(page.getByRole("button", { name: "Upload material" })).toBeVisible();
 }
 
+async function choose(page: Page, label: string, option: string) {
+  await page.getByRole("combobox", { name: new RegExp(`^${label}(?: |$)`) }).click();
+  await page.getByRole("option", { name: option, exact: true }).click();
+}
+
 test("tea01 course, topic, newest-first rows and search use the HTTP boundary", async ({ page }) => {
   const api = await mockTeacherMaterialsApi(page);
   await openMaterials(page);
-  await expect(page.getByText(NEW.title)).toBeVisible();
-  await expect(page.getByText(OLD.title)).toBeVisible();
-  const items = page.getByText(/Newer testing guide|Older source/);
-  await expect(items.nth(0)).toHaveText(NEW.title);
+  await expect(page.getByText(NEW.title, { exact: true })).toBeVisible();
+  await expect(page.getByText(OLD.title, { exact: true })).toBeVisible();
+  await expect(page.locator("tbody tr strong").first()).toHaveText(NEW.title);
   await page.getByLabel("Search your materials").fill("architecture.txt");
-  await expect(page.getByText(OLD.title)).toBeVisible();
-  await expect(page.getByText(NEW.title)).toHaveCount(0);
+  await expect(page.getByText(OLD.title, { exact: true })).toBeVisible();
+  await expect(page.getByText(NEW.title, { exact: true })).toHaveCount(0);
   await page.getByLabel("Search your materials").fill("");
-  await page.getByLabel("Topic filter").selectOption(TOPIC_A);
-  await expect(page.getByText(NEW.title)).toBeVisible();
-  await expect(page.getByText(OLD.title)).toHaveCount(0);
+  await choose(page, "Topic filter", "Testing");
+  await expect(page.getByText(NEW.title, { exact: true })).toBeVisible();
+  await expect(page.getByText(OLD.title, { exact: true })).toHaveCount(0);
   expect(api.requests.some((r) => r.method === "GET" && r.path === `/api/teacher/courses/${COURSE_A}/materials?topic_id=${TOPIC_A}`)).toBe(true);
-  await page.getByLabel("Course", { exact: true }).selectOption(COURSE_B);
-  await expect(page.getByText(NEW.title)).toHaveCount(0);
+  await choose(page, "Course", "Programming");
+  await expect(page.getByText(NEW.title, { exact: true })).toHaveCount(0);
   expect(api.requests.some((r) => r.path === `/api/teacher/courses/${COURSE_B}/topics`)).toBe(true);
 });
 
@@ -48,7 +52,7 @@ test("tea01 upload dialog validates, sends multipart and refreshes", async ({ pa
     name: "checklist.txt", mimeType: "text/plain", buffer: Buffer.from("Checklist contents"),
   });
   await dialog.getByRole("button", { name: "Upload", exact: true }).click();
-  await expect(page.getByText("Uploaded checklist")).toBeVisible();
+  await expect(page.getByText("Uploaded checklist", { exact: true })).toBeVisible();
   const post = api.requests.find((r) => r.method === "POST" && r.path === `/api/teacher/courses/${COURSE_A}/materials`);
   expect(post?.body).toContain("checklist.txt");
   expect(post?.body).toContain("Uploaded checklist");
@@ -61,38 +65,31 @@ test("tea01 assignment, unassignment and download work on rows", async ({ page }
   const row = page.getByRole("row").filter({ hasText: OLD.title });
   await expect(row).toBeVisible();
   const selector = row.getByRole("combobox", { name: /Change topic/ });
-  if (await selector.count()) {
-    await selector.selectOption(TOPIC_A);
-  } else {
-    await row.getByRole("button", { name: "Change topic" }).click();
-    await page.getByRole("option", { name: "Testing" }).click();
-  }
+  await selector.click();
+  await page.getByRole("option", { name: "Testing", exact: true }).click();
   await expect.poll(() => api.materials.find((m) => m.id === OLD.id)?.topic_id).toBe(TOPIC_A);
   const download = page.waitForEvent("download");
   await row.getByRole("button", { name: "Download" }).click();
   expect((await download).suggestedFilename()).toBe(OLD.original_filename);
   expect(api.requests.some((r) => r.method === "GET" && r.path === `/api/teacher/materials/${OLD.id}/file`)).toBe(true);
-  if (await selector.count()) {
-    await selector.selectOption("");
-  } else {
-    await row.getByRole("button", { name: "Change topic" }).click();
-    await page.getByRole("option", { name: /Unassigned|No topic/ }).click();
-  }
+  await selector.click();
+  await page.getByRole("option", { name: "Unassigned", exact: true }).click();
   await expect.poll(() => api.materials.find((m) => m.id === OLD.id)?.topic_id).toBeNull();
 });
 
 test("tea01 empty state, course error Retry and recoverable material error", async ({ page }) => {
   const api = await mockTeacherMaterialsApi(page);
-  api.failCourses = 1;
+  api.failCourses = 10;
   await page.goto("/teacher/materials");
   await expect(page.getByRole("button", { name: "Retry" })).toBeVisible();
+  api.failCourses = 0;
   await page.getByRole("button", { name: "Retry" }).click();
   await expect(page.getByLabel("Course", { exact: true })).toBeVisible();
   api.materials = [];
-  await page.getByLabel("Course", { exact: true }).selectOption(COURSE_B);
-  await expect(page.getByText(/no materials/i)).toBeVisible();
-  api.failMaterials = 1;
-  await page.getByLabel("Course", { exact: true }).selectOption(COURSE_A);
+  await choose(page, "Course", "Programming");
+  await expect(page.getByText(/no matching materials|no materials/i)).toBeVisible();
+  api.failMaterials = 10;
+  await choose(page, "Course", "Software Engineering");
   await expect(page.getByText(/could not|error|failed/i)).toBeVisible();
 });
 

@@ -263,10 +263,10 @@ test("keyboard focus is visible and navigation supports back and forward", async
 
 test("teacher material search filters the loaded library", async ({ page }) => {
   await page.goto("/teacher/materials");
-  await expect(page.getByText(OLD.title)).toBeVisible();
+  await expect(page.getByText(OLD.title, { exact: true })).toBeVisible();
   await page.getByLabel("Search your materials").fill("architecture.txt");
-  await expect(page.getByText(OLD.title)).toBeVisible();
-  await expect(page.getByText("Newer testing guide")).toHaveCount(0);
+  await expect(page.getByText(OLD.title, { exact: true })).toBeVisible();
+  await expect(page.getByText("Newer testing guide", { exact: true })).toHaveCount(0);
 });
 
 test("teacher upload picker can be opened with the keyboard", async ({

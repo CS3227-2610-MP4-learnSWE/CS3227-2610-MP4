@@ -3,6 +3,7 @@
 import os
 import shutil
 import subprocess
+import sys
 import tempfile
 import uuid
 from pathlib import Path
@@ -45,8 +46,8 @@ def pytest_sessionstart(session):
     env["ALLOW_DEMO_IDENTITY"] = "true"
     backend = Path(__file__).resolve().parents[1]
     try:
-        subprocess.run(["uv", "run", "alembic", "upgrade", "head"], cwd=backend, env=env, check=True)
-        subprocess.run(["uv", "run", "python", "-m", "teacher_materials.seed"], cwd=backend, env=env, check=True)
+        subprocess.run([sys.executable, "-m", "alembic", "upgrade", "head"], cwd=backend, env=env, check=True)
+        subprocess.run([sys.executable, "-m", "teacher_materials.seed"], cwd=backend, env=env, check=True)
     except BaseException:
         _cleanup()
         raise

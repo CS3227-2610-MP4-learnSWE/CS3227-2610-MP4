@@ -254,7 +254,7 @@ def test_tea01_upload_does_not_publish(app, tea01_database):
 def test_tea01_seed_is_idempotent_and_preserves_uploads(app, tea01_database):
     material = upload(app, "seed-safe.txt", b"keep my source").json()
     before = tea01_database.execute("SELECT count(*) FROM course_membership").fetchone()[0]
-    subprocess.run(["uv", "run", "python", "-m", "teacher_materials.seed"], cwd=Path(__file__).resolve().parents[1], env=os.environ.copy(), check=True)
+    subprocess.run([sys.executable, "-m", "teacher_materials.seed"], cwd=Path(__file__).resolve().parents[1], env=os.environ.copy(), check=True)
     assert tea01_database.execute("SELECT count(*) FROM course_membership").fetchone()[0] == before
     assert tea01_database.execute("SELECT title FROM material WHERE id=%s", (material["id"],)).fetchone()[0] == material["title"]
     assert call(app, "GET", f"{BASE}/materials/{material['id']}/file").content == b"keep my source"
