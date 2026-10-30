@@ -20,8 +20,40 @@ import {
 import { MessageCircle, RotateCcw, Send, Sparkles, X } from "lucide-react";
 import { lessons, navigation } from "../data";
 import { usePractice } from "../practice/PracticeContext";
+import { ApiError } from "../services/client";
+import { sendCompanionMessage } from "../services/companion";
 
-type Message = { from: "you" | "companion"; text: string };
+type Message = {
+  from: "you" | "companion";
+  text: string;
+  failed?: boolean;
+};
+const HISTORY_ITEMS = 4;
+
+// Fixed wording per failure; the raw server body is never shown.
+function failureMessage(error: unknown): string {
+  const e = error instanceof ApiError ? error : null;
+  const wait = e?.retryAfterSeconds;
+  if (e?.status === 429 && e.code === "rate_limited")
+    return wait
+      ? `You have sent a lot of messages. Please wait ${wait} seconds and try again.`
+      : "You have sent a lot of messages. Please wait a little and try again.";
+  if (e?.status === 429)
+    return wait
+      ? `The study companion is busy. Please try again in ${wait} seconds.`
+      : "The study companion is busy. Please try again shortly.";
+  if (e?.status === 401)
+    return "The study companion could not tell who you are. Please sign in again.";
+  if (e?.status === 404)
+    return "I could not find this practice page or attempt. Reload the page and try again.";
+  if (e?.status === 422)
+    return "That message could not be sent. Shorten it or clear the chat, then try again.";
+  if (e?.status === 502)
+    return "The study companion could not answer that. Please try again.";
+  if (e?.status === 503)
+    return "The study companion is unavailable right now. Please try again later.";
+  return "I could not reach the study companion. Check your connection and try again.";
+}
 type CompanionState = {
   open: boolean;
   setOpen: Dispatch<SetStateAction<boolean>>;
@@ -68,7 +100,11 @@ export default function StudyCompanion() {
   const { open, setOpen } = useCompanion();
   const [messages, setMessages] = useState<Message[]>([]);
   const [draft, setDraft] = useState("");
-  const { submitted } = usePractice();
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  // Bumped by "Clear chat" so a reply that arrives later is ignored.
+  const generation = useRef(0);
+  const { submitted, submittedAttemptId, setId } = usePractice();
   const location = useLocation();
   const path = location.pathname.split("/");
   const lesson =
@@ -102,18 +138,56 @@ export default function StudyCompanion() {
     document.addEventListener("keydown", close);
     return () => document.removeEventListener("keydown", close);
   }, [open, setOpen]);
-  const send = () => {
-    if (!draft.trim()) return;
+  const onPractice = path[2] === "practice";
+  const send = async () => {
+    const text = draft.trim();
+    if (!text || pending) return;
+    const history = messages
+      .filter((m) => !m.failed)
+      .slice(-HISTORY_ITEMS)
+      .map((m) => ({
+        role: m.from === "you" ? ("user" as const) : ("assistant" as const),
+        text: m.text,
+      }));
+    const run = ++generation.current;
+    setError(null);
+    setPending(true);
     setMessages((items) => [
-      ...items,
-      { from: "you", text: draft.trim() },
-      {
-        from: "companion",
-        text: `Preview only · You’re viewing ${page}. ${submitted ? "After submission, the full app will help explain the answers and your reasoning." : "Before whole-set submission, the full app will offer guiding questions and hints, never reveal or confirm answers."} No AI request was made.`,
-      },
+      ...items.filter((m) => !(m.failed && m.text === text)),
+      { from: "you", text },
     ]);
     setDraft("");
-    input.current?.focus();
+    try {
+      const result = await sendCompanionMessage({
+        message: text,
+        history,
+        context: {
+          page: onPractice ? "practice" : "other",
+          set_id: onPractice ? setId : null,
+          attempt_id: onPractice ? submittedAttemptId : null,
+          label: page.slice(0, 80),
+        },
+      });
+      if (run !== generation.current) return;
+      setMessages((items) => [
+        ...items,
+        { from: "companion", text: result.reply },
+      ]);
+    } catch (caught) {
+      if (run !== generation.current) return;
+      setMessages((items) =>
+        items.map((m, i) =>
+          i === items.length - 1 ? { ...m, failed: true } : m,
+        ),
+      );
+      setDraft((current) => current || text);
+      setError(failureMessage(caught));
+    } finally {
+      if (run === generation.current) {
+        setPending(false);
+        input.current?.focus();
+      }
+    }
   };
   return (
     <div className="companion-widget">
@@ -139,6 +213,9 @@ export default function StudyCompanion() {
                 aria-label="Clear chat"
                 size="small"
                 onClick={() => {
+                  generation.current++;
+                  setPending(false);
+                  setError(null);
                   setMessages([]);
                   setDraft("");
                   input.current?.focus();
@@ -177,20 +254,31 @@ export default function StudyCompanion() {
               </p>
               <small>
                 {submitted
-                  ? "Practice submitted · Explanations available in the full app"
+                  ? "Practice submitted · Ask about your attempt from the Practice page"
                   : "Hints only before whole-set submission"}
               </small>
             </div>
             {messages.map((message, index) => (
               <div key={index} className={`chat-message ${message.from}`}>
                 <span>
-                  {message.from === "you" ? "You" : "Study companion · Preview"}
+                  {message.from === "you" ? "You" : "Study companion"}
                 </span>
                 <p>{message.text}</p>
               </div>
             ))}
+            {pending && (
+              <div className="chat-message companion" role="status">
+                <span>Study companion</span>
+                <p>Thinking...</p>
+              </div>
+            )}
             <div ref={end} />
           </div>
+          {error && (
+            <p role="alert" className="companion-error">
+              {error}
+            </p>
+          )}
           <form
             className="companion-compose"
             onSubmit={(event) => {
@@ -203,19 +291,19 @@ export default function StudyCompanion() {
               label="Message your study companion"
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
-              inputProps={{ maxLength: 2000 }}
+              inputProps={{ maxLength: 1000 }}
             />
             <Button
               variant="contained"
               type="submit"
               aria-label="Send question"
-              disabled={!draft.trim()}
+              disabled={!draft.trim() || pending}
             >
               <Send size={18} />
             </Button>
           </form>
           <p className="companion-disclaimer">
-            UI preview · No AI connected · Messages reset on reload
+            AI study companion · Replies can be wrong · Messages reset on reload
           </p>
         </Paper>
       )}

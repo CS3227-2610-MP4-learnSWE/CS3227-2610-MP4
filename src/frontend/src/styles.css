@@ -3382,6 +3382,13 @@ td .MuiButton-root {
 .companion-compose .MuiInputLabel-root {
   font-size: 11px;
 }
+.companion-error {
+  margin: 0;
+  padding: 8px 14px;
+  font-size: 12px;
+  color: var(--red);
+  background: var(--red-soft);
+}
 .companion-disclaimer {
   font-size: 9px;
   color: var(--muted);
