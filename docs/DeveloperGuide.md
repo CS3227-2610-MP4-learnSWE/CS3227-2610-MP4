@@ -1,4 +1,4 @@
-# Developer Guide — App Shell Preview
+# Developer Guide — Current Preview
 
 ## Architecture and boundaries
 
@@ -10,7 +10,7 @@ The widget derives a current-page label from routes and sample lesson metadata o
 
 BrowserRouter enables direct URLs and history. For future production hosting, configure SPA fallback and route `/api` to FastAPI. Vite proxies `/api` locally to `API_PROXY_TARGET` (default `http://127.0.0.1:8000`). The health indicator and the student Practice page fetch backend data; the health check handles checking, successful JSON, failed/malformed responses and a four-second timeout. Practice calls go only through `services/client.ts` (the single place that sets `X-Student-Id` from `config.ts`, applies a 10 s timeout built with `setTimeout` and `AbortController`, and raises one `ApiError`) and the typed functions in `services/practice.ts`, which reject responses of the wrong shape. No UI action calls an AI service. The folder is not named `api/` because the Vite dev server would then serve `/src/api/...` modules, which the login test treats as API requests.
 
-FastAPI exposes `/api/health` and `/api/health/ready` (process-only semantics) and the STU-02 practice attempt API: `GET /api/practice-sets/{set_id}`, `POST /api/practice-sets/{set_id}/attempts`, `GET /api/attempts/{attempt_id}`, `PUT /api/attempts/{attempt_id}/answers`, `POST /api/attempts/{attempt_id}/submit` and `GET /api/attempts/{attempt_id}/results`. The student is identified by the placeholder `X-Student-Id` header (to be replaced by SHR-01 authentication); other students' attempts return 404. Attempts live in an in-memory store behind the `AttemptStore` interface; save and submit hold a per-attempt lock from the store so a save cannot land after a concurrent submit, and the header value is trimmed before use. Modules in `src/backend/`: `practice_data` (fixture and answer key), `practice_schemas`, `practice_logic` (validation and scoring), `practice_routes` (HTTP, shared header check) and `attempt_store`; `main.py` only wires the router. The key and explanations are released only in results of a submitted attempt. OpenAPI/docs are framework-generated. No database or real authentication dependency is present. PostgreSQL remains the agreed future database. Backend tests use HTTPX ASGI transport against the real application.
+FastAPI exposes `/api/health` and `/api/health/ready` (process-only semantics) and the STU-02 practice attempt API: `GET /api/practice-sets/{set_id}`, `POST /api/practice-sets/{set_id}/attempts`, `GET /api/attempts/{attempt_id}`, `PUT /api/attempts/{attempt_id}/answers`, `POST /api/attempts/{attempt_id}/submit` and `GET /api/attempts/{attempt_id}/results`. The student is identified by the placeholder `X-Student-Id` header (to be replaced by SHR-01 authentication); other students' attempts return 404. Attempts live in an in-memory store behind the `AttemptStore` interface; save and submit hold a per-attempt lock from the store so a save cannot land after a concurrent submit, and the header value is trimmed before use. Modules in `src/backend/`: `practice_data` (fixture and answer key), `practice_schemas`, `practice_logic` (validation and scoring), `practice_routes` (HTTP, shared header check) and `attempt_store`; `main.py` only wires the router. The key and explanations are released only in results of a submitted attempt. OpenAPI/docs are framework-generated; explicit documentation of the 401/403/404/409/422 application errors is still a follow-up. The planned check order is not guaranteed for malformed bodies: FastAPI can return 422 before handler-level checks (see the fair comparison record and security test log). No database or real authentication dependency is present. PostgreSQL remains the agreed future database. Backend tests use HTTPX ASGI transport against the real application.
 
 ## State and preview actions
 
@@ -28,11 +28,11 @@ Playwright exercises real UI behaviour with intercepted health responses. Backen
 
 ## Workflow records
 
-`workflow/AppShellPlan.md` records scope, execution decisions and verification. `logs/AppShellSummary.md` summarises the development conversation and tool outcomes. `logs/WorkflowScaffoldingSummary.md` records the design discussion for the multi-agent workflow, including the variants (A split verification, B merged verification, single-session baseline) that will be compared in planned experiments; no experiment has been run yet. `logs/TrackerAndExperimentSetupSummary.md` covers the token tracker, the STU-02 experiment setup and a review of earlier work. These are initial process artefacts, not a claim that all assignment requirements for multi-agent SE, context-engineering experiments or reflections have been completed. No deployment automation or product website is created in this phase.
+`workflow/AppShellPlan.md` records scope, execution decisions and verification. `logs/AppShellSummary.md` summarises the development conversation and tool outcomes. `logs/WorkflowScaffoldingSummary.md` records the design discussion for the multi-agent workflow, including the original plans for comparing A (split verification), B (merged verification) and a single-session baseline. Those experiments have since run; the fair comparison in `workflow/experiments/stu02/fair/` and the decision in `workflow/experiments/results/stu02-decision.md` are the current evidence. Variant B is the chosen workflow. `logs/TrackerAndExperimentSetupSummary.md` covers the token tracker, the STU-02 experiment setup and a review of earlier work. `logs/Stu02FrontendSpecSummary.md` records the frontend spec, build and two fix rounds; its later status update records PR 5 as merged. `logs/PostPr5DocsSummary.md` records the documentation reconciliation. PRs 1–5 are merged; STU-02 backend and frontend work with placeholder identity and an in-memory store. Latest recorded checks are 65 mocked browser tests, 60 backend tests and one real-backend test (not re-run in the documentation session). GitHub CI results were not independently checked during that session. Real login, persistence, the shared SoC LLM client, deployment and the remaining student features are unfinished. These records do not claim all submission requirements are complete.
 
 ## Workflow files
 
-Spec-driven, multi-agent scaffolding. Contents are templates and drafts until features are specified; see `workflow/README.md` for the index.
+Spec-driven, multi-agent workflow with approved STU-02 specs and completed experiment records; see `workflow/README.md` for the index. Feature specs distinguish implemented slices from future work.
 
 | File | Purpose |
 |---|---|
@@ -50,7 +50,7 @@ Spec-driven, multi-agent scaffolding. Contents are templates and drafts until fe
 | `workflow/checklist.md` | Setup and submission checklist. |
 | `.github/workflows/ci.yml` | Continuous integration on pull requests and pushes to `master` (plan: `workflow/specs/CI-01/plan.md`). |
 | `workflow/deployment.md` | Deployment options, the SoC LLM network question, and open hosting decisions. |
-| `docs/Reflections.md` | Reflection skeleton, to be filled from experiment results. |
+| `docs/Reflections.md` | Evidence-backed reflections on the workflow experiments and frontend run; remaining topics are marked still to do. |
 
 ## Acknowledgements
 

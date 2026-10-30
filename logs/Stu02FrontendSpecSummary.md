@@ -1,5 +1,7 @@
 # STU-02 frontend spec summary: 30 October 2026
 
+> Historical session record: “not pushed/no PR” statements below describe the time of each step. PR 5 is now merged; see the final status update.
+
 ## User direction
 Next step is the STU-02 frontend: connect the student Practice page to the real STU-02 API, remove student answer keys from the frontend, handle errors and backend-down, keep the companion and teacher pages working. Write the spec and plan on a new branch and show them before building with workflow B. Login and database are out of scope; use a placeholder student id.
 
@@ -21,3 +23,6 @@ At the user's request the developer fixed all five non-blocking items (N1-N5). T
 
 ## Wrong-answer UI fix (same day, same branch)
 The user reported that wrong answers looked green and said "Not quite". In one session, tests first, I made a wrong choice red-bordered, the correct choice green-bordered, a wrong answer's explanation red, and the summary banner amber unless perfect. Mocked suite 65/65. Not done: not pushed (the user will check locally first), not reviewed by the verifier, dark mode not checked by eye.
+
+## Merged status reconciled on 30 Oct 2026
+The user confirmed PR 5 merged, and git history confirms merge commit `4a9b541`, including the wrong-answer UI fix `48061d9`. Earlier push/PR blockers are superseded. The docs session reviewed the merged routes, practice state/page, locked-state tests, CI definition and historical records; it did not re-run product tests, inspect GitHub Actions results or check dark mode by eye. The previously reported leftover backend process was not inspected; its current status is unknown.
