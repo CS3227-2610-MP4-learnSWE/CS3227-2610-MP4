@@ -6,7 +6,7 @@ Newest entry first. Use `templates/handoff.md`. Older entries describe the state
 - Done: on the user's explicit OK, pushed only `feat/stu03-run-b` and opened [PR 8](https://github.com/CS3227-2610-MP4-learnSWE/CS3227-2610-MP4/pull/8) into `master`; attached it to this chat. Before pushing: only the two `.env.example` files are tracked and a search of the diff found no key-like strings. Earlier entries that say "not pushed" or "no PR exists" are superseded.
 - CI on PR 8 (read from GitHub): Backend tests, Frontend checks and browser tests, Workflow tool tests and Dependency audit passed. The Real backend end-to-end job failed, but its test passed ("1 passed"); the failure is in the job's cleanup: the `setup-uv` post step ran `uv cache prune --ci`, reported the cache in use by another uv process, and timed out after 300 s (exit 2). Likely cause: the backend started in the background by `nohup uv run uvicorn ...` is still running during cleanup. Not yet confirmed. The same job succeeded on earlier runs (master push at 09:22 UTC and the `exp/stu03-caps` PR runs), so this is new in this PR or a flake.
 - Next: user decides on a CI change (stop the backend in an `if: always()` step, or re-run the job first to see whether it recurs). No CI file has been changed.
-- Not verified: the cause of the lock; whether a re-run passes.
+- Update: the next run on `fcbadd3` (triggered by the notes push, no CI change) passed all 5 checks, so the failure did not recur once. The cause of the lock is still unconfirmed and one pass does not prove it is gone; the stop-backend step stays a proposal if it recurs.
 - Resource use: single session, no agents; token/cost not measured.
 
 ## 2026-10-30: companion message box shows a character count (single session, small UI fix)
