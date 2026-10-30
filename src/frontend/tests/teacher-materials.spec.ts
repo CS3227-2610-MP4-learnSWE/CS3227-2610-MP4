@@ -227,6 +227,10 @@ test("tea01 changing topic filter ignores a late unfiltered response", async ({
   page,
 }) => {
   await mockTeacherMaterialsApi(page);
+  await openMaterials(page);
+  await expect(page.getByText(OLD.title, { exact: true })).toBeVisible();
+  await choose(page, "Topic filter", "Testing");
+  await expect(page.getByText(OLD.title, { exact: true })).toHaveCount(0);
   let release!: () => void;
   const gate = new Promise<void>((resolve) => {
     release = resolve;
@@ -244,7 +248,7 @@ test("tea01 changing topic filter ignores a late unfiltered response", async ({
       completed++;
     },
   );
-  await openMaterials(page);
+  await choose(page, "Topic filter", "All topics");
   await expect.poll(() => held).toBeGreaterThan(0);
   await choose(page, "Topic filter", "Testing");
   await expect(page.getByText(NEW.title, { exact: true })).toBeVisible();
