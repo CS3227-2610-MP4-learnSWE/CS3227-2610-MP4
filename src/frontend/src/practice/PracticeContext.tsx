@@ -33,9 +33,12 @@ type PracticeState = {
   missing: string[];
   // Set when a failed submission cannot be edited any more (the server already holds the answers).
   locked: boolean;
+  // The attempt id while the results are shown, for the study companion. Null otherwise.
+  submittedAttemptId: string | null;
 };
 
 type Practice = PracticeState & {
+  setId: string;
   submitted: boolean;
   loadSet: () => void;
   choose: (questionId: string, choiceId: string) => void;
@@ -52,6 +55,7 @@ const initial: PracticeState = {
   message: null,
   missing: [],
   locked: false,
+  submittedAttemptId: null,
 };
 const Context = createContext<Practice | null>(null);
 
@@ -81,7 +85,13 @@ export function PracticeProvider({ children }: { children: ReactNode }) {
 
   const finish = async () => {
     const results = await getResults(attemptId.current!);
-    patch({ results, phase: "submitted", message: null, missing: [] });
+    patch({
+      results,
+      phase: "submitted",
+      message: null,
+      missing: [],
+      submittedAttemptId: attemptId.current,
+    });
   };
 
   // Runs the submission from the current step. Returns normally on success or a handled failure.
@@ -155,6 +165,7 @@ export function PracticeProvider({ children }: { children: ReactNode }) {
 
   const value: Practice = {
     ...state,
+    setId: PRACTICE_SET_ID,
     submitted: state.phase === "submitted",
     loadSet,
     choose: (questionId, choiceId) =>
