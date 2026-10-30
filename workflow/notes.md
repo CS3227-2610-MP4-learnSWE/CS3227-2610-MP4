@@ -2,6 +2,13 @@
 
 Newest entry first. Use `templates/handoff.md`. Older entries describe the state at the time; the newest entry supersedes their open/merged status.
 
+## 2026-10-30: TEA-01 started (orchestrator)
+- Done: created `feat/tea01-materials` from clean `e544ea5`; user explicitly approved implementation of the teacher increment plan. Spec-writer is creating detailed TEA-01 contracts before app code.
+- Decisions: persistent PostgreSQL metadata/private local files; PDF/UTF-8 text up to 10 MiB; development-only identity opt-in; no real login, AI, publication or student persistence changes.
+- Next: commit approved-scope spec/plan/tasks/shared contract, record start commit, dispatch developer and independent test-designer in separate worktrees, then verifier.
+- Open: exact app/DB startup verification pending. PR publication/merge requires human approval.
+- Resource use: Codex orchestrator + gpt-6-sol spec-writer; exact token/cost totals unavailable.
+
 ## 2026-10-30: documentation PR published (single session, orchestrator)
 - Done: user approved opening the PR. Committed the eleven reviewed Markdown files as `de5c9bb`, pushed only `docs/post-pr5-status`, and opened [PR 6](https://github.com/CS3227-2610-MP4-learnSWE/CS3227-2610-MP4/pull/6) into `master`; attached it to this chat. The earlier "no commit/push/PR" entry describes the pre-approval state.
 - Verification: branch and changed-file list checked; `git diff --check` passed before commit. Push and PR creation succeeded. No product tests or live LLM calls; GitHub CI result not yet verified. Publishing evidence and this handoff are recorded in a follow-up docs commit on the same PR.
