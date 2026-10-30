@@ -2,6 +2,11 @@
 
 Newest entry first. Use `templates/handoff.md`.
 
+## 2026-10-30: wrong answers shown clearly (single session, small UI fix on PR 5)
+- Done: at the user's request, on the same branch `feat/stu02-frontend-run-b` (PR 5 still open, not merged): after submission the chosen wrong choice has a red border and background, the correct choice a green one, a wrong answer's explanation block is red, and the score banner is amber (not green) unless the set is perfect. Tests first (`tests/practice-wrong-answer.spec.ts`, 3 tests, failed before the change), then `pages/Practice.tsx` and `styles.css` (new `--red`, `--red-soft`, light and dark). Full mocked suite 65/65, typecheck, lint, prettier (LF) pass; checked on a screenshot.
+- Single session, no agents (small UI fix). Not independently verified by the verifier. Not pushed: committed locally for the user to check first.
+- Open: dark mode red/green contrast not checked by eye; colour is not the only cue (the explanation text says "Not quite" and names both answers).
+
 ## 2026-10-30: STU-02 frontend built with Variant B (verifier passed after 1 fix round)
 - Done: run branch `feat/stu02-frontend-run-b` (from the approved spec `e35c376`, HEAD `4995bd7`, not pushed). Developer built the Practice page on the real API (`src/services`, `practice/PracticeContext.tsx`, `pages/Practice.tsx`), moved the teacher demo answers to `teacherDemo.ts`, loaded Teacher and Admin lazily, wrote the real-backend test and CI job, and updated UserGuide, DeveloperGuide and the security log. Test-designer (own worktree, spec and contract only) wrote 36 mocked tests plus a shared API mock. Verifier round 1: FAIL with 2 blocking defects (404 `attempt_not_found` at the results step never recovered; the all-roles route test timed out under default workers); developer fixed both plus six non-blocking items; the re-check passed.
 - Verified by the verifier (re-run, not only read): typecheck, lint, prettier on LF content, build and bundle scan, mocked suite 57/57 twice with default workers, backend 60/60, real-backend test 1/1.

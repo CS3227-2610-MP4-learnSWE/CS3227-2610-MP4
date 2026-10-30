@@ -18,3 +18,6 @@ No code written and nothing committed or pushed. The spec and plan are drafts wi
 
 ## Fix round 2 (same day)
 At the user's request the developer fixed all five non-blocking items (N1-N5). The verifier's final re-check passed at `d1f8392`: mocked suite 62/62 twice, backend 60/60, real backend 1/1, and the CI bundle-scan script run locally against five cases. Revision rounds used: 2 of 2. Still not done: nothing is pushed, no PR, CI has not run on GitHub, and the leftover backend on port 8000 is still running. Two developer reports did not reach the orchestrator again; results come from the verifier's re-runs.
+
+## Wrong-answer UI fix (same day, same branch)
+The user reported that wrong answers looked green and said "Not quite". In one session, tests first, I made a wrong choice red-bordered, the correct choice green-bordered, a wrong answer's explanation red, and the summary banner amber unless perfect. Mocked suite 65/65. Not done: not pushed (the user will check locally first), not reviewed by the verifier, dark mode not checked by eye.

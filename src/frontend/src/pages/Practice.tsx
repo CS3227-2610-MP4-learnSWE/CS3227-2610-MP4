@@ -102,7 +102,14 @@ export default function Practice() {
             </Alert>
           )}
           {results && (
-            <Alert severity="success" sx={{ my: 2 }}>
+            <Alert
+              severity={
+                results.score.correct === results.score.total
+                  ? "success"
+                  : "warning"
+              }
+              sx={{ my: 2 }}
+            >
               <h2 className="result-title">
                 {results.score.correct} / {results.score.total} —{" "}
                 {results.score.correct === results.score.total
@@ -117,6 +124,11 @@ export default function Practice() {
             const result = resultOf(q.id);
             const textOf = (id: string) =>
               q.choices.find((c) => c.id === id)?.text ?? "";
+            const optionState = (id: string) => {
+              if (!result) return choices[q.id] === id ? "selected" : "";
+              if (id === result.correct_choice) return "correct";
+              return id === result.selected ? "wrong" : "";
+            };
             return (
               <Panel key={q.id} className="question-panel">
                 <div className="question-number">
@@ -136,7 +148,7 @@ export default function Practice() {
                 >
                   {q.choices.map((c) => (
                     <FormControlLabel
-                      className={`answer-option ${choices[q.id] === c.id ? "selected" : ""}`}
+                      className={`answer-option ${optionState(c.id)}`}
                       value={c.id}
                       key={c.id}
                       control={<Radio size="small" />}
@@ -146,7 +158,7 @@ export default function Practice() {
                   ))}
                 </RadioGroup>
                 {result && (
-                  <div className="solution">
+                  <div className={`solution ${result.correct ? "" : "wrong"}`}>
                     <strong>
                       {result.correct ? "Correct" : "Not quite"} · Your answer:{" "}
                       {textOf(result.selected)}
