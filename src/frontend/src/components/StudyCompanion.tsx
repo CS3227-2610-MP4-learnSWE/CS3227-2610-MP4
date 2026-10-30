@@ -28,6 +28,7 @@ type Message = {
   text: string;
   failed?: boolean;
 };
+const MAX_MESSAGE_CHARS = 1000;
 const HISTORY_ITEMS = 4;
 
 // Fixed wording per failure; the raw server body is never shown.
@@ -291,7 +292,12 @@ export default function StudyCompanion() {
               label="Message your study companion"
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
-              inputProps={{ maxLength: 1000 }}
+              inputProps={{ maxLength: MAX_MESSAGE_CHARS }}
+              helperText={
+                draft.length >= MAX_MESSAGE_CHARS
+                  ? `${draft.length} / ${MAX_MESSAGE_CHARS} · Message limit reached, extra text was not added`
+                  : `${draft.length} / ${MAX_MESSAGE_CHARS}`
+              }
             />
             <Button
               variant="contained"

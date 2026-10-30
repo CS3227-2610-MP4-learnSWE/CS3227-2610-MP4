@@ -2,6 +2,13 @@
 
 Newest entry first. Use `templates/handoff.md`. Older entries describe the state at the time; the newest entry supersedes their open/merged status.
 
+## 2026-10-30: companion message box shows a character count (single session, small UI fix)
+- Done: after the user's live paste of more than 1,000 characters got a normal reply (the input's `maxLength` had silently cut the text before sending), the widget now shows "n / 1000" under the box and a note ("Message limit reached, extra text was not added") at the limit. Tests first: `src/frontend/tests/companion-limit.spec.ts` (4 tests, orchestrator-written, failed before the change), then `StudyCompanion.tsx` (`MAX_MESSAGE_CHARS`, `helperText`). Spec AC36, UserGuide sentence updated.
+- Verification: new tests 4/4; full mocked Playwright suite 92 passed (88 + 4); typecheck, lint and prettier (`--end-of-line auto`) clean. Backend untouched (327 passed earlier, not re-run). Not checked by eye in a browser; no verifier review of this change; CI not run.
+- Correction: my earlier check table said a message over 1,000 characters would give a "too long" error; through the widget it never does, because the box cuts the text first. The server's 422 for over-long messages is unchanged and tested at the API level.
+- Next: user decides whether to commit; nothing is committed for this change or pushed.
+- Resource use: single session, no agents, no retries beyond a CRLF handling fix in a helper script; token/cost not measured.
+
 ## 2026-10-30: first live use of the STU-03 companion (user-run, single session)
 - Done: the user ran the app locally with a real key (backend started with `uv run --env-file .env`, `.env` in `src/backend`, ignored by git) and pasted four hint exchanges. I read them against the answer key; no live call was made by me. Found: the backend does not load `.env` by itself (no dotenv); `docs/DeveloperGuide.md` implies it does and has not been corrected.
 - Observed: replies were short and named no letter, but effectively stated the concept the question asks for (Q1, Q2, Q3). Decision (user): keep the current hint behaviour for now; a graded two-rung ladder on the existing 4-message history was discussed and not adopted. Recorded in `spec.md` (item k) and the security log.
