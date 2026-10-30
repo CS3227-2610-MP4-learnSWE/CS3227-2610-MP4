@@ -48,6 +48,13 @@ jobs:
       - run: npm run lint
       - run: npm run format:check
       - run: npm run build
+      - name: Student bundles hold no answer key
+        run: |
+          # Explanation texts may appear only in the lazy Teacher chunk.
+          if grep -l -e "Tests protect expected behaviour" -e "len returns the number of items" -e "One focused responsibility makes" dist/assets/index-*.js dist/assets/Admin-*.js dist/assets/*vendor*.js; then
+            echo "Answer key text found in a student-reachable bundle"
+            exit 1
+          fi
       - run: npx playwright install --with-deps chromium
       - run: npm test
       - name: Upload Playwright report on failure
@@ -61,6 +68,7 @@ jobs:
   real-backend:
     name: Real backend end-to-end
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
@@ -94,6 +102,9 @@ jobs:
         env:
           REAL_BACKEND: "1"
         run: npx playwright test --project=real-backend
+      - name: Print backend log on failure
+        if: failure()
+        run: cat "$RUNNER_TEMP/backend.log" || true
       - name: Upload Playwright report on failure
         if: failure()
         uses: actions/upload-artifact@v4
