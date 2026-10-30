@@ -6,11 +6,18 @@ export class ApiError extends Error {
   status: number;
   code: string;
   missing: string[];
-  constructor(status: number, code = "", missing: string[] = []) {
+  retryAfterSeconds: number | null;
+  constructor(
+    status: number,
+    code = "",
+    missing: string[] = [],
+    retryAfterSeconds: number | null = null,
+  ) {
     super(code || `HTTP ${status}`);
     this.status = status;
     this.code = code;
     this.missing = missing;
+    this.retryAfterSeconds = retryAfterSeconds;
   }
 }
 
@@ -19,9 +26,13 @@ export async function request(
   method: string,
   path: string,
   body?: unknown,
+  options: { timeoutMs?: number } = {},
 ): Promise<unknown> {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  const timer = setTimeout(
+    () => controller.abort(),
+    options.timeoutMs ?? REQUEST_TIMEOUT_MS,
+  );
   try {
     const response = await fetch(path, {
       method,
@@ -40,12 +51,21 @@ export async function request(
     }
     if (!response.ok) {
       const detail = (data as { detail?: unknown } | undefined)?.detail as
-        { code?: unknown; missing?: unknown } | undefined;
+        | { code?: unknown; missing?: unknown; retry_after_seconds?: unknown }
+        | undefined;
       const code = typeof detail?.code === "string" ? detail.code : "";
       const missing = Array.isArray(detail?.missing)
         ? detail.missing.filter((id): id is string => typeof id === "string")
         : [];
-      throw new ApiError(response.status, code, missing);
+      const retry = detail?.retry_after_seconds;
+      throw new ApiError(
+        response.status,
+        code,
+        missing,
+        typeof retry === "number" && Number.isInteger(retry) && retry > 0
+          ? retry
+          : null,
+      );
     }
     if (data === undefined) throw new ApiError(0, "bad_response");
     return data;
