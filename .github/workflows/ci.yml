@@ -51,7 +51,12 @@ jobs:
       - name: Student bundles hold no answer key
         run: |
           # Explanation texts may appear only in the lazy Teacher chunk.
-          if grep -l -e "Tests protect expected behaviour" -e "len returns the number of items" -e "One focused responsibility makes" dist/assets/index-*.js dist/assets/Admin-*.js dist/assets/*vendor*.js; then
+          pattern="Tests protect expected behaviour|len returns the number of items|One focused responsibility makes"
+          chunks=$(ls dist/assets/*.js | grep -v '/Teacher-')
+          [ -n "$chunks" ] || { echo "No bundles found to scan"; exit 1; }
+          # Positive control: the scan must find the text where it is expected.
+          grep -Eq "$pattern" dist/assets/Teacher-*.js || { echo "Control failed: Teacher chunk has no explanation text"; exit 1; }
+          if grep -El "$pattern" $chunks; then
             echo "Answer key text found in a student-reachable bundle"
             exit 1
           fi
