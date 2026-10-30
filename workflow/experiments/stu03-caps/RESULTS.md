@@ -46,6 +46,12 @@ Cost per call with the short-answer instruction, averaged over the caps where it
 - Against our first guess (standard instruction, history 4, caps up to 400: hint $0.000218, explain $0.000378, help $0.000217 per call), the recommended setup (short-answer instruction, caps 100 / 200 / 150, 4 history messages) costs $0.000169, $0.000192 and $0.000150: about 22%, 49% and 31% less. With 2 history messages it would be $0.000150, $0.000178 and $0.000137, and with none $0.000131, $0.000154 and $0.000132.
 - Decision (user): 4 history messages, kept for usefulness to students in a continuing conversation, not on measured benefit (our test questions were independent, so a benefit for follow-ups is assumed, not shown). It costs 14% to 29% more per call than no history (about $0.00002 to $0.00004). It stays a single setting in the shared client so it can be changed later.
 
+## How the caps were picked
+The full grid is in `results/phase6-grid.md` (and `.json`): every combination of mode, output cap, instruction and history, as replies passing (of 3 questions) and $ per 1,000 calls, regenerated with `python -I analyze6.py results --hint-no-question --grid`. Each cell rests on only 3 replies, so single cells are noisy; read the pooled rows and the trends.
+
+Rule for the recommended output cap: the larger of (a) the smallest cap where all 9 replies passed with the short-answer instruction (hint 60, explain 150, help 100) and (b) about twice the longest finished reply seen with that instruction at caps of 250 or more (hint 46, explain 80, help 68 tokens), rounded up. That gives hint 100, explain 200, help 150, so a longer-than-usual reply is not cut off. Explain 200 was not itself tested; 150 and 250 both passed 9 of 9. History was chosen separately (see the combination section above and the user's decision).
+
+## Recommended caps (for the STU-03 spec)
 | Cap | Recommended | Evidence |
 |---|---|---|
 | Answer-length instruction | Short-answer ("at most 3 short sentences, no markdown") in all modes | Cuts cost per call by about 22% (hint), 57% (explain), 33% (help) and reduces markdown. Thinner explanations: check the sample below. |

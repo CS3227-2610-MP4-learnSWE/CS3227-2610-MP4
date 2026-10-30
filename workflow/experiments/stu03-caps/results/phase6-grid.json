@@ -1,0 +1,728 @@
+{
+ "hint": [
+  {
+   "cap": 40,
+   "instruction": "short-answer",
+   "history": 0,
+   "passed": 2,
+   "n": 3,
+   "cost_per_1000": 0.127
+  },
+  {
+   "cap": 40,
+   "instruction": "short-answer",
+   "history": 2,
+   "passed": 2,
+   "n": 3,
+   "cost_per_1000": 0.149
+  },
+  {
+   "cap": 40,
+   "instruction": "short-answer",
+   "history": 4,
+   "passed": 3,
+   "n": 3,
+   "cost_per_1000": 0.16
+  },
+  {
+   "cap": 40,
+   "instruction": "standard",
+   "history": 0,
+   "passed": 1,
+   "n": 3,
+   "cost_per_1000": 0.126
+  },
+  {
+   "cap": 40,
+   "instruction": "standard",
+   "history": 2,
+   "passed": 0,
+   "n": 3,
+   "cost_per_1000": 0.151
+  },
+  {
+   "cap": 40,
+   "instruction": "standard",
+   "history": 4,
+   "passed": 0,
+   "n": 3,
+   "cost_per_1000": 0.166
+  },
+  {
+   "cap": 60,
+   "instruction": "short-answer",
+   "history": 0,
+   "passed": 3,
+   "n": 3,
+   "cost_per_1000": 0.128
+  },
+  {
+   "cap": 60,
+   "instruction": "short-answer",
+   "history": 2,
+   "passed": 3,
+   "n": 3,
+   "cost_per_1000": 0.161
+  },
+  {
+   "cap": 60,
+   "instruction": "short-answer",
+   "history": 4,
+   "passed": 3,
+   "n": 3,
+   "cost_per_1000": 0.17
+  },
+  {
+   "cap": 60,
+   "instruction": "standard",
+   "history": 0,
+   "passed": 2,
+   "n": 3,
+   "cost_per_1000": 0.161
+  },
+  {
+   "cap": 60,
+   "instruction": "standard",
+   "history": 2,
+   "passed": 2,
+   "n": 3,
+   "cost_per_1000": 0.165
+  },
+  {
+   "cap": 60,
+   "instruction": "standard",
+   "history": 4,
+   "passed": 2,
+   "n": 3,
+   "cost_per_1000": 0.166
+  },
+  {
+   "cap": 100,
+   "instruction": "short-answer",
+   "history": 0,
+   "passed": 3,
+   "n": 3,
+   "cost_per_1000": 0.119
+  },
+  {
+   "cap": 100,
+   "instruction": "short-answer",
+   "history": 2,
+   "passed": 3,
+   "n": 3,
+   "cost_per_1000": 0.147
+  },
+  {
+   "cap": 100,
+   "instruction": "short-answer",
+   "history": 4,
+   "passed": 3,
+   "n": 3,
+   "cost_per_1000": 0.168
+  },
+  {
+   "cap": 100,
+   "instruction": "standard",
+   "history": 0,
+   "passed": 1,
+   "n": 3,
+   "cost_per_1000": 0.189
+  },
+  {
+   "cap": 100,
+   "instruction": "standard",
+   "history": 2,
+   "passed": 2,
+   "n": 3,
+   "cost_per_1000": 0.222
+  },
+  {
+   "cap": 100,
+   "instruction": "standard",
+   "history": 4,
+   "passed": 2,
+   "n": 3,
+   "cost_per_1000": 0.201
+  },
+  {
+   "cap": 150,
+   "instruction": "short-answer",
+   "history": 0,
+   "passed": 3,
+   "n": 3,
+   "cost_per_1000": 0.15
+  },
+  {
+   "cap": 150,
+   "instruction": "short-answer",
+   "history": 2,
+   "passed": 3,
+   "n": 3,
+   "cost_per_1000": 0.148
+  },
+  {
+   "cap": 150,
+   "instruction": "short-answer",
+   "history": 4,
+   "passed": 3,
+   "n": 3,
+   "cost_per_1000": 0.171
+  },
+  {
+   "cap": 150,
+   "instruction": "standard",
+   "history": 0,
+   "passed": 3,
+   "n": 3,
+   "cost_per_1000": 0.232
+  },
+  {
+   "cap": 150,
+   "instruction": "standard",
+   "history": 2,
+   "passed": 2,
+   "n": 3,
+   "cost_per_1000": 0.123
+  },
+  {
+   "cap": 150,
+   "instruction": "standard",
+   "history": 4,
+   "passed": 3,
+   "n": 3,
+   "cost_per_1000": 0.205
+  },
+  {
+   "cap": 250,
+   "instruction": "short-answer",
+   "history": 0,
+   "passed": 3,
+   "n": 3,
+   "cost_per_1000": 0.128
+  },
+  {
+   "cap": 250,
+   "instruction": "short-answer",
+   "history": 2,
+   "passed": 3,
+   "n": 3,
+   "cost_per_1000": 0.145
+  },
+  {
+   "cap": 250,
+   "instruction": "short-answer",
+   "history": 4,
+   "passed": 3,
+   "n": 3,
+   "cost_per_1000": 0.166
+  },
+  {
+   "cap": 250,
+   "instruction": "standard",
+   "history": 0,
+   "passed": 3,
+   "n": 3,
+   "cost_per_1000": 0.201
+  },
+  {
+   "cap": 250,
+   "instruction": "standard",
+   "history": 2,
+   "passed": 2,
+   "n": 3,
+   "cost_per_1000": 0.199
+  },
+  {
+   "cap": 250,
+   "instruction": "standard",
+   "history": 4,
+   "passed": 3,
+   "n": 3,
+   "cost_per_1000": 0.231
+  }
+ ],
+ "explain": [
+  {
+   "cap": 60,
+   "instruction": "short-answer",
+   "history": 0,
+   "passed": 1,
+   "n": 3,
+   "cost_per_1000": 0.148
+  },
+  {
+   "cap": 60,
+   "instruction": "short-answer",
+   "history": 2,
+   "passed": 2,
+   "n": 3,
+   "cost_per_1000": 0.17
+  },
+  {
+   "cap": 60,
+   "instruction": "short-answer",
+   "history": 4,
+   "passed": 2,
+   "n": 3,
+   "cost_per_1000": 0.186
+  },
+  {
+   "cap": 60,
+   "instruction": "standard",
+   "history": 0,
+   "passed": 0,
+   "n": 3,
+   "cost_per_1000": 0.148
+  },
+  {
+   "cap": 60,
+   "instruction": "standard",
+   "history": 2,
+   "passed": 0,
+   "n": 3,
+   "cost_per_1000": 0.168
+  },
+  {
+   "cap": 60,
+   "instruction": "standard",
+   "history": 4,
+   "passed": 0,
+   "n": 3,
+   "cost_per_1000": 0.183
+  },
+  {
+   "cap": 100,
+   "instruction": "short-answer",
+   "history": 0,
+   "passed": 2,
+   "n": 3,
+   "cost_per_1000": 0.161
+  },
+  {
+   "cap": 100,
+   "instruction": "short-answer",
+   "history": 2,
+   "passed": 1,
+   "n": 3,
+   "cost_per_1000": 0.151
+  },
+  {
+   "cap": 100,
+   "instruction": "short-answer",
+   "history": 4,
+   "passed": 2,
+   "n": 3,
+   "cost_per_1000": 0.18
+  },
+  {
+   "cap": 100,
+   "instruction": "standard",
+   "history": 0,
+   "passed": 0,
+   "n": 3,
+   "cost_per_1000": 0.211
+  },
+  {
+   "cap": 100,
+   "instruction": "standard",
+   "history": 2,
+   "passed": 0,
+   "n": 3,
+   "cost_per_1000": 0.23
+  },
+  {
+   "cap": 100,
+   "instruction": "standard",
+   "history": 4,
+   "passed": 0,
+   "n": 3,
+   "cost_per_1000": 0.245
+  },
+  {
+   "cap": 150,
+   "instruction": "short-answer",
+   "history": 0,
+   "passed": 3,
+   "n": 3,
+   "cost_per_1000": 0.16
+  },
+  {
+   "cap": 150,
+   "instruction": "short-answer",
+   "history": 2,
+   "passed": 3,
+   "n": 3,
+   "cost_per_1000": 0.177
+  },
+  {
+   "cap": 150,
+   "instruction": "short-answer",
+   "history": 4,
+   "passed": 3,
+   "n": 3,
+   "cost_per_1000": 0.19
+  },
+  {
+   "cap": 150,
+   "instruction": "standard",
+   "history": 0,
+   "passed": 0,
+   "n": 3,
+   "cost_per_1000": 0.289
+  },
+  {
+   "cap": 150,
+   "instruction": "standard",
+   "history": 2,
+   "passed": 0,
+   "n": 3,
+   "cost_per_1000": 0.309
+  },
+  {
+   "cap": 150,
+   "instruction": "standard",
+   "history": 4,
+   "passed": 1,
+   "n": 3,
+   "cost_per_1000": 0.312
+  },
+  {
+   "cap": 250,
+   "instruction": "short-answer",
+   "history": 0,
+   "passed": 3,
+   "n": 3,
+   "cost_per_1000": 0.151
+  },
+  {
+   "cap": 250,
+   "instruction": "short-answer",
+   "history": 2,
+   "passed": 3,
+   "n": 3,
+   "cost_per_1000": 0.179
+  },
+  {
+   "cap": 250,
+   "instruction": "short-answer",
+   "history": 4,
+   "passed": 3,
+   "n": 3,
+   "cost_per_1000": 0.188
+  },
+  {
+   "cap": 250,
+   "instruction": "standard",
+   "history": 0,
+   "passed": 1,
+   "n": 3,
+   "cost_per_1000": 0.376
+  },
+  {
+   "cap": 250,
+   "instruction": "standard",
+   "history": 2,
+   "passed": 1,
+   "n": 3,
+   "cost_per_1000": 0.417
+  },
+  {
+   "cap": 250,
+   "instruction": "standard",
+   "history": 4,
+   "passed": 2,
+   "n": 3,
+   "cost_per_1000": 0.426
+  },
+  {
+   "cap": 400,
+   "instruction": "short-answer",
+   "history": 0,
+   "passed": 3,
+   "n": 3,
+   "cost_per_1000": 0.15
+  },
+  {
+   "cap": 400,
+   "instruction": "short-answer",
+   "history": 2,
+   "passed": 3,
+   "n": 3,
+   "cost_per_1000": 0.179
+  },
+  {
+   "cap": 400,
+   "instruction": "short-answer",
+   "history": 4,
+   "passed": 3,
+   "n": 3,
+   "cost_per_1000": 0.199
+  },
+  {
+   "cap": 400,
+   "instruction": "standard",
+   "history": 0,
+   "passed": 3,
+   "n": 3,
+   "cost_per_1000": 0.307
+  },
+  {
+   "cap": 400,
+   "instruction": "standard",
+   "history": 2,
+   "passed": 3,
+   "n": 3,
+   "cost_per_1000": 0.538
+  },
+  {
+   "cap": 400,
+   "instruction": "standard",
+   "history": 4,
+   "passed": 3,
+   "n": 3,
+   "cost_per_1000": 0.378
+  }
+ ],
+ "help": [
+  {
+   "cap": 60,
+   "instruction": "short-answer",
+   "history": 0,
+   "passed": 2,
+   "n": 3,
+   "cost_per_1000": 0.126
+  },
+  {
+   "cap": 60,
+   "instruction": "short-answer",
+   "history": 2,
+   "passed": 1,
+   "n": 3,
+   "cost_per_1000": 0.148
+  },
+  {
+   "cap": 60,
+   "instruction": "short-answer",
+   "history": 4,
+   "passed": 2,
+   "n": 3,
+   "cost_per_1000": 0.153
+  },
+  {
+   "cap": 60,
+   "instruction": "standard",
+   "history": 0,
+   "passed": 1,
+   "n": 3,
+   "cost_per_1000": 0.125
+  },
+  {
+   "cap": 60,
+   "instruction": "standard",
+   "history": 2,
+   "passed": 2,
+   "n": 3,
+   "cost_per_1000": 0.131
+  },
+  {
+   "cap": 60,
+   "instruction": "standard",
+   "history": 4,
+   "passed": 2,
+   "n": 3,
+   "cost_per_1000": 0.149
+  },
+  {
+   "cap": 100,
+   "instruction": "short-answer",
+   "history": 0,
+   "passed": 3,
+   "n": 3,
+   "cost_per_1000": 0.141
+  },
+  {
+   "cap": 100,
+   "instruction": "short-answer",
+   "history": 2,
+   "passed": 3,
+   "n": 3,
+   "cost_per_1000": 0.141
+  },
+  {
+   "cap": 100,
+   "instruction": "short-answer",
+   "history": 4,
+   "passed": 3,
+   "n": 3,
+   "cost_per_1000": 0.149
+  },
+  {
+   "cap": 100,
+   "instruction": "standard",
+   "history": 0,
+   "passed": 1,
+   "n": 3,
+   "cost_per_1000": 0.171
+  },
+  {
+   "cap": 100,
+   "instruction": "standard",
+   "history": 2,
+   "passed": 3,
+   "n": 3,
+   "cost_per_1000": 0.168
+  },
+  {
+   "cap": 100,
+   "instruction": "standard",
+   "history": 4,
+   "passed": 1,
+   "n": 3,
+   "cost_per_1000": 0.211
+  },
+  {
+   "cap": 150,
+   "instruction": "short-answer",
+   "history": 0,
+   "passed": 3,
+   "n": 3,
+   "cost_per_1000": 0.125
+  },
+  {
+   "cap": 150,
+   "instruction": "short-answer",
+   "history": 2,
+   "passed": 3,
+   "n": 3,
+   "cost_per_1000": 0.139
+  },
+  {
+   "cap": 150,
+   "instruction": "short-answer",
+   "history": 4,
+   "passed": 3,
+   "n": 3,
+   "cost_per_1000": 0.157
+  },
+  {
+   "cap": 150,
+   "instruction": "standard",
+   "history": 0,
+   "passed": 1,
+   "n": 3,
+   "cost_per_1000": 0.225
+  },
+  {
+   "cap": 150,
+   "instruction": "standard",
+   "history": 2,
+   "passed": 2,
+   "n": 3,
+   "cost_per_1000": 0.237
+  },
+  {
+   "cap": 150,
+   "instruction": "standard",
+   "history": 4,
+   "passed": 3,
+   "n": 3,
+   "cost_per_1000": 0.173
+  },
+  {
+   "cap": 250,
+   "instruction": "short-answer",
+   "history": 0,
+   "passed": 2,
+   "n": 3,
+   "cost_per_1000": 0.131
+  },
+  {
+   "cap": 250,
+   "instruction": "short-answer",
+   "history": 2,
+   "passed": 3,
+   "n": 3,
+   "cost_per_1000": 0.138
+  },
+  {
+   "cap": 250,
+   "instruction": "short-answer",
+   "history": 4,
+   "passed": 3,
+   "n": 3,
+   "cost_per_1000": 0.147
+  },
+  {
+   "cap": 250,
+   "instruction": "standard",
+   "history": 0,
+   "passed": 3,
+   "n": 3,
+   "cost_per_1000": 0.306
+  },
+  {
+   "cap": 250,
+   "instruction": "standard",
+   "history": 2,
+   "passed": 3,
+   "n": 3,
+   "cost_per_1000": 0.142
+  },
+  {
+   "cap": 250,
+   "instruction": "standard",
+   "history": 4,
+   "passed": 3,
+   "n": 3,
+   "cost_per_1000": 0.233
+  },
+  {
+   "cap": 400,
+   "instruction": "short-answer",
+   "history": 0,
+   "passed": 3,
+   "n": 3,
+   "cost_per_1000": 0.13
+  },
+  {
+   "cap": 400,
+   "instruction": "short-answer",
+   "history": 2,
+   "passed": 3,
+   "n": 3,
+   "cost_per_1000": 0.132
+  },
+  {
+   "cap": 400,
+   "instruction": "short-answer",
+   "history": 4,
+   "passed": 3,
+   "n": 3,
+   "cost_per_1000": 0.148
+  },
+  {
+   "cap": 400,
+   "instruction": "standard",
+   "history": 0,
+   "passed": 3,
+   "n": 3,
+   "cost_per_1000": 0.266
+  },
+  {
+   "cap": 400,
+   "instruction": "standard",
+   "history": 2,
+   "passed": 3,
+   "n": 3,
+   "cost_per_1000": 0.167
+  },
+  {
+   "cap": 400,
+   "instruction": "standard",
+   "history": 4,
+   "passed": 3,
+   "n": 3,
+   "cost_per_1000": 0.202
+  }
+ ]
+}

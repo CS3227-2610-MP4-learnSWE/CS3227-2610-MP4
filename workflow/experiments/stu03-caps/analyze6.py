@@ -33,6 +33,35 @@ def fit_prices(folder: Path) -> tuple[float, float]:
     return pin, pout
 
 
+def write_grid(folder: Path, data: list[dict], pin: float, pout: float) -> None:
+    """Every combination (mode x cap x instruction x history): replies passing out of 3 and $ per 1,000 calls."""
+    grid = {}
+    for mode in ("hint", "explain", "help"):
+        cells = defaultdict(list)
+        for r in (x for x in data if x["mode"] == mode):
+            cells[(r["max_tokens"], r["style"], r["history_msgs"])].append(r)
+        grid[mode] = [
+            dict(cap=cap, instruction="short-answer" if style == "brief" else "standard", history=h, passed=sum(x["useful"] for x in g), n=len(g),
+                 cost_per_1000=round(1000 * sum(x["usage"]["prompt_tokens"] * pin + x["usage"]["completion_tokens"] * pout for x in g) / len(g), 3))
+            for (cap, style, h), g in sorted(cells.items())
+        ]
+    (folder / "phase6-grid.json").write_text(json.dumps(grid, indent=1), encoding="utf-8")
+    lines = ["# Phase 6: every combination", "",
+             "Cell: replies passing the usefulness rule (of 3 questions) and cost in $ per 1,000 calls (prices fitted from the dashboard). Hint uses the relaxed rule (no question mark required).", ""]
+    for mode, rows_ in grid.items():
+        lines += [f"## {mode}", "", "| Cap | Standard, history 0 | Standard, history 2 | Standard, history 4 | Short-answer, history 0 | Short-answer, history 2 | Short-answer, history 4 |", "|---|---|---|---|---|---|---|"]
+        for cap in sorted({r["cap"] for r in rows_}):
+            cells_ = []
+            for inst in ("standard", "short-answer"):
+                for h in (0, 2, 4):
+                    c = next(r for r in rows_ if r["cap"] == cap and r["instruction"] == inst and r["history"] == h)
+                    cells_.append(f"{c['passed']}/{c['n']}, {c['cost_per_1000']:.3f}")
+            lines.append(f"| {cap} | " + " | ".join(cells_) + " |")
+        lines.append("")
+    (folder / "phase6-grid.md").write_text("\n".join(lines), encoding="utf-8")
+    print("wrote phase6-grid.md and phase6-grid.json")
+
+
 def main(folder: Path) -> None:
     pin, pout = fit_prices(folder)
     print(f"fitted price per 1M tokens: input ${pin * 1e6:.3f}, output ${pout * 1e6:.3f} (estimate)")
@@ -47,6 +76,8 @@ def main(folder: Path) -> None:
             if r["mode"] == "hint":
                 r["useful"] = rules.useful(by_id[r["id"]], r, need_question=False)
         print("HINT RULE RELAXED: no question mark required (post-hoc)")
+    if "--grid" in sys.argv:
+        write_grid(folder, data, pin, pout)
     print(f"phase 6 calls: {len(data)}, estimated cost ${sum(r['usage']['prompt_tokens'] * pin + r['usage']['completion_tokens'] * pout for r in data):.4f}")
     for mode in ("hint", "explain", "help"):
         m = [r for r in data if r["mode"] == mode]
