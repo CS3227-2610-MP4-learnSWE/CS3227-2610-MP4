@@ -115,7 +115,6 @@ for (const [role, routes] of Object.entries(routesByRole)) {
   test(`${role} routes render on direct navigation and reload`, async ({
     page,
   }) => {
-    test.slow();
     for (const route of routes) {
       await page.goto(route);
       await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
