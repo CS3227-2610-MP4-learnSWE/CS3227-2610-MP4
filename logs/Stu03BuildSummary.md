@@ -1,0 +1,10 @@
+# STU-03 build summary: 30 October 2026
+
+## Direction and completed work
+The user approved the STU-03 spec and plan ("ready to build"). The orchestrator committed them locally (`610aa35`), cut `feat/stu03-run-b` and ran Variant B: a developer built the shared SoC LLM client, the pasted-question matcher, the leak check, the companion endpoint and the widget flow with updated guides; an independent test-designer, in its own worktree and from the spec and contract only, wrote the backend and Playwright tests; the read-only verifier reviewed. Verifier round 1 and 2 each failed on gaps in the deterministic leak check. The user approved fix round 1 (defects 1 to 6) and then one small extra change beyond the two-round cap, followed by a narrow verifier re-check. That re-check found all named strings blocked and no regression, with hedged letter forms ("the answer is probably b") still passing; the user accepted these and the other rare forms as documented residual risk.
+
+## Verification and limits
+Backend 327 tests passed on the final run branch (I re-ran it after each stage); frontend typecheck, lint, prettier on LF content and 88 Playwright tests were reported by the test-designer and verifier on the merged code (the frontend was not touched after that merge). Not done: CI on GitHub, any live LLM call, the manual live check (AC31) and the iterative live testing (AC35). The leak check is a phrase list and cannot be complete; the residual forms are listed in the User Guide and the spec, and some harmless hints are withheld. Developer-written fix-round tests are separate from the independent suite. Nothing is pushed and no PR exists; the documentation updates of this stage are uncommitted.
+
+## Resources and summary verification
+Harness-reported subagent tokens and revision counts are in `workflow/experiments/resource-log.md`; no cost was measured. This summary was checked against git history, test runs I made and the agent reports. Human review pending.
