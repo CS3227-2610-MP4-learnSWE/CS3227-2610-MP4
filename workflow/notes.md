@@ -2,6 +2,13 @@
 
 Newest entry first. Use `templates/handoff.md`. Older entries describe the state at the time; the newest entry supersedes their open/merged status.
 
+## 2026-10-30: first live use of the STU-03 companion (user-run, single session)
+- Done: the user ran the app locally with a real key (backend started with `uv run --env-file .env`, `.env` in `src/backend`, ignored by git) and pasted four hint exchanges. I read them against the answer key; no live call was made by me. Found: the backend does not load `.env` by itself (no dotenv); `docs/DeveloperGuide.md` implies it does and has not been corrected.
+- Observed: replies were short and named no letter, but effectively stated the concept the question asks for (Q1, Q2, Q3). Decision (user): keep the current hint behaviour for now; a graded two-rung ladder on the existing 4-message history was discussed and not adopted. Recorded in `spec.md` (item k) and the security log.
+- Open: correct the DeveloperGuide `.env` wording (needs OK); further AC35 live testing with harder questions; dashboard count comparison not reported yet.
+- Not verified: only four exchanges seen; no over-refusal, explain-mode or help-mode results yet.
+- Resource use: no tool cost measured; a small docs edit.
+
 ## 2026-10-30: STU-03 built and verified (Variant B; local on `feat/stu03-run-b`, not pushed)
 - Done: run branch `feat/stu03-run-b` from the approved spec commit `610aa35`, main folder on the run branch, agent definitions checked. Developer built the shared `llm_client.py` (generic, no student-specific names), `question_match.py`, `leak_check.py`, `text_normalise.py`, the companion route and service, the frontend widget flow and the guides. The independent test-designer (own worktree) wrote the backend and Playwright tests from the spec and contract only; merged at `0c73113`. Verifier round 1: FAIL (1 blocking leak-check gap, 8 non-blocking). Fix round 1 (defects 1-6, user approved), verifier round 2: FAIL (blocking: more letter forms). User approved one small extra developer change past the two-round cap, plus a narrow verifier re-check: all nine named strings blocked, no regression, one class left (hedged or qualified letters such as "the answer is probably b"). The user accepted that class and the other rare forms as documented residual risk (UserGuide, spec). HEAD at the time of writing is `25c7d5a` plus uncommitted doc edits.
 - Verified (re-run by me and by the verifier): backend 327 passed (266 on the first merge, then 298, then 327); frontend (untouched after the merge) typecheck, lint, prettier on LF content and 88 Playwright passed per the test-designer and verifier. Not run: CI on GitHub, any live LLM call, the manual live check (AC31) and the iterative live testing (AC35).

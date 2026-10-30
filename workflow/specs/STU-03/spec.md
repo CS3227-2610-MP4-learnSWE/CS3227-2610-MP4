@@ -139,3 +139,4 @@ Confirmed by the user in discussion.
 - h. Logging: metadata only (mode, outcome code, latency, token usage if returned); no message or reply text. Usage counts for ADM-06 are a later feature.
 - i. The fixed help text is written by us from `docs/UserGuide.md` and claims only what works; the developer writes it and the verifier checks it.
 - j. The pasted-question rule also forces Hint mode on a Help page for a student who has already submitted that set; full explanations come from the practice results page.
+- k. After the first live use (basic recall questions) the hints effectively stated the concept the question asks about, without naming a letter or choice. The user decided to keep the current hint behaviour for now. A graded hint ladder on the existing 4-message history was discussed and not adopted; it can be revisited with harder questions in the iterative live testing (AC35).
