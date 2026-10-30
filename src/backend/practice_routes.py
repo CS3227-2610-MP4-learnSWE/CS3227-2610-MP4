@@ -20,7 +20,9 @@ router = APIRouter(prefix="/api")
 
 def error_response(_: Request, exc: ApiError) -> JSONResponse:
     detail = {"code": exc.code, "message": exc.message, **exc.extra}
-    return JSONResponse(status_code=exc.status, content={"detail": detail})
+    retry_after = exc.extra.get("retry_after_seconds")
+    headers = {"Retry-After": str(retry_after)} if retry_after is not None else None
+    return JSONResponse(status_code=exc.status, content={"detail": detail}, headers=headers)
 
 
 def require_student(x_student_id: str | None = Header(default=None)) -> str:

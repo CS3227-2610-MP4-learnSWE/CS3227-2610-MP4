@@ -1,11 +1,13 @@
-"""App wiring: health endpoints and the practice attempt API. No database or real authentication yet."""
+"""App wiring: health endpoints, the practice attempt API and the study companion. No database or real authentication yet."""
 from fastapi import FastAPI
 
+import companion_routes
 import practice_routes
 from errors import ApiError
 
 app = FastAPI(title="learnSWE Preview API", version="0.1.0")
 app.include_router(practice_routes.router)
+app.include_router(companion_routes.router)
 app.add_exception_handler(ApiError, practice_routes.error_response)
 
 
