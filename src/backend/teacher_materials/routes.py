@@ -1,0 +1,171 @@
+"""Teacher materials HTTP API with access checks before request-body validation."""
+import os
+from contextlib import contextmanager
+from datetime import timezone
+from pathlib import Path
+from typing import Iterator
+from uuid import UUID, uuid4
+
+from fastapi import APIRouter, Request
+from starlette.datastructures import UploadFile
+from fastapi.responses import FileResponse
+from pydantic import BaseModel, ConfigDict, ValidationError
+from sqlalchemy import create_engine, select
+from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import Session
+
+from errors import ApiError
+from teacher_materials.demo_identity import require_managed_course, require_teacher
+from teacher_materials.models import Course, CourseMembership, Material, Topic, User
+from teacher_materials.storage import remove_file, resolve_file, save_upload, storage_root
+
+router = APIRouter(prefix="/api/teacher", tags=["teacher materials"])
+
+
+def _uuid(value: str) -> UUID:
+    try:
+        return UUID(value)
+    except (ValueError, TypeError) as exc:
+        raise ApiError(422, "validation_error", "A valid UUID is required.") from exc
+
+
+def _timestamp(value):
+    return value.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
+
+
+def _course(row: Course) -> dict:
+    return {"id": str(row.id), "title": row.title, "created_at": _timestamp(row.created_at)}
+
+
+def _topic(row: Topic) -> dict:
+    return {"id": str(row.id), "course_id": str(row.course_id), "name": row.name, "created_at": _timestamp(row.created_at)}
+
+
+def _material(row: Material) -> dict:
+    return {"id": str(row.id), "course_id": str(row.course_id), "topic_id": str(row.topic_id) if row.topic_id else None, "uploaded_by": row.uploaded_by, "title": row.title, "original_filename": row.original_filename, "media_type": row.media_type, "size_bytes": row.size_bytes, "created_at": _timestamp(row.created_at), "updated_at": _timestamp(row.updated_at)}
+
+
+@contextmanager
+def _teacher_session(request: Request) -> Iterator[tuple[Session, User]]:
+    if os.getenv("APP_ENV") != "development" or os.getenv("ALLOW_DEMO_IDENTITY", "").lower() != "true":
+        raise ApiError(403, "demo_identity_disabled", "Demo teacher identity is disabled.")
+    if not request.headers.get("X-Demo-User-Id"):
+        raise ApiError(401, "unauthenticated", "Demo user identity is required.")
+    url = os.getenv("DATABASE_URL")
+    if not url or not url.startswith("postgresql+psycopg://"):
+        raise ApiError(503, "service_unavailable", "Teacher materials service is unavailable.")
+    try:
+        engine = create_engine(url, pool_pre_ping=True)
+        with Session(engine) as session:
+            teacher = require_teacher(request, session)
+            storage_root()
+            yield session, teacher
+    except SQLAlchemyError as exc:
+        raise ApiError(503, "service_unavailable", "Teacher materials service is unavailable.") from exc
+    finally:
+        if "engine" in locals():
+            engine.dispose()
+
+
+def _owned_material(session: Session, teacher: User, material_id: str) -> Material:
+    material = session.scalar(select(Material).join(CourseMembership, CourseMembership.course_id == Material.course_id).where(Material.id == _uuid(material_id), CourseMembership.user_id == teacher.id))
+    if material is None:
+        raise ApiError(404, "not_found", "Material not found.")
+    return material
+
+
+def _same_course_topic(session: Session, course_id: UUID, value: str) -> UUID:
+    topic_id = _uuid(value)
+    if session.scalar(select(Topic.id).where(Topic.id == topic_id, Topic.course_id == course_id)) is None:
+        raise ApiError(404, "not_found", "Topic not found.")
+    return topic_id
+
+
+@router.get("/courses")
+def list_courses(request: Request):
+    with _teacher_session(request) as (session, teacher):
+        rows = session.scalars(select(Course).join(CourseMembership, CourseMembership.course_id == Course.id).where(CourseMembership.user_id == teacher.id).order_by(Course.created_at, Course.id)).all()
+        return [_course(row) for row in rows]
+
+
+@router.get("/courses/{course_id}/topics")
+def list_topics(request: Request, course_id: str):
+    with _teacher_session(request) as (session, teacher):
+        course = require_managed_course(session, teacher, _uuid(course_id))
+        rows = session.scalars(select(Topic).where(Topic.course_id == course.id).order_by(Topic.created_at, Topic.id)).all()
+        return [_topic(row) for row in rows]
+
+
+@router.get("/courses/{course_id}/materials")
+def list_materials(request: Request, course_id: str):
+    with _teacher_session(request) as (session, teacher):
+        course = require_managed_course(session, teacher, _uuid(course_id))
+        query = select(Material).where(Material.course_id == course.id)
+        if "topic_id" in request.query_params:
+            topic_id = _same_course_topic(session, course.id, request.query_params["topic_id"])
+            query = query.where(Material.topic_id == topic_id)
+        rows = session.scalars(query.order_by(Material.created_at.desc(), Material.id)).all()
+        return [_material(row) for row in rows]
+
+
+@router.post("/courses/{course_id}/materials", status_code=201)
+async def upload_material(request: Request, course_id: str):
+    with _teacher_session(request) as (session, teacher):
+        course = require_managed_course(session, teacher, _uuid(course_id))
+        root = storage_root()
+        try:
+            form = await request.form()
+        except Exception as exc:
+            raise ApiError(422, "validation_error", "Valid multipart upload fields are required.") from exc
+        if set(form.keys()) - {"file", "title", "topic_id"} or not isinstance(form.get("file"), UploadFile) or not isinstance(form.get("title"), str):
+            raise ApiError(422, "validation_error", "A title and one file are required.")
+        title = form["title"].strip()
+        if not 1 <= len(title) <= 200:
+            raise ApiError(422, "validation_error", "Title must contain 1–200 characters.")
+        topic_id = _same_course_topic(session, course.id, form["topic_id"]) if "topic_id" in form and form["topic_id"] else None
+        stored = save_upload(form["file"], root)
+        try:
+            row = Material(id=uuid4(), course_id=course.id, topic_id=topic_id, uploaded_by=teacher.id, title=title, original_filename=stored.original_filename, media_type=stored.media_type, size_bytes=stored.size_bytes, storage_key=stored.storage_key)
+            session.add(row)
+            session.commit()
+            session.refresh(row)
+            return _material(row)
+        except Exception as exc:
+            session.rollback()
+            remove_file(root, stored.storage_key)
+            raise ApiError(503, "service_unavailable", "Teacher materials service is unavailable.") from exc
+
+
+class TopicPatch(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    topic_id: UUID | None
+
+
+@router.patch("/materials/{material_id}")
+async def assign_topic(request: Request, material_id: str):
+    with _teacher_session(request) as (session, teacher):
+        row = _owned_material(session, teacher, material_id)
+        try:
+            body = TopicPatch.model_validate(await request.json())
+        except (ValueError, ValidationError) as exc:
+            raise ApiError(422, "validation_error", "Provide only a valid topic_id UUID or null.") from exc
+        topic_id = _same_course_topic(session, row.course_id, str(body.topic_id)) if body.topic_id else None
+        # Lock row so the last committed assignment wins and unrelated columns stay untouched.
+        row = session.scalar(select(Material).where(Material.id == row.id).with_for_update())
+        row.topic_id = topic_id
+        from sqlalchemy import func
+        row.updated_at = func.now()
+        session.commit()
+        session.refresh(row)
+        return _material(row)
+
+
+@router.get("/materials/{material_id}/file")
+def download_material(request: Request, material_id: str):
+    with _teacher_session(request) as (session, teacher):
+        row = _owned_material(session, teacher, material_id)
+        root = storage_root()
+        path = resolve_file(root, row.storage_key)
+        if not path.is_file():
+            raise ApiError(503, "service_unavailable", "Private file storage is unavailable.")
+        return FileResponse(path, media_type=row.media_type, filename=row.original_filename, content_disposition_type="attachment")

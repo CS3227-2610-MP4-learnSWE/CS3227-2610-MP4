@@ -56,3 +56,53 @@ export async function request(
     clearTimeout(timer);
   }
 }
+
+/** Teacher-only transport. The demo header is sent only with an explicit local gate. */
+export async function requestTeacher(
+  method: string,
+  path: string,
+  body?: FormData | object,
+  blob = false,
+): Promise<unknown> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  const headers: Record<string, string> = {};
+  if (
+    import.meta.env.VITE_APP_ENV === "development" &&
+    import.meta.env.VITE_ALLOW_DEMO_IDENTITY === "true"
+  ) {
+    headers["X-Demo-User-Id"] =
+      import.meta.env.VITE_DEMO_USER_ID || "demo-teacher";
+  }
+  if (body !== undefined && !(body instanceof FormData))
+    headers["Content-Type"] = "application/json";
+  try {
+    const response = await fetch(path, {
+      method,
+      signal: controller.signal,
+      headers,
+      body:
+        body instanceof FormData
+          ? body
+          : body === undefined
+            ? undefined
+            : JSON.stringify(body),
+    });
+    if (!response.ok) {
+      let code = "";
+      try {
+        const data = await response.json();
+        code = data?.detail?.code || "";
+      } catch {
+        /* unavailable response body */
+      }
+      throw new ApiError(response.status, code);
+    }
+    return blob ? response.blob() : response.json();
+  } catch (error) {
+    if (error instanceof ApiError) throw error;
+    throw new ApiError(0, "network");
+  } finally {
+    clearTimeout(timer);
+  }
+}

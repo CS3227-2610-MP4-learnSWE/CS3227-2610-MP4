@@ -1,0 +1,1 @@
+"""Teacher materials vertical slice."""

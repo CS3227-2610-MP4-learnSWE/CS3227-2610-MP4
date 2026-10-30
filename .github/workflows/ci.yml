@@ -19,6 +19,23 @@ jobs:
   backend:
     name: Backend tests
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: learnswe
+          POSTGRES_PASSWORD: learnswe-local-only
+          POSTGRES_DB: learnswe_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U learnswe -d learnswe_test"
+          --health-interval 2s --health-timeout 2s --health-retries 20
+    env:
+      TEA01_TEST_DATABASE_URL: postgresql+psycopg://learnswe:learnswe-local-only@127.0.0.1:5432/learnswe_test
+      FILE_STORAGE_DIR: ${{ runner.temp }}/learnswe-materials
+      APP_ENV: development
+      ALLOW_DEMO_IDENTITY: "true"
     defaults:
       run:
         working-directory: src/backend
