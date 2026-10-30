@@ -2,6 +2,13 @@
 
 Newest entry first. Use `templates/handoff.md`.
 
+## 2026-10-30: STU-02 frontend spec and plan (draft, awaiting approval)
+- Done: branch `feat/stu02-frontend-spec` from latest `master` (the merged STU-02 backend branch was left). Drafted `specs/STU-02-frontend/` (spec with 13 acceptance criteria, plan, tasks) in a single session, not the spec-writer agent, because the context was already loaded. Nothing in `src/` changed.
+- Decisions proposed (not yet approved): attempt made on first submit; all answers saved in one PUT before submit; attempt id in memory only; teacher demo data moved to `teacherDemo.ts` and teacher/admin pages loaded lazily so student scripts contain no answer key; tests mock the API.
+- Open (three questions at the end of `spec.md`): when to create the attempt, memory vs `sessionStorage`, a real-backend end-to-end test in CI.
+- Next: user approves or edits spec and plan, then run Variant B (developer || test-designer, then verifier) with the main folder on the run branch.
+- Not verified: nothing run; the spec was checked against the current `Student.tsx`, `Teacher.tsx`, `StudyCompanion.tsx`, the backend routes and `app.spec.ts` by reading only.
+
 ## 2026-10-30: continuous integration (CI-01)
 - Done: `.github/workflows/ci.yml` on branch `chore/ci` from `master`: backend tests, frontend checks and Playwright, workflow tool tests, dependency audit (runtime blocking, dev reported). Read-only permissions, no secrets. Every step was run locally first. Playwright: 180 s timeout for the layout-matrix test, 2 workers and 1 retry on CI (the route test failed once under parallel load). Plan: `specs/CI-01/plan.md`.
 - Found: the SoC docs host resolves to a private NUS address, so the SoC LLM may be reachable only inside NUS; this decides hosting (`deployment.md`).
