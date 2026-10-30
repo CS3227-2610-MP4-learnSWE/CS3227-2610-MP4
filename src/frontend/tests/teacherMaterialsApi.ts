@@ -44,8 +44,14 @@ export const NEW: Material = {
 
 export class TeacherMaterialsApi {
   materials: Material[] = [NEW, OLD];
-  requests: { method: string; path: string; body: string | null }[] = [];
+  requests: {
+    method: string;
+    path: string;
+    body: string | null;
+    headers: Record<string, string>;
+  }[] = [];
   failCourses = 0;
+  failTopics = 0;
   failMaterials = 0;
   failUpload = 0;
 
@@ -55,7 +61,7 @@ export class TeacherMaterialsApi {
     const method = request.method();
     const path = url.pathname + url.search;
     const body = request.postData();
-    this.requests.push({ method, path, body });
+    this.requests.push({ method, path, body, headers: request.headers() });
     const json = (status: number, value: unknown) =>
       route.fulfill({ status, json: value });
     const error = (status: number, code: string) =>
@@ -74,6 +80,7 @@ export class TeacherMaterialsApi {
       /^\/api\/teacher\/courses\/([^/]+)\/topics$/,
     );
     if (method === "GET" && topics) {
+      if (this.failTopics-- > 0) return error(503, "service_unavailable");
       return json(
         200,
         topics[1] === COURSE_A

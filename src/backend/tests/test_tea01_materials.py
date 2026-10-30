@@ -316,3 +316,90 @@ def test_tea01_concurrent_uploads_and_assignments(app, tea01_database, tea01_sto
     final = next(m for m in call(app, "GET", MATERIALS_A).json() if m["id"] == ids[0])
     assert final["topic_id"] in {TOPIC_A, None}
     assert {k: v for k, v in final.items() if k not in {"topic_id", "updated_at"}} == {k: v for k, v in initial.items() if k not in {"topic_id", "updated_at"}}
+
+
+def test_tea01_post_commit_read_failure_never_orphans_metadata(app, tea01_database, tea01_storage, monkeypatch):
+    from sqlalchemy.exc import OperationalError
+    from sqlalchemy.orm import Session
+
+    before_files = stored_files(tea01_storage)
+    title = "refresh fault " + uuid.uuid4().hex
+
+    def fail_refresh(self, instance, *args, **kwargs):
+        raise OperationalError("fixture refresh fault", {}, RuntimeError("connection lost"))
+
+    with monkeypatch.context() as patch:
+        patch.setattr(Session, "refresh", fail_refresh)
+        response = upload(app, "post-commit.txt", b"still downloadable", title)
+    rows = tea01_database.execute("SELECT id, storage_key FROM material WHERE title=%s", (title,)).fetchall()
+    if response.status_code == 201:
+        assert len(rows) == 1
+        assert (tea01_storage / rows[0][1]).read_bytes() == b"still downloadable"
+        assert call(app, "GET", f"{BASE}/materials/{rows[0][0]}/file").content == b"still downloadable"
+    else:
+        assert_error(response, 503, "service_unavailable")
+        assert rows == []
+        assert stored_files(tea01_storage) == before_files
+
+
+def test_tea01_delayed_clear_is_last_committed_topic_update(app, tea01_database):
+    created = upload(app, "delayed-clear.txt", b"topic race", "Delayed clear").json()
+    mid = created["id"]
+
+    async def race():
+        entered = asyncio.Event()
+        release = asyncio.Event()
+
+        async def delayed_body():
+            entered.set()
+            await release.wait()
+            yield b'{"topic_id":null}'
+
+        async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:
+            headers = {"X-Demo-User-Id": "demo-teacher", "Content-Type": "application/json"}
+            clear = asyncio.create_task(client.patch(f"{BASE}/materials/{mid}", headers=headers, content=delayed_body()))
+            await asyncio.wait_for(entered.wait(), 5)
+            assigned = await client.patch(f"{BASE}/materials/{mid}", headers=headers, json={"topic_id": TOPIC_A})
+            assert assigned.status_code == 200, assigned.text
+            release.set()
+            cleared = await asyncio.wait_for(clear, 5)
+            return assigned, cleared
+
+    assigned, cleared = asyncio.run(race())
+    assert assigned.json()["topic_id"] == TOPIC_A
+    assert cleared.status_code == 200, cleared.text
+    assert cleared.json()["topic_id"] is None
+    final = tea01_database.execute("SELECT topic_id, title, original_filename, size_bytes FROM material WHERE id=%s", (mid,)).fetchone()
+    assert final == (None, created["title"], created["original_filename"], created["size_bytes"])
+
+
+def test_tea01_chunked_oversize_stops_reading_at_file_limit(app, tea01_database, tea01_storage):
+    before = (len(material_rows(tea01_database)), stored_files(tea01_storage))
+    chunk = b"x" * 65536
+    consumed = 0
+    boundary = "tea01-boundary"
+
+    async def body():
+        nonlocal consumed
+        yield f'--{boundary}\r\nContent-Disposition: form-data; name="title"\r\n\r\nChunked\r\n--{boundary}\r\nContent-Disposition: form-data; name="file"; filename="large.txt"\r\nContent-Type: text/plain\r\n\r\n'.encode()
+        for _ in range(200):
+            consumed += len(chunk)
+            yield chunk
+        yield f"\r\n--{boundary}--\r\n".encode()
+
+    async def send():
+        async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:
+            return await client.post(MATERIALS_A, headers={"X-Demo-User-Id": "demo-teacher", "Content-Type": f"multipart/form-data; boundary={boundary}"}, content=body())
+
+    response = asyncio.run(send())
+    assert_error(response, 413, "file_too_large")
+    assert "10 MiB" in response.json()["detail"]["message"]
+    assert consumed <= 10_485_760 + 2 * len(chunk), f"upload consumed {consumed} bytes before rejecting"
+    assert (len(material_rows(tea01_database)), stored_files(tea01_storage)) == before
+
+
+def test_tea01_multipart_topic_must_be_text_field(app, tea01_database, tea01_storage):
+    before = (len(material_rows(tea01_database)), stored_files(tea01_storage))
+    response = call(app, "POST", MATERIALS_A, data={"title": "Bad topic shape"}, files={"file": ("source.txt", b"source"), "topic_id": ("topic.txt", TOPIC_A.encode(), "text/plain")})
+    assert_error(response, 422, "validation_error")
+    assert (len(material_rows(tea01_database)), stored_files(tea01_storage)) == before

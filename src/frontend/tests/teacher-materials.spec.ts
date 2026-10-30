@@ -64,6 +64,11 @@ test("tea01 course, topic, newest-first rows and search use the HTTP boundary", 
       (r) => r.path === `/api/teacher/courses/${COURSE_B}/topics`,
     ),
   ).toBe(true);
+  expect(api.requests.length).toBeGreaterThan(0);
+  for (const request of api.requests) {
+    expect(request.headers["x-demo-user-id"]).toBe("demo-teacher");
+    expect(request.headers["x-student-id"]).toBeUndefined();
+  }
 });
 
 test("tea01 upload dialog validates, sends multipart and refreshes", async ({
@@ -172,3 +177,162 @@ test("tea01 mobile page retains labeled controls and no horizontal overflow", as
     ),
   ).toBe(true);
 });
+
+test("tea01 switching courses ignores a late response from the old course", async ({
+  page,
+}) => {
+  const api = await mockTeacherMaterialsApi(page);
+  api.materials.push({
+    ...NEW,
+    id: "88888888-8888-4888-8888-888888888888",
+    course_id: COURSE_B,
+    topic_id: null,
+    title: "Programming source",
+    original_filename: "programming.txt",
+  });
+  let release!: () => void;
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  let held = 0;
+  let completed = 0;
+  await page.route(
+    (url) =>
+      url.pathname === `/api/teacher/courses/${COURSE_A}/materials` &&
+      !url.search,
+    async (route) => {
+      held++;
+      await gate;
+      await route.fulfill({ json: [NEW, OLD] });
+      completed++;
+    },
+  );
+  await openMaterials(page);
+  await expect.poll(() => held).toBeGreaterThan(0);
+  await choose(page, "Course", "Programming");
+  await expect(
+    page.getByText("Programming source", { exact: true }),
+  ).toBeVisible();
+  const pending = held;
+  release();
+  await expect.poll(() => completed).toBe(pending);
+  await settle(page);
+  await expect(
+    page.getByText("Programming source", { exact: true }),
+  ).toBeVisible();
+  await expect(page.getByText(NEW.title, { exact: true })).toHaveCount(0);
+});
+
+test("tea01 changing topic filter ignores a late unfiltered response", async ({
+  page,
+}) => {
+  await mockTeacherMaterialsApi(page);
+  await openMaterials(page);
+  await expect(page.getByText(OLD.title, { exact: true })).toBeVisible();
+  await choose(page, "Topic filter", "Testing");
+  await expect(page.getByText(OLD.title, { exact: true })).toHaveCount(0);
+  let release!: () => void;
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  let held = 0;
+  let completed = 0;
+  await page.route(
+    (url) =>
+      url.pathname === `/api/teacher/courses/${COURSE_A}/materials` &&
+      !url.search,
+    async (route) => {
+      held++;
+      await gate;
+      await route.fulfill({ json: [NEW, OLD] });
+      completed++;
+    },
+  );
+  await choose(page, "Topic filter", "All topics");
+  await expect.poll(() => held).toBeGreaterThan(0);
+  await choose(page, "Topic filter", "Testing");
+  await expect(page.getByText(NEW.title, { exact: true })).toBeVisible();
+  await expect(page.getByText(OLD.title, { exact: true })).toHaveCount(0);
+  const pending = held;
+  release();
+  await expect.poll(() => completed).toBe(pending);
+  await settle(page);
+  await expect(page.getByText(OLD.title, { exact: true })).toHaveCount(0);
+});
+
+test("tea01 a late topic-change refresh cannot overwrite a newer list", async ({
+  page,
+}) => {
+  const api = await mockTeacherMaterialsApi(page);
+  await openMaterials(page);
+  const row = page.getByRole("row").filter({ hasText: OLD.title });
+  await expect(row).toBeVisible();
+  let release!: () => void;
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  let hold = true;
+  let held = 0;
+  let completed = 0;
+  await page.route(
+    (url) =>
+      url.pathname === `/api/teacher/courses/${COURSE_A}/materials` &&
+      !url.search,
+    async (route) => {
+      if (!hold) return api.handle(route);
+      held++;
+      await gate;
+      await route.fulfill({ json: [NEW, { ...OLD, topic_id: TOPIC_A }] });
+      completed++;
+    },
+  );
+  await row.getByRole("combobox", { name: /Change topic/ }).click();
+  await page.getByRole("option", { name: "Testing", exact: true }).click();
+  await expect.poll(() => held).toBeGreaterThan(0);
+  api.materials = api.materials.map((item) =>
+    item.id === OLD.id ? { ...item, topic_id: null } : item,
+  );
+  hold = false;
+  await choose(page, "Topic filter", "Testing");
+  await expect(page.getByText(OLD.title, { exact: true })).toHaveCount(0);
+  await choose(page, "Topic filter", "All topics");
+  await expect(
+    row.getByRole("combobox", { name: /Change topic/ }),
+  ).not.toContainText("Testing");
+  const pending = held;
+  release();
+  await expect.poll(() => completed).toBe(pending);
+  await settle(page);
+  await expect(
+    row.getByRole("combobox", { name: /Change topic/ }),
+  ).not.toContainText("Testing");
+});
+
+test("tea01 Retry reloads failed topics and restores topic options", async ({
+  page,
+}) => {
+  const api = await mockTeacherMaterialsApi(page);
+  api.failTopics = 10;
+  await openMaterials(page);
+  await expect(page.getByRole("alert")).toContainText("Could not load topics");
+  const before = api.requests.filter(
+    (r) => r.path === `/api/teacher/courses/${COURSE_A}/topics`,
+  ).length;
+  api.failTopics = 0;
+  await page.getByRole("button", { name: "Retry" }).click();
+  await expect
+    .poll(
+      () =>
+        api.requests.filter(
+          (r) => r.path === `/api/teacher/courses/${COURSE_A}/topics`,
+        ).length,
+    )
+    .toBeGreaterThan(before);
+  await choose(page, "Topic filter", "Testing");
+  await expect(page.getByText(NEW.title, { exact: true })).toBeVisible();
+});
+
+async function settle(page: Page) {
+  await page.evaluate(() => new Promise(requestAnimationFrame));
+  await page.evaluate(() => new Promise(requestAnimationFrame));
+}
