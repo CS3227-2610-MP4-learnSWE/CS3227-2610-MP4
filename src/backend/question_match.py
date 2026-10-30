@@ -1,19 +1,11 @@
 """Detects a pasted practice question in a student's message. Pure: no I/O, no model call."""
-import re
-import unicodedata
 from collections.abc import Sequence
 
 from practice_data import PracticeSet, Question
+from text_normalise import normalise
 
 WORD_SHARE = 0.8  # our choice, unmeasured (spec decision 2)
 MIN_CHOICE_CHARS = 4  # shorter choice texts ("2", "3") would match ordinary prose
-_NON_WORD = re.compile(r"[\W_]+")
-
-
-def normalise(text: str) -> str:
-    """NFKC, case-fold, drop markdown/quote/punctuation, collapse whitespace."""
-    folded = unicodedata.normalize("NFKC", text).casefold()
-    return _NON_WORD.sub(" ", folded).strip()
 
 
 def _contains(haystack: str, needle: str) -> bool:
