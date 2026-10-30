@@ -2,12 +2,14 @@
 
 Newest entry first. Use `templates/handoff.md`. Older entries describe the state at the time; the newest entry supersedes their open/merged status.
 
-## 2026-10-30: TEA-01 started (orchestrator)
-- Done: created `feat/tea01-materials` from clean `e544ea5`; user explicitly approved implementation of the teacher increment plan. Spec-writer is creating detailed TEA-01 contracts before app code.
-- Decisions: persistent PostgreSQL metadata/private local files; PDF/UTF-8 text up to 10 MiB; development-only identity opt-in; no real login, AI, publication or student persistence changes.
-- Next: commit approved-scope spec/plan/tasks/shared contract, record start commit, dispatch developer and independent test-designer in separate worktrees, then verifier.
-- Open: exact app/DB startup verification pending. PR publication/merge requires human approval.
-- Resource use: Codex orchestrator + gpt-6-sol spec-writer; exact token/cost totals unavailable.
+## 2026-10-30: TEA-01 complete locally, awaiting human PR approval (orchestrator)
+- Done: `feat/tea01-materials` contains persistent private teacher materials, PostgreSQL16/SQLAlchemy/Alembic foundation, gated demo identity, upload/list/topic assignment/download UI/API, shared data contract and setup docs. Source verified at `673ca2470f1fa3948e3075b26c28ed8b71bb3e53`; final subsequent commit is workflow evidence only.
+- Verification: independent verifier PASS after correction round1. Fresh backend76 (real isolated PostgreSQL16), browser74, types/lint/format/build passed. Parent live HTTP smoke passed upload201/byte-identical download/cross-course404. GitHub-hosted CI/deployment not checked.
+- Fixes: six verifier findings reproduced and fixed: postcommit file cleanup, stale ORM null update, multipart ingress limits, stale UI responses, non-retried topics and malformed multipart500. Independent regressions were RED on old code and GREEN on corrections. Security evidence in workflow/security/test-log.md.
+- Workflow: approved contract13d10cf; implementation9c5eb6b; independent tests firsta5e25c4; fixes0a96850, label/docs44ab536; integration673ca24. Delegated developer hit spend cap; parent assumed developer role, documented as deviation. Test-designer and final verifier remained independent. Exact token/cost totals unavailable.
+- Next: human reviews local feature branch and authorises push/PR publication. Nothing pushed, no PR opened, no merge to master. Teammates should read docs/SharedDataContract.md before shared-entity work.
+- Limits: spoofable development identity is not real login; source uploads never publish lessons. AI generation/publishing/admin features/student persistence remain future increments. PostgreSQL and private files need coordinated backups; crash-between-stores limitation documented.
+- Files: source under src/, compose.yml, docs guides/shared contract, workflow/specs/TEA-01, tests, security/resource logs and logs/TEA01Session.md.
 
 ## 2026-10-30: documentation PR published (single session, orchestrator)
 - Done: user approved opening the PR. Committed the eleven reviewed Markdown files as `de5c9bb`, pushed only `docs/post-pr5-status`, and opened [PR 6](https://github.com/CS3227-2610-MP4-learnSWE/CS3227-2610-MP4/pull/6) into `master`; attached it to this chat. The earlier "no commit/push/PR" entry describes the pre-approval state.
