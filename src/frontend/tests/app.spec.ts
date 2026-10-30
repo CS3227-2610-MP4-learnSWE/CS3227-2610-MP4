@@ -1,9 +1,12 @@
 import { test, expect } from "@playwright/test";
+import { mockPracticeApi } from "./practiceApi";
 
 test.beforeEach(async ({ page }) => {
   await page.route("**/api/health", (route) =>
     route.fulfill({ json: { status: "ok" } }),
   );
+  // Tests that open /student/practice get the default practice API mock.
+  await mockPracticeApi(page);
 });
 
 test("login tabs explore selected roles without authentication requests", async ({
@@ -35,35 +38,6 @@ test("login tabs explore selected roles without authentication requests", async 
     "Teaching",
   );
   expect(requests).toEqual([]);
-});
-
-test("practice blocks incomplete submissions and reveals solutions only after whole-set submission", async ({
-  page,
-}) => {
-  await page.goto("/student/practice");
-  await expect(page.getByText("Correct answer:", { exact: false })).toHaveCount(
-    0,
-  );
-  await page.getByRole("button", { name: "Submit practice set" }).click();
-  await expect(page.getByRole("alert")).toContainText("Answer all 3 questions");
-  await page
-    .getByRole("radio", { name: "A single, focused responsibility" })
-    .check();
-  await page
-    .getByRole("radio", { name: "To catch regressions when code changes" })
-    .check();
-  await page.getByRole("radio", { name: "3", exact: true }).check();
-  await page.getByRole("button", { name: "Get a hint" }).click();
-  await expect(page.getByText("Correct answer:", { exact: false })).toHaveCount(
-    0,
-  );
-  await page.getByRole("button", { name: "Submit practice set" }).click();
-  await expect(
-    page.getByRole("heading", { name: "3 / 3 — Nicely done!" }),
-  ).toBeVisible();
-  await expect(page.getByText("Correct answer:", { exact: false })).toHaveCount(
-    3,
-  );
 });
 
 test("lesson completion is reversible and reflected in dashboard", async ({
@@ -117,13 +91,9 @@ test("theme toggle works on login and workspace", async ({ page }) => {
   await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
 });
 
-test("all role routes render on direct navigation and reload", async ({
-  page,
-}) => {
-  for (const route of [
-    "/student/overview",
-    "/student/materials",
-    "/student/assistant",
+const routesByRole: Record<string, string[]> = {
+  student: ["/student/overview", "/student/materials", "/student/assistant"],
+  teacher: [
     "/teacher/overview",
     "/teacher/materials",
     "/teacher/generate",
@@ -131,19 +101,32 @@ test("all role routes render on direct navigation and reload", async ({
     "/teacher/practice",
     "/teacher/inbox",
     "/teacher/feedback",
+  ],
+  admin: [
     "/admin/overview",
     "/admin/forms",
     "/admin/responses",
     "/admin/announcements",
     "/admin/users",
     "/admin/usage",
-  ]) {
-    await page.goto(route);
-    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
-  }
-  await page.reload();
-  await expect(page.getByRole("heading", { name: "AI usage" })).toBeVisible();
-});
+  ],
+};
+for (const [role, routes] of Object.entries(routesByRole)) {
+  test(`${role} routes render on direct navigation and reload`, async ({
+    page,
+  }) => {
+    for (const route of routes) {
+      await page.goto(route);
+      await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+    }
+    if (role === "admin") {
+      await page.reload();
+      await expect(
+        page.getByRole("heading", { name: "AI usage" }),
+      ).toBeVisible();
+    }
+  });
+}
 
 test("backend outage does not block sample screens", async ({ page }) => {
   await page.route("**/api/health", (route) => route.abort());

@@ -10,6 +10,8 @@
   --purple-soft: #f2edfc;
   --green: #25836a;
   --green-soft: #eaf7f0;
+  --red: #b3372f;
+  --red-soft: #fdecea;
   --amber: #a07828;
   --amber-soft: #fcf5e6;
   --shadow: 0 8px 32px rgba(31, 53, 90, 0.04);
@@ -26,6 +28,8 @@
   --purple-soft: #30283f;
   --green: #76ccb0;
   --green-soft: #20382f;
+  --red: #f0948d;
+  --red-soft: #3d2523;
   --amber: #e7c57f;
   --amber-soft: #3a3323;
   --shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
@@ -1605,6 +1609,18 @@ button:focus-visible {
   border-color: var(--blue);
   background: var(--blue-soft);
 }
+.answer-option.correct {
+  border: 2px solid var(--green);
+  background: var(--green-soft);
+}
+.answer-option.wrong {
+  border: 2px solid var(--red);
+  background: var(--red-soft);
+}
+.answer-option.MuiFormControlLabel-root.correct,
+.answer-option.MuiFormControlLabel-root.wrong {
+  padding: 3px 9px;
+}
 .answer-option .MuiRadio-root {
   padding: 7px;
 }
@@ -1681,6 +1697,10 @@ button:focus-visible {
   border-radius: 8px;
   padding: 16px;
   margin-top: 15px;
+}
+.solution.wrong {
+  background: var(--red-soft);
+  color: var(--red);
 }
 .solution strong {
   font-size: 12px;

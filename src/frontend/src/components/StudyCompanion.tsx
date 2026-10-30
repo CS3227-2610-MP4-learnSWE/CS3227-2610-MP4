@@ -19,7 +19,7 @@ import {
 } from "@mui/material";
 import { MessageCircle, RotateCcw, Send, Sparkles, X } from "lucide-react";
 import { lessons, navigation } from "../data";
-import { useDemo } from "../state";
+import { usePractice } from "../practice/PracticeContext";
 
 type Message = { from: "you" | "companion"; text: string };
 type CompanionState = {
@@ -68,7 +68,7 @@ export default function StudyCompanion() {
   const { open, setOpen } = useCompanion();
   const [messages, setMessages] = useState<Message[]>([]);
   const [draft, setDraft] = useState("");
-  const { submitted } = useDemo();
+  const { submitted } = usePractice();
   const location = useLocation();
   const path = location.pathname.split("/");
   const lesson =
