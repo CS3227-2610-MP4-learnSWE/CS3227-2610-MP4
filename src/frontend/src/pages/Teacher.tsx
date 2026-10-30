@@ -175,41 +175,63 @@ function Materials({ notify }: Props) {
   const [busy, setBusy] = useState(false);
   const [uploadError, setUploadError] = useState("");
   const fileInput = useRef<HTMLInputElement>(null);
+  const demoEnabled =
+    import.meta.env.VITE_APP_ENV === "development" &&
+    import.meta.env.VITE_ALLOW_DEMO_IDENTITY === "true";
 
-  const loadCourses = () => {
+  const [courseReload, setCourseReload] = useState(0);
+  const [dataReload, setDataReload] = useState(0);
+  const loadCourses = () => setCourseReload((value) => value + 1);
+  const refresh = () => setDataReload((value) => value + 1);
+  useEffect(() => {
+    let active = true;
     setLoading(true);
     setError("");
     listTeacherCourses()
       .then((items) => {
+        if (!active) return;
         setCourses(items);
-        setCourseId((current) =>
-          items.some((item) => item.id === current)
-            ? current
-            : items[0]?.id || "",
-        );
+        setCourseId(items[0]?.id || "");
+        if (!items.length) setLoading(false);
       })
-      .catch(() => setError("Could not load courses. Please try again."))
-      .finally(() => setLoading(false));
-  };
-  useEffect(loadCourses, []);
+      .catch(() => {
+        if (active) {
+          setError("Could not load courses. Please try again.");
+          setLoading(false);
+        }
+      });
+    return () => {
+      active = false;
+    };
+  }, [courseReload]);
   useEffect(() => {
     if (!courseId) return;
-    setTopicFilter("");
-    setTopics([]);
-    listTeacherTopics(courseId)
-      .then(setTopics)
-      .catch(() => setError("Could not load topics. Please retry."));
-  }, [courseId]);
-  const refresh = () => {
-    if (!courseId) return;
+    let active = true;
     setLoading(true);
     setError("");
-    listTeacherMaterials(courseId, topicFilter || undefined)
-      .then(setMaterials)
-      .catch(() => setError("Could not load materials. Please retry."))
-      .finally(() => setLoading(false));
-  };
-  useEffect(refresh, [courseId, topicFilter]);
+    setMaterials([]);
+    // A course/filter/retry change supersedes both responses. A late response
+    // cannot overwrite the selected course, even after a mutation completes.
+    Promise.all([
+      listTeacherTopics(courseId),
+      listTeacherMaterials(courseId, topicFilter || undefined),
+    ])
+      .then(([nextTopics, nextMaterials]) => {
+        if (!active) return;
+        setTopics(nextTopics);
+        setMaterials(nextMaterials);
+      })
+      .catch(() => {
+        if (active)
+          setError("Could not load topics or materials. Please retry.");
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [courseId, topicFilter, dataReload]);
   const visible = materials.filter((item) =>
     `${item.title} ${item.original_filename}`
       .toLowerCase()
@@ -288,6 +310,11 @@ function Materials({ notify }: Props) {
           </Button>
         }
       />
+      <PreviewNote>
+        Development identity:{" "}
+        {import.meta.env.VITE_DEMO_USER_ID || "demo-teacher"}. Local testing
+        only; this is not a real login.
+      </PreviewNote>
       <Panel className="library-panel">
         <div className="library-toolbar">
           <h2>
@@ -298,7 +325,14 @@ function Materials({ notify }: Props) {
             select
             label="Course"
             value={courseId}
-            onChange={(e) => setCourseId(e.target.value)}
+            onChange={(e) => {
+              setCourseId(e.target.value);
+              setTopicFilter("");
+              setUploadTopic("");
+              setTopics([]);
+              setMaterials([]);
+              setLoading(true);
+            }}
             sx={{ maxWidth: 240 }}
           >
             {courses.map((course) => (
