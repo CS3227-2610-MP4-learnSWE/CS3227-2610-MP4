@@ -91,13 +91,9 @@ test("theme toggle works on login and workspace", async ({ page }) => {
   await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
 });
 
-test("all role routes render on direct navigation and reload", async ({
-  page,
-}) => {
-  for (const route of [
-    "/student/overview",
-    "/student/materials",
-    "/student/assistant",
+const routesByRole: Record<string, string[]> = {
+  student: ["/student/overview", "/student/materials", "/student/assistant"],
+  teacher: [
     "/teacher/overview",
     "/teacher/materials",
     "/teacher/generate",
@@ -105,19 +101,33 @@ test("all role routes render on direct navigation and reload", async ({
     "/teacher/practice",
     "/teacher/inbox",
     "/teacher/feedback",
+  ],
+  admin: [
     "/admin/overview",
     "/admin/forms",
     "/admin/responses",
     "/admin/announcements",
     "/admin/users",
     "/admin/usage",
-  ]) {
-    await page.goto(route);
-    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
-  }
-  await page.reload();
-  await expect(page.getByRole("heading", { name: "AI usage" })).toBeVisible();
-});
+  ],
+};
+for (const [role, routes] of Object.entries(routesByRole)) {
+  test(`${role} routes render on direct navigation and reload`, async ({
+    page,
+  }) => {
+    test.slow();
+    for (const route of routes) {
+      await page.goto(route);
+      await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+    }
+    if (role === "admin") {
+      await page.reload();
+      await expect(
+        page.getByRole("heading", { name: "AI usage" }),
+      ).toBeVisible();
+    }
+  });
+}
 
 test("backend outage does not block sample screens", async ({ page }) => {
   await page.route("**/api/health", (route) => route.abort());
