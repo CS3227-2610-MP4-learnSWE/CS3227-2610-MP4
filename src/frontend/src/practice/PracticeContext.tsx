@@ -129,6 +129,7 @@ export function PracticeProvider({ children }: { children: ReactNode }) {
               phase: "editing",
               message: "incomplete",
               missing: error.missing,
+              locked: false,
             });
             return;
           } else throw error;
