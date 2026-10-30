@@ -19,10 +19,14 @@ OUTPUT_WORDS = (
 )
 OUTPUT_AFTER = r"(?:is |are )?(?:printed|output|returned|the (?:output|result|answer))"
 _SEPARATOR = r"\s*(?:,|and|or|&)\s*"
-_END_OR_PUNCT = re.compile(r"\s*(?:$|[.,;:!?)])")
+# After a lone "a": end of clause, comma, dash or a conjunction, so it is a letter, not the article.
+_END_OR_PUNCT = re.compile(
+    r"\s*(?:$|[.,;:!?)—–-]|(?:because|since|as|and|but|so)\b)", re.IGNORECASE
+)
+_CONNECT = r"(?:(?:is|would be|should be)\s*[:=]?|:|=|->|[-—–])?\s*"
 _VERB = r"(?:is|are|isn't|aren't|looks?|seems?|would be|should be|must be|will be)"
 _VERDICT = (
-    rf"\s+{_VERB}\s+(?:to be\s+)?(?:not\s+|definitely\s+|also\s+|both\s+|the\s+)*{VERDICT_WORDS}\b"
+    rf"\s+{_VERB}\s+(?:to be\s+)?(?:not\s+|definitely\s+|also\s+|both\s+|the\s+)*(?:{VERDICT_WORDS}|answer)\b"
 )
 _TICKS = "✓✔"
 
@@ -62,23 +66,29 @@ def _letter_reference(text: str, all_ids: set[str], correct_ids: set[str]) -> bo
     ident = _id_pattern(all_ids)
     chain = _chain(ident)
     named = re.compile(
-        rf"\b(?:option|choice|answer)s?\b\s*(?:is\s+|:\s*|would be\s+|should be\s+)?({chain})",
+        rf"\b(?:option|choice|answer)s?\b\s*{_CONNECT}({chain})",
         re.IGNORECASE,
     )
     for m in named.finditer(text):
         if any(i in correct_ids for i in _letters(m.group(1), m.end(), text, ident)):
             return True
     # "Correct: b" names a letter as the answer whichever letter it is.
-    marked = re.compile(rf"\bcorrect(?: answer)?\s*[:—–-]\s*({chain})", re.IGNORECASE)
-    if any(_letters(m.group(1), m.end(), text, ident) for m in marked.finditer(text)):
+    marked = re.compile(
+        rf"\bcorrect(?: answer)?\s*[:—–-]\s*({chain})|\b(?:correct|right) one\s*{_CONNECT}({chain})",
+        re.IGNORECASE,
+    )
+    for m in marked.finditer(text):
+        if _letters(m.group(1) or m.group(2), m.end(), text, ident):
+            return True
+    dump = re.compile(rf"\bq\d+\s*[:\-]\s*({_id_pattern(correct_ids)})", re.IGNORECASE)
+    if any(_letters(m.group(1), m.end(), text, ident) for m in dump.finditer(text)):
         return True
     correct = _alt(correct_ids)
     # "(b)" not glued to a word (so not print(b)), a list marker "b)", a tick, a key dump "q1: a".
     return bool(
         re.search(
             rf"(?<!\w)\((?:{correct})\)|(?<![\w(])(?:{correct})\)"
-            rf"|(?<!\w)(?:{correct})\s*[{_TICKS}]|[{_TICKS}]\s*(?:{correct})(?!\w)"
-            rf"|\bq\d+\s*[:\-]\s*(?:{correct})(?!\w)",
+            rf"|(?<!\w)(?:{correct})\s*[{_TICKS}]|[{_TICKS}]\s*(?:{correct})(?!\w)",
             text,
             re.IGNORECASE,
         )
