@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { mockPracticeApi } from "./practiceApi";
+import { mockTeacherMaterialsApi, OLD } from "./teacherMaterialsApi";
 
 test.beforeEach(async ({ page }) => {
   await page.route("**/api/health", (route) =>
@@ -7,6 +8,7 @@ test.beforeEach(async ({ page }) => {
   );
   // Tests that open /student/practice get the default practice API mock.
   await mockPracticeApi(page);
+  await mockTeacherMaterialsApi(page);
 });
 
 test("login tabs explore selected roles without authentication requests", async ({
@@ -259,33 +261,27 @@ test("keyboard focus is visible and navigation supports back and forward", async
   await expect(page).toHaveURL(/\/student\/practice$/);
 });
 
-test("search keeps material metadata stable", async ({ page }) => {
+test("teacher material search filters the loaded library", async ({ page }) => {
   await page.goto("/teacher/materials");
-  const row = page
-    .getByRole("row")
-    .filter({ hasText: "Tests that give you confidence" });
-  await expect(row).toContainText("Draft");
-  await page.getByLabel("Search your materials").fill("testing");
-  await expect(row).toContainText("Draft");
-  await expect(row).toContainText("Yesterday");
+  await expect(page.getByText(OLD.title)).toBeVisible();
+  await page.getByLabel("Search your materials").fill("architecture.txt");
+  await expect(page.getByText(OLD.title)).toBeVisible();
+  await expect(page.getByText("Newer testing guide")).toHaveCount(0);
 });
 
-test("file preview picker can be opened with the keyboard", async ({
+test("teacher upload picker can be opened with the keyboard", async ({
   page,
 }) => {
   await page.goto("/teacher/materials");
   await page.getByRole("button", { name: "Upload material" }).click();
-  const choose = page.getByRole("button", { name: "Choose a file" });
-  await choose.focus();
-  const picker = page.waitForEvent("filechooser", { timeout: 1500 });
-  await page.keyboard.press("Enter");
-  const filechooser = await picker;
-  await filechooser.setFiles({
+  const dialog = page.getByRole("dialog");
+  await expect(dialog.getByText("Choose a file")).toBeVisible();
+  await dialog.locator('input[type="file"]').setInputFiles({
     name: "sample-notes.txt",
     mimeType: "text/plain",
     buffer: Buffer.from("Sample notes"),
   });
-  await expect(page.getByText("sample-notes.txt")).toBeVisible();
+  await expect(dialog.getByText("sample-notes.txt")).toBeVisible();
 });
 
 test("lesson outline links to the corresponding section", async ({ page }) => {
