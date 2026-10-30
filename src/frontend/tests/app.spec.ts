@@ -1,9 +1,12 @@
 import { test, expect } from "@playwright/test";
+import { mockPracticeApi } from "./practiceApi";
 
 test.beforeEach(async ({ page }) => {
   await page.route("**/api/health", (route) =>
     route.fulfill({ json: { status: "ok" } }),
   );
+  // Tests that open /student/practice get the default practice API mock.
+  await mockPracticeApi(page);
 });
 
 test("login tabs explore selected roles without authentication requests", async ({
@@ -35,35 +38,6 @@ test("login tabs explore selected roles without authentication requests", async 
     "Teaching",
   );
   expect(requests).toEqual([]);
-});
-
-test("practice blocks incomplete submissions and reveals solutions only after whole-set submission", async ({
-  page,
-}) => {
-  await page.goto("/student/practice");
-  await expect(page.getByText("Correct answer:", { exact: false })).toHaveCount(
-    0,
-  );
-  await page.getByRole("button", { name: "Submit practice set" }).click();
-  await expect(page.getByRole("alert")).toContainText("Answer all 3 questions");
-  await page
-    .getByRole("radio", { name: "A single, focused responsibility" })
-    .check();
-  await page
-    .getByRole("radio", { name: "To catch regressions when code changes" })
-    .check();
-  await page.getByRole("radio", { name: "3", exact: true }).check();
-  await page.getByRole("button", { name: "Get a hint" }).click();
-  await expect(page.getByText("Correct answer:", { exact: false })).toHaveCount(
-    0,
-  );
-  await page.getByRole("button", { name: "Submit practice set" }).click();
-  await expect(
-    page.getByRole("heading", { name: "3 / 3 — Nicely done!" }),
-  ).toBeVisible();
-  await expect(page.getByText("Correct answer:", { exact: false })).toHaveCount(
-    3,
-  );
 });
 
 test("lesson completion is reversible and reflected in dashboard", async ({
