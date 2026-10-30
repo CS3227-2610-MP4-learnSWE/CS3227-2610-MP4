@@ -235,7 +235,7 @@ def _int_or_none(value: object) -> int | None:
 
 def _retry_after(response: httpx.Response) -> int:
     raw = response.headers.get("Retry-After", "").strip()
-    return max(1, int(raw)) if raw.isdigit() else DEFAULT_RETRY_AFTER_SECONDS
+    return max(1, int(raw)) if raw.isascii() and raw.isdigit() else DEFAULT_RETRY_AFTER_SECONDS
 
 
 _client: SoclaasClient | None = None

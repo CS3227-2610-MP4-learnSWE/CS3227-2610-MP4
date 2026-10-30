@@ -82,7 +82,7 @@ def _resolve_context(ctx: ContextIn, student: str) -> tuple[PracticeSet | None, 
 def _leak_scope(plan: service.Plan) -> tuple[Question, ...]:
     """Hint: the questions in context. Help: every question of every set. Explain: no check."""
     if plan.mode == "hint":
-        return plan.questions
+        return plan.questions + plan.leak_extra
     if plan.mode == "help":
         return tuple(q for s in practice_data.PRACTICE_SETS.values() for q in s.questions)
     return ()

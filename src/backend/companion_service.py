@@ -24,6 +24,8 @@ class Plan:
     mode: Mode
     questions: tuple[Question, ...]  # the questions placed in context (none for help)
     answers: dict[str, str] | None  # explain only: a snapshot of the student's choices
+    # Questions checked for leaks but not placed in context (a pasted question from another set).
+    leak_extra: tuple[Question, ...] = ()
 
 
 def validate_message(raw: str) -> str:
@@ -69,7 +71,8 @@ def select_mode(
         if match is not None and match not in practice_set.questions:
             return Plan("hint", (match,), None)
         return Plan("explain", practice_set.questions, dict(attempt.answers))
-    return Plan("hint", practice_set.questions, None)
+    extra = (match,) if match is not None and match not in practice_set.questions else ()
+    return Plan("hint", practice_set.questions, None, extra)
 
 
 def _context_text(plan: Plan) -> str:
