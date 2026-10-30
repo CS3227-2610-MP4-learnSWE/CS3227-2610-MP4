@@ -12,3 +12,6 @@ No application code, tests, dependencies, active agent rules or approved contrac
 
 ## Resources and summary verification
 Token and cost totals for this Codex session were unavailable and were not invented. The earlier read-only orientation retried one restricted-network check with approved access; no edit retry or fix round. This summary was checked against tool outcomes and the final changed-file list; historical test/cost claims are attributed to existing records, not fresh measurements. Human review remains pending.
+
+## Publication after user approval (30 October 2026)
+The user approved opening the PR and reserved merging for themselves. Checked the branch, changed-file list and whitespace, committed the eleven reviewed Markdown files as `de5c9bb`, and pushed only `docs/post-pr5-status`. GitHub returned [PR 6](https://github.com/CS3227-2610-MP4-learnSWE/CS3227-2610-MP4/pull/6), targeting `master`; it was attached to this chat. These successful tool outcomes supersede the pre-approval publication status above. This publication handoff updates notes, the resource row and this summary in a follow-up docs commit on the same PR. No merge, product test run or live LLM call; CI result not yet verified. No retries or subagents; token/cost totals unavailable. Summary checked against the commit, push and PR tool outputs.
