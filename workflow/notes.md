@@ -2,7 +2,15 @@
 
 Newest entry first. Use `templates/handoff.md`.
 
-## 2026-10-30: STU-02 frontend spec and plan (draft, awaiting approval)
+## 2026-10-30: STU-02 frontend built with Variant B (verifier passed after 1 fix round)
+- Done: run branch `feat/stu02-frontend-run-b` (from the approved spec `e35c376`, HEAD `4995bd7`, not pushed). Developer built the Practice page on the real API (`src/services`, `practice/PracticeContext.tsx`, `pages/Practice.tsx`), moved the teacher demo answers to `teacherDemo.ts`, loaded Teacher and Admin lazily, wrote the real-backend test and CI job, and updated UserGuide, DeveloperGuide and the security log. Test-designer (own worktree, spec and contract only) wrote 36 mocked tests plus a shared API mock. Verifier round 1: FAIL with 2 blocking defects (404 `attempt_not_found` at the results step never recovered; the all-roles route test timed out under default workers); developer fixed both plus six non-blocking items; the re-check passed.
+- Verified by the verifier (re-run, not only read): typecheck, lint, prettier on LF content, build and bundle scan, mocked suite 57/57 twice with default workers, backend 60/60, real-backend test 1/1.
+- Process notes: the UI wording was not in the spec, so the plan got a "UI wording contract" mid-build; the plan said `api/` but the folder is `services/` (the dev server serves `/src/api/...`, which the login test counts as business requests). Two developer reports never reached the orchestrator; the verifier re-ran everything instead. Prettier on Windows flags CRLF files; judged on LF content.
+- Open, non-blocking (verifier N1-N5): reset `locked` on a 422; tests for the locked radios and wrong-shape responses; the CI bundle scan should cover every chunk except Teacher with a positive control; `test.slow()` on the route tests; UserGuide should say answers lock after a failure past the save step.
+- Open: a leftover uvicorn on port 8000 (PID 17312 tree, shell 36404) started by an agent shell; I could not stop it (denied); the user can run `Stop-Process -Id 14888,8020,38472,17312,36404 -Force`. Not yet run on GitHub: CI jobs unverified there.
+- Next: user decides on N1-N5, then push and PR. Nothing is pushed.
+
+## 2026-10-30: STU-02 frontend spec and plan (approved after this entry)
 - Done: branch `feat/stu02-frontend-spec` from latest `master` (the merged STU-02 backend branch was left). Drafted `specs/STU-02-frontend/` (spec with 13 acceptance criteria, plan, tasks) in a single session, not the spec-writer agent, because the context was already loaded. Nothing in `src/` changed.
 - Decisions proposed (not yet approved): attempt made on first submit; all answers saved in one PUT before submit; attempt id in memory only; teacher demo data moved to `teacherDemo.ts` and teacher/admin pages loaded lazily so student scripts contain no answer key; tests mock the API.
 - Open (three questions at the end of `spec.md`): when to create the attempt, memory vs `sessionStorage`, a real-backend end-to-end test in CI.

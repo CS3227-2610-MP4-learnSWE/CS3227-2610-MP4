@@ -11,3 +11,7 @@ Next step is the STU-02 frontend: connect the student Practice page to the real 
 
 ## Not done
 No code written and nothing committed or pushed. The spec and plan are drafts with three open questions for the user. The resource-log row is partial (measured before the session ended). Written by the AI; a team member should check it.
+
+## Build with Variant B (same day, after approval)
+- The user approved the spec and plan as proposed. Branch `feat/stu02-frontend-run-b` from commit `e35c376`; developer and test-designer ran in parallel, then the verifier. Round 1 found two blocking defects (results-step recovery, a load-sensitive route test); the developer fixed them and six smaller items; the verifier's re-check passed (mocked suite 57/57 twice, backend 60/60, real backend 1/1).
+- Not done: nothing is pushed and no PR is open; CI has not run on GitHub; five non-blocking items (N1-N5) are open; a leftover backend on port 8000 is still running and the AI was not permitted to stop it. Two developer reports did not reach the orchestrator, so results come from the verifier's own re-runs. Written by the AI; a team member should check it.
