@@ -87,7 +87,7 @@ def test_stu03_fix3_other_set_leak_scope_is_not_added_to_context(fake, monkeypat
     sets["other-set"] = PracticeSet("other-set", "Other", (other,))
     monkeypatch.setattr("practice_data.PRACTICE_SETS", sets)
     ask(new_student(), other.text, page="practice", set_id=SET_ID)
-    assert "enqueue" not in fake.last.all_text.split("Student message:")[0]
+    assert other.text not in fake.last.all_text.split("Student message:")[0]
 
 
 @pytest.mark.parametrize("value", ["²", "٣", "7²"])
