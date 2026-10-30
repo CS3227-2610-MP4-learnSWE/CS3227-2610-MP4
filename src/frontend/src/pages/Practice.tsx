@@ -95,7 +95,10 @@ export default function Practice() {
                 </Button>
               }
             >
-              We could not finish submitting just now. Your answers are kept.
+              We could not finish submitting just now.{" "}
+              {p.locked
+                ? "Your answers are saved; try again to finish."
+                : "Your answers are kept."}
             </Alert>
           )}
           {results && (
@@ -138,7 +141,7 @@ export default function Practice() {
                       key={c.id}
                       control={<Radio size="small" />}
                       label={c.text}
-                      disabled={submitted || submitting}
+                      disabled={submitted || submitting || p.locked}
                     />
                   ))}
                 </RadioGroup>

@@ -24,7 +24,7 @@ One practice session state, kept in a provider above the student pages so it sur
 | Submit, no attempt yet | `POST /api/practice-sets/{set}/attempts` | 201 keep `attempt_id` |
 | Save | `PUT /api/attempts/{id}/answers` with all picked answers | 404 `attempt_not_found`: new attempt, save again, once |
 | Submit | `POST /api/attempts/{id}/submit` | 200 continue; 422 `incomplete`: use `missing`; 409: go to results; 5xx or network: retry message |
-| Results | `GET /api/attempts/{id}/results` | 200 show; failure: retry message, stays submitted on the server |
+| Results | `GET /api/attempts/{id}/results` | 200 show; 404 `attempt_not_found`: new attempt, save, submit, results, once (verifier round 1); other failure: retry message |
 
 Every request sends `X-Student-Id` and uses a 10 s timeout. Retry repeats only the step that failed, so a submit that succeeded is never repeated (a repeat would return 409, which is handled anyway).
 

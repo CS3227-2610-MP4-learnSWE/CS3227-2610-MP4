@@ -31,6 +31,8 @@ type PracticeState = {
   results: Results | null;
   message: Message;
   missing: string[];
+  // Set when a failed submission cannot be edited any more (the server already holds the answers).
+  locked: boolean;
 };
 
 type Practice = PracticeState & {
@@ -49,6 +51,7 @@ const initial: PracticeState = {
   results: null,
   message: null,
   missing: [],
+  locked: false,
 };
 const Context = createContext<Practice | null>(null);
 
@@ -115,7 +118,6 @@ export function PracticeProvider({ children }: { children: ReactNode }) {
           } else if (
             error.status === 404 &&
             error.code === "attempt_not_found" &&
-            step.current !== "results" &&
             !renewed
           ) {
             renewed = true;
@@ -133,7 +135,11 @@ export function PracticeProvider({ children }: { children: ReactNode }) {
         }
       }
     } catch {
-      patch({ phase: "editing", message: "retry" });
+      patch({
+        phase: "editing",
+        message: "retry",
+        locked: step.current !== "save",
+      });
     }
   };
 

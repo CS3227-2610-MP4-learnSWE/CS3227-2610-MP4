@@ -90,11 +90,15 @@ export async function saveAnswers(
   attemptId: string,
   answers: Record<string, string>,
 ): Promise<void> {
-  await request("PUT", `/api/attempts/${seg(attemptId)}/answers`, { answers });
+  const data = await request("PUT", `/api/attempts/${seg(attemptId)}/answers`, {
+    answers,
+  });
+  if (!isObject(data) || !isObject(data.answers)) throw bad();
 }
 
 export async function submitAttempt(attemptId: string): Promise<void> {
-  await request("POST", `/api/attempts/${seg(attemptId)}/submit`);
+  const data = await request("POST", `/api/attempts/${seg(attemptId)}/submit`);
+  if (!isObject(data) || data.status !== "submitted") throw bad();
 }
 
 export async function getResults(attemptId: string): Promise<Results> {
