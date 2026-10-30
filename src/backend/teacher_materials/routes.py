@@ -2,7 +2,6 @@
 import os
 from contextlib import contextmanager
 from datetime import timezone
-from pathlib import Path
 from typing import Iterator
 from uuid import UUID, uuid4
 
@@ -17,6 +16,7 @@ from sqlalchemy.orm import Session
 from errors import ApiError
 from teacher_materials.demo_identity import require_managed_course, require_teacher
 from teacher_materials.models import Course, CourseMembership, Material, Topic, User
+from teacher_materials.multipart import material_form
 from teacher_materials.storage import remove_file, resolve_file, save_upload, storage_root
 
 router = APIRouter(prefix="/api/teacher", tags=["teacher materials"])
@@ -24,6 +24,8 @@ router = APIRouter(prefix="/api/teacher", tags=["teacher materials"])
 
 def _uuid(value: str) -> UUID:
     try:
+        if not isinstance(value, str):
+            raise TypeError("UUID input must be a string")
         return UUID(value)
     except (ValueError, TypeError) as exc:
         raise ApiError(422, "validation_error", "A valid UUID is required.") from exc
@@ -113,27 +115,33 @@ async def upload_material(request: Request, course_id: str):
     with _teacher_session(request) as (session, teacher):
         course = require_managed_course(session, teacher, _uuid(course_id))
         root = storage_root()
-        try:
-            form = await request.form()
-        except Exception as exc:
-            raise ApiError(422, "validation_error", "Valid multipart upload fields are required.") from exc
-        if set(form.keys()) - {"file", "title", "topic_id"} or not isinstance(form.get("file"), UploadFile) or not isinstance(form.get("title"), str):
-            raise ApiError(422, "validation_error", "A title and one file are required.")
-        title = form["title"].strip()
-        if not 1 <= len(title) <= 200:
-            raise ApiError(422, "validation_error", "Title must contain 1–200 characters.")
-        topic_id = _same_course_topic(session, course.id, form["topic_id"]) if "topic_id" in form and form["topic_id"] else None
-        stored = save_upload(form["file"], root)
-        try:
-            row = Material(id=uuid4(), course_id=course.id, topic_id=topic_id, uploaded_by=teacher.id, title=title, original_filename=stored.original_filename, media_type=stored.media_type, size_bytes=stored.size_bytes, storage_key=stored.storage_key)
-            session.add(row)
-            session.commit()
-            session.refresh(row)
-            return _material(row)
-        except Exception as exc:
-            session.rollback()
-            remove_file(root, stored.storage_key)
-            raise ApiError(503, "service_unavailable", "Teacher materials service is unavailable.") from exc
+        async with material_form(request) as form:
+            allowed = {"file", "title", "topic_id"}
+            if (set(form.keys()) - allowed
+                    or any(len(form.getlist(key)) != 1 for key in form)
+                    or not isinstance(form.get("file"), UploadFile)
+                    or not isinstance(form.get("title"), str)
+                    or ("topic_id" in form and not isinstance(form["topic_id"], str))):
+                raise ApiError(422, "validation_error", "A title, optional topic and exactly one file are required.")
+            title = form["title"].strip()
+            if not 1 <= len(title) <= 200:
+                raise ApiError(422, "validation_error", "Title must contain 1–200 characters.")
+            topic_id = _same_course_topic(session, course.id, form["topic_id"]) if form.get("topic_id") else None
+            stored = save_upload(form["file"], root)
+            try:
+                row = Material(id=uuid4(), course_id=course.id, topic_id=topic_id, uploaded_by=teacher.id, title=title, original_filename=stored.original_filename, media_type=stored.media_type, size_bytes=stored.size_bytes, storage_key=stored.storage_key)
+                session.add(row)
+                session.flush()
+                session.refresh(row)
+                payload = _material(row)
+                # All fallible reads/serialization happen before the commit.
+                # Nothing after a successful commit may delete these bytes.
+                session.commit()
+            except Exception as exc:
+                session.rollback()
+                remove_file(root, stored.storage_key)
+                raise ApiError(503, "service_unavailable", "Teacher materials service is unavailable.") from exc
+            return payload
 
 
 class TopicPatch(BaseModel):
@@ -151,13 +159,15 @@ async def assign_topic(request: Request, material_id: str):
             raise ApiError(422, "validation_error", "Provide only a valid topic_id UUID or null.") from exc
         topic_id = _same_course_topic(session, row.course_id, str(body.topic_id)) if body.topic_id else None
         # Lock row so the last committed assignment wins and unrelated columns stay untouched.
-        row = session.scalar(select(Material).where(Material.id == row.id).with_for_update())
+        row = session.scalar(select(Material).where(Material.id == row.id).with_for_update().execution_options(populate_existing=True))
         row.topic_id = topic_id
         from sqlalchemy import func
         row.updated_at = func.now()
-        session.commit()
+        session.flush()
         session.refresh(row)
-        return _material(row)
+        payload = _material(row)
+        session.commit()
+        return payload
 
 
 @router.get("/materials/{material_id}/file")

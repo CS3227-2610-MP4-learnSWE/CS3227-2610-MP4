@@ -78,7 +78,12 @@ jobs:
             exit 1
           fi
       - run: npx playwright install --with-deps chromium
-      - run: npm test
+      - name: Browser tests with explicit local teacher identity
+        env:
+          VITE_APP_ENV: development
+          VITE_ALLOW_DEMO_IDENTITY: "true"
+          VITE_DEMO_USER_ID: demo-teacher
+        run: npm test
       - name: Upload Playwright report on failure
         if: failure()
         uses: actions/upload-artifact@v4

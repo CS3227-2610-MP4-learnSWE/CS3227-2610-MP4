@@ -6,25 +6,42 @@ This release includes server-backed student practice and a private, PostgreSQL-b
 
 ## Run locally
 
-Requirements: Node.js 22+, npm 10+, Python 3.12+, [uv](https://docs.astral.sh/uv/) and Docker for PostgreSQL 16. Start the local database with `docker compose up -d postgres`. Set `DATABASE_URL=postgresql+psycopg://learnswe:learnswe-local-only@127.0.0.1:5433/learnswe`, `FILE_STORAGE_DIR` to an absolute private directory (for example `$PWD/private-files` from the repository root), `APP_ENV=development`, and `ALLOW_DEMO_IDENTITY=true` in the backend process environment. Run `uv run alembic upgrade head` and `uv run python -m teacher_materials.seed` from `src/backend` before starting the API. The demo identity header is spoofable and works only with both development gate settings.
+Requirements: Node.js 22+, npm 10+, Python 3.12+, [uv](https://docs.astral.sh/uv/) and Docker Desktop for PostgreSQL 16. Start Docker Desktop first.
 
-In one terminal:
+From the repository root, start the local database:
+
+```sh
+docker compose up -d postgres
+```
+
+In the backend terminal:
 
 ```sh
 cd src/backend
 uv sync --frozen
-uv run alembic upgrade head
-uv run python -m teacher_materials.seed
-uv run uvicorn main:app --host 127.0.0.1 --port 8000 --reload
+cp .env.example .env
 ```
 
-In another terminal:
+Edit `.env`: set `FILE_STORAGE_DIR` to a private **absolute path** on your machine (for example `/absolute/path/to/learnswe/private-files`, or `C:/path/to/learnswe/private-files` on Windows). The database URL matches the Compose service on loopback port 5433. Keep `APP_ENV=development` and `ALLOW_DEMO_IDENTITY=true` for local teacher testing. Then run:
+
+```sh
+uv run --env-file .env alembic upgrade head
+uv run --env-file .env python -m teacher_materials.seed
+uv run --env-file .env uvicorn main:app --host 127.0.0.1 --port 8000 --reload
+```
+
+The seed can be rerun; it does not erase uploads. The identity header is spoofable and must not be used as production authentication. The `--env-file` option is important: the API does not automatically load the backend `.env`.
+
+In another terminal, from the repository root:
 
 ```sh
 cd src/frontend
 npm ci
+cp .env.example .env
 npm run dev
 ```
+
+In PowerShell, use `Copy-Item .env.example .env` instead of `cp` if preferred. Preserve any existing `.env` rather than overwriting it; add the values from `.env.example` manually.
 
 Open [the local preview](http://127.0.0.1:5173/login). Select a role tab, then **Explore … demo**. No credentials are needed. Sign-in and Create account only display a preview message.
 
@@ -37,9 +54,9 @@ Preview screens work without the backend, but Student Practice and Teacher Mater
 - **Admin:** illustrative analytics, feedback-form builder and audience preview, sample feedback and analysis references, announcement preview, role-filtered people table and illustrative AI usage.
 - **Shared:** responsive navigation, role switching, light/dark mode, keyboard focus, reduced-motion support and direct browser routes.
 
-Changes exist in memory only and reset on browser refresh. The student companion opens from the bottom-right chat icon on any student page. Close/Escape minimises without losing messages or the unsent draft; its refresh icon clears both without refreshing the page. Chat survives student-page navigation, but returning to login or switching demo roles ends that temporary conversation. Some editor drafts reset when leaving their screen. All figures, records and AI responses are illustrative. There are no AI calls, messages, registrations or real login. Teacher Materials files and metadata persist in PostgreSQL and private local storage; uploading never publishes student-facing content. Other preview actions remain in memory.
+Remaining preview state and the current student practice session are temporary. Teacher Materials records and files persist across browser and backend restarts. The student companion opens from the bottom-right chat icon on any student page. Close/Escape minimises without losing messages or the unsent draft; its refresh icon clears both without refreshing the page. Chat survives student-page navigation, but returning to login or switching demo roles ends that temporary conversation. Some editor drafts reset when leaving their screen. All figures, records and AI responses are illustrative. There are no AI calls, messages, registrations or real login. Teacher Materials files and metadata persist in PostgreSQL and private local storage; uploading never publishes student-facing content. Other preview actions remain in memory.
 
-**Practice boundary:** complete every question and submit the whole set before scores and solutions are shown. Before submission, the practice hint and companion previews never reveal or confirm answers. The widget displays the current page label and fixed demonstration replies; it does not retrieve page contents or call AI. Authenticated, account-scoped conversation persistence until logout (including browser reload) and secure current-page content retrieval remain future requirements. Sample answer keys ship in frontend code and the demo role switcher is unrestricted; neither is a security boundary. Production answer protection and authorisation must be implemented on the server later.
+**Practice boundary:** complete every question and submit the whole set before scores and solutions are shown. Before submission, the practice hint and companion previews never reveal or confirm answers. The widget displays the current page label and fixed demonstration replies; it does not retrieve page contents or call AI. Authenticated, account-scoped conversation persistence until logout (including browser reload) and secure current-page content retrieval remain future requirements. Student practice gets questions without keys and reads answers only from the server after submission. Separate teacher sample answers load only in the lazy teacher screen. The demo role switcher and identity headers are not authentication; real login and course authorisation remain future work.
 
 ## Health API
 
@@ -67,7 +84,7 @@ cd src/backend
 uv run pytest -q
 ```
 
-Frontend tests start a local Vite server if port 5173 is free. They cover login preview behaviour, practice submission, completion, inbox, role routes, themes, mobile navigation, focus and backend failure. Tests intercept health responses; the backend suite separately exercises the real ASGI API. Visual review screenshots are generated under `src/frontend/test-results/visual/` and are not committed.
+Frontend tests start a local Vite server if port 5173 is free. They cover login preview behaviour, practice submission, completion, inbox, role routes, themes, mobile navigation, focus and backend failure. Teacher browser tests require `VITE_APP_ENV=development`, `VITE_ALLOW_DEMO_IDENTITY=true` and `VITE_DEMO_USER_ID=demo-teacher` in the test-server environment (the frontend `.env` above provides these). PostgreSQL integration tests require `TEA01_TEST_DATABASE_URL` pointing to a dedicated test database; they create/drop only their unique schema. Without that variable, teacher integration tests are explicitly skipped. Never point it at production. Tests intercept health responses; the backend suite separately exercises the real ASGI API. Visual review screenshots are generated under `src/frontend/test-results/visual/` and are not committed.
 
 The production build is generated in `src/frontend/dist/`. Hosting it later requires SPA fallback to `index.html` and routing `/api` to FastAPI; deployment is not included in this release.
 

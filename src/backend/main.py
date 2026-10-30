@@ -1,4 +1,4 @@
-"""App wiring: health endpoints and the practice attempt API. No database or real authentication yet."""
+"""App wiring: health, in-memory student practice, and PostgreSQL teacher materials. No real authentication yet."""
 from fastapi import FastAPI
 
 import practice_routes
