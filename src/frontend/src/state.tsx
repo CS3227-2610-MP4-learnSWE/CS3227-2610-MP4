@@ -4,19 +4,12 @@ import { initialMessages, type Role, type DemoMessage } from "./data";
 type DemoState = {
   completed: string[];
   toggleCompleted: (id: string) => void;
-  answers: Record<string, string>;
-  answer: (id: string, value: string) => void;
-  submitted: boolean;
-  submit: () => void;
-  resetPractice: () => void;
   messages: Record<Role, DemoMessage[]>;
   read: (role: Role, id: string) => void;
 };
 const Context = createContext<DemoState | null>(null);
 export function DemoProvider({ children }: { children: ReactNode }) {
   const [completed, setCompleted] = useState<string[]>([]);
-  const [answers, setAnswers] = useState<Record<string, string>>({});
-  const [submitted, setSubmitted] = useState(false);
   const [messages, setMessages] = useState<Record<Role, DemoMessage[]>>({
     student: initialMessages.map((m) => ({ ...m })),
     teacher: initialMessages.map((m) => ({ ...m })),
@@ -30,14 +23,6 @@ export function DemoProvider({ children }: { children: ReactNode }) {
           ? items.filter((item) => item !== id)
           : [...items, id],
       ),
-    answers,
-    answer: (id, value) => setAnswers((items) => ({ ...items, [id]: value })),
-    submitted,
-    submit: () => setSubmitted(true),
-    resetPractice: () => {
-      setSubmitted(false);
-      setAnswers({});
-    },
     messages,
     read: (role, id) =>
       setMessages((items) => ({

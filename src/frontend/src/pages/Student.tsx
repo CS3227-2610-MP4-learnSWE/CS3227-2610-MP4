@@ -1,13 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, Navigate, useLocation } from "react-router";
-import {
-  Alert,
-  Button,
-  FormControlLabel,
-  Radio,
-  RadioGroup,
-  TextField,
-} from "@mui/material";
+import { Button, TextField } from "@mui/material";
 import {
   ArrowLeft,
   ArrowRight,
@@ -17,7 +10,6 @@ import {
   Flame,
   Lightbulb,
   Sparkles,
-  Target,
 } from "lucide-react";
 import {
   ArrowBadge,
@@ -27,14 +19,14 @@ import {
   Panel,
   PreviewNote,
   PrimaryLink,
-  Progress,
   SectionHeading,
   Stat,
   Tag,
 } from "../components/ui";
-import { lessons, questions, weeklyActivity } from "../data";
+import { lessons, weeklyActivity } from "../data";
 import { useDemo } from "../state";
 import { useCompanion } from "../components/StudyCompanion";
+import Practice from "./Practice";
 
 function Overview() {
   const { completed } = useDemo();
@@ -364,157 +356,6 @@ function Lesson({ id }: { id: string }) {
           </Panel>
         </aside>
       </div>
-    </>
-  );
-}
-export function Practice() {
-  const { answers, answer, submitted, submit, resetPractice } = useDemo();
-  const [error, setError] = useState(false);
-  const [hint, setHint] = useState(false);
-  const count = questions.filter((q) => answers[q.id]?.trim()).length;
-  const score = questions.filter(
-    (q) => answers[q.id]?.trim() === q.answer,
-  ).length;
-  return (
-    <>
-      <PageHeading
-        eyebrow="UNDERSTAND IT. THEN TRY IT."
-        title="Put your knowledge to work."
-        description="A few focused questions to turn understanding into confidence."
-      />
-      <div className="practice-layout">
-        <div>
-          <Panel className="practice-intro">
-            <div>
-              <Tag tone="purple">SOFTWARE ENGINEERING ESSENTIALS</Tag>
-              <h2>Clear code, confident changes</h2>
-              <p>3 MCQs · About 5 minutes · Whole-set submission</p>
-            </div>
-            <span className="icon-box purple">
-              <Target size={25} />
-            </span>
-          </Panel>
-          {error && (
-            <Alert severity="warning" sx={{ my: 2 }}>
-              Answer all 3 questions before submitting the whole set.
-            </Alert>
-          )}
-          {submitted && (
-            <Alert severity="success" sx={{ my: 2 }}>
-              <h2 className="result-title">
-                {score} / 3 —{" "}
-                {score === 3
-                  ? "Nicely done!"
-                  : "Keep building your understanding."}
-              </h2>
-              Your whole set is submitted. Review your answers and explanations
-              below.
-            </Alert>
-          )}
-          {questions.map((q, i) => (
-            <Panel key={q.id} className="question-panel">
-              <div className="question-number">
-                QUESTION {String(i + 1).padStart(2, "0")}
-                <span>Choose one</span>
-              </div>
-              <h3>{q.text}</h3>
-              {q.code && (
-                <pre className="code-block">
-                  <code>{q.code}</code>
-                </pre>
-              )}
-              {
-                <RadioGroup
-                  aria-label={q.text}
-                  value={answers[q.id] || ""}
-                  onChange={(e) => answer(q.id, e.target.value)}
-                >
-                  {q.options.map((option) => (
-                    <FormControlLabel
-                      className={`answer-option ${answers[q.id] === option ? "selected" : ""}`}
-                      value={option}
-                      key={option}
-                      control={<Radio size="small" />}
-                      label={option}
-                      disabled={submitted}
-                    />
-                  ))}
-                </RadioGroup>
-              }
-              {submitted && (
-                <div className="solution">
-                  <strong>Correct answer: {q.answer}</strong>
-                  <p>{q.explanation}</p>
-                </div>
-              )}
-            </Panel>
-          ))}
-          <div className="practice-submit">
-            <p>
-              <CheckCircle2 size={16} /> Answers are revealed after you submit
-              the whole set.
-            </p>
-            <Button
-              variant="contained"
-              onClick={() => {
-                if (submitted) {
-                  resetPractice();
-                  setHint(false);
-                  setError(false);
-                } else if (count < questions.length) setError(true);
-                else {
-                  submit();
-                  setError(false);
-                }
-              }}
-            >
-              {submitted ? "Start another demo attempt" : "Submit practice set"}
-            </Button>
-          </div>
-        </div>
-        <aside className="practice-aside">
-          <Panel className="practice-progress">
-            <span className="eyebrow">YOUR PRACTICE SESSION</span>
-            <h3>{submitted ? "A step forward." : "One thought at a time."}</h3>
-            <Progress
-              value={Math.round((count / 3) * 100)}
-              label={`${count} of 3 answered`}
-            />
-            <p>Take your time. You can change any answer before submitting.</p>
-          </Panel>
-          <Panel className="hint-panel">
-            <span className="icon-box purple">
-              <Sparkles size={22} />
-            </span>
-            <h3>A nudge, not a shortcut.</h3>
-            <p>
-              {submitted
-                ? "Your explanations are now available alongside each question."
-                : "Your study companion can help you think through a concept without revealing the answer."}
-            </p>
-            {hint && (
-              <div className="hint-text">
-                {submitted
-                  ? "Compare your reasoning with each explanation. What assumption would you change next time?"
-                  : "Break the problem into smaller ideas. What is each question asking you to measure or protect? Trace the code one line at a time."}
-              </div>
-            )}
-            <Button
-              variant="outlined"
-              fullWidth
-              onClick={() => setHint(true)}
-              startIcon={<Lightbulb size={16} />}
-            >
-              {submitted ? "Reflect on your answers" : "Get a hint"}
-            </Button>
-            <small>Scripted demo · No AI request</small>
-          </Panel>
-        </aside>
-      </div>
-      <PreviewNote>
-        Demo scoring runs in your browser. Sample answer keys are not secure;
-        production enforcement belongs in the backend.
-      </PreviewNote>
     </>
   );
 }

@@ -35,7 +35,8 @@ import {
   Stat,
   Tag,
 } from "../components/ui";
-import { lessons, questions } from "../data";
+import { lessons } from "../data";
+import { questions } from "../teacherDemo";
 
 type Props = { notify: (message?: string) => void };
 function Overview() {

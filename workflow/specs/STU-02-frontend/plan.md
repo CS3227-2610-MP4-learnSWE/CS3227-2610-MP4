@@ -30,8 +30,8 @@ Every request sends `X-Student-Id` and uses a 10 s timeout. Retry repeats only t
 
 ## Components and modules
 New (small, single purpose):
-- `src/frontend/src/api/client.ts`: the only place that calls `fetch` for the business API: base path, header, timeout, JSON parsing, and one `ApiError` (status, code, missing). Reuses nothing duplicated; the health check in `Shell.tsx` stays as is.
-- `src/frontend/src/api/practice.ts`: typed functions `getSet`, `startAttempt`, `saveAnswers`, `submitAttempt`, `getResults`, with a check that each response has the expected shape (a wrong shape counts as a failed response).
+- `src/frontend/src/services/client.ts`: the only place that calls `fetch` for the business API: base path, header, timeout, JSON parsing, and one `ApiError` (status, code, missing). Reuses nothing duplicated; the health check in `Shell.tsx` stays as is.
+- `src/frontend/src/services/practice.ts`: typed functions `getSet`, `startAttempt`, `saveAnswers`, `submitAttempt`, `getResults`, with a check that each response has the expected shape (a wrong shape counts as a failed response).
 - `src/frontend/src/config.ts`: `STUDENT_ID` placeholder with a comment pointing to SHR-01.
 - `src/frontend/src/practice/PracticeContext.tsx`: provider and hook holding the state above and the actions `load`, `choose`, `submit`, `startAnother`, `retry`. Mounted in `DemoProvider`'s place for practice only; the old `answers`, `answer`, `submit`, `resetPractice` and `submitted` are removed from `state.tsx` (the companion reads the new hook).
 - `src/frontend/src/pages/Practice.tsx`: the page (moved out of `Student.tsx`), same layout and classes; renders from the state.
@@ -72,3 +72,16 @@ Security cases to add to `workflow/security/test-log.md`: answer key absent from
 - Attempt id in memory only (open question 2, proposed).
 - Teacher demo data moves to its own file and teacher/admin load on demand: this is the only way the student scripts can be free of answers while the teacher demo still has them; the teacher demo remains placeholder data until the teacher backend exists.
 - Workflow: Variant B (developer || test-designer in a worktree, then verifier, max 2 fix rounds). The test-designer works from this spec and the API contract only.
+
+## UI wording contract (added during the build, 30 Oct 2026)
+The spec did not fix page wording; both the page and the tests rely on this. It is part of the contract.
+- Failures (every failure message and the load error panel) have a button named exactly "Try again".
+- The missing-question message is an element with `role="alert"` that contains the unanswered question numbers; for a server 422 it uses the server's `missing` list.
+- The reset button is named "Start another attempt". While the set loads, text matching /loading/i is shown.
+- The score reads "N / M" or "N of M" (also "N out of M"); the counter reads "N of M answered".
+- Keep the `.question-panel` class; each question panel shows, after submission, the student's choice, the correct choice, the word "correct" and the explanation; code snippets render in `pre code`.
+- The label for the correct choice must not be the exact string "Correct choice" in student code (Teacher.tsx uses it); use "Correct answer".
+- The 10 s timeout is `setTimeout` plus `AbortController` (not `AbortSignal.timeout`), so a fake clock controls it.
+- After a second `attempt_not_found` the page shows "Try again" with exactly 2 attempt starts, 2 saves and no submit. A retry repeats only the failed step (results retry sends only results; submit retry only submit).
+- The study companion keeps its text: "Hints only before whole-set submission" before submit and "Practice submitted" after.
+- Folder renamed from `api/` to `services/`: the dev server serves `/src/api/...` modules, and the existing login test counts any URL containing `/api/` as a business request.

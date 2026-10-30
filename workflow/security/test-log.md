@@ -12,3 +12,7 @@
 | 2026-10-29 | STU-02 | Concurrent save and submit | atomic | no lock; race possible | Open, non-blocking (in-memory placeholder) |
 | 2026-10-29 | STU-02 | Header variants (padded, duplicate) | no cross-student access | separate students; last duplicate wins | Pass; goes away with SHR-01 |
 | 2026-10-29 | STU-02 | Committed secrets; AI prompt injection | none; not applicable | none; no AI in this slice | Pass / n/a |
+| 2026-10-30 | STU-02-frontend | Student scripts for `/student/practice` searched for fixture explanations | none present; teacher data only in the lazy Teacher chunk | explanation texts only in the Teacher chunk; student chunks hold the field name `correct_choice` only | Pass (built bundle checked) |
+| 2026-10-30 | STU-02-frontend | Results request before successful submit | none sent | results requested only after submit 200 or 409 (code path) | Code reviewed; mocked test by test-designer pending |
+| 2026-10-30 | STU-02-frontend | Server text (question, choice, explanation) rendered | shown as text, not HTML | React text nodes only, no `dangerouslySetInnerHTML` | Code reviewed; mocked `<img onerror>` test by test-designer pending |
+| 2026-10-30 | STU-02-frontend | Double click on Submit | one submit flow | button disabled and a `busy` guard | Code reviewed; mocked test by test-designer pending |

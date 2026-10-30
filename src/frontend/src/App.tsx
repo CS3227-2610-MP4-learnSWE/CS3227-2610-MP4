@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { Navigate, Route, Routes } from "react-router";
 import {
   Alert,
@@ -13,9 +13,12 @@ import Login from "./pages/Login";
 import { CompanionProvider } from "./components/StudyCompanion";
 import Shell from "./components/Shell";
 import Student from "./pages/Student";
-import Teacher from "./pages/Teacher";
-import Admin from "./pages/Admin";
+import { PracticeProvider } from "./practice/PracticeContext";
 import InboxPage, { FeedbackForm } from "./pages/Inbox";
+
+// Loaded on demand so the student pages never download the teacher demo data.
+const Teacher = lazy(() => import("./pages/Teacher"));
+const Admin = lazy(() => import("./pages/Admin"));
 
 export default function App() {
   const prefersDark = useMediaQuery("(prefers-color-scheme: dark)");
@@ -81,9 +84,11 @@ export default function App() {
           <Route
             path="/student"
             element={
-              <CompanionProvider>
-                <Shell role="student" dark={dark} toggle={toggle} />
-              </CompanionProvider>
+              <PracticeProvider>
+                <CompanionProvider>
+                  <Shell role="student" dark={dark} toggle={toggle} />
+                </CompanionProvider>
+              </PracticeProvider>
             }
           >
             <Route index element={<Navigate to="overview" replace />} />
@@ -98,14 +103,28 @@ export default function App() {
             <Route index element={<Navigate to="overview" replace />} />
             <Route path="inbox" element={<InboxPage role="teacher" />} />
             <Route path="feedback" element={<FeedbackForm notify={notify} />} />
-            <Route path="*" element={<Teacher notify={notify} />} />
+            <Route
+              path="*"
+              element={
+                <Suspense fallback={<p role="status">Loading…</p>}>
+                  <Teacher notify={notify} />
+                </Suspense>
+              }
+            />
           </Route>
           <Route
             path="/admin"
             element={<Shell role="admin" dark={dark} toggle={toggle} />}
           >
             <Route index element={<Navigate to="overview" replace />} />
-            <Route path="*" element={<Admin notify={notify} />} />
+            <Route
+              path="*"
+              element={
+                <Suspense fallback={<p role="status">Loading…</p>}>
+                  <Admin notify={notify} />
+                </Suspense>
+              }
+            />
           </Route>
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
