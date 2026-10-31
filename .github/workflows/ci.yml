@@ -117,6 +117,13 @@ jobs:
           name: real-backend-results
           path: src/frontend/test-results/
           retention-days: 7
+      # The backend is started in the background with `uv run`. If it is still running when the job
+      # ends, the setup-uv cleanup (`uv cache prune`) can wait on the uv cache lock until it times out.
+      - name: Stop backend
+        if: always()
+        run: |
+          pkill -f "uvicorn main:app" || true
+          sleep 2
 
   workflow-tools:
     name: Workflow tool tests
