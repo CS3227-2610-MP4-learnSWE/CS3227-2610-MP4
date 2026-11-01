@@ -30,8 +30,8 @@ All errors use {"detail":{"code":"...","message":"..."}} (429 adds safe integer 
 | extracted text >8,000 chars | 422 source_text_too_large | Mention 8,000 characters |
 | PDF >100 pages | 422 source_text_too_large | Mention 100 pages; reject before extracting any page |
 | invalid UTF-8, malformed/encrypted PDF, extraction exception | 422 source_unreadable | State source cannot be read as UTF-8 text/text-based PDF |
-| LlmRateLimited | 429 llm_rate_limited | Fixed retry message; Retry-After header and detail.retry_after_seconds use the retry_after_seconds integer |
-| LlmBusy | 429 llm_busy | Fixed retry message; Retry-After header and detail.retry_after_seconds use the retry_after_seconds integer |
+| LlmRateLimited | 429 llm_rate_limited | Fixed retry message; detail.retry_after_seconds uses retry_after_seconds integer; Retry-After header optional |
+| LlmBusy | 429 llm_busy | Fixed retry message; detail.retry_after_seconds uses retry_after_seconds integer; Retry-After header optional |
 | LlmNotConfigured | 503 llm_not_configured | State AI service is not configured |
 | LlmInputTooLarge | 422 source_text_too_large | State source cannot fit request limit; normally unreachable due to 8,000 source cap |
 | LlmTimeout | 504 llm_timeout | Fixed retry message |
