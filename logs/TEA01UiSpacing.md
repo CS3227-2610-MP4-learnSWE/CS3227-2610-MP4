@@ -1,0 +1,7 @@
+# TEA-01 spacing and local configuration — 2026-11-01
+
+User reported disabled upload and left-flush course error. Error/loading rows lacked padding; added a scoped padded flex row and explicit disabled-upload explanation. Extended existing course-error test to check padding and disabled state. All nine teacher browser tests, TypeScript and ESLint passed. Browser checks use mocks; real API diagnosis returned 503 private storage unavailable. The ignored backend .env contained the placeholder storage path; changed that one field to a real private local directory and created it. Restart the backend using --env-file .env to load it. No claim that database/course loading works after restart yet. No commit or push; small single-session cosmetic fix, no delegated verifier.
+
+Follow-up: user requested a fresh upload form after cancellation. Reproduced retained title with a failing browser regression. Shared closeUpload resets title, topic, file (including native input), and upload errors on Cancel, Escape/backdrop close, and successful upload; busy dismissal remains blocked. Regression covers Cancel and Escape; topic assertion checks the actual selected option because the empty MUI field renders blank. No commit/push.
+
+Final verification: all ten teacher browser tests passed, along with TypeScript and ESLint. User confirmed uploads work after correcting local storage configuration and requested a local commit of the current changes. Environment files remain ignored; no push requested.

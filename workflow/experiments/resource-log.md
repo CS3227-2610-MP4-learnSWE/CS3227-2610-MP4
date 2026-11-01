@@ -30,3 +30,8 @@ One hand-written row per notable task. Take the numbers from a token-tracker sum
 Cache reads dominate token volume (millions per task) but are cheap per token; output and cache writes dominate cost. Switching model mid-session is expensive because the whole context is written to cache again.
 
 Also record: tasks that consumed the most tokens, what was tried to reduce it, and the SoC LLM request counts and rate-limit hits for the in-app AI features.
+| 2026-10-30 | TEA-01 materials increment | feat/tea01-materials | Variant B, orchestrator + spec-writer then developer/test-designer/verifier | Codex parent; gpt-6-sol specification/development/testing; gpt-6-astra verifier | unavailable | unavailable | unavailable | unavailable | unavailable | 1 | Baseline60backend65browser; final76backend74browser and verifier PASS. Delegated developer spend-cap failure required parent developer substitution; independent test-designer/verifier retained. No live LLM calls; exact tracker totals unavailable. Details: logs/TEA01Session.md. |
+
+- 2026-11-01 TEA-01 small UI/debug correction: primary Codex session; no agents; token/cost totals unavailable. Final ten teacher browser tests and types/lint passed; local server needed sandbox escalation. Cancellation regression reproduced before fix.
+
+- 2026-11-01 local master merge: primary Codex session, no agents, token/cost totals unavailable; nine conflict files resolved, backend343/browser102/typecheck/lint/build passed. Offline lock resolution cache misses required online resolution.

@@ -2,6 +2,26 @@
 
 Newest entry first. Use `templates/handoff.md`. Older entries describe the state at the time; the newest entry supersedes their open/merged status.
 
+## 2026-11-01: merge local master into teacher branch (developer)
+- User requested local master merge. Merged master 778c696 into feat/tea01-materials, preserving student companion and teacher materials routers, dependency sets, isolated database and fake-LLM test fixtures, environment examples and both workflow histories.
+- Resolved guide conflicts to describe both implemented slices and their limitations; regenerated uv.lock with httpx as a runtime dependency.
+- Verification: backend 343 passed against the isolated test database; mocked browser suite 102 passed; frontend typecheck, lint and production build passed. No live LLM calls, deployment, push or PR. Local .env values untouched by merge.
+
+## 2026-11-01: TEA-01 materials error spacing (developer, small UI correction)
+- Follow-up: upload cancellation now resets all fields/native file input and validation errors; shared reset also used for Escape/backdrop dismissal and successful upload.
+- Added padded loading/error rows and an explanation for disabled upload when no course has loaded. Existing course-load failure disables upload intentionally.
+- Local diagnosis: teacher courses returned 503, private file storage unavailable; ignored backend .env still contained the example placeholder path. Replaced only FILE_STORAGE_DIR with /Users/dylanwong/Documents/Codex/learnswe-private-files and created that directory. Backend restart required to reload env; not restarted by this session.
+- Verified: teacher browser tests 9/9, frontend types/lint pass. Small single-session UI correction consistent with previous cosmetic fixes; no independent verifier. No commit/push.
+
+## 2026-10-30: TEA-01 complete locally, awaiting human PR approval (orchestrator)
+- Done: `feat/tea01-materials` contains persistent private teacher materials, PostgreSQL16/SQLAlchemy/Alembic foundation, gated demo identity, upload/list/topic assignment/download UI/API, shared data contract and setup docs. Source verified at `673ca2470f1fa3948e3075b26c28ed8b71bb3e53`; final subsequent commit is workflow evidence only.
+- Verification: independent verifier PASS after correction round1. Fresh backend76 (real isolated PostgreSQL16), browser74, types/lint/format/build passed. Parent live HTTP smoke passed upload201/byte-identical download/cross-course404. GitHub-hosted CI/deployment not checked.
+- Fixes: six verifier findings reproduced and fixed: postcommit file cleanup, stale ORM null update, multipart ingress limits, stale UI responses, non-retried topics and malformed multipart500. Independent regressions were RED on old code and GREEN on corrections. Security evidence in workflow/security/test-log.md.
+- Workflow: approved contract13d10cf; implementation9c5eb6b; independent tests firsta5e25c4; fixes0a96850, label/docs44ab536; integration673ca24. Delegated developer hit spend cap; parent assumed developer role, documented as deviation. Test-designer and final verifier remained independent. Exact token/cost totals unavailable.
+- Next: human reviews local feature branch and authorises push/PR publication. Nothing pushed, no PR opened, no merge to master. Teammates should read docs/SharedDataContract.md before shared-entity work.
+- Limits: spoofable development identity is not real login; source uploads never publish lessons. AI generation/publishing/admin features/student persistence remain future increments. PostgreSQL and private files need coordinated backups; crash-between-stores limitation documented.
+- Files: source under src/, compose.yml, docs guides/shared contract, workflow/specs/TEA-01, tests, security/resource logs and logs/TEA01Session.md.
+
 ## 2026-10-31: CI real-backend cleanup failure on `master` (single session, orchestrator)
 - Done: PR 8 was merged by the user (`master` at `916ab8e`). The CI run on that push failed in the Real backend end-to-end job with the same `setup-uv` cleanup error as before (`uv cache prune --ci` waits 300 s on the uv cache lock, exit 2); the other four jobs passed. So the failure is intermittent: the PR run on `fcbadd3` and two earlier `master` runs passed. Earlier entries that call it a one-off or say a re-run passed are superseded. Created `fix/ci-real-backend-cleanup` from the latest `master` and added an `if: always()` step "Stop backend" (kills `uvicorn main:app`, then sleeps 2 s) at the end of the real-backend job in `.github/workflows/ci.yml`. No other file changed.
 - Likely cause (not confirmed): the backend is started in the background with `nohup uv run uvicorn ...` and is still running when the post step prunes the cache, so the prune waits on the lock. The step stops that process first.

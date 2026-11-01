@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router";
 import {
   Button,
@@ -35,8 +35,18 @@ import {
   Stat,
   Tag,
 } from "../components/ui";
-import { lessons } from "../data";
 import { questions } from "../teacherDemo";
+import {
+  listTeacherCourses,
+  listTeacherTopics,
+  listTeacherMaterials,
+  uploadTeacherMaterial,
+  setTeacherMaterialTopic,
+  downloadTeacherMaterial,
+  type Course,
+  type Topic,
+  type Material,
+} from "../services/teacherMaterials";
 
 type Props = { notify: (message?: string) => void };
 function Overview() {
@@ -150,34 +160,208 @@ function Overview() {
   );
 }
 function Materials({ notify }: Props) {
-  const [open, setOpen] = useState(false);
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [courseId, setCourseId] = useState("");
+  const [topics, setTopics] = useState<Topic[]>([]);
+  const [topicFilter, setTopicFilter] = useState("");
+  const [materials, setMaterials] = useState<Material[]>([]);
   const [search, setSearch] = useState("");
-  const [filename, setFilename] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [open, setOpen] = useState(false);
+  const [title, setTitle] = useState("");
+  const [uploadTopic, setUploadTopic] = useState("");
+  const [file, setFile] = useState<File | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [uploadError, setUploadError] = useState("");
   const fileInput = useRef<HTMLInputElement>(null);
-  const visible = lessons.filter((l) =>
-    `${l.title} ${l.topic}`.toLowerCase().includes(search.toLowerCase()),
+  const demoEnabled =
+    import.meta.env.VITE_APP_ENV === "development" &&
+    import.meta.env.VITE_ALLOW_DEMO_IDENTITY === "true";
+
+  const [courseReload, setCourseReload] = useState(0);
+  const [dataReload, setDataReload] = useState(0);
+  const loadCourses = () => setCourseReload((value) => value + 1);
+  const refresh = () => setDataReload((value) => value + 1);
+  useEffect(() => {
+    let active = true;
+    setLoading(true);
+    setError("");
+    listTeacherCourses()
+      .then((items) => {
+        if (!active) return;
+        setCourses(items);
+        setCourseId(items[0]?.id || "");
+        if (!items.length) setLoading(false);
+      })
+      .catch(() => {
+        if (active) {
+          setError("Could not load courses. Please try again.");
+          setLoading(false);
+        }
+      });
+    return () => {
+      active = false;
+    };
+  }, [courseReload]);
+  useEffect(() => {
+    if (!courseId) return;
+    let active = true;
+    setLoading(true);
+    setError("");
+    setMaterials([]);
+    // A course/filter/retry change supersedes both responses. A late response
+    // cannot overwrite the selected course, even after a mutation completes.
+    Promise.all([
+      listTeacherTopics(courseId),
+      listTeacherMaterials(courseId, topicFilter || undefined),
+    ])
+      .then(([nextTopics, nextMaterials]) => {
+        if (!active) return;
+        setTopics(nextTopics);
+        setMaterials(nextMaterials);
+      })
+      .catch(() => {
+        if (active)
+          setError("Could not load topics or materials. Please retry.");
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [courseId, topicFilter, dataReload]);
+  const visible = materials.filter((item) =>
+    `${item.title} ${item.original_filename}`
+      .toLowerCase()
+      .includes(search.toLowerCase()),
   );
+  const closeUpload = () => {
+    setOpen(false);
+    setTitle("");
+    setFile(null);
+    setUploadTopic("");
+    setUploadError("");
+    if (fileInput.current) fileInput.current.value = "";
+  };
+  const submit = async () => {
+    if (!file || !title.trim()) {
+      setUploadError(
+        "Add a title and choose a PDF or UTF-8 text file (maximum 10 MiB).",
+      );
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024 || !/\.(pdf|txt)$/i.test(file.name)) {
+      setUploadError("Choose a PDF or UTF-8 text file no larger than 10 MiB.");
+      return;
+    }
+    setBusy(true);
+    setUploadError("");
+    try {
+      await uploadTeacherMaterial(courseId, {
+        file,
+        title,
+        topicId: uploadTopic || undefined,
+      });
+      closeUpload();
+      notify("Material uploaded. It has not been published to students.");
+      refresh();
+    } catch {
+      setUploadError(
+        "Upload failed. Check that the file is a readable PDF or UTF-8 text file within 10 MiB, then retry.",
+      );
+    } finally {
+      setBusy(false);
+    }
+  };
+  const changeTopic = async (item: Material, value: string) => {
+    try {
+      await setTeacherMaterialTopic(item.id, value || null);
+      refresh();
+    } catch {
+      setError("Could not change the topic. Please retry.");
+    }
+  };
+  const download = async (item: Material) => {
+    try {
+      const blob = await downloadTeacherMaterial(item.id);
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = item.original_filename;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      URL.revokeObjectURL(url);
+    } catch {
+      setError("Could not download this material. Please retry.");
+    }
+  };
   return (
     <>
       <PageHeading
         eyebrow="THE STARTING POINT FOR GREAT LESSONS"
         title="Your materials, all together."
-        description="A thoughtful home for the ideas you want to share."
+        description="Private source files for your teaching. Uploading does not publish a lesson."
         action={
           <Button
             variant="contained"
             startIcon={<Upload size={17} />}
             onClick={() => setOpen(true)}
+            disabled={!courseId}
           >
             Upload material
           </Button>
         }
       />
+      <PreviewNote>
+        Development identity:{" "}
+        {demoEnabled
+          ? import.meta.env.VITE_DEMO_USER_ID || "demo-teacher"
+          : "disabled (configure local .env)"}
+        . Local testing only; this is not a real login.
+      </PreviewNote>
       <Panel className="library-panel">
         <div className="library-toolbar">
           <h2>
-            Course materials <span className="count-badge">3</span>
+            Course materials{" "}
+            <span className="count-badge">{materials.length}</span>
           </h2>
+          <TextField
+            select
+            label="Course"
+            value={courseId}
+            onChange={(e) => {
+              setCourseId(e.target.value);
+              setTopicFilter("");
+              setUploadTopic("");
+              setTopics([]);
+              setMaterials([]);
+              setLoading(true);
+            }}
+            sx={{ maxWidth: 240 }}
+          >
+            {courses.map((course) => (
+              <MenuItem key={course.id} value={course.id}>
+                {course.title}
+              </MenuItem>
+            ))}
+          </TextField>
+          <TextField
+            select
+            label="Topic filter"
+            value={topicFilter}
+            onChange={(e) => setTopicFilter(e.target.value)}
+            sx={{ maxWidth: 220 }}
+          >
+            <MenuItem value="">All topics</MenuItem>
+            {topics.map((topic) => (
+              <MenuItem key={topic.id} value={topic.id}>
+                {topic.name}
+              </MenuItem>
+            ))}
+          </TextField>
           <TextField
             label="Search your materials"
             value={search}
@@ -185,106 +369,141 @@ function Materials({ notify }: Props) {
             sx={{ maxWidth: 280 }}
           />
         </div>
-        <div className="table-scroll">
-          <table>
-            <thead>
-              <tr>
-                <th>Material</th>
-                <th>Topic</th>
-                <th>Status</th>
-                <th>Updated</th>
-                <th>
-                  <span className="sr-only">Action</span>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {visible.map((lesson) => (
-                <tr key={lesson.id}>
-                  <td>
-                    <span className={`file-icon ${lesson.tone}`}>
-                      <FileText size={20} />
-                    </span>
-                    <div>
-                      <strong>{lesson.title}</strong>
-                      <small>Course notes · Sample PDF</small>
-                    </div>
-                  </td>
-                  <td>{lesson.topic}</td>
-                  <td>
-                    <Tag
-                      tone={
-                        lesson.sourceStatus === "Published" ? "green" : "amber"
-                      }
-                    >
-                      {lesson.sourceStatus}
-                    </Tag>
-                  </td>
-                  <td>{lesson.updated}</td>
-                  <td>
-                    <Button component={Link} to="/teacher/review" size="small">
-                      Review
-                      <ArrowRight size={14} />
-                    </Button>
-                  </td>
+        {loading && (
+          <p className="library-status" role="status">
+            Loading materials…
+          </p>
+        )}
+        {error && (
+          <div className="library-status" role="alert">
+            <span>{error}</span>{" "}
+            <Button onClick={courses.length ? refresh : loadCourses}>
+              Retry
+            </Button>
+            {!courseId && (
+              <small>Upload becomes available after a course loads.</small>
+            )}
+          </div>
+        )}
+        {!loading && !error && !courses.length && (
+          <EmptyState title="No courses yet">
+            You do not manage a course.
+          </EmptyState>
+        )}
+        {!loading && !error && courses.length > 0 && (
+          <div className="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Material</th>
+                  <th>Topic</th>
+                  <th>Updated</th>
+                  <th>Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        {!visible.length && (
+              </thead>
+              <tbody>
+                {visible.map((item) => (
+                  <tr key={item.id}>
+                    <td>
+                      <span className="file-icon blue">
+                        <FileText size={20} />
+                      </span>
+                      <div>
+                        <strong>{item.title}</strong>
+                        <small>{item.original_filename}</small>
+                      </div>
+                    </td>
+                    <td>
+                      <TextField
+                        select
+                        label={`Change topic for ${item.title}`}
+                        value={item.topic_id || ""}
+                        onChange={(e) => changeTopic(item, e.target.value)}
+                        sx={{ minWidth: 170 }}
+                      >
+                        <MenuItem value="">Unassigned</MenuItem>
+                        {topics.map((topic) => (
+                          <MenuItem key={topic.id} value={topic.id}>
+                            {topic.name}
+                          </MenuItem>
+                        ))}
+                      </TextField>
+                    </td>
+                    <td>{new Date(item.updated_at).toLocaleDateString()}</td>
+                    <td>
+                      <Button size="small" onClick={() => download(item)}>
+                        Download
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+        {!loading && !error && courses.length > 0 && !visible.length && (
           <EmptyState title="No matching materials">
-            Try a different title or topic.
+            Upload a file or change the topic or search.
           </EmptyState>
         )}
       </Panel>
-      <PreviewNote>
-        Sample library · Uploads are a visual preview. No files leave your
-        browser.
-      </PreviewNote>
       <Dialog
         open={open}
-        onClose={() => setOpen(false)}
+        onClose={() => !busy && closeUpload()}
         maxWidth="sm"
         fullWidth
       >
-        <DialogTitle>Upload material · Preview</DialogTitle>
+        <DialogTitle>Upload material</DialogTitle>
         <DialogContent>
           <p className="muted">
-            Choose a file to preview the upload interface. It will not be read,
-            uploaded or saved.
+            PDF or UTF-8 text, up to 10 MiB. Source files remain private and
+            unpublished.
           </p>
+          <TextField
+            label="Title"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            sx={{ mt: 1 }}
+          />
+          <TextField
+            select
+            label="Topic optional"
+            value={uploadTopic}
+            onChange={(e) => setUploadTopic(e.target.value)}
+            sx={{ mt: 2 }}
+          >
+            <MenuItem value="">Unassigned</MenuItem>
+            {topics.map((topic) => (
+              <MenuItem key={topic.id} value={topic.id}>
+                {topic.name}
+              </MenuItem>
+            ))}
+          </TextField>
           <Button
             onClick={() => fileInput.current?.click()}
             variant="outlined"
-            startIcon={<Upload size={18} />}
+            sx={{ mt: 2 }}
             fullWidth
           >
             Choose a file
-            <input
-              type="file"
-              ref={fileInput}
-              hidden
-              onChange={(e) => setFilename(e.target.files?.[0]?.name || "")}
-            />
           </Button>
-          {filename && <p>{filename}</p>}
-          <TextField
-            sx={{ mt: 3 }}
-            label="Course"
-            value="Software engineering essentials"
-            slotProps={{ input: { readOnly: true } }}
+          <input
+            ref={fileInput}
+            type="file"
+            accept=".pdf,.txt,application/pdf,text/plain"
+            aria-label="Choose a file"
+            style={{ position: "absolute", width: 1, height: 1, opacity: 0 }}
+            onChange={(e) => setFile(e.target.files?.[0] || null)}
           />
+          {file && <p>{file.name}</p>}
+          {uploadError && <p role="alert">{uploadError}</p>}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setOpen(false)}>Cancel</Button>
-          <Button
-            onClick={() =>
-              notify("Upload preview only. No file was uploaded or saved.")
-            }
-            variant="contained"
-          >
-            Preview upload
+          <Button onClick={closeUpload} disabled={busy}>
+            Cancel
+          </Button>
+          <Button variant="contained" onClick={submit} disabled={busy}>
+            {busy ? "Uploading…" : "Upload"}
           </Button>
         </DialogActions>
       </Dialog>

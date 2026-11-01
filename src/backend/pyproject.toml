@@ -3,7 +3,16 @@ name = "learnswe-backend"
 version = "0.1.0"
 description = "Health-only backend for the learnSWE app preview"
 requires-python = ">=3.12"
-dependencies = ["fastapi>=0.115,<1", "uvicorn>=0.34,<1", "httpx>=0.28,<1"]
+dependencies = [
+    "alembic>=1.14,<2",
+    "fastapi>=0.115,<1",
+    "httpx>=0.28,<1",
+    "psycopg[binary]>=3,<4",
+    "pypdf>=5,<7",
+    "python-multipart>=0.0.20,<1",
+    "sqlalchemy>=2,<3",
+    "uvicorn>=0.34,<1",
+]
 
 [dependency-groups]
 dev = ["pytest>=8,<9"]
