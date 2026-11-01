@@ -8,6 +8,8 @@ Add `study_note_draft`: `id` UUID PK generated server-side, `course_id` UUID not
 
 Creation validates model text at 1–1,999 characters after stripping (reject >=2,000 before stripping as well, because the shared client may have clipped it). The schema's 2,000 maximum leaves space for future reviewed editing; this slice never generates a 2,000-character row.
 
+The TEA-01 migration currently depends on live metadata: freeze it to its original five tables/historical schema before adding the draft model, so a fresh install does not create the draft table prematurely. Verify fresh upgrade and upgrade from the existing TEA-01 revision, plus downgrade/re-upgrade without altering developer data.
+
 ## API and exact representations
 
 All paths start /api/teacher; reuse X-Demo-User-Id and existing development gate. All UUID response values are canonical strings. UTC timestamps end in Z. `DraftMetadata = {id, course_id, source_material_id, created_by, title, created_at}`; all fields strings, IDs UUID except created_by. `Draft = DraftMetadata + {content: string}`. No wrapper, status, storage key, raw filename or provider metadata.
@@ -20,7 +22,7 @@ All paths start /api/teacher; reuse X-Demo-User-Id and existing development gate
 
 Teacher-role membership grants access to all drafts of that course, including another member teacher's drafts. Same existing 401 unauthenticated; 403 demo_identity_disabled/forbidden; 404 not_found; 422 validation_error for malformed UUID; 503 service_unavailable for database/private-file/config failures. Identity/gate/role checks precede identifier validation; accessible resource lookup precedes extraction/model work. Missing or malformed files on disk give controlled 503 if not readable at all, and source_unreadable when bytes can be read but decoding/parsing fails.
 
-All errors use exactly {"detail":{"code":"...","message":"..."}}; messages are fixed safe text, never exception text. LLM error mapping:
+All errors use {"detail":{"code":"...","message":"..."}} (429 adds safe integer detail.retry_after_seconds); messages are fixed safe text, never exception text. LLM error mapping:
 
 | Condition / exception | Status/code | Message requirement |
 |---|---|---|
@@ -28,8 +30,8 @@ All errors use exactly {"detail":{"code":"...","message":"..."}}; messages are f
 | extracted text >8,000 chars | 422 source_text_too_large | Mention 8,000 characters |
 | PDF >100 pages | 422 source_text_too_large | Mention 100 pages; reject before extracting any page |
 | invalid UTF-8, malformed/encrypted PDF, extraction exception | 422 source_unreadable | State source cannot be read as UTF-8 text/text-based PDF |
-| LlmRateLimited | 429 llm_rate_limited | Fixed retry message; Retry-After header uses retry_after_seconds integer |
-| LlmBusy | 429 llm_busy | Fixed retry message; Retry-After header uses retry_after_seconds integer |
+| LlmRateLimited | 429 llm_rate_limited | Fixed retry message; Retry-After header and detail.retry_after_seconds use the retry_after_seconds integer |
+| LlmBusy | 429 llm_busy | Fixed retry message; Retry-After header and detail.retry_after_seconds use the retry_after_seconds integer |
 | LlmNotConfigured | 503 llm_not_configured | State AI service is not configured |
 | LlmInputTooLarge | 422 source_text_too_large | State source cannot fit request limit; normally unreachable due to 8,000 source cap |
 | LlmTimeout | 504 llm_timeout | Fixed retry message |
