@@ -270,9 +270,18 @@ def test_tea02_no_open_app_transaction_during_llm_and_rechecks_access(notes, tea
     app, fake = notes
     source = upload(app)
     tea01_database.commit()
+    from sqlalchemy import event
+    from sqlalchemy.orm import Session
+    active = set()
+    def begun(session, transaction, connection):
+        active.add(id(session))
+    def ended(session, transaction):
+        if transaction.parent is None:
+            active.discard(id(session))
+    event.listen(Session, "after_begin", begun)
+    event.listen(Session, "after_transaction_end", ended)
     def revoke():
-        open_app = tea01_database.execute("SELECT count(*) FROM pg_stat_activity WHERE datname=current_database() AND pid<>pg_backend_pid() AND state='idle in transaction'").fetchone()[0]
-        assert open_app == 0, "application left a transaction open during model call"
+        assert not active, "application left a transaction open during model call"
         tea01_database.execute("DELETE FROM course_membership WHERE course_id=%s AND user_id='demo-teacher'", (COURSE,))
         tea01_database.commit()
     fake.hook = revoke
@@ -280,6 +289,8 @@ def test_tea02_no_open_app_transaction_during_llm_and_rechecks_access(notes, tea
         error(generate(app, source), 404, "not_found")
         assert tea01_database.execute("SELECT count(*) FROM study_note_draft WHERE source_material_id=%s", (source["id"],)).fetchone()[0] == 0
     finally:
+        event.remove(Session, "after_begin", begun)
+        event.remove(Session, "after_transaction_end", ended)
         tea01_database.execute("INSERT INTO course_membership(course_id,user_id) VALUES(%s,'demo-teacher') ON CONFLICT DO NOTHING", (COURSE,))
         tea01_database.commit()
 
