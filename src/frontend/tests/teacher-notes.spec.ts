@@ -70,7 +70,7 @@ test("tea02 deep-linked draft is escaped text with preserved line breaks", async
     ),
   ).toBeUndefined();
   await expect(page.locator('img[src="x"]')).toHaveCount(0);
-  await expect(page.getByText("demo-teacher", { exact: true })).toBeVisible();
+  await expect(page.getByText(/Created by: demo-teacher/)).toBeVisible();
 });
 
 test("tea02 generation failure retains source/drafts and retries only on explicit click", async ({
@@ -92,7 +92,9 @@ test("tea02 generation failure retains source/drafts and retries only on explici
   await expect(
     page.getByRole("combobox", { name: /Source material/ }),
   ).toContainText(NEW.title);
-  await expect(page.getByText(SAVED.title, { exact: true })).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: new RegExp(SAVED.title) }),
+  ).toBeVisible();
   expect(api.generationCalls).toBe(1);
   await expect(
     page.getByText("Upstream private sentinel must not be shown"),
@@ -116,8 +118,7 @@ test("tea02 pending generation prevents duplicate calls and ignores old course c
   });
   await open(page);
   const generate = page.getByRole("button", {
-    name: "Generate draft notes",
-    exact: true,
+    name: /^(Generate draft notes|Generating…)$/,
   });
   await generate.click();
   await expect.poll(() => api.generationCalls).toBe(1);
@@ -177,7 +178,9 @@ test("tea02 late course lists cannot replace newer course selections", async ({
   await expect(page.getByText("No saved drafts yet")).toBeVisible();
   release();
   await expect.poll(() => completed).toBe(held);
-  await expect(page.getByText(SAVED.title, { exact: true })).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: new RegExp(SAVED.title) }),
+  ).toHaveCount(0);
   await expect(page.getByRole("combobox", { name: /^Course/ })).toContainText(
     "Programming",
   );
@@ -208,7 +211,7 @@ test("tea02 late draft response cannot replace current route draft", async ({
   });
   await page.goto(`/teacher/generate?course=${COURSE_A}&draft=${SAVED.id}`);
   await expect.poll(() => held).toBeGreaterThan(0);
-  await page.getByText(newer.title, { exact: true }).click();
+  await page.getByRole("button", { name: new RegExp(newer.title) }).click();
   await expect(page.getByText(newer.content, { exact: true })).toBeVisible();
   release();
   await expect.poll(() => completed).toBe(held);
@@ -220,7 +223,7 @@ for (const theme of ["light", "dark"] as const) {
   for (const width of [390, 1440]) {
     test(`tea02 studio remains readable without overflow at ${width}px in ${theme}`, async ({
       page,
-    }) => {
+    }, testInfo) => {
       await page.emulateMedia({ colorScheme: theme, reducedMotion: "reduce" });
       await page.setViewportSize({ width, height: 900 });
       await mockTeacherNotesApi(page);
@@ -233,6 +236,10 @@ for (const theme of ["light", "dark"] as const) {
           () => document.documentElement.scrollWidth <= innerWidth,
         ),
       ).toBe(true);
+      await page.screenshot({
+        path: testInfo.outputPath(`tea02-${theme}-${width}.png`),
+        fullPage: true,
+      });
     });
   }
 }
