@@ -2,6 +2,14 @@
 
 Newest entry first. Use `templates/handoff.md`. Older entries describe the state at the time; the newest entry supersedes their open/merged status.
 
+## 2026-11-01: TEA-02 notes complete locally, awaiting human PR approval (orchestrator)
+- Done: feat/tea02-generate-notes generates, saves and reopens concise private draft notes from authorised UTF-8/text-based PDF source materials. Shared llm_client.py unchanged. No editing/MCQs/publication/OCR/student access; US-TEA-02-01 editable criterion remains deferred to TEA-03.
+- Shared contract: new study_note_draft entity, source/course/creator relationships, API/error representations and future LLM integration documented. Historical TEA-01 migration frozen; additive draft migration handles fresh/existing schema upgrades and downgrade/re-upgrade. Run `uv run --env-file .env alembic upgrade head` from src/backend before testing an existing development database; tests used isolated schemas/files only.
+- Verification: independent verifier PASS at06311acc29e0e52ce3115085a09744d5dfafc6ad after one correction round, no open findings. Backend383 passed; final browser115, types/lint/format/build passed. All four initial theme/width screenshots inspected; corrected screenshots also checked. No live model/provider-quality or hosted CI/deployment check.
+- Workflow: approved start97ae30b; developerde1cc1c; independent tests committed before integration, first merged6945eb5. Fixde9738c adds saved-list creator and contract clarity; independent creator RED/GREEN plus fake-clock timeout regressions integrated06311ac. Four initial harness selector corrections preserved assertions. Correction source preceded regression commit while completed test agent was being reactivated; timing deviation recorded in logs/TEA02Session.md/resource record.
+- Next: human reviews local branch and authorises push/PR. Nothing pushed, no PR opened and no master merge. Spoofable development identity remains local-only; fixed source/output limits and duplicate-generation-on-explicit-retry warning are intentional.
+- Files: workflow/specs/TEA-02-notes, docs/SharedDataContract.md and guides, src/backend/teacher_notes plus migration, frontend TeacherNotes/services, independent tests, logs/TEA02Session.md and resource/security records.
+
 ## 2026-11-01: TEA-02 notes developer handoff
 - Implemented: additive draft model/migration, frozen historical TEA-01 migration, authorised generate/list/get endpoints, bounded UTF-8/PDF extraction, fixed source-only prompt and unchanged shared LLM dependency. Session closed before model work; role/source/membership checked and locked again before insert.
 - UI: real AI content studio, course/source selection, saved draft list and query-linked read-only viewer, escaped plain text, explicit error/retry/limits/notices and no automatic POST retry. Teacher HTTP timeout is additive and default-preserving.

@@ -51,3 +51,21 @@
 | 2026-10-30 | STU-03 | Secrets committed | none; `.env.example` has names only | as expected | Pass (verifier) |
 | 2026-10-30 | STU-03 | Live model behaviour with the final prompts (manual check AC31, iterative testing AC35) | not yet run | not yet run | Pending (user, with approval) |
 | 2026-10-30 | STU-03 | First manual live use by the user (4 hint requests on the three practice questions, real SoC LLM, current prompts) | guiding hints that do not give the answer | replies were short, named no letter and quoted no choice, but the content effectively stated the answer: Q1 "a function should perform a single task", Q2 "tests ... catch regressions early", Q3 "the list contains three integer elements" | OBSERVED, accepted by the user for now: basic recall questions leave little room for a hint that does not reveal the concept; revisit with harder questions in AC35 (graded hint ladder on the existing 4-message history was discussed and not adopted) |
+
+
+## 2026-11-01 — TEA-02 unpublished draft notes
+
+Verified against isolated PostgreSQL schema/private temporary files and fake LLM responses. Independent verifier reran backend383/browser113 at6945eb5; final verifier PASS at06311ac with115browser tests after metadata/timeout corrections; backend unchanged.
+
+| Case | Expected control | Observed |
+|---|---|---|
+| Missing/unknown demo identity, disabled gate, wrong role, foreign/guessed source/course/draft | 401/403/404; no extraction/model call or foreign draft content | Passed |
+| Source injection and context isolation | Fixed system instruction, only authorised extracted source as user message; no tools/other records | Passed |
+| UTF-8/PDF extraction limits, malformed/encrypted/scanned source | Safe controlled failure, 8,000 chars/100 pages enforced before model call | Passed |
+| Blank/nonstring/clipped/length-finished output; HTML-like notes | Unusable output rejected; accepted content rendered as escaped plain text | Passed |
+| Missing DB/storage, model errors and failed metadata commit | Safe messages, source/old drafts intact, no partial new draft | Passed |
+| Access/source removed during generation; concurrent generations | Access rechecked/locked before insert; no open DB transaction during model call; distinct valid rows | Passed |
+| Schema migration, same-course FK/content constraints and restart persistence | Fresh/old-schema upgrade and downgrade/re-upgrade; invalid rows rejected, valid drafts persist | Passed |
+| Student publication/access | No publication or student draft endpoint; student APIs unchanged | Passed |
+
+Shared llm_client.py unchanged. Model failures/rate limits use test fakes; live provider behaviour and production authentication are outside this verification.
