@@ -2,6 +2,12 @@
 
 Newest entry first. Use `templates/handoff.md`. Older entries describe the state at the time; the newest entry supersedes their open/merged status.
 
+## 2026-11-01: TEA-01 materials error spacing (developer, small UI correction)
+- Follow-up: upload cancellation now resets all fields/native file input and validation errors; shared reset also used for Escape/backdrop dismissal and successful upload.
+- Added padded loading/error rows and an explanation for disabled upload when no course has loaded. Existing course-load failure disables upload intentionally.
+- Local diagnosis: teacher courses returned 503, private file storage unavailable; ignored backend .env still contained the example placeholder path. Replaced only FILE_STORAGE_DIR with /Users/dylanwong/Documents/Codex/learnswe-private-files and created that directory. Backend restart required to reload env; not restarted by this session.
+- Verified: teacher browser tests 9/9, frontend types/lint pass. Small single-session UI correction consistent with previous cosmetic fixes; no independent verifier. No commit/push.
+
 ## 2026-10-30: TEA-01 complete locally, awaiting human PR approval (orchestrator)
 - Done: `feat/tea01-materials` contains persistent private teacher materials, PostgreSQL16/SQLAlchemy/Alembic foundation, gated demo identity, upload/list/topic assignment/download UI/API, shared data contract and setup docs. Source verified at `673ca2470f1fa3948e3075b26c28ed8b71bb3e53`; final subsequent commit is workflow evidence only.
 - Verification: independent verifier PASS after correction round1. Fresh backend76 (real isolated PostgreSQL16), browser74, types/lint/format/build passed. Parent live HTTP smoke passed upload201/byte-identical download/cross-course404. GitHub-hosted CI/deployment not checked.

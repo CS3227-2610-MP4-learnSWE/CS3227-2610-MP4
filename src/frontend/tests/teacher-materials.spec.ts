@@ -145,6 +145,17 @@ test("tea01 empty state, course error Retry and recoverable material error", asy
   api.failCourses = 10;
   await page.goto("/teacher/materials");
   await expect(page.getByRole("button", { name: "Retry" })).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Upload material" }),
+  ).toBeDisabled();
+  await expect(
+    page.getByText("Upload becomes available after a course loads."),
+  ).toBeVisible();
+  expect(
+    await page
+      .getByRole("alert")
+      .evaluate((element) => parseFloat(getComputedStyle(element).paddingLeft)),
+  ).toBeGreaterThanOrEqual(19);
   api.failCourses = 0;
   await page.getByRole("button", { name: "Retry" }).click();
   await expect(page.getByLabel("Course", { exact: true })).toBeVisible();
@@ -336,3 +347,38 @@ async function settle(page: Page) {
   await page.evaluate(() => new Promise(requestAnimationFrame));
   await page.evaluate(() => new Promise(requestAnimationFrame));
 }
+
+test("tea01 cancelling upload clears fields and errors on reopen", async ({
+  page,
+}) => {
+  await mockTeacherMaterialsApi(page);
+  await openMaterials(page);
+  for (const dismiss of ["cancel", "escape"]) {
+    await page.getByRole("button", { name: "Upload material" }).click();
+    const dialog = page.getByRole("dialog");
+    await dialog.getByLabel("Title").fill("Discard me");
+    await choose(page, "Topic optional", "Testing");
+    await dialog.locator('input[type="file"]').setInputFiles({
+      name: "invalid.jpg",
+      mimeType: "image/jpeg",
+      buffer: Buffer.from("invalid"),
+    });
+    await dialog.getByRole("button", { name: "Upload", exact: true }).click();
+    await expect(dialog.getByRole("alert")).toBeVisible();
+    if (dismiss === "cancel")
+      await dialog.getByRole("button", { name: "Cancel" }).click();
+    else await page.keyboard.press("Escape");
+    await expect(dialog).not.toBeVisible();
+    await page.getByRole("button", { name: "Upload material" }).click();
+    await expect(dialog.getByLabel("Title")).toHaveValue("");
+    await dialog.getByLabel("Topic optional").click();
+    await expect(
+      page.getByRole("option", { name: "Unassigned", exact: true }),
+    ).toHaveAttribute("aria-selected", "true");
+    await page.keyboard.press("Escape");
+    await expect(dialog.locator('input[type="file"]')).toHaveValue("");
+    await expect(dialog.getByText("invalid.jpg")).toHaveCount(0);
+    await expect(dialog.getByRole("alert")).toHaveCount(0);
+    await dialog.getByRole("button", { name: "Cancel" }).click();
+  }
+});

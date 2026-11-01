@@ -1976,6 +1976,18 @@ button:focus-visible {
   margin-bottom: 0;
   border-bottom: 1px solid var(--line);
 }
+.library-status {
+  margin: 0;
+  padding: 23px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+}
+.library-status small {
+  flex-basis: 100%;
+  color: var(--muted);
+}
 .library-toolbar h2 {
   margin: 0;
   font-size: 16px;

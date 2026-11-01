@@ -237,6 +237,14 @@ function Materials({ notify }: Props) {
       .toLowerCase()
       .includes(search.toLowerCase()),
   );
+  const closeUpload = () => {
+    setOpen(false);
+    setTitle("");
+    setFile(null);
+    setUploadTopic("");
+    setUploadError("");
+    if (fileInput.current) fileInput.current.value = "";
+  };
   const submit = async () => {
     if (!file || !title.trim()) {
       setUploadError(
@@ -256,10 +264,7 @@ function Materials({ notify }: Props) {
         title,
         topicId: uploadTopic || undefined,
       });
-      setOpen(false);
-      setTitle("");
-      setFile(null);
-      setUploadTopic("");
+      closeUpload();
       notify("Material uploaded. It has not been published to students.");
       refresh();
     } catch {
@@ -364,14 +369,21 @@ function Materials({ notify }: Props) {
             sx={{ maxWidth: 280 }}
           />
         </div>
-        {loading && <p role="status">Loading materials…</p>}
+        {loading && (
+          <p className="library-status" role="status">
+            Loading materials…
+          </p>
+        )}
         {error && (
-          <p role="alert">
-            {error}{" "}
+          <div className="library-status" role="alert">
+            <span>{error}</span>{" "}
             <Button onClick={courses.length ? refresh : loadCourses}>
               Retry
             </Button>
-          </p>
+            {!courseId && (
+              <small>Upload becomes available after a course loads.</small>
+            )}
+          </div>
         )}
         {!loading && !error && !courses.length && (
           <EmptyState title="No courses yet">
@@ -437,7 +449,7 @@ function Materials({ notify }: Props) {
       </Panel>
       <Dialog
         open={open}
-        onClose={() => !busy && setOpen(false)}
+        onClose={() => !busy && closeUpload()}
         maxWidth="sm"
         fullWidth
       >
@@ -487,7 +499,7 @@ function Materials({ notify }: Props) {
           {uploadError && <p role="alert">{uploadError}</p>}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setOpen(false)} disabled={busy}>
+          <Button onClick={closeUpload} disabled={busy}>
             Cancel
           </Button>
           <Button variant="contained" onClick={submit} disabled={busy}>
