@@ -1,11 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import {
-  mockTeacherNotesApi,
-  COURSE_A,
-  COURSE_B,
-  NEW,
-  SAVED,
-} from "./teacherNotesApi";
+import { mockTeacherNotesApi, COURSE_A, NEW, SAVED } from "./teacherNotesApi";
 
 async function choose(page: Page, label: string, name: string) {
   await page

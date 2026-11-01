@@ -80,7 +80,23 @@ export class TeacherNotesApi extends TeacherMaterialsApi {
         200,
         this.drafts
           .filter((draft) => draft.course_id === list[1])
-          .map(({ content: _content, ...metadata }) => metadata),
+          .map(
+            ({
+              id,
+              course_id,
+              source_material_id,
+              created_by,
+              title,
+              created_at,
+            }) => ({
+              id,
+              course_id,
+              source_material_id,
+              created_by,
+              title,
+              created_at,
+            }),
+          ),
       );
     }
     if (get && method === "GET") {
