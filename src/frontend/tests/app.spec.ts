@@ -1,3 +1,4 @@
+import { mockTeacherNotesApi } from "./teacherNotesApi";
 import { test, expect } from "@playwright/test";
 import { mockPracticeApi } from "./practiceApi";
 import { mockTeacherMaterialsApi, OLD } from "./teacherMaterialsApi";
@@ -159,14 +160,18 @@ test("mobile navigation works without horizontal overflow", async ({
   ).toBe(true);
 });
 
-test("teacher actions and admin messages are explicit previews", async ({
+test("teacher generation is real while admin messages remain explicit previews", async ({
   page,
 }) => {
+  const teacherApi = await mockTeacherNotesApi(page);
   await page.goto("/teacher/generate");
-  await page.getByRole("button", { name: "Preview generation" }).click();
+  await page
+    .getByRole("button", { name: "Generate draft notes", exact: true })
+    .click();
   await expect(
-    page.getByText("Sample draft · No AI request was made"),
+    page.getByText("Draft notes generated and saved."),
   ).toBeVisible();
+  expect(teacherApi.generationCalls).toBe(1);
   await page.goto("/admin/announcements");
   await page.getByLabel("Subject").fill("Course update");
   await page.getByLabel("Message").fill("Some useful information.");
