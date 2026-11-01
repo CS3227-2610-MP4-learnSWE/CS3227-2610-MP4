@@ -86,9 +86,9 @@ The test-designer must not import these internals or implementation files. The s
 - Real authentication must resolve the signed-in account to the shared user ID on the server and replace the demo-header resolver. Keep the teacher-role and course-membership checks; the demo role switcher/header is not proof of identity. Demo seeds are for development only, with no credentials or passwords.
 - Back up PostgreSQL and the private file directory together. A database-only restore cannot recover uploaded bytes. Storage keys remain opaque server-owned references; future object storage can replace local file resolution without exposing local paths or turning private uploads into public URLs.
 
-## TEA-02-notes integration contract (approved, implementation pending)
+## TEA-02-notes integration contract
 
-See [TEA-02 notes contract](../workflow/specs/TEA-02-notes/plan.md) for exact endpoints, representations, errors, limits and test interfaces. This is an additive draft-generation slice, not a claim that editing or publication is implemented.
+See [TEA-02 notes contract](../workflow/specs/TEA-02-notes/plan.md) for exact endpoints, representations, errors, limits and test interfaces. This is an implemented additive draft-generation slice; editing and publication remain deferred.
 
 - `study_note_draft`: UUID `id` PK; UUID `course_id` and `source_material_id` not null, composite FK to material `(id, course_id)` and course FK; `created_by` varchar(64) user FK; `title` varchar(200) not null snapshot; `content` text not null with length 1–2,000 DB constraint; `created_at` timestamptz not null default now(). Add material uniqueness `(id, course_id)`. All UUIDs generated server-side; no nullable fields. Generation accepts only nonblank output shorter than 2,000 chars to reject potential clipping. Append-only generation never overwrites drafts.
 - Metadata JSON is `{id, course_id, source_material_id, created_by, title, created_at}`; retrieve/create adds `content`. UUIDs are strings and timestamps UTC Z. Course lists omit content, newest first then ID descending. Current teacher-role membership controls every read/create, not creator ownership. Source uploads remain private; drafts are not lessons and have no student endpoint/publication state.
