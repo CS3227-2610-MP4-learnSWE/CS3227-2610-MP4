@@ -50,6 +50,7 @@ def call(app, method, path, *, user="demo-teacher", **kwargs):
     async def send():
         async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:
             headers = {"X-Demo-User-Id": user} if user else {}
+            headers.update(kwargs.pop("headers", {}))
             return await client.request(method, path, headers=headers, **kwargs)
     return asyncio.run(send())
 
@@ -353,3 +354,50 @@ def test_tea02_fresh_and_existing_schema_migrations_preserve_materials(tea01_dat
         finally:
             conn.execute("SET search_path TO public")
             conn.execute(f'DROP SCHEMA "{schema}" CASCADE')
+
+
+def test_tea02_accepted_output_boundary_and_no_student_publication(notes):
+    app, fake = notes
+    source = upload(app)
+    before = call(app, "GET", "/api/practice-sets/intro-se-1", headers={"X-Student-Id": "demo-student"})
+    fake.text = "x" * 1999
+    created = generate(app, source)
+    assert created.status_code == 201 and len(created.json()["content"]) == 1999
+    after = call(app, "GET", "/api/practice-sets/intro-se-1", headers={"X-Student-Id": "demo-student"})
+    assert before.status_code == after.status_code == 200 and before.json() == after.json()
+    error(call(app, "GET", f"{BASE}/note-drafts/{created.json()['id']}", user="demo-student"), 403, "forbidden")
+
+
+def test_tea02_missing_configuration_and_storage_fail_controlled(notes, monkeypatch, tmp_path):
+    app, fake = notes
+    source = upload(app)
+    with monkeypatch.context() as patch:
+        patch.delenv("DATABASE_URL", raising=False)
+        error(generate(app, source), 503, "service_unavailable")
+    blocked = tmp_path / "not-a-directory"
+    blocked.write_text("file")
+    with monkeypatch.context() as patch:
+        patch.setenv("FILE_STORAGE_DIR", str(blocked))
+        error(generate(app, source), 503, "service_unavailable")
+    assert not fake.calls
+
+
+def test_tea02_source_removed_during_generation_cannot_save(notes, tea01_database):
+    app, fake = notes
+    source = upload(app)
+    def remove():
+        tea01_database.execute("DELETE FROM material WHERE id=%s", (source["id"],))
+        tea01_database.commit()
+    fake.hook = remove
+    error(generate(app, source), 404, "not_found")
+    assert tea01_database.execute("SELECT count(*) FROM study_note_draft WHERE source_material_id=%s", (source["id"],)).fetchone()[0] == 0
+
+
+def test_tea02_database_enforces_content_and_course_relationship(notes, tea01_database):
+    import psycopg
+    app, _ = notes
+    source = upload(app)
+    for course, text in [(OTHER, "valid text"), (COURSE, ""), (COURSE, "x" * 2001)]:
+        with pytest.raises(psycopg.Error):
+            with tea01_database.transaction():
+                tea01_database.execute("INSERT INTO study_note_draft(id,course_id,source_material_id,created_by,title,content) VALUES(%s,%s,%s,'demo-teacher','bad',%s)", (uuid.uuid4(), course, source["id"], text))
