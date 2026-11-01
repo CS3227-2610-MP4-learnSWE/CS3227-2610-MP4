@@ -83,9 +83,10 @@ export async function requestTeacher(
   path: string,
   body?: FormData | object,
   blob = false,
+  timeoutMs = REQUEST_TIMEOUT_MS,
 ): Promise<unknown> {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
   const headers: Record<string, string> = {};
   if (
     import.meta.env.VITE_APP_ENV === "development" &&
@@ -110,13 +111,16 @@ export async function requestTeacher(
     });
     if (!response.ok) {
       let code = "";
+      let retryAfter: number | null = null;
       try {
         const data = await response.json();
-        code = data?.detail?.code || "";
+        code = typeof data?.detail?.code === "string" ? data.detail.code : "";
+        const retry = data?.detail?.retry_after_seconds;
+        if (Number.isInteger(retry) && retry > 0) retryAfter = retry;
       } catch {
         /* unavailable response body */
       }
-      throw new ApiError(response.status, code);
+      throw new ApiError(response.status, code, [], retryAfter);
     }
     return blob ? response.blob() : response.json();
   } catch (error) {

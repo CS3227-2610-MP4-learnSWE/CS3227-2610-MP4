@@ -2,6 +2,12 @@
 
 Newest entry first. Use `templates/handoff.md`. Older entries describe the state at the time; the newest entry supersedes their open/merged status.
 
+## 2026-11-01: TEA-02 notes developer handoff
+- Implemented: additive draft model/migration, frozen historical TEA-01 migration, authorised generate/list/get endpoints, bounded UTF-8/PDF extraction, fixed source-only prompt and unchanged shared LLM dependency. Session closed before model work; role/source/membership checked and locked again before insert.
+- UI: real AI content studio, course/source selection, saved draft list and query-linked read-only viewer, escaped plain text, explicit error/retry/limits/notices and no automatic POST retry. Teacher HTTP timeout is additive and default-preserving.
+- Guides/help updated: Teacher notes persist but remain unpublished/read-only; editing/MCQs/approval/publication deferred. No .env changes or live LLM calls.
+- Checks: existing backend343 passed against isolated PostgreSQL schema; types/lint/build and changed frontend format checks passed. Existing browser suite in progress; independent test integration/verifier next. Parent owns session/resource/security records. No push/PR.
+
 ## 2026-11-01: TEA-02-notes approved contract (spec-writer)
 - Done: recorded the user-approved generate/save/view slice, exact APIs/types/error codes, extraction/output limits, safe shared-client dependency interface, frontend labels/query behaviour and independent test fixture contract under workflow/specs/TEA-02-notes. Added draft/shared-LLM handoff to SharedDataContract.
 - Decisions: editing criterion remains deferred to TEA-03; one source/one bounded model call, oversized source rejection, unchanged llm_client.py. Output >=2,000 rejected; >100 PDF pages uses source_text_too_large. No live LLM calls.

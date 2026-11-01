@@ -21,7 +21,6 @@ import {
   Plus,
   Sparkles,
   Upload,
-  WandSparkles,
 } from "lucide-react";
 import {
   CourseArt,
@@ -36,6 +35,7 @@ import {
   Tag,
 } from "../components/ui";
 import { questions } from "../teacherDemo";
+import TeacherNotes from "./TeacherNotes";
 import {
   listTeacherCourses,
   listTeacherTopics,
@@ -510,152 +510,7 @@ function Materials({ notify }: Props) {
     </>
   );
 }
-function Generate() {
-  const [type, setType] = useState("Study notes");
-  const [source, setSource] = useState("Clean code essentials");
-  const [preview, setPreview] = useState(false);
-  return (
-    <>
-      <PageHeading
-        eyebrow="A HEAD START, NOT A REPLACEMENT"
-        title="Your ideas. A little momentum."
-        description="Turn source materials into a starting point you can make your own."
-      />
-      <div className="studio-layout">
-        <Panel className="studio-controls">
-          <span className="icon-box purple">
-            <WandSparkles size={23} />
-          </span>
-          <h2>Content studio</h2>
-          <p>Choose the material. Set the direction.</p>
-          <TextField
-            select
-            label="Source material"
-            value={source}
-            onChange={(e) => setSource(e.target.value)}
-          >
-            {[
-              "Clean code essentials",
-              "Software testing notes",
-              "Version control guide",
-            ].map((item) => (
-              <MenuItem key={item} value={item}>
-                {item}
-              </MenuItem>
-            ))}
-          </TextField>
-          <TextField
-            select
-            label="Create a draft of"
-            value={type}
-            onChange={(e) => setType(e.target.value)}
-          >
-            {["Study notes", "Practice questions"].map((item) => (
-              <MenuItem key={item} value={item}>
-                {item}
-              </MenuItem>
-            ))}
-          </TextField>
-          <div className="callout small">
-            <Check size={18} />
-            <p>
-              You stay in control. Every draft needs your review before
-              publication.
-            </p>
-          </div>
-          <Button
-            fullWidth
-            variant="contained"
-            startIcon={<Sparkles size={17} />}
-            onClick={() => setPreview(true)}
-          >
-            Preview generation
-          </Button>
-          <PreviewNote>Displays a fixed sample. No AI request.</PreviewNote>
-        </Panel>
-        <Panel className="draft-preview">
-          {preview ? (
-            <>
-              <div className="draft-top">
-                <Tag tone="purple">Sample draft · No AI request was made</Tag>
-                <span className="muted">{type}</span>
-              </div>
-              <h2>
-                {type === "Study notes"
-                  ? "Writing code with clear intentions"
-                  : "A little practice in clear thinking"}
-              </h2>
-              <p className="muted">
-                Source selection: {source} · Fixed illustrative output
-              </p>
-              {type === "Study notes" ? (
-                <>
-                  <h3>Start with a single responsibility</h3>
-                  <p>
-                    A focused function does one thing well. This makes its
-                    purpose easier to explain, test and change.
-                  </p>
-                  <pre className="code-block">
-                    {"def calculate_total(prices):\n    return sum(prices)"}
-                  </pre>
-                  <h3>Choose names that explain why</h3>
-                  <p>
-                    Prefer clear intention over clever abbreviation. A useful
-                    name lets a reader understand the idea without tracing every
-                    implementation detail.
-                  </p>
-                  <div className="callout">
-                    <Sparkles size={20} />
-                    <p>
-                      Reflection: Which function in your last project could
-                      benefit from a clearer name?
-                    </p>
-                  </div>
-                </>
-              ) : (
-                questions.map((q, i) => (
-                  <div className="draft-question" key={q.id}>
-                    <h3>
-                      {i + 1}. {q.text}
-                    </h3>
-                    <ul aria-label="Answer choices">
-                      {q.options.map((option) => (
-                        <li key={option}>{option}</li>
-                      ))}
-                    </ul>
-                    <p>Correct choice: {q.answer}</p>
-                    <p className="muted">{q.explanation}</p>
-                  </div>
-                ))
-              )}
-              <Button
-                component={Link}
-                to="/teacher/review"
-                endIcon={<ArrowRight size={16} />}
-              >
-                Review sample content
-              </Button>
-            </>
-          ) : (
-            <div className="empty-state studio-empty">
-              <div className="studio-empty-art">
-                <Sparkles size={38} />
-                <span>✦</span>
-              </div>
-              <h2>A little inspiration lives here.</h2>
-              <p>
-                Your generated draft will appear here.
-                <br />
-                For now, explore a sample to see how it feels.
-              </p>
-              <Tag tone="purple">Always a draft. Always your decision.</Tag>
-            </div>
-          )}
-        </Panel>
-      </div>
-    </>
-  );
-}
+
 function Review({ notify }: Props) {
   const [tab, setTab] = useState(0);
   const [notes, setNotes] = useState(
@@ -852,7 +707,7 @@ export default function Teacher({ notify }: Props) {
     case "materials":
       return <Materials notify={notify} />;
     case "generate":
-      return <Generate />;
+      return <TeacherNotes />;
     case "review":
       return <Review notify={notify} />;
     case "practice":

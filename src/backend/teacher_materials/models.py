@@ -2,7 +2,7 @@
 from datetime import datetime
 from uuid import UUID, uuid4
 
-from sqlalchemy import BigInteger, CheckConstraint, DateTime, ForeignKey, ForeignKeyConstraint, String, UniqueConstraint, Uuid, func
+from sqlalchemy import BigInteger, CheckConstraint, DateTime, ForeignKey, ForeignKeyConstraint, String, Text, UniqueConstraint, Uuid, func
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
@@ -54,4 +54,19 @@ class Material(Base):
     storage_key: Mapped[str] = mapped_column(String(255), unique=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
-    __table_args__ = (ForeignKeyConstraint(["topic_id", "course_id"], ["topic.id", "topic.course_id"]), CheckConstraint("size_bytes between 1 and 10485760"),)
+    __table_args__ = (ForeignKeyConstraint(["topic_id", "course_id"], ["topic.id", "topic.course_id"]), CheckConstraint("size_bytes between 1 and 10485760"), UniqueConstraint("id", "course_id", name="uq_material_id_course"))
+
+
+class StudyNoteDraft(Base):
+    __tablename__ = "study_note_draft"
+    id: Mapped[UUID] = mapped_column(Uuid, primary_key=True, default=uuid4)
+    course_id: Mapped[UUID] = mapped_column(Uuid, ForeignKey("course.id"))
+    source_material_id: Mapped[UUID] = mapped_column(Uuid)
+    created_by: Mapped[str] = mapped_column(String(64), ForeignKey("user.id"))
+    title: Mapped[str] = mapped_column(String(200))
+    content: Mapped[str] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    __table_args__ = (
+        ForeignKeyConstraint(["source_material_id", "course_id"], ["material.id", "material.course_id"]),
+        CheckConstraint("char_length(content) between 1 and 2000", name="ck_note_content_length"),
+    )

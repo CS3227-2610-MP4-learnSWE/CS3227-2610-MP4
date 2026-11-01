@@ -2,7 +2,7 @@
 
 A calmer space to learn, teach and grow in software engineering.
 
-This release includes server-backed student practice and a private, PostgreSQL-backed Teacher Materials page. Other teacher and admin screens remain demonstrations.
+This release includes server-backed student practice, the student study companion, private teacher source materials and persisted AI-generated draft notes. Teacher notes use the shared SoC LLM client; editing and publication remain deferred. Other teacher and admin screens remain demonstrations.
 
 ## Run locally
 
@@ -45,18 +45,18 @@ In PowerShell, use `Copy-Item .env.example .env` instead of `cp` if preferred. P
 
 Open [the local preview](http://127.0.0.1:5173/login). Select a role tab, then **Explore … demo**. No credentials are needed. Sign-in and Create account only display a preview message.
 
-Preview screens work without the backend, but Student Practice and Teacher Materials require it. Copy `src/frontend/.env.example` to `src/frontend/.env` for the local teacher demo header. An optional `src/frontend/.env` can override `API_PROXY_TARGET`; see `.env.example`. No secrets are needed.
+Preview screens work without the backend, but Student Practice, the study companion, Teacher Materials and Teacher AI content studio require it. Copy `src/frontend/.env.example` to `src/frontend/.env` for the local teacher demo header. An optional `src/frontend/.env` can override `API_PROXY_TARGET`; see `.env.example`. AI calls also require the backend `SOCLAAS_BASE_URL`, `SOCLAAS_API_KEY` and `SOCLAAS_MODEL` settings; keep the key in the ignored backend `.env`.
 
 ## What you can explore
 
 - **Student:** overview, topic/search filtering, sample lessons with reversible completion, MCQ-only whole-set practice submission and results, a floating study companion, inbox read status and a feedback-form preview.
-- **Teacher:** overview, working private materials library with PDF/UTF-8 uploads, topic assignment and download, sample AI content studio, editable draft notes/questions/answer keys, practice-set selection and inbox.
+- **Teacher:** overview, working private materials library with PDF/UTF-8 uploads, topic assignment and download, working AI content studio with saved, read-only draft notes; sample review/editing screens, practice-set selection and inbox.
 - **Admin:** illustrative analytics, feedback-form builder and audience preview, sample feedback and analysis references, announcement preview, role-filtered people table and illustrative AI usage.
 - **Shared:** responsive navigation, role switching, light/dark mode, keyboard focus, reduced-motion support and direct browser routes.
 
-Remaining preview state and the current student practice session are temporary. Teacher Materials records and files persist across browser and backend restarts. The student companion opens from the bottom-right chat icon on any student page. Close/Escape minimises without losing messages or the unsent draft; its refresh icon clears both without refreshing the page. Chat survives student-page navigation, but returning to login or switching demo roles ends that temporary conversation. Some editor drafts reset when leaving their screen. All figures, records and AI responses are illustrative. There are no AI calls, messages, registrations or real login. Teacher Materials files and metadata persist in PostgreSQL and private local storage; uploading never publishes student-facing content. Other preview actions remain in memory.
+Remaining preview state and the current student practice session are temporary. Teacher Materials records and files persist across browser and backend restarts. The student companion opens from the bottom-right chat icon on any student page. Close/Escape minimises without losing messages or the unsent draft; its refresh icon clears both without refreshing the page. Chat survives student-page navigation, but returning to login or switching demo roles ends that temporary conversation. Some editor drafts reset when leaving their screen. Dashboard figures remain illustrative. The student companion and teacher notes make real AI calls when configured; registration, real login, publication and message delivery remain unimplemented. Teacher Materials files and metadata persist in PostgreSQL and private local storage; uploading never publishes student-facing content. Other preview actions remain in memory.
 
-**Practice boundary:** complete every question and submit the whole set before scores and solutions are shown. Before submission, the practice hint and companion previews never reveal or confirm answers. The widget displays the current page label and fixed demonstration replies; it does not retrieve page contents or call AI. Authenticated, account-scoped conversation persistence until logout (including browser reload) and secure current-page content retrieval remain future requirements. Student practice gets questions without keys and reads answers only from the server after submission. Separate teacher sample answers load only in the lazy teacher screen. The demo role switcher and identity headers are not authentication; real login and course authorisation remain future work.
+**Practice boundary:** complete every question and submit the whole set before scores and solutions are shown. The student companion uses server-selected hint mode before submission and explain mode for eligible submitted attempts. It calls the SoC LLM; its documented deterministic leak check has residual risks (see the user guide). It does not retrieve lesson content yet. Authenticated account-scoped conversation persistence until logout remains future work. Student practice gets questions without keys and reads answers only from the server after submission. Separate teacher sample answers load only in the lazy teacher screen. The demo role switcher and identity headers are not authentication; teacher source/draft endpoints enforce development role/course membership checks, while production authentication remains future work.
 
 ## Health API
 
