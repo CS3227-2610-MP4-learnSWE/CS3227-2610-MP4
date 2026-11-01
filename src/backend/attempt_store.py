@@ -22,6 +22,10 @@ class AttemptStore(Protocol):
         """Return the attempt only if it exists and belongs to the student."""
         ...
 
+    def list_for_student(self, student_id: str, set_id: str) -> list[Attempt]:
+        """The student's attempts on one set, oldest first (creation order)."""
+        ...
+
     def lock(self, attempt_id: str) -> AbstractContextManager:
         """Hold while checking and changing one attempt, so concurrent requests cannot interleave."""
         ...
@@ -43,6 +47,14 @@ class InMemoryAttemptStore:
         if attempt is None or attempt.student_id != student_id:
             return None
         return attempt
+
+    def list_for_student(self, student_id: str, set_id: str) -> list[Attempt]:
+        # dicts keep insertion order, which is creation order; list() guards against concurrent creates.
+        return [
+            a
+            for a in list(self._attempts.values())
+            if a.student_id == student_id and a.set_id == set_id
+        ]
 
     def lock(self, attempt_id: str) -> threading.Lock:
         with self._locks_guard:

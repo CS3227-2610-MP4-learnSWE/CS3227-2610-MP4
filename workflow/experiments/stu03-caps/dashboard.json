@@ -1,0 +1,10 @@
+{
+  "note": "Spend per phase in $: differences between SoCLaaS dashboard readings taken by the user before and after each phase (30 Oct 2026).",
+  "phase1": 0.000045,
+  "phase2": 0.005664,
+  "phase3": 0.003622,
+  "phase4": 0.002642,
+  "phase5": 0.000430,
+  "phase6": 0.051299,
+  "phase7": 0.002022
+}
