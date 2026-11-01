@@ -49,6 +49,9 @@ test("tea02 studio generates, saves and reopens a draft with explicit real-call 
   expect(post.headers["x-demo-user-id"]).toBe("demo-teacher");
   expect(post.headers["x-student-id"]).toBeUndefined();
   expect(post.body).toBeNull();
+  await expect(
+    page.getByRole("button", { name: /Generated draft/ }),
+  ).toContainText("demo-teacher");
 });
 
 test("tea02 deep-linked draft is escaped text with preserved line breaks", async ({
@@ -70,7 +73,9 @@ test("tea02 deep-linked draft is escaped text with preserved line breaks", async
     ),
   ).toBeUndefined();
   await expect(page.locator('img[src="x"]')).toHaveCount(0);
-  await expect(page.getByText(/Created by: demo-teacher/)).toBeVisible();
+  await expect(
+    page.locator(".notes-viewer").getByText(/Created by: demo-teacher/),
+  ).toBeVisible();
 });
 
 test("tea02 generation failure retains source/drafts and retries only on explicit click", async ({
@@ -243,3 +248,68 @@ for (const theme of ["light", "dark"] as const) {
     });
   }
 }
+
+test("tea02 generation stays pending past ten seconds and succeeds before forty-five", async ({
+  page,
+}) => {
+  const api = await mockTeacherNotesApi(page);
+  let release!: () => void;
+  api.holdGeneration = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await open(page);
+  await page.clock.install();
+  await page
+    .getByRole("button", { name: "Generate draft notes", exact: true })
+    .click();
+  await expect.poll(() => api.generationCalls).toBe(1);
+  await page.clock.fastForward(20_000);
+  await expect(
+    page.getByRole("button", { name: "Generating…", exact: true }),
+  ).toBeDisabled();
+  await expect(page.getByRole("alert")).toHaveCount(0);
+  release();
+  await expect(
+    page.getByText("Draft notes generated and saved."),
+  ).toBeVisible();
+  expect(api.generationCalls).toBe(1);
+});
+
+test("tea02 generation times out at forty-five seconds without losing choices or retrying", async ({
+  page,
+}) => {
+  const api = await mockTeacherNotesApi(page);
+  let release!: () => void;
+  api.holdGeneration = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await open(page);
+  await page.clock.install();
+  await page
+    .getByRole("button", { name: "Generate draft notes", exact: true })
+    .click();
+  await expect.poll(() => api.generationCalls).toBe(1);
+  await page.clock.fastForward(44_000);
+  await expect(
+    page.getByRole("button", { name: "Generating…", exact: true }),
+  ).toBeDisabled();
+  await expect(page.getByRole("alert")).toHaveCount(0);
+  await page.clock.fastForward(1_500);
+  await expect(page.getByRole("alert")).toBeVisible();
+  await expect(
+    page.getByRole("combobox", { name: /Source material/ }),
+  ).toContainText(NEW.title);
+  await expect(
+    page.getByRole("button", { name: new RegExp(SAVED.title) }),
+  ).toBeVisible();
+  await expect(
+    page.getByText(
+      "If a response is lost, generating again may create another saved draft.",
+    ),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Generate draft notes", exact: true }),
+  ).toBeEnabled();
+  expect(api.generationCalls).toBe(1);
+  release();
+});
