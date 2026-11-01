@@ -344,6 +344,7 @@ export default function TeacherNotes() {
                     aria-pressed={draftId === item.id}
                   >
                     {item.title}
+                    <small>Created by: {item.created_by}</small>
                     <small>{new Date(item.created_at).toLocaleString()}</small>
                   </Button>
                 </li>
