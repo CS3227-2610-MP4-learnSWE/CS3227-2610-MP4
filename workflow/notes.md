@@ -2,6 +2,12 @@
 
 Newest entry first. Use `templates/handoff.md`. Older entries describe the state at the time; the newest entry supersedes their open/merged status.
 
+## 2026-11-01: TEA-02-notes approved contract (spec-writer)
+- Done: recorded the user-approved generate/save/view slice, exact APIs/types/error codes, extraction/output limits, safe shared-client dependency interface, frontend labels/query behaviour and independent test fixture contract under workflow/specs/TEA-02-notes. Added draft/shared-LLM handoff to SharedDataContract.
+- Decisions: editing criterion remains deferred to TEA-03; one source/one bounded model call, oversized source rejection, unchanged llm_client.py. Output >=2,000 rejected; >100 PDF pages uses source_text_too_large. No live LLM calls.
+- Next: orchestrator records this spec commit as the shared start, then developer/test-designer work independently per Variant B. Implementation request explicitly approved the plan; no new scope approval pending.
+- Files: workflow/specs/TEA-02-notes/{spec,plan,tasks}.md, docs/SharedDataContract.md, workflow/notes.md. No application/test code read or changed. Exact tokens/cost unavailable; one spec-writing pass.
+
 ## 2026-11-01: merge local master into teacher branch (developer)
 - User requested local master merge. Merged master 778c696 into feat/tea01-materials, preserving student companion and teacher materials routers, dependency sets, isolated database and fake-LLM test fixtures, environment examples and both workflow histories.
 - Resolved guide conflicts to describe both implemented slices and their limitations; regenerated uv.lock with httpx as a runtime dependency.
