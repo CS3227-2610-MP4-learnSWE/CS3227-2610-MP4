@@ -2,6 +2,12 @@
 
 Newest entry first. Use `templates/handoff.md`. Older entries describe the state at the time; the newest entry supersedes their open/merged status.
 
+## 2026-11-02: TEA-03-notes approved contract (spec-writer)
+- Done: user-approved notes-only editing plan recorded in workflow/specs/TEA-03-notes with migration/backfill, strict versioned PATCH, conflict recovery, source-title snapshot, router blocking and independent test interfaces. No application code/tests changed.
+- Prior state: TEA-02 merged through PR11 at040dc07; user reports real generation worked. Older waiting-for-approval entries below are historical and superseded on that point.
+- Next: orchestrator records spec commit; developer and independent test-designer start together from it, separate worktrees. No open questions. No live LLM call, push or PR.
+- Files: workflow/specs/TEA-03-notes/{spec,plan,tasks}.md and workflow/notes.md. Resource totals unavailable; spec-writer inherited model configuration.
+
 ## 2026-11-01: TEA-02 notes complete locally, awaiting human PR approval (orchestrator)
 - Done: feat/tea02-generate-notes generates, saves and reopens concise private draft notes from authorised UTF-8/text-based PDF source materials. Shared llm_client.py unchanged. No editing/MCQs/publication/OCR/student access; US-TEA-02-01 editable criterion remains deferred to TEA-03.
 - Shared contract: new study_note_draft entity, source/course/creator relationships, API/error representations and future LLM integration documented. Historical TEA-01 migration frozen; additive draft migration handles fresh/existing schema upgrades and downgrade/re-upgrade. Run `uv run --env-file .env alembic upgrade head` from src/backend before testing an existing development database; tests used isolated schemas/files only.
