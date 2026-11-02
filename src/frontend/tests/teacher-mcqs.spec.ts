@@ -330,3 +330,50 @@ test("tea02 mcqs independent list and detail failures recover on explicit retry"
   ).toBeVisible();
   expect(api.mcqCalls).toBe(0);
 });
+
+for (const outcome of ["success", "failure"] as const) {
+  test(`tea02 mcqs ignores old generation ${outcome} after back-forward returns to the same batch URL`, async ({
+    page,
+  }) => {
+    const api = await mockTeacherMcqsApi(page);
+    let release!: () => void;
+    api.holdMcq = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    api.failMcq = outcome === "failure" ? 1 : 0;
+    await open(page);
+    await page
+      .getByRole("button", { name: new RegExp(BATCH.source_title) })
+      .click();
+    await expect(page).toHaveURL(route);
+    await expect(
+      page.getByText(BATCH.questions[0].question, { exact: true }),
+    ).toBeVisible();
+    await generation(page).click();
+    await expect.poll(() => api.mcqCalls).toBe(1);
+    await page.goBack();
+    await expect(page).not.toHaveURL(/batch=/);
+    await page.goForward();
+    await expect(page).toHaveURL(route);
+    await expect(
+      page.getByText(BATCH.questions[0].question, { exact: true }),
+    ).toBeVisible();
+    const settled = page.waitForResponse(
+      (response) =>
+        response.request().method() === "POST" &&
+        response.url().endsWith("/mcq-drafts"),
+    );
+    release();
+    await settled;
+    await expect(generation(page)).toBeEnabled();
+    await expect(page).toHaveURL(route);
+    await expect(
+      page.getByText("Draft MCQs generated and saved.", { exact: true }),
+    ).toHaveCount(0);
+    await expect(page.getByRole("alert")).toHaveCount(0);
+    await expect(
+      page.getByText(BATCH.questions[0].question, { exact: true }),
+    ).toBeVisible();
+    expect(api.mcqCalls).toBe(1);
+  });
+}
