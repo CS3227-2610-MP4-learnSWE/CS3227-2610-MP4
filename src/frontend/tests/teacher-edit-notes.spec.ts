@@ -397,7 +397,7 @@ for (const [width, theme] of [
     page,
   }, testInfo) => {
     await page.setViewportSize({ width, height: 900 });
-    await page.emulateMedia({ colorScheme: theme });
+    await page.emulateMedia({ colorScheme: theme, reducedMotion: "reduce" });
     await mockTeacherNotesApi(page);
     await edit(page);
     await dirty(page);
@@ -408,7 +408,8 @@ for (const [width, theme] of [
     ).toBe(true);
     await expect(
       page.getByRole("button", { name: "Save changes", exact: true }),
-    ).toBeVisible();
+    ).toBeEnabled();
+    await page.evaluate(() => window.scrollTo(0, 0));
     await page.screenshot({
       path: testInfo.outputPath(`tea03-${theme}-${width}.png`),
       fullPage: true,
