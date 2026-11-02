@@ -239,3 +239,71 @@ def test_tea01_db_storage_populated_downgrade_refuses_without_blob(tea01_databas
         assert db.execute('SELECT version_num FROM alembic_version').fetchone()[0]==HEAD
         assert db.execute('SELECT title FROM material WHERE id=%s',(mid,)).fetchone()[0]=='Current'
         assert db.execute("SELECT to_regclass('material_file')").fetchone()[0]
+
+
+def test_tea01_db_storage_upgrade_serialises_guard_with_legacy_writer(tea01_database, tmp_path):
+    """The empty-table decision and removal of storage_key must be one locked operation."""
+    import psycopg
+    with migration_schema() as (db, migrate):
+        migrate('upgrade', LEGACY)
+        db.execute("INSERT INTO course(id,title) VALUES(%s,'Legacy course')", (COURSE_A,))
+        db.execute('INSERT INTO "user"(id,display_name,role) VALUES(\'demo-teacher\',\'Teacher\',\'teacher\')')
+        schema = db.execute('SELECT current_schema()').fetchone()[0]
+        base = os.environ['TEA01_TEST_DATABASE_URL']
+        parts = urlsplit(base)
+        query = dict(parse_qsl(parts.query)); query['options'] = f'-csearch_path={schema}'
+        env = dict(os.environ, DATABASE_URL=urlunsplit(parts._replace(query=urlencode(query))))
+        ready, release = tmp_path/'guard-complete', tmp_path/'resume-migration'
+        # Public Alembic operation boundary: guard already ran, destructive DDL has not.
+        script = '''import sys,time
+from pathlib import Path
+from alembic import command
+from alembic.config import Config
+from alembic.operations import Operations
+ready,release=map(Path,sys.argv[1:])
+original=Operations.create_table
+def paused(self,name,*args,**kwargs):
+ if name=='material_file':
+  ready.touch()
+  deadline=time.monotonic()+15
+  while not release.exists():
+   if time.monotonic()>deadline: raise RuntimeError('test migration barrier timed out')
+   time.sleep(.01)
+ return original(self,name,*args,**kwargs)
+Operations.create_table=paused
+command.upgrade(Config('alembic.ini'),'head')
+'''
+        process = subprocess.Popen([sys.executable, '-c', script, str(ready), str(release)], env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        mid = uuid.uuid4()
+        accepted = False
+        try:
+            deadline = time.monotonic()+10
+            while not ready.exists() and process.poll() is None and time.monotonic()<deadline:
+                time.sleep(.01)
+            assert ready.exists(), 'migration never reached the post-guard DDL boundary'
+            # A fixed migration keeps its table lock until commit; the writer then times out.
+            with psycopg.connect(env['DATABASE_URL'].replace('postgresql+psycopg://','postgresql://',1)) as writer:
+                try:
+                    writer.execute("SET LOCAL lock_timeout='500ms'")
+                    writer.execute("INSERT INTO material(id,course_id,uploaded_by,title,original_filename,media_type,size_bytes,storage_key) VALUES(%s,%s,'demo-teacher','Racing source','race.txt','text/plain',1,'preserve-me.txt')", (mid,COURSE_A))
+                    writer.commit()
+                    accepted = True
+                except psycopg.errors.LockNotAvailable:
+                    writer.rollback()
+            release.touch()
+            stdout, stderr = process.communicate(timeout=15)
+            assert not (accepted and process.returncode == 0), 'migration and legacy upload both committed: original file mapping was discarded'
+            if accepted:
+                assert process.returncode != 0
+                assert db.execute('SELECT version_num FROM alembic_version').fetchone()[0] == LEGACY
+                assert db.execute('SELECT storage_key FROM material WHERE id=%s',(mid,)).fetchone()[0] == 'preserve-me.txt'
+            else:
+                assert process.returncode == 0, stdout+stderr
+                assert db.execute('SELECT version_num FROM alembic_version').fetchone()[0] == HEAD
+                assert db.execute('SELECT count(*) FROM material').fetchone()[0] == 0
+        finally:
+            release.touch()
+            if process.poll() is None:
+                try: process.communicate(timeout=5)
+                except subprocess.TimeoutExpired:
+                    process.kill();process.communicate()
