@@ -2,6 +2,27 @@
 
 Newest entry first. Use `templates/handoff.md`. Older entries describe the state at the time; the newest entry supersedes their open/merged status.
 
+## 2026-11-02: TEA-03 draft editing complete locally, awaiting human PR approval (orchestrator)
+- Done: feat/tea03-edit-notes adds explicit title/content editing with2,000-character content limit, Unicode counters, Save/Cancel, failed-save recovery, version conflicts/load-latest confirmation, unsaved navigation/unload protection and last-editor/time metadata. Source snapshot/original attribution stay immutable; notes remain unpublished. Editing makes no LLM calls; shared llm_client.py unchanged.
+- Data: migration20261102_tea03 backfills source_title/version/updated_at/updated_by; APIs expose the additive fields. Transactional PATCH checks current teacher/course access and strict version, one concurrent save wins and stale versions409. Shared contract/guides/help updated. Before trying an existing development DB: from src/backend run `uv run --env-file .env alembic upgrade head`, restartbackend andrefreshfrontend. Tests never used developer data/files.
+- Verification: independent strongest verifier PASS at2de07d15a610f1dc74b426b7db9a92801aae6e79, no open findings. Backend412; final fullbrowser132, types/lint/format/build passed. Final verifier reran17focusededitingcases. Parent inspected populated390/1440 light/dark editor screenshots; Markdown links resolve. No live provider/hosted CI/deployment checks.
+- Workflow: startf5f7194 +Unicodeclarification9695b97; source113d7ba; independenttestscfc3925 committed before source visibility and integrated8f07d32. Parent corrected inherited teacher-AI status ef61b1f and refined screenshot capture only. Two reviewer findings fixed: cancelled latest-load busy ownership (RED ea0f6c7, source9203ff2, integration1ceba30); valid long-title mobile overflow (RED659d590, sourcef256e55, integration2de07d1). Both regressions unchanged afterRED. Two-round cap met; resource/security/session evidence recorded.
+- TEA-02 status: merged PR11/master040dc07; user reported successful real generation on2026-11-02. This is user-reported manual evidence, not an agent-run live model test. Older awaiting-approval entries are historical and superseded.
+- Next: human reviews local branch and authorises push/PR publication. Nothing pushed, no PR opened, no mastermerge. MCQs, publishing, full revision history and production authentication remain future work; native unload warnings depend on browser behaviour.
+- Files: workflow/specs/TEA-03-notes, docs/SharedDataContract.md and guides, draft model/migration/routes, frontend NoteDraftEditor/TeacherNotes/data-router entry, independent tests and logs/TEA03Session.md.
+
+## 2026-11-02: TEA-03 developer implementation ready for independent tests
+- Implemented additive source/version/editor metadata and migration, transactional access-checked versioned PATCH, plain-text editing/conflict recovery, and data-router navigation/unload guards. Shared LLM client unchanged; no edit calls an LLM.
+- Existing backend382 passed, one expected old TEA-02 exact metadata shape assertion awaits independent fixture update; frontend types/lint/build/changed-source formatting pass. Independent tests have not been read or modified.
+- Guides/shared contract/app-help describe current editing and source attribution. TEA-02 PR11/master040dc07 and user-reported successful real generation recorded. Tests use isolated schemas/files only; no development data or .env changes, live calls, push or PR.
+- Next: integrate independent tests, verifier checks, then corrections if needed. Parent owns resource/security/session records.
+
+## 2026-11-02: TEA-03-notes approved contract (spec-writer)
+- Done: user-approved notes-only editing plan recorded in workflow/specs/TEA-03-notes with migration/backfill, strict versioned PATCH, conflict recovery, source-title snapshot, router blocking and independent test interfaces. No application code/tests changed.
+- Prior state: TEA-02 merged through PR11 at040dc07; user reports real generation worked. Older waiting-for-approval entries below are historical and superseded on that point.
+- Next: orchestrator records spec commit; developer and independent test-designer start together from it, separate worktrees. No open questions. No live LLM call, push or PR.
+- Files: workflow/specs/TEA-03-notes/{spec,plan,tasks}.md and workflow/notes.md. Resource totals unavailable; spec-writer inherited model configuration.
+
 ## 2026-11-01: TEA-02 notes complete locally, awaiting human PR approval (orchestrator)
 - Done: feat/tea02-generate-notes generates, saves and reopens concise private draft notes from authorised UTF-8/text-based PDF source materials. Shared llm_client.py unchanged. No editing/MCQs/publication/OCR/student access; US-TEA-02-01 editable criterion remains deferred to TEA-03.
 - Shared contract: new study_note_draft entity, source/course/creator relationships, API/error representations and future LLM integration documented. Historical TEA-01 migration frozen; additive draft migration handles fresh/existing schema upgrades and downgrade/re-upgrade. Run `uv run --env-file .env alembic upgrade head` from src/backend before testing an existing development database; tests used isolated schemas/files only.

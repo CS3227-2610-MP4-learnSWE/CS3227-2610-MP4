@@ -69,3 +69,23 @@ Verified against isolated PostgreSQL schema/private temporary files and fake LLM
 | Student publication/access | No publication or student draft endpoint; student APIs unchanged | Passed |
 
 Shared llm_client.py unchanged. Model failures/rate limits use test fakes; live provider behaviour and production authentication are outside this verification.
+
+
+## 2026-11-02 — TEA-03 private draft editing
+
+Independent initial verification:412backend/130browser, types/lint/format/build passed using isolated schemas/files and fake generation clients. No developer data or live provider used. Final correction recheck recorded in logs/TEA03Session.md.
+
+| Case | Expected control | Observed |
+|---|---|---|
+| Demo gate/identity/role/course/record access with invalid bodies | Access resolved before body validation;401/403/404, no unauthorised mutation | Passed |
+| Body claims, strict version/types/extra fields, Unicode boundaries | Only title/content/positive integer version accepted; NUL/surrogates and invalid lengths422 | Passed |
+| Concurrent edits and stale/lost responses | Locked current version; exactlyone200/one409; committed old-version retry409 | Passed |
+| Revoked access and server-resolved audit data | Current role/membership checked/locked; immutable source/creator refs; editor resolved server-side | Passed (concurrent revocation locking inspected; before-save revocation tested) |
+| Failed DB commit and restart/migration | Rollback preserves draft/source; persistent fields backfill; downgrade/re-upgrade tested | Passed |
+| Untrusted note title/content | Escaped plain text; no HTML interpretation, LLM call, student access or publication | Passed |
+| Unsaved/pending-save navigation and unload | Confirm discard, preserve buffers, block departure during save, reset pending navigation after settlement | Passed; extra manual probes checked success/503 settlement |
+| Cancelled same-key latest-version request | Cancellation releases busy state; stale cleanup cannot affect newer save | Initial blocker reproduced; independentea0f6c7RED thenGREEN after9203ff2; final verifier PASS at2de07d15 |
+
+Shared llm_client.py unchanged; editing does not consume model usage. Production identity and publication remain outside this increment.
+
+Final TEA-03 verdict: strongest independent verifier PASS at2de07d15a610f1dc74b426b7db9a92801aae6e79 after two correction rounds. Final17focusededitingtests passed; independent full132browser/types/lint/format/build passed. Backendunchangedfrom412-passrevision. Second valid-input layout finding (200-char unbroken title/source and64-char userIDs) reproduced beforefixf256e55 and passed regression659d590 afterwards; full text wraps without hiding/truncation. No outstanding findings.

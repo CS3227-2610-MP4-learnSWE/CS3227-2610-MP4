@@ -15,7 +15,7 @@ import pytest
 BASE = "/api/teacher"
 COURSE = "11111111-1111-4111-8111-111111111111"
 OTHER = "22222222-2222-4222-8222-222222222222"
-META = {"id", "course_id", "source_material_id", "created_by", "title", "created_at"}
+META = {"id", "course_id", "source_material_id", "created_by", "title", "created_at", "source_title", "version", "updated_at", "updated_by"}
 
 
 class NotesLlm:
@@ -356,7 +356,7 @@ def test_tea02_fresh_and_existing_schema_migrations_preserve_materials(tea01_dat
                 assert cur.execute("SELECT title FROM material WHERE id=%s", (mid,)).fetchone()[0] == "Keep source"
                 assert cur.execute("SELECT to_regclass('study_note_draft')").fetchone()[0]
                 with pytest.raises(psycopg.Error):
-                    cur.execute("INSERT INTO study_note_draft(id,course_id,source_material_id,created_by,title,content) VALUES(%s,%s,%s,'demo-teacher','bad','')", (uuid.uuid4(), COURSE, mid))
+                    cur.execute("INSERT INTO study_note_draft(id,course_id,source_material_id,created_by,title,content,source_title,updated_by) VALUES(%s,%s,%s,'demo-teacher','bad','','source','demo-teacher')", (uuid.uuid4(), COURSE, mid))
                 migrate("downgrade", "20261030_tea01")
                 assert cur.execute("SELECT to_regclass('study_note_draft')").fetchone()[0] is None
                 assert cur.execute("SELECT title FROM material WHERE id=%s", (mid,)).fetchone()[0] == "Keep source"
@@ -411,4 +411,4 @@ def test_tea02_database_enforces_content_and_course_relationship(notes, tea01_da
     for course, text in [(OTHER, "valid text"), (COURSE, ""), (COURSE, "x" * 2001)]:
         with pytest.raises(psycopg.Error):
             with tea01_database.transaction():
-                tea01_database.execute("INSERT INTO study_note_draft(id,course_id,source_material_id,created_by,title,content) VALUES(%s,%s,%s,'demo-teacher','bad',%s)", (uuid.uuid4(), course, source["id"], text))
+                tea01_database.execute("INSERT INTO study_note_draft(id,course_id,source_material_id,created_by,title,content,source_title,updated_by) VALUES(%s,%s,%s,'demo-teacher','bad',%s,'source','demo-teacher')", (uuid.uuid4(), course, source["id"], text))

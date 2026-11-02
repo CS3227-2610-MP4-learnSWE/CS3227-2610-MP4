@@ -1,8 +1,10 @@
-"""Authorised, append-only study-note drafts; no transaction during model calls."""
+"""Private note generation and versioned edits with current course access."""
+from datetime import datetime, timezone
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, Request
 from sqlalchemy import select
+from pydantic import BaseModel, ConfigDict, Field, StrictInt, StrictStr, ValidationError
 
 from errors import ApiError
 from llm_client import LlmClient, get_llm_client
@@ -16,7 +18,7 @@ router = APIRouter(prefix="/api/teacher", tags=["teacher note drafts"])
 
 
 def _draft(row: StudyNoteDraft, *, content: bool = False) -> dict:
-    result = {"id": str(row.id), "course_id": str(row.course_id), "source_material_id": str(row.source_material_id), "created_by": row.created_by, "title": row.title, "created_at": _timestamp(row.created_at)}
+    result = {"id": str(row.id), "course_id": str(row.course_id), "source_material_id": str(row.source_material_id), "created_by": row.created_by, "title": row.title, "created_at": _timestamp(row.created_at), "source_title": row.source_title, "version": row.version, "updated_at": _timestamp(row.updated_at), "updated_by": row.updated_by}
     if content:
         result["content"] = row.content
     return result
@@ -41,7 +43,8 @@ def create_note_draft(request: Request, material_id: str, llm: LlmClient = Depen
         source = session.scalar(select(Material).where(Material.id == source_id, Material.course_id == course_id).with_for_update(read=True))
         if membership is None or source is None:
             raise ApiError(404, "not_found", "Material not found.")
-        row = StudyNoteDraft(id=uuid4(), course_id=course_id, source_material_id=source_id, created_by=teacher_id, title=title, content=content)
+        created = datetime.now(timezone.utc)
+        row = StudyNoteDraft(id=uuid4(), course_id=course_id, source_material_id=source_id, created_by=teacher_id, title=title, source_title=title, content=content, version=1, updated_by=teacher_id, created_at=created, updated_at=created)
         session.add(row)
         session.flush()
         session.refresh(row)
@@ -65,3 +68,64 @@ def get_note_draft(request: Request, draft_id: str):
         if row is None:
             raise ApiError(404, "not_found", "Draft not found.")
         return _draft(row, content=True)
+
+
+class DraftEdit(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    title: StrictStr
+    content: StrictStr
+    version: StrictInt = Field(ge=1)
+
+
+def _edit_error() -> ApiError:
+    return ApiError(422, "validation_error", "Provide a valid title, note content and positive integer version.")
+
+
+@router.patch("/note-drafts/{draft_id}")
+async def edit_note_draft(request: Request, draft_id: str):
+    try:
+        with _teacher_session(request) as (session, teacher):
+            try:
+                identifier = _uuid(draft_id)
+            except ApiError:
+                raise _edit_error() from None
+            row = session.scalar(select(StudyNoteDraft).join(CourseMembership, CourseMembership.course_id == StudyNoteDraft.course_id).where(StudyNoteDraft.id == identifier, CourseMembership.user_id == teacher.id))
+            if row is None:
+                raise ApiError(404, "not_found", "Draft not found.")
+            try:
+                body = DraftEdit.model_validate(await request.json())
+            except (ValueError, ValidationError):
+                raise _edit_error() from None
+            title = body.title.strip()
+            content = body.content.replace("\r\n", "\n").replace("\r", "\n").strip()
+            if not 1 <= len(title) <= 200 or not 1 <= len(content) <= 2000 or "\x00" in title + content:
+                raise _edit_error()
+            try:
+                (title + content).encode("utf-8", errors="strict")
+            except UnicodeEncodeError:
+                raise _edit_error() from None
+            # Shared locks hold role/membership stable until the versioned write commits.
+            user = session.scalar(select(User).where(User.id == teacher.id).with_for_update(read=True).execution_options(populate_existing=True))
+            if user is None or user.role != "teacher":
+                raise ApiError(403, "forbidden", "Teacher access is required.")
+            membership = session.scalar(select(CourseMembership).where(CourseMembership.course_id == row.course_id, CourseMembership.user_id == teacher.id).with_for_update(read=True))
+            if membership is None:
+                raise ApiError(404, "not_found", "Draft not found.")
+            row = session.scalar(select(StudyNoteDraft).where(StudyNoteDraft.id == identifier).with_for_update().execution_options(populate_existing=True))
+            if row is None:
+                raise ApiError(404, "not_found", "Draft not found.")
+            if row.version != body.version:
+                raise ApiError(409, "draft_conflict", "This draft has changed. Load the latest saved version before saving.")
+            row.title, row.content = title, content
+            row.version += 1
+            row.updated_by = user.id
+            row.updated_at = datetime.now(timezone.utc)
+            session.flush()
+            session.refresh(row)
+            payload = _draft(row, content=True)
+            session.commit()
+            return payload
+    except ApiError as exc:
+        if exc.status == 503:
+            raise ApiError(503, "service_unavailable", "Teacher notes service is unavailable. Please try again.") from None
+        raise

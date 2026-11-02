@@ -15,6 +15,10 @@ export type NoteDraft = {
   title: string;
   created_at: string;
   content: string;
+  source_title: string;
+  version: number;
+  updated_at: string;
+  updated_by: string;
 };
 export const SAVED: NoteDraft = {
   id: "88888888-8888-4888-8888-888888888888",
@@ -24,6 +28,10 @@ export const SAVED: NoteDraft = {
   title: "Saved draft 1",
   created_at: "2026-11-01T10:00:00Z",
   content: "Core concept\n- One responsibility per function.",
+  source_title: "Immutable original source",
+  version: 1,
+  updated_at: "2026-11-01T10:00:00Z",
+  updated_by: "demo-teacher",
 };
 
 export class TeacherNotesApi extends TeacherMaterialsApi {
@@ -33,6 +41,10 @@ export class TeacherNotesApi extends TeacherMaterialsApi {
   failDrafts = 0;
   failGet = 0;
   holdGeneration: Promise<void> | null = null;
+  holdPatch: Promise<void> | null = null;
+  patchCalls = 0;
+  failPatchStatus = 0;
+  editorId = "demo-teacher";
   override async handle(route: Route) {
     const request = route.request();
     const path = new URL(request.url()).pathname;
@@ -58,6 +70,36 @@ export class TeacherNotesApi extends TeacherMaterialsApi {
       body: request.postData(),
       headers: request.headers(),
     });
+    if (get && method === "PATCH") {
+      this.patchCalls++;
+      const body = JSON.parse(request.postData() || "{}");
+      if (this.holdPatch) await this.holdPatch;
+      const index = this.drafts.findIndex((item) => item.id === get[1]);
+      if (index < 0)
+        return json(404, {
+          detail: { code: "not_found", message: "Draft not found." },
+        });
+      const old = this.drafts[index];
+      const status = this.failPatchStatus;
+      this.failPatchStatus = 0;
+      if (status || body.version !== old.version)
+        return json(status || 409, {
+          detail: {
+            code: status === 503 ? "service_unavailable" : "draft_conflict",
+            message: "private sentinel must not be shown",
+          },
+        });
+      const updated = {
+        ...old,
+        title: body.title,
+        content: body.content,
+        version: old.version + 1,
+        updated_at: "2026-11-02T12:00:00Z",
+        updated_by: this.editorId,
+      };
+      this.drafts[index] = updated;
+      return json(200, updated);
+    }
     if (create && method === "POST") {
       this.generationCalls++;
       if (this.holdGeneration) await this.holdGeneration;
@@ -69,6 +111,10 @@ export class TeacherNotesApi extends TeacherMaterialsApi {
         course_id: material.course_id,
         source_material_id: material.id,
         title: "Generated draft",
+        source_title: material.title,
+        version: 1,
+        updated_at: "2026-11-01T12:00:00Z",
+        updated_by: "demo-teacher",
         created_at: "2026-11-01T12:00:00Z",
       };
       this.drafts.unshift(draft);
@@ -80,23 +126,11 @@ export class TeacherNotesApi extends TeacherMaterialsApi {
         200,
         this.drafts
           .filter((draft) => draft.course_id === list[1])
-          .map(
-            ({
-              id,
-              course_id,
-              source_material_id,
-              created_by,
-              title,
-              created_at,
-            }) => ({
-              id,
-              course_id,
-              source_material_id,
-              created_by,
-              title,
-              created_at,
-            }),
-          ),
+          .map((item) => {
+            const metadata: Partial<NoteDraft> = { ...item };
+            delete metadata.content;
+            return metadata;
+          }),
       );
     }
     if (get && method === "GET") {
