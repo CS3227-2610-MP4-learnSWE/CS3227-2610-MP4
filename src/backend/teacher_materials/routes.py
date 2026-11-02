@@ -4,21 +4,22 @@ from contextlib import contextmanager
 from datetime import timezone
 from typing import Iterator
 from uuid import UUID, uuid4
+from urllib.parse import quote
 
 from fastapi import APIRouter, Request
 from starlette.datastructures import UploadFile
-from fastapi.responses import FileResponse
+from fastapi.responses import Response
 from pydantic import BaseModel, ConfigDict, ValidationError
-from sqlalchemy import create_engine, select
+from sqlalchemy import create_engine, func, select, text
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from errors import ApiError
 from text_validation import is_postgres_text
 from teacher_materials.demo_identity import require_managed_course, require_teacher
-from teacher_materials.models import Course, CourseMembership, Material, Topic, User
+from teacher_materials.models import Course, CourseMembership, Material, MaterialFile, Topic, User
 from teacher_materials.multipart import material_form
-from teacher_materials.storage import remove_file, resolve_file, save_upload, storage_root
+from teacher_materials.storage import MAX_TOTAL_BYTES, validate_upload
 
 router = APIRouter(prefix="/api/teacher", tags=["teacher materials"])
 
@@ -58,10 +59,9 @@ def _teacher_session(request: Request) -> Iterator[tuple[Session, User]]:
     if not url or not url.startswith("postgresql+psycopg://"):
         raise ApiError(503, "service_unavailable", "Teacher materials service is unavailable.")
     try:
-        engine = create_engine(url, pool_pre_ping=True)
+        engine = create_engine(url, pool_pre_ping=True, isolation_level="READ COMMITTED")
         with Session(engine) as session:
             teacher = require_teacher(request, session)
-            storage_root()
             yield session, teacher
     except SQLAlchemyError as exc:
         raise ApiError(503, "service_unavailable", "Teacher materials service is unavailable.") from exc
@@ -115,7 +115,6 @@ def list_materials(request: Request, course_id: str):
 async def upload_material(request: Request, course_id: str):
     with _teacher_session(request) as (session, teacher):
         course = require_managed_course(session, teacher, _uuid(course_id))
-        root = storage_root()
         async with material_form(request) as form:
             allowed = {"file", "title", "topic_id"}
             if (set(form.keys()) - allowed
@@ -128,20 +127,20 @@ async def upload_material(request: Request, course_id: str):
             if not 1 <= len(title) <= 200 or not is_postgres_text(title):
                 raise ApiError(422, "validation_error", "Title must contain 1–200 characters.")
             topic_id = _same_course_topic(session, course.id, form["topic_id"]) if form.get("topic_id") else None
-            stored = save_upload(form["file"], root)
-            try:
-                row = Material(id=uuid4(), course_id=course.id, topic_id=topic_id, uploaded_by=teacher.id, title=title, original_filename=stored.original_filename, media_type=stored.media_type, size_bytes=stored.size_bytes, storage_key=stored.storage_key)
-                session.add(row)
-                session.flush()
-                session.refresh(row)
-                payload = _material(row)
-                # All fallible reads/serialization happen before the commit.
-                # Nothing after a successful commit may delete these bytes.
-                session.commit()
-            except Exception as exc:
-                session.rollback()
-                remove_file(root, stored.storage_key)
-                raise ApiError(503, "service_unavailable", "Teacher materials service is unavailable.") from exc
+            stored = validate_upload(form["file"])
+            # A transaction-scoped lock makes the fresh byte sum safe for concurrent uploads.
+            session.execute(text("SELECT pg_advisory_xact_lock(32272610)"))
+            used = session.scalar(select(func.coalesce(func.sum(func.octet_length(MaterialFile.content)), 0)))
+            if used + stored.size_bytes > MAX_TOTAL_BYTES:
+                raise ApiError(413, "storage_quota_exceeded", "Upload would exceed the 100 MiB total storage limit.")
+            row = Material(id=uuid4(), course_id=course.id, topic_id=topic_id, uploaded_by=teacher.id, title=title, original_filename=stored.original_filename, media_type=stored.media_type, size_bytes=stored.size_bytes)
+            session.add(row)
+            session.flush()
+            session.add(MaterialFile(material_id=row.id, content=stored.content))
+            session.flush()
+            session.refresh(row)
+            payload = _material(row)
+            session.commit()
             return payload
 
 
@@ -162,7 +161,6 @@ async def assign_topic(request: Request, material_id: str):
         # Lock row so the last committed assignment wins and unrelated columns stay untouched.
         row = session.scalar(select(Material).where(Material.id == row.id).with_for_update().execution_options(populate_existing=True))
         row.topic_id = topic_id
-        from sqlalchemy import func
         row.updated_at = func.now()
         session.flush()
         session.refresh(row)
@@ -171,12 +169,18 @@ async def assign_topic(request: Request, material_id: str):
         return payload
 
 
+def _material_content(session: Session, material_id: UUID) -> bytes:
+    content = session.scalar(select(MaterialFile.content).where(MaterialFile.material_id == material_id))
+    if content is None:
+        raise ApiError(503, "service_unavailable", "Stored material content is unavailable.")
+    return content
+
+
 @router.get("/materials/{material_id}/file")
 def download_material(request: Request, material_id: str):
     with _teacher_session(request) as (session, teacher):
         row = _owned_material(session, teacher, material_id)
-        root = storage_root()
-        path = resolve_file(root, row.storage_key)
-        if not path.is_file():
-            raise ApiError(503, "service_unavailable", "Private file storage is unavailable.")
-        return FileResponse(path, media_type=row.media_type, filename=row.original_filename, content_disposition_type="attachment")
+        content = _material_content(session, row.id)
+        filename = quote(row.original_filename)
+        disposition = f"attachment; filename*=utf-8''{filename}" if filename != row.original_filename else f'attachment; filename="{filename}"'
+        return Response(content, media_type=row.media_type, headers={"Content-Disposition": disposition})

@@ -35,6 +35,7 @@ import {
   Tag,
 } from "../components/ui";
 import { questions } from "../teacherDemo";
+import { ApiError } from "../services/client";
 import TeacherContentStudio from "./TeacherContentStudio";
 import {
   listTeacherCourses,
@@ -267,9 +268,11 @@ function Materials({ notify }: Props) {
       closeUpload();
       notify("Material uploaded. It has not been published to students.");
       refresh();
-    } catch {
+    } catch (reason) {
       setUploadError(
-        "Upload failed. Check that the file is a readable PDF or UTF-8 text file within 10 MiB, then retry.",
+        reason instanceof ApiError && reason.code === "storage_quota_exceeded"
+          ? "Upload would exceed the 100 MiB total storage limit."
+          : "Upload failed. Check that the file is a readable PDF or UTF-8 text file within 10 MiB, then retry.",
       );
     } finally {
       setBusy(false);
@@ -456,9 +459,10 @@ function Materials({ notify }: Props) {
         <DialogTitle>Upload material</DialogTitle>
         <DialogContent>
           <p className="muted">
-            PDF or UTF-8 text, up to 10 MiB. Source files remain private and
-            unpublished.
+            PDF or UTF-8 text · Up to 10 MiB per file · 100 MiB total upload
+            storage.
           </p>
+          <p className="muted">Source files remain private and unpublished.</p>
           <TextField
             label="Title"
             value={title}

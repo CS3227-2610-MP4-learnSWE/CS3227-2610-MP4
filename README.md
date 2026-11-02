@@ -12,6 +12,8 @@ From the repository root, start the local database:
 
 ```sh
 docker compose up -d postgres
+# Once, create a fresh database; keep any previous database unchanged.
+docker compose exec postgres createdb -U learnswe learnswe_db_files
 ```
 
 In the backend terminal:
@@ -19,16 +21,20 @@ In the backend terminal:
 ```sh
 cd src/backend
 uv sync --frozen
+
+# Only if .env does not already exist:
 cp .env.example .env
 ```
 
-Edit `.env`: set `FILE_STORAGE_DIR` to a private **absolute path** on your machine (for example `/absolute/path/to/learnswe/private-files`, or `C:/path/to/learnswe/private-files` on Windows). The database URL matches the Compose service on loopback port 5433. Keep `APP_ENV=development` and `ALLOW_DEMO_IDENTITY=true` for local teacher testing. Then run:
+Edit `.env`: point `DATABASE_URL` at the fresh `learnswe_db_files` database on loopback port 5433, as in `.env.example`. Preserve an existing `.env` and change only the needed values. Keep `APP_ENV=development` and `ALLOW_DEMO_IDENTITY=true` for local teacher testing. No permanent file directory is required. Then run:
 
 ```sh
 uv run --env-file .env alembic upgrade head
 uv run --env-file .env python -m teacher_materials.seed
 uv run --env-file .env uvicorn main:app --host 127.0.0.1 --port 8000 --reload
 ```
+
+The storage conversion refuses migration when existing materials are present; use a fresh database rather than clearing the previous one. Old uploads and drafts do not appear in the fresh database; upload sources again. Populated downgrade is also refused because originals cannot be reconstructed as old filesystem files. To return to the old version, restore its code, database configuration and original files together.
 
 The seed can be rerun; it does not erase uploads. The identity header is spoofable and must not be used as production authentication. The `--env-file` option is important: the API does not automatically load the backend `.env`.
 
@@ -37,6 +43,8 @@ In another terminal, from the repository root:
 ```sh
 cd src/frontend
 npm ci
+
+# Only if .env does not already exist:
 cp .env.example .env
 npm run dev
 ```
@@ -54,7 +62,7 @@ Preview screens work without the backend, but Student Practice, the study compan
 - **Admin:** illustrative analytics, feedback-form builder and audience preview, sample feedback and analysis references, announcement preview, role-filtered people table and illustrative AI usage.
 - **Shared:** responsive navigation, role switching, light/dark mode, keyboard focus, reduced-motion support and direct browser routes.
 
-Remaining preview state and the current student practice session are temporary. Teacher Materials records and files persist across browser and backend restarts. The student companion opens from the bottom-right chat icon on any student page. Close/Escape minimises without losing messages or the unsent draft; its refresh icon clears both without refreshing the page. Chat survives student-page navigation, but returning to login or switching demo roles ends that temporary conversation. Some editor drafts reset when leaving their screen. Dashboard figures remain illustrative. The student companion and teacher notes/MCQs make real AI calls when configured; registration, real login, publication and message delivery remain unimplemented. Teacher Materials files and metadata persist in PostgreSQL and private local storage; uploading never publishes student-facing content. Other preview actions remain in memory.
+Remaining preview state and the current student practice session are temporary. Teacher Materials records and file bytes persist in PostgreSQL across browser/backend restarts and redeploys. Uploads are limited to 10 MiB each and 100 MiB total original bytes; database overhead and other records need additional capacity. The student companion opens from the bottom-right chat icon on any student page. Close/Escape minimises without losing messages or the unsent draft; its refresh icon clears both without refreshing the page. Chat survives student-page navigation, but returning to login or switching demo roles ends that temporary conversation. Some editor drafts reset when leaving their screen. Dashboard figures remain illustrative. The student companion and teacher notes/MCQs make real AI calls when configured; registration, real login, publication and message delivery remain unimplemented. Teacher Materials original bytes and metadata persist together in PostgreSQL; uploading never publishes student-facing content. Other preview actions remain in memory.
 
 **Practice boundary:** complete every question and submit the whole set before scores and solutions are shown. The student companion uses server-selected hint mode before submission and explain mode for eligible submitted attempts. It calls the SoC LLM; its documented deterministic leak check has residual risks (see the user guide). It does not retrieve lesson content yet. Authenticated account-scoped conversation persistence until logout remains future work. Student practice gets questions without keys and reads answers only from the server after submission. Separate teacher sample answers load only in the lazy teacher screen. The demo role switcher and identity headers are not authentication; teacher source/draft endpoints enforce development role/course membership checks, while production authentication remains future work.
 
@@ -65,7 +73,7 @@ Remaining preview state and the current student practice session are temporary. 
 | `GET /api/health` | `200 {"status":"ok"}` | API process can serve a request. |
 | `GET /api/health/ready` | `200 {"status":"ready"}` | Process readiness only; does not check PostgreSQL or AI. |
 
-FastAPI's generated API documentation is at [localhost:8000/docs](http://127.0.0.1:8000/docs). Teacher Materials endpoints are specified in [the shared data contract](docs/SharedDataContract.md).
+FastAPI's generated API documentation is at [localhost:8000/docs](http://127.0.0.1:8000/docs). Teacher Materials endpoints and BYTEA storage are specified in [the shared data contract](docs/SharedDataContract.md).
 
 ## Verify
 

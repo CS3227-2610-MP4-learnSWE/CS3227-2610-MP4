@@ -26,3 +26,9 @@ The SoC documentation host (`dochub.comp.nus.edu.sg`) resolves to a private addr
 1. Is the SoC LLM reachable from outside the NUS network?
 2. Does SoC provide servers or VMs for course projects?
 3. Database hosting for PostgreSQL (dev and prod).
+
+## Teacher original-file persistence
+
+Teacher originals now live in PostgreSQL material_file.content BYTEA with metadata/drafts, so a Render persistent disk is not required for uploads. FILE_STORAGE_DIR is ignored; temporary multipart spooling may use ephemeral disk. Keep DATABASE_URL and provider credentials in deployment secrets. The application enforces10 MiB per file/100 MiB total raw bytes, not total database usage; monitor the chosen provider's capacity and other tables/overhead. No specific free-tier allowance is assumed. PostgreSQL backups now include originals; restore the database as one unit.
+
+Deploy this revision against a separately created empty database, migrate and seed explicitly, then upload again. Conversion/downgrade refuses populated material tables; never clear the previous database/files to bypass it. Keep old code/configuration/database/files for rollback. This change does not configure hosting, deploy, implement login or resolve SoC LLM network reachability; follow the existing decisions/gates above.
