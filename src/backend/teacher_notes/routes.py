@@ -11,8 +11,7 @@ from text_validation import is_postgres_text
 from llm_client import LlmClient, get_llm_client
 from teacher_materials.demo_identity import require_managed_course
 from teacher_materials.models import CourseMembership, Material, StudyNoteDraft, User
-from teacher_materials.routes import _owned_material, _teacher_session, _timestamp, _uuid
-from teacher_materials.storage import resolve_file, storage_root
+from teacher_materials.routes import _material_content, _owned_material, _teacher_session, _timestamp, _uuid
 from teacher_notes.generation import extract_source, generate_notes
 
 router = APIRouter(prefix="/api/teacher", tags=["teacher note drafts"])
@@ -30,10 +29,10 @@ def create_note_draft(request: Request, material_id: str, llm: LlmClient = Depen
     with _teacher_session(request) as (session, teacher):
         material = _owned_material(session, teacher, material_id)
         teacher_id, source_id, course_id, title = teacher.id, material.id, material.course_id, material.title
-        path = resolve_file(storage_root(), material.storage_key)
+        source_content = _material_content(session, material.id)
         media_type = material.media_type
     # Copy scalars and release the session before extraction and external work.
-    text = extract_source(path, media_type)
+    text = extract_source(source_content, media_type)
     content = generate_notes(llm, text, teacher_id)
     with _teacher_session(request) as (session, teacher):
         # Locks linearise access checks with concurrent role/membership changes.
