@@ -44,13 +44,11 @@ for (const theme of ["light", "dark"] as const) {
         ),
       ).toBeVisible();
       await dialog.getByLabel("Title").fill("Quota recovery source");
-      await dialog
-        .locator('input[type="file"]')
-        .setInputFiles({
-          name: "source.txt",
-          mimeType: "text/plain",
-          buffer: Buffer.from("One responsibility per function."),
-        });
+      await dialog.locator('input[type="file"]').setInputFiles({
+        name: "source.txt",
+        mimeType: "text/plain",
+        buffer: Buffer.from("One responsibility per function."),
+      });
       await dialog.getByRole("button", { name: "Upload", exact: true }).click();
       await expect(dialog.getByRole("alert")).toContainText(
         "Upload would exceed the 100 MiB total storage limit.",

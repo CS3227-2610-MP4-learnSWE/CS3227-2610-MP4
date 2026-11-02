@@ -126,7 +126,13 @@ def test_tea01_db_storage_advisory_lock_and_fresh_usage(app, tea01_database):
             with ThreadPoolExecutor(max_workers=1) as pool:
                 future=pool.submit(post_upload,app,content=b'x',title=marker+'-waiter')
                 try:
-                    time.sleep(.2);assert not future.done(),'upload bypassed quota lock'
+                    deadline=time.monotonic()+5
+                    waiting=False
+                    while time.monotonic()<deadline and not future.done():
+                        waiting=tea01_database.execute("SELECT EXISTS(SELECT 1 FROM pg_locks WHERE locktype='advisory' AND objid=%s AND NOT granted)",(LOCK,)).fetchone()[0]
+                        if waiting: break
+                        time.sleep(.01)
+                    assert waiting and not future.done(),'upload did not wait on the transaction quota lock'
                     mid=uuid.uuid4()
                     holder.execute("INSERT INTO material(id,course_id,uploaded_by,title,original_filename,media_type,size_bytes) VALUES(%s,%s,'demo-teacher',%s,'lock.txt','text/plain',1)",(mid,COURSE_A,marker+'-holder'))
                     holder.execute("INSERT INTO material_file(material_id,content) VALUES(%s,'x'::bytea)",(mid,));holder.commit()
