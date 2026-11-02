@@ -2,7 +2,7 @@
 
 A calmer space to learn, teach and grow in software engineering.
 
-This release includes server-backed student practice, the student study companion, private teacher source materials and persisted AI-generated draft notes. Teacher notes use the shared SoC LLM client; editing and publication remain deferred. Other teacher and admin screens remain demonstrations.
+This release includes server-backed student practice, the student study companion, private teacher source materials and persisted AI-generated draft notes. Teacher notes use the shared SoC LLM client for generation; teachers can explicitly edit/save drafts without AI calls. Publication remains deferred. Other teacher and admin screens remain demonstrations.
 
 ## Run locally
 
@@ -50,7 +50,7 @@ Preview screens work without the backend, but Student Practice, the study compan
 ## What you can explore
 
 - **Student:** overview, topic/search filtering, sample lessons with reversible completion, MCQ-only whole-set practice submission and results, a floating study companion, inbox read status and a feedback-form preview.
-- **Teacher:** overview, working private materials library with PDF/UTF-8 uploads, topic assignment and download, working AI content studio with saved, read-only draft notes; sample review/editing screens, practice-set selection and inbox.
+- **Teacher:** overview, working private materials library with PDF/UTF-8 uploads, topic assignment and download, working AI content studio with saved draft notes, explicit editing and conflict recovery; sample publication screens, practice-set selection and inbox.
 - **Admin:** illustrative analytics, feedback-form builder and audience preview, sample feedback and analysis references, announcement preview, role-filtered people table and illustrative AI usage.
 - **Shared:** responsive navigation, role switching, light/dark mode, keyboard focus, reduced-motion support and direct browser routes.
 
