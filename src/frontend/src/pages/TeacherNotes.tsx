@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router";
 import { Button, MenuItem, TextField } from "@mui/material";
 import { FileText, Sparkles } from "lucide-react";
@@ -9,155 +9,42 @@ import {
   PreviewNote,
   Tag,
 } from "../components/ui";
-import { ApiError } from "../services/client";
+import { teacherGenerationError } from "../services/teacherGeneration";
 import NoteDraftEditor from "./NoteDraftEditor";
-import {
-  listTeacherCourses,
-  listTeacherMaterials,
-  type Course,
-  type Material,
-} from "../services/teacherMaterials";
+import { useTeacherStudioSources } from "../hooks/useTeacherStudioSources";
+import { useStudioGeneration } from "../hooks/useStudioGeneration";
 import {
   generateNoteDraft,
   getNoteDraft,
   listNoteDrafts,
   type NoteDraft,
-  type NoteDraftMetadata,
 } from "../services/teacherNotes";
-
-function generationError(error: unknown): string {
-  if (!(error instanceof ApiError))
-    return "Could not generate draft notes. Please try again.";
-  const messages: Record<string, string> = {
-    source_text_empty:
-      "No usable source text was found. Scanned PDFs need a text-based source.",
-    source_text_too_large:
-      "Choose a source with at most 8,000 characters and 100 PDF pages.",
-    source_unreadable:
-      "The source could not be read. Choose a UTF-8 text file or text-based PDF.",
-    llm_not_configured:
-      "The AI service is not configured. Ask your developer to check the backend settings.",
-    llm_timeout: "Generation timed out. Please try again.",
-    llm_bad_response:
-      "The AI service returned unusable or incomplete notes. Please try again.",
-    llm_upstream_error:
-      "The AI service could not generate notes. Please try again.",
-    llm_unavailable: "The AI service is unavailable. Please try again later.",
-    llm_rate_limited:
-      "Too many generation requests. Please wait before retrying.",
-    llm_busy: "The AI service is busy. Please wait before retrying.",
-  };
-  const message =
-    messages[error.code] || "Could not generate draft notes. Please try again.";
-  return error.retryAfterSeconds
-    ? `${message} Try again in ${error.retryAfterSeconds} seconds.`
-    : message;
-}
 
 export default function TeacherNotes() {
   const [params, setParams] = useSearchParams();
   const queryCourse = params.get("course") || "";
   const draftId = params.get("draft") || "";
-  const [courses, setCourses] = useState<Course[]>([]);
-  const [coursesReady, setCoursesReady] = useState(false);
-  const [coursesError, setCoursesError] = useState("");
-  const [coursesReload, setCoursesReload] = useState(0);
-  const [resources, setResources] = useState<{
-    course: string;
-    materials: Material[];
-    drafts: NoteDraftMetadata[];
-  }>({ course: "", materials: [], drafts: [] });
-  const [resourcesLoading, setResourcesLoading] = useState(false);
-  const [resourcesError, setResourcesError] = useState("");
-  const [reload, setReload] = useState(0);
-  const [sourceId, setSourceId] = useState("");
+  const studio = useTeacherStudioSources(queryCourse, listNoteDrafts);
   const [draft, setDraft] = useState<NoteDraft | null>(null);
   const [draftLoading, setDraftLoading] = useState(false);
   const [draftError, setDraftError] = useState("");
   const [draftReload, setDraftReload] = useState(0);
-  const [busy, setBusy] = useState(false);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
-  const busyRef = useRef(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const courseId =
-    coursesReady && (!queryCourse || courses.some((c) => c.id === queryCourse))
-      ? queryCourse || courses[0]?.id || ""
-      : "";
-  const viewKey = `${courseId}/${sourceId}/${draftId}`;
-  const currentView = useRef(viewKey);
-  currentView.current = viewKey;
-  const mounted = useRef(true);
+  const { busy, start } = useStudioGeneration(
+    `${studio.courseId}/${studio.sourceId}/${draftId}`,
+  );
   useEffect(() => {
-    mounted.current = true;
-    return () => {
-      mounted.current = false;
-    };
-  }, []);
-
-  useEffect(() => {
-    let active = true;
-    setCoursesError("");
-    setCoursesReady(false);
-    listTeacherCourses()
-      .then((items) => {
-        if (!active) return;
-        setCourses(items);
-        setCoursesReady(true);
-      })
-      .catch(() => {
-        if (active)
-          setCoursesError("Could not load courses. Please try again.");
-      });
-    return () => {
-      active = false;
-    };
-  }, [coursesReload]);
-
-  useEffect(() => {
-    setSourceId("");
     setError("");
     setSuccess("");
-  }, [courseId]);
-
-  useEffect(() => {
-    let active = true;
-    setResourcesError("");
-    if (!courseId) {
-      setResourcesLoading(false);
-      return;
-    }
-    setResourcesLoading(true);
-    Promise.all([listTeacherMaterials(courseId), listNoteDrafts(courseId)])
-      .then(([materials, drafts]) => {
-        if (!active) return;
-        setResources({ course: courseId, materials, drafts });
-        setSourceId((previous) =>
-          materials.some((m) => m.id === previous)
-            ? previous
-            : materials[0]?.id || "",
-        );
-      })
-      .catch(() => {
-        if (active)
-          setResourcesError(
-            "Could not load sources and saved drafts. Please try again.",
-          );
-      })
-      .finally(() => {
-        if (active) setResourcesLoading(false);
-      });
-    return () => {
-      active = false;
-    };
-  }, [courseId, reload]);
-
+  }, [studio.courseId]);
   useEffect(() => {
     let active = true;
     setDraft(null);
     setDraftError("");
-    if (!courseId || !draftId) {
+    if (!studio.courseId || !draftId) {
       setDraftLoading(false);
       return;
     }
@@ -165,7 +52,7 @@ export default function TeacherNotes() {
     getNoteDraft(draftId)
       .then((item) => {
         if (!active) return;
-        if (item.course_id !== courseId || item.id !== draftId)
+        if (item.course_id !== studio.courseId || item.id !== draftId)
           throw new Error("Wrong draft");
         setDraft(item);
       })
@@ -181,45 +68,39 @@ export default function TeacherNotes() {
     return () => {
       active = false;
     };
-  }, [courseId, draftId, draftReload]);
-
-  const materials = resources.course === courseId ? resources.materials : [];
-  const drafts = resources.course === courseId ? resources.drafts : [];
+  }, [studio.courseId, draftId, draftReload]);
   const shownDraft =
-    draft?.course_id === courseId && draft.id === draftId ? draft : null;
+    draft?.course_id === studio.courseId && draft.id === draftId ? draft : null;
   const changeCourse = (id: string) => {
     setParams(id ? { course: id } : {});
   };
   const generate = async () => {
-    if (busyRef.current || editing || saving || !courseId || !sourceId) return;
-    busyRef.current = true;
-    setBusy(true);
+    if (editing || saving || !studio.courseId || !studio.sourceId) return;
+    const request = start();
+    if (!request) return;
     setError("");
     setSuccess("");
-    const startedView = viewKey;
     try {
-      const created = await generateNoteDraft(sourceId);
-      if (!mounted.current || currentView.current !== startedView) return;
+      const created = await generateNoteDraft(studio.sourceId);
+      if (!request.isCurrent()) return;
       if (
-        created.course_id !== courseId ||
-        created.source_material_id !== sourceId
+        created.course_id !== studio.courseId ||
+        created.source_material_id !== studio.sourceId
       )
         throw new Error("Unexpected draft");
-      setParams({ course: courseId, draft: created.id });
+      setParams({ course: studio.courseId, draft: created.id });
       setSuccess("Draft notes generated and saved.");
-      setReload((value) => value + 1);
+      studio.reloadResources();
     } catch (reason) {
-      if (mounted.current && currentView.current === startedView)
-        setError(generationError(reason));
+      if (request.isCurrent())
+        setError(teacherGenerationError(reason, "notes"));
     } finally {
-      busyRef.current = false;
-      if (mounted.current) setBusy(false);
+      request.finish();
     }
   };
   const demoEnabled =
     import.meta.env.VITE_APP_ENV === "development" &&
     import.meta.env.VITE_ALLOW_DEMO_IDENTITY === "true";
-
   return (
     <>
       <PageHeading
@@ -234,19 +115,21 @@ export default function TeacherNotes() {
           : "disabled (configure local .env)"}
         . Local testing only; this is not a real login.
       </PreviewNote>
-      {coursesError && (
+      {studio.coursesError && (
         <div className="library-status" role="alert">
-          {coursesError}
-          <Button onClick={() => setCoursesReload((n) => n + 1)}>Retry</Button>
+          {studio.coursesError}
+          <Button onClick={studio.retryCourses}>Retry</Button>
         </div>
       )}
-      {!coursesReady && !coursesError && <p role="status">Loading courses…</p>}
-      {coursesReady && queryCourse && !courseId && (
+      {!studio.coursesReady && !studio.coursesError && (
+        <p role="status">Loading courses…</p>
+      )}
+      {studio.coursesReady && queryCourse && !studio.courseId && (
         <div className="library-status" role="alert">
           This course is unavailable. Choose a managed course below.
         </div>
       )}
-      {coursesReady && !courses.length && (
+      {studio.coursesReady && !studio.courses.length && (
         <EmptyState title="No courses yet">
           You do not manage a course.
         </EmptyState>
@@ -261,11 +144,11 @@ export default function TeacherNotes() {
             <TextField
               select
               label="Course"
-              value={courseId}
+              value={studio.courseId}
               onChange={(event) => changeCourse(event.target.value)}
-              disabled={!coursesReady || saving}
+              disabled={!studio.coursesReady || saving}
             >
-              {courses.map((course) => (
+              {studio.courses.map((course) => (
                 <MenuItem key={course.id} value={course.id}>
                   {course.title}
                 </MenuItem>
@@ -274,15 +157,21 @@ export default function TeacherNotes() {
             <TextField
               select
               label="Source material"
-              value={materials.some((m) => m.id === sourceId) ? sourceId : ""}
+              value={
+                studio.materials.some((m) => m.id === studio.sourceId)
+                  ? studio.sourceId
+                  : ""
+              }
               onChange={(event) => {
-                setSourceId(event.target.value);
+                studio.setSourceId(event.target.value);
                 setError("");
                 setSuccess("");
               }}
-              disabled={saving || resourcesLoading || !materials.length}
+              disabled={
+                saving || studio.resourcesLoading || !studio.materials.length
+              }
             >
-              {materials.map((material) => (
+              {studio.materials.map((material) => (
                 <MenuItem key={material.id} value={material.id}>
                   {material.title}
                 </MenuItem>
@@ -293,10 +182,10 @@ export default function TeacherNotes() {
               pages. Scanned PDFs need a text-based source.
             </p>
             <p>Generation sends the selected source text to the SoC LLM.</p>
-            {!resourcesLoading &&
-              courseId &&
-              resources.course === courseId &&
-              !materials.length && (
+            {!studio.resourcesLoading &&
+              studio.courseId &&
+              studio.resourcesReady &&
+              !studio.materials.length && (
                 <p>
                   Upload a source material to generate notes.{" "}
                   <Link to="/teacher/materials">Open materials library</Link>
@@ -310,9 +199,9 @@ export default function TeacherNotes() {
                 busy ||
                 editing ||
                 saving ||
-                !sourceId ||
-                !courseId ||
-                resourcesLoading
+                !studio.sourceId ||
+                !studio.courseId ||
+                studio.resourcesLoading
               }
               onClick={generate}
             >
@@ -325,31 +214,30 @@ export default function TeacherNotes() {
             {busy && <p role="status">Generating draft notes…</p>}
             {error && <p role="alert">{error}</p>}
             {success && <p role="status">{success}</p>}
-            <p>MCQ generation is not available in this increment.</p>
           </Panel>
           <Panel className="notes-list">
             <h2>Saved drafts</h2>
-            {resourcesLoading && (
+            {studio.resourcesLoading && (
               <p role="status">Loading sources and saved drafts…</p>
             )}
-            {resourcesError && (
+            {studio.resourcesError && (
               <div role="alert">
-                {resourcesError}
-                <Button onClick={() => setReload((n) => n + 1)}>Retry</Button>
+                {studio.resourcesError}
+                <Button onClick={studio.reloadResources}>Retry</Button>
               </div>
             )}
-            {!resourcesLoading &&
-              !resourcesError &&
-              courseId &&
-              !drafts.length && <p>No saved drafts yet</p>}
+            {!studio.resourcesLoading &&
+              !studio.resourcesError &&
+              studio.courseId &&
+              !studio.drafts.length && <p>No saved drafts yet</p>}
             <ul>
-              {drafts.map((item) => (
+              {studio.drafts.map((item) => (
                 <li key={item.id}>
                   <Button
                     startIcon={<FileText size={16} />}
                     disabled={saving}
                     onClick={() =>
-                      setParams({ course: courseId, draft: item.id })
+                      setParams({ course: studio.courseId, draft: item.id })
                     }
                     aria-pressed={draftId === item.id}
                   >
@@ -370,7 +258,7 @@ export default function TeacherNotes() {
               <Button onClick={() => setDraftReload((n) => n + 1)}>
                 Retry
               </Button>
-              <Button onClick={() => setParams({ course: courseId })}>
+              <Button onClick={() => setParams({ course: studio.courseId })}>
                 Clear draft selection
               </Button>
             </div>
@@ -379,18 +267,13 @@ export default function TeacherNotes() {
             <>
               <Tag tone="purple">Unpublished draft · Review required</Tag>
               <NoteDraftEditor
-                key={`${courseId}/${shownDraft.id}`}
+                key={`${studio.courseId}/${shownDraft.id}`}
                 draft={shownDraft}
                 onEditingChange={setEditing}
                 onSavingChange={setSaving}
                 onSaved={(saved) => {
                   setDraft(saved);
-                  setResources((previous) => ({
-                    ...previous,
-                    drafts: previous.drafts.map((item) =>
-                      item.id === saved.id ? saved : item,
-                    ),
-                  }));
+                  studio.updateDraft(saved);
                 }}
               />
             </>

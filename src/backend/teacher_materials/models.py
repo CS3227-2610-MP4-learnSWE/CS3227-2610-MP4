@@ -3,6 +3,7 @@ from datetime import datetime
 from uuid import UUID, uuid4
 
 from sqlalchemy import BigInteger, CheckConstraint, DateTime, ForeignKey, ForeignKeyConstraint, Integer, String, Text, UniqueConstraint, Uuid, func
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
@@ -74,4 +75,35 @@ class StudyNoteDraft(Base):
         CheckConstraint("version >= 1", name="ck_note_version_positive"),
         ForeignKeyConstraint(["source_material_id", "course_id"], ["material.id", "material.course_id"]),
         CheckConstraint("char_length(content) between 1 and 2000", name="ck_note_content_length"),
+    )
+
+
+class McqDraftBatch(Base):
+    __tablename__ = "mcq_draft_batch"
+    id: Mapped[UUID] = mapped_column(Uuid, primary_key=True, default=uuid4)
+    course_id: Mapped[UUID] = mapped_column(Uuid, ForeignKey("course.id"))
+    source_material_id: Mapped[UUID] = mapped_column(Uuid)
+    created_by: Mapped[str] = mapped_column(String(64), ForeignKey("user.id"))
+    source_title: Mapped[str] = mapped_column(String(200))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    __table_args__ = (ForeignKeyConstraint(["source_material_id", "course_id"], ["material.id", "material.course_id"]),)
+
+
+class McqDraftQuestion(Base):
+    __tablename__ = "mcq_draft_question"
+    id: Mapped[UUID] = mapped_column(Uuid, primary_key=True, default=uuid4)
+    batch_id: Mapped[UUID] = mapped_column(Uuid, ForeignKey("mcq_draft_batch.id"))
+    position: Mapped[int] = mapped_column(Integer)
+    question: Mapped[str] = mapped_column(String(200))
+    choices: Mapped[list[str]] = mapped_column(JSONB)
+    correct_choice_index: Mapped[int] = mapped_column(Integer)
+    explanation: Mapped[str] = mapped_column(String(200))
+    __table_args__ = (
+        UniqueConstraint("batch_id", "position"),
+        CheckConstraint("position between 1 and 3", name="ck_mcq_position"),
+        CheckConstraint("correct_choice_index between 0 and 3", name="ck_mcq_answer"),
+        CheckConstraint("char_length(question) between 1 and 200", name="ck_mcq_question_length"),
+        CheckConstraint("char_length(explanation) between 1 and 200", name="ck_mcq_explanation_length"),
+        CheckConstraint("CASE WHEN jsonb_typeof(choices) = 'array' THEN jsonb_array_length(choices) = 4 ELSE false END", name="ck_mcq_choices_count"),
+        *[CheckConstraint(f"jsonb_typeof(choices->{i}) = 'string' AND char_length(choices->>{i}) between 1 and 80", name=f"ck_mcq_choice_{i}") for i in range(4)],
     )

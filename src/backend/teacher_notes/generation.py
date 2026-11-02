@@ -4,6 +4,7 @@ from pathlib import Path
 from pypdf import PdfReader
 
 from errors import ApiError
+from text_validation import is_postgres_text
 from llm_client import (
     ChatMessage, LlmBadResponse, LlmBusy, LlmClient, LlmError, LlmInputTooLarge,
     LlmNotConfigured, LlmRateLimited, LlmTimeout, LlmUpstreamError,
@@ -71,9 +72,9 @@ def _llm_error(exc: LlmError) -> ApiError:
     if isinstance(exc, LlmTimeout):
         return ApiError(504, "llm_timeout", "Generation timed out. Please try again.")
     if isinstance(exc, LlmUpstreamError):
-        return ApiError(502, "llm_upstream_error", "The AI service could not generate notes. Please try again.")
+        return ApiError(502, "llm_upstream_error", "The AI service could not generate content. Please try again.")
     if isinstance(exc, LlmBadResponse):
-        return ApiError(502, "llm_bad_response", "The AI service returned unusable notes. Please try again.")
+        return ApiError(502, "llm_bad_response", "The AI service returned unusable content. Please try again.")
     return ApiError(503, "llm_unavailable", "The AI service is unavailable. Please try again later.")
 
 
@@ -86,6 +87,7 @@ def generate_notes(llm: LlmClient, text: str, teacher_id: str) -> str:
     except LlmError as exc:
         raise _llm_error(exc) from None
     if (not isinstance(reply.text, str) or not reply.text.strip()
-            or len(reply.text) >= 2_000 or reply.finish_reason == "length"):
+            or len(reply.text) >= 2_000 or reply.finish_reason == "length"
+            or not is_postgres_text(reply.text)):
         raise _llm_error(LlmBadResponse("Unusable reply"))
     return reply.text.strip()

@@ -35,7 +35,7 @@ import {
   Tag,
 } from "../components/ui";
 import { questions } from "../teacherDemo";
-import TeacherNotes from "./TeacherNotes";
+import TeacherContentStudio from "./TeacherContentStudio";
 import {
   listTeacherCourses,
   listTeacherTopics,
@@ -707,7 +707,7 @@ export default function Teacher({ notify }: Props) {
     case "materials":
       return <Materials notify={notify} />;
     case "generate":
-      return <TeacherNotes />;
+      return <TeacherContentStudio />;
     case "review":
       return <Review notify={notify} />;
     case "practice":
