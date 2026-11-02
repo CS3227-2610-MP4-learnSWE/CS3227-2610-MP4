@@ -71,9 +71,9 @@ def _llm_error(exc: LlmError) -> ApiError:
     if isinstance(exc, LlmTimeout):
         return ApiError(504, "llm_timeout", "Generation timed out. Please try again.")
     if isinstance(exc, LlmUpstreamError):
-        return ApiError(502, "llm_upstream_error", "The AI service could not generate notes. Please try again.")
+        return ApiError(502, "llm_upstream_error", "The AI service could not generate content. Please try again.")
     if isinstance(exc, LlmBadResponse):
-        return ApiError(502, "llm_bad_response", "The AI service returned unusable notes. Please try again.")
+        return ApiError(502, "llm_bad_response", "The AI service returned unusable content. Please try again.")
     return ApiError(503, "llm_unavailable", "The AI service is unavailable. Please try again later.")
 
 

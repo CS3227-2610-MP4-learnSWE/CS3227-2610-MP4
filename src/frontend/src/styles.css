@@ -3486,3 +3486,22 @@ td .MuiButton-root {
   flex-wrap: wrap;
   gap: 12px;
 }
+
+.studio-tabs {
+  margin-bottom: 24px;
+}
+.mcq-questions {
+  padding-left: 24px;
+  white-space: pre-wrap;
+}
+.mcq-questions > li {
+  padding: 16px 0;
+  border-bottom: 1px solid var(--border);
+}
+.mcq-questions ol {
+  padding-left: 24px;
+}
+.mcq-questions li,
+.mcq-questions p {
+  overflow-wrap: anywhere;
+}
