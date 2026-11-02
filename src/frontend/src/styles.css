@@ -3473,3 +3473,15 @@ td .MuiButton-root {
   font-size: 14px;
   margin: 24px 0;
 }
+
+.note-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  margin-top: 24px;
+}
+.note-editor-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}

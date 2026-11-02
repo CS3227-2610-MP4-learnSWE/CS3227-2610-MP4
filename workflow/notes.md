@@ -2,6 +2,12 @@
 
 Newest entry first. Use `templates/handoff.md`. Older entries describe the state at the time; the newest entry supersedes their open/merged status.
 
+## 2026-11-02: TEA-03 developer implementation ready for independent tests
+- Implemented additive source/version/editor metadata and migration, transactional access-checked versioned PATCH, plain-text editing/conflict recovery, and data-router navigation/unload guards. Shared LLM client unchanged; no edit calls an LLM.
+- Existing backend382 passed, one expected old TEA-02 exact metadata shape assertion awaits independent fixture update; frontend types/lint/build/changed-source formatting pass. Independent tests have not been read or modified.
+- Guides/shared contract/app-help describe current editing and source attribution. TEA-02 PR11/master040dc07 and user-reported successful real generation recorded. Tests use isolated schemas/files only; no development data or .env changes, live calls, push or PR.
+- Next: integrate independent tests, verifier checks, then corrections if needed. Parent owns resource/security/session records.
+
 ## 2026-11-02: TEA-03-notes approved contract (spec-writer)
 - Done: user-approved notes-only editing plan recorded in workflow/specs/TEA-03-notes with migration/backfill, strict versioned PATCH, conflict recovery, source-title snapshot, router blocking and independent test interfaces. No application code/tests changed.
 - Prior state: TEA-02 merged through PR11 at040dc07; user reports real generation worked. Older waiting-for-approval entries below are historical and superseded on that point.

@@ -10,6 +10,7 @@ import {
   Tag,
 } from "../components/ui";
 import { ApiError } from "../services/client";
+import NoteDraftEditor from "./NoteDraftEditor";
 import {
   listTeacherCourses,
   listTeacherMaterials,
@@ -75,6 +76,8 @@ export default function TeacherNotes() {
   const [draftError, setDraftError] = useState("");
   const [draftReload, setDraftReload] = useState(0);
   const [busy, setBusy] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
   const busyRef = useRef(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -185,11 +188,10 @@ export default function TeacherNotes() {
   const shownDraft =
     draft?.course_id === courseId && draft.id === draftId ? draft : null;
   const changeCourse = (id: string) => {
-    setSourceId("");
     setParams(id ? { course: id } : {});
   };
   const generate = async () => {
-    if (busyRef.current || !courseId || !sourceId) return;
+    if (busyRef.current || editing || saving || !courseId || !sourceId) return;
     busyRef.current = true;
     setBusy(true);
     setError("");
@@ -261,7 +263,7 @@ export default function TeacherNotes() {
               label="Course"
               value={courseId}
               onChange={(event) => changeCourse(event.target.value)}
-              disabled={!coursesReady}
+              disabled={!coursesReady || saving}
             >
               {courses.map((course) => (
                 <MenuItem key={course.id} value={course.id}>
@@ -278,7 +280,7 @@ export default function TeacherNotes() {
                 setError("");
                 setSuccess("");
               }}
-              disabled={resourcesLoading || !materials.length}
+              disabled={saving || resourcesLoading || !materials.length}
             >
               {materials.map((material) => (
                 <MenuItem key={material.id} value={material.id}>
@@ -304,7 +306,14 @@ export default function TeacherNotes() {
               fullWidth
               variant="contained"
               startIcon={<Sparkles size={17} />}
-              disabled={busy || !sourceId || !courseId || resourcesLoading}
+              disabled={
+                busy ||
+                editing ||
+                saving ||
+                !sourceId ||
+                !courseId ||
+                resourcesLoading
+              }
               onClick={generate}
             >
               {busy ? "Generating…" : "Generate draft notes"}
@@ -338,6 +347,7 @@ export default function TeacherNotes() {
                 <li key={item.id}>
                   <Button
                     startIcon={<FileText size={16} />}
+                    disabled={saving}
                     onClick={() =>
                       setParams({ course: courseId, draft: item.id })
                     }
@@ -368,19 +378,21 @@ export default function TeacherNotes() {
           {shownDraft ? (
             <>
               <Tag tone="purple">Unpublished draft · Review required</Tag>
-              <h2>{shownDraft.title}</h2>
-              <p className="muted">
-                Source: {shownDraft.title}
-                <br />
-                Created by: {shownDraft.created_by}
-                <br />
-                Created: {new Date(shownDraft.created_at).toLocaleString()}
-              </p>
-              <div className="note-content">{shownDraft.content}</div>
-              <p className="muted">
-                Read-only draft. Editing and publishing will be added in a later
-                increment.
-              </p>
+              <NoteDraftEditor
+                key={`${courseId}/${shownDraft.id}`}
+                draft={shownDraft}
+                onEditingChange={setEditing}
+                onSavingChange={setSaving}
+                onSaved={(saved) => {
+                  setDraft(saved);
+                  setResources((previous) => ({
+                    ...previous,
+                    drafts: previous.drafts.map((item) =>
+                      item.id === saved.id ? saved : item,
+                    ),
+                  }));
+                }}
+              />
             </>
           ) : (
             !draftLoading &&

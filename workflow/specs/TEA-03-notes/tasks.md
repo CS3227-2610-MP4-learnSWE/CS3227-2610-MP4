@@ -6,9 +6,9 @@ Status: Approved implementation request,2026-11-02.
 |---|---|---|---|---|
 |1|Commit approved spec/plan/API+UI contract and record start commit|spec-writer,orchestrator|user approval|done|
 |2|Write independent backend/browser/security tests in isolated worktree|test-designer|1|todo|
-|3|Add migration/backfill/response fields and transactional versioned PATCH|developer|1|todo|
-|4|Add editor/validation/recovery and data-router unsaved navigation protection|developer|3|todo|
-|5|Update shared contract/guides/help and TEA02 merge/live-test handoff; run existing checks, commit source|developer|3,4|todo|
+|3|Add migration/backfill/response fields and transactional versioned PATCH|developer|1|done|
+|4|Add editor/validation/recovery and data-router unsaved navigation protection|developer|3|done|
+|5|Update shared contract/guides/help and TEA02 merge/live-test handoff; run existing checks, commit source|developer|3,4|done|
 |6|Integrate developer source in test worktree, run tests, merge independent tests|test-designer,orchestrator|2,5|todo|
 |7|Read-only independent code/docs/security verifier reruns checks|verifier|6|todo|
 |8|Fix findings and verifier recheck, max two rounds|developer,verifier|7|todo|

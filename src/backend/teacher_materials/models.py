@@ -2,7 +2,7 @@
 from datetime import datetime
 from uuid import UUID, uuid4
 
-from sqlalchemy import BigInteger, CheckConstraint, DateTime, ForeignKey, ForeignKeyConstraint, String, Text, UniqueConstraint, Uuid, func
+from sqlalchemy import BigInteger, CheckConstraint, DateTime, ForeignKey, ForeignKeyConstraint, Integer, String, Text, UniqueConstraint, Uuid, func
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
@@ -65,8 +65,13 @@ class StudyNoteDraft(Base):
     created_by: Mapped[str] = mapped_column(String(64), ForeignKey("user.id"))
     title: Mapped[str] = mapped_column(String(200))
     content: Mapped[str] = mapped_column(Text)
+    source_title: Mapped[str] = mapped_column(String(200))
+    version: Mapped[int] = mapped_column(Integer, server_default="1")
+    updated_by: Mapped[str] = mapped_column(String(64), ForeignKey("user.id"))
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     __table_args__ = (
+        CheckConstraint("version >= 1", name="ck_note_version_positive"),
         ForeignKeyConstraint(["source_material_id", "course_id"], ["material.id", "material.course_id"]),
         CheckConstraint("char_length(content) between 1 and 2000", name="ck_note_content_length"),
     )
