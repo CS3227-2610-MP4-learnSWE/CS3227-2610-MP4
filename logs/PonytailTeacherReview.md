@@ -15,3 +15,7 @@ The main duplication is teacher studio course/source fetching, request lifecycle
 ## Evidence and limits
 
 Five targeted probes used mocked responses, isolated PostgreSQL schemas and temporary files; no live provider or developer data. Two browser history cases and two generated Unicode cases were independently reproduced; parent ran one invalid-title HTTP probe. Prior implementation verification at unchanged code:478 backend/149 browser/types/lint/format/build; those full suites were not repeated for this review and missed these cases. No deployment, live-model factual-quality or production-authentication testing. Exact resource/cost totals unavailable. No application changes, push or PR.
+
+## Resolution — 2026-11-02
+
+All findings above were subsequently fixed and independently verified PASS atabc92dfe29743b2ad746ba4f90e9c852da9ff0f9. See [TeacherReviewFixes.md](TeacherReviewFixes.md) for RED/GREEN evidence, shared hooks, corrected errors and current483backend/155browser checks. This report records the pre-fix state; it is not an outstanding-defect list.

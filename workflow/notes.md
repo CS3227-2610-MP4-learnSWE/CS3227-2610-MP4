@@ -4,6 +4,14 @@ Newest entry first. Use `templates/handoff.md`. Older entries describe the state
 
 
 
+
+## 2026-11-02: Teacher Ponytail review fixes complete locally (orchestrator)
+- All four findings resolved on feat/tea02-generate-mcqs: permanent note/MCQ request invalidation across navigation/selection round trips; generated invalid Unicode502; invalid upload title422 before storage; focused shared studio source/loading and generation hooks. Valid astral Unicode, access checks, retries, existing draft editing/blockers preserved. No migrations, dependencies or llm_client.py changes.
+- Workflow: approved corrective contractd02418b; independent regressions292af7d committed before source, four browser/four backend RED plus valid-Unicode positive control. Source/productdocs81ba253; unchanged original nine regressions GREEN. Additional source-only success/failure coverageabc92df passed after integration (not claimed RED).
+- Verification: strongest independent verifier PASS atabc92dfe29743b2ad746ba4f90e9c852da9ff0f9, all four findings resolved, no blocking defects/material doc gaps, zero correction rounds for this corrective run. Fresh independent483backend/155browser/types/lint/format/diff passed. Designer fullbuild also passed. Shared frontend32net lines removed including hooks; editor/viewer logic stays separate. Docs UserGuide/DeveloperGuide/SharedDataContract verified accurate.
+- Evidence: logs/TeacherReviewFixes.md, original historical logs/PonytailTeacherReview.md, security/resource records. Tests used fake LLM, isolated PostgreSQL schemas/tempfiles; Docker Desktop and existing testcontainer started because stopped. No developer DB/private uploads/.env or live provider calls.
+- Next: human review/publishing gate retained. Local commits only; nothing pushed, no PR/master merge/deployment. Restart backend/refresh frontend to try fixes; no migration needed. Live provider quality and production auth remain unverified.
+
 ## 2026-11-02: Ponytail full review of all teacher increments (orchestrator)
 - Read-only application review at2c36951 with strongest independent verifier, including earlier materials/notes/editing and current MCQs plus shared docs.
 - Findings: note generation revives stale success/error after returning to same view; generated NUL/surrogate notes reach DB (503/unhandled UnicodeEncodeError); NUL material title gives503 instead of documented422. Five isolated/mock probes reproduced these. No fixes made.

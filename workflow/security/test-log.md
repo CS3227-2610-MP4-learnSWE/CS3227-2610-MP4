@@ -109,3 +109,18 @@ Independent integration at79b5aa0:478 backend/147 browser, types/lint/format/bui
 Shared client unchanged. Development identity remains local-only/spoofable. Factual question quality still requires teacher review; editing/publication/student release are deferred.
 
 Final MCQ review: verifier independently reran478 backend/147 initial browser/types/lint/format/build and extra role-revocation/source-course-change probes (403/404, zero rows). One uncovered history-return stale-response defect was reproduced by independentaaa55bc success/failure RED regressions, fixed198c3f4, then both GREEN unchanged. Final full149 browser/build passed; strongest verifier reran17 focused MCQ cases/types/lint/format and PASS at3ebc6462b65c09e71a7fa141763409c402e2f9c4. Backend unchanged since fresh478 run. No live provider, hosted CI or production authentication tested.
+
+
+## 2026-11-02 — Teacher Ponytail corrective verification
+
+Final strongest verifier PASS atabc92dfe29743b2ad746ba4f90e9c852da9ff0f9, zero correction rounds. Approvedcontractd02418b; independent292af7d tests committed before source81ba253, original ninecases GREEN unchanged after RED. Additional source-roundtrip pair passed postintegration.
+
+| Case | Control and outcome |
+|---|---|
+| Note/MCQ navigation and selection A→B→A | Shared permanent epoch invalidation; stale success cannot navigate and stale error cannot display; duplicate/pending guards retained |
+| Generated NUL/high/low surrogate |502 llm_bad_response before persistence, safe envelope, old drafts/files preserved |
+| Upload title NUL |422 validation_error before private file creation or metadata insert |
+| Valid astral Unicode |200-codepoint title and1999-codepoint generated notes accepted |
+| Existing teacher security/editor behaviour | Fresh483backend/155browser tests cover access/revocation/concurrency/rollback/limits/escaped output and unsaved/pending-save guards |
+
+Types/lint/format/diff passed in strongest recheck; fullbuild passed independent designer. Fake LLM only, isolated PostgreSQL schemas and temporary files, no developer data or live calls. No shared-client/migration/auth-scope changes. Guides/shared contract match corrected behaviour.
