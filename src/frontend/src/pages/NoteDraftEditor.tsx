@@ -126,7 +126,10 @@ export default function NoteDraftEditor({
     setEditing(true);
   };
   const cancel = () => {
+    if (saving) return;
     operation.current += 1;
+    pending.current = false;
+    setLoadingLatest(false);
     setEditing(false);
     setError("");
     setConflict(false);
@@ -177,10 +180,10 @@ export default function NoteDraftEditor({
         );
       }
     } finally {
-      pending.current = false;
-      if (mounted.current && token === operation.current) setSaving(false);
-      // A navigation attempted while saving is cancelled, even when the save fails.
-      if (blocked) blocker.reset();
+      if (mounted.current && token === operation.current) {
+        pending.current = false;
+        setSaving(false);
+      }
     }
   };
   // The async save closure may predate a blocked navigation. Reset its latest state on settlement.
@@ -214,9 +217,10 @@ export default function NoteDraftEditor({
           "Could not load the latest saved version. Your edits are still here.",
         );
     } finally {
-      pending.current = false;
-      if (mounted.current && token === operation.current)
+      if (mounted.current && token === operation.current) {
+        pending.current = false;
         setLoadingLatest(false);
+      }
     }
   };
   const keepEditing = () => {
