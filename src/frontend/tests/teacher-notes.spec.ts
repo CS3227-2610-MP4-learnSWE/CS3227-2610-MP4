@@ -313,3 +313,64 @@ test("tea02 generation times out at forty-five seconds without losing choices or
   expect(api.generationCalls).toBe(1);
   release();
 });
+
+for (const navigation of ["course-return", "draft-history"] as const) {
+  for (const outcome of ["success", "failure"] as const) {
+    test(`teacher review ignores obsolete note generation ${outcome} after ${navigation}`, async ({
+      page,
+    }) => {
+      const api = await mockTeacherNotesApi(page);
+      let release!: () => void;
+      api.holdGeneration = new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      api.failGeneration = outcome === "failure" ? 1 : 0;
+      await page.goto(`/teacher/generate?course=${COURSE_A}`);
+      const generate = page.getByRole("button", {
+        name: /^(Generate draft notes|Generating…)$/,
+      });
+      await expect(generate).toBeEnabled();
+      if (navigation === "draft-history") {
+        await page
+          .getByRole("button", { name: new RegExp(SAVED.title) })
+          .click();
+        await expect(page).toHaveURL(new RegExp(`draft=${SAVED.id}`));
+        await expect(
+          page.getByText(SAVED.content, { exact: true }),
+        ).toBeVisible();
+      }
+      await generate.click();
+      await expect.poll(() => api.generationCalls).toBe(1);
+      if (navigation === "course-return") {
+        await choose(page, "Course", "Programming");
+        await expect(page.getByText("No saved drafts yet")).toBeVisible();
+        await page.goBack();
+        await expect(
+          page.getByRole("combobox", { name: /^Course/ }),
+        ).toContainText("Software Engineering");
+      } else {
+        await page.goBack();
+        await expect(page).not.toHaveURL(/draft=/);
+        await page.goForward();
+        await expect(page).toHaveURL(new RegExp(`draft=${SAVED.id}`));
+        await expect(
+          page.getByText(SAVED.content, { exact: true }),
+        ).toBeVisible();
+      }
+      const retainedUrl = page.url();
+      const settled = page.waitForResponse(
+        (r) =>
+          r.request().method() === "POST" && r.url().endsWith("/note-drafts"),
+      );
+      release();
+      await settled;
+      await expect(generate).toBeEnabled();
+      await expect(page).toHaveURL(retainedUrl);
+      await expect(
+        page.getByText("Draft notes generated and saved.", { exact: true }),
+      ).toHaveCount(0);
+      await expect(page.getByRole("alert")).toHaveCount(0);
+      expect(api.generationCalls).toBe(1);
+    });
+  }
+}
