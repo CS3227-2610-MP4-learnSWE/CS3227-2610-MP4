@@ -1,6 +1,8 @@
 """Strict, all-or-nothing MCQ generation through the existing shared client."""
 import json
 
+from text_validation import is_postgres_text
+
 from llm_client import ChatMessage, LlmBadResponse, LlmClient, LlmError
 from teacher_notes.generation import _llm_error
 
@@ -29,7 +31,7 @@ def _unique_object(pairs):
 
 
 def _text(value, maximum):
-    if not isinstance(value, str) or any(c == "\x00" or 0xD800 <= ord(c) <= 0xDFFF for c in value):
+    if not isinstance(value, str) or not is_postgres_text(value):
         _reject()
     value = value.replace("\r\n", "\n").replace("\r", "\n").strip()
     if not 1 <= len(value) <= maximum:

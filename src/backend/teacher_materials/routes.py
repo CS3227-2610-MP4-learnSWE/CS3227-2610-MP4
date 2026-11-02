@@ -14,6 +14,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from errors import ApiError
+from text_validation import is_postgres_text
 from teacher_materials.demo_identity import require_managed_course, require_teacher
 from teacher_materials.models import Course, CourseMembership, Material, Topic, User
 from teacher_materials.multipart import material_form
@@ -124,7 +125,7 @@ async def upload_material(request: Request, course_id: str):
                     or ("topic_id" in form and not isinstance(form["topic_id"], str))):
                 raise ApiError(422, "validation_error", "A title, optional topic and exactly one file are required.")
             title = form["title"].strip()
-            if not 1 <= len(title) <= 200:
+            if not 1 <= len(title) <= 200 or not is_postgres_text(title):
                 raise ApiError(422, "validation_error", "Title must contain 1–200 characters.")
             topic_id = _same_course_topic(session, course.id, form["topic_id"]) if form.get("topic_id") else None
             stored = save_upload(form["file"], root)

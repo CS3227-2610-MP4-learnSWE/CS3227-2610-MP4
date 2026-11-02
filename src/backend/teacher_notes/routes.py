@@ -7,6 +7,7 @@ from sqlalchemy import select
 from pydantic import BaseModel, ConfigDict, Field, StrictInt, StrictStr, ValidationError
 
 from errors import ApiError
+from text_validation import is_postgres_text
 from llm_client import LlmClient, get_llm_client
 from teacher_materials.demo_identity import require_managed_course
 from teacher_materials.models import CourseMembership, Material, StudyNoteDraft, User
@@ -98,12 +99,8 @@ async def edit_note_draft(request: Request, draft_id: str):
                 raise _edit_error() from None
             title = body.title.strip()
             content = body.content.replace("\r\n", "\n").replace("\r", "\n").strip()
-            if not 1 <= len(title) <= 200 or not 1 <= len(content) <= 2000 or "\x00" in title + content:
+            if not 1 <= len(title) <= 200 or not 1 <= len(content) <= 2000 or not is_postgres_text(title + content):
                 raise _edit_error()
-            try:
-                (title + content).encode("utf-8", errors="strict")
-            except UnicodeEncodeError:
-                raise _edit_error() from None
             # Shared locks hold role/membership stable until the versioned write commits.
             user = session.scalar(select(User).where(User.id == teacher.id).with_for_update(read=True).execution_options(populate_existing=True))
             if user is None or user.role != "teacher":
