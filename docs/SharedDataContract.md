@@ -1,6 +1,6 @@
-# Shared data contract for TEA-01
+# Shared data contract for teacher features
 
-This is the fixed handoff contract for the TEA-01 developer and independent test designer. It is a development-only vertical slice; it does not establish production authentication. The API contract is authoritative for black-box tests, so tests need import only the FastAPI `app`.
+This is the shared handoff contract for TEA-01 source materials and the TEA-02 notes-generation slice. These development-only features do not establish production authentication. The API contract is authoritative for black-box tests, so tests need import only the FastAPI `app`.
 
 ## Runtime and persistence
 
@@ -81,7 +81,17 @@ The test-designer must not import these internals or implementation files. The s
 ## Cross-role integration and authentication handoff
 
 - These PostgreSQL users, courses, memberships and topics are the common foundation. Later student/admin work should reuse their IDs and relationships rather than create parallel teacher-specific copies.
-- A source `material` is private teacher input, **not** a published lesson or a student practice set. Future generated notes and MCQs should reference its material ID through separate draft/publication records. This increment does not create those records or release their answers.
+- A source `material` is private teacher input, **not** a published lesson or a student practice set. Generated content references its material ID through separate records. TEA-01 introduced sources only; TEA-02 now creates unpublished study-note drafts as described below. MCQ generation, publication and student answer release remain future work.
 - Current student practice still reads the server fixture `intro-se-1` and stores attempts in the in-memory `AttemptStore`. Its placeholder `X-Student-Id` is not a foreign-key integration with these new tables. Nothing automatically migrates attempts, enrolls students or changes the existing scoring flow.
 - Real authentication must resolve the signed-in account to the shared user ID on the server and replace the demo-header resolver. Keep the teacher-role and course-membership checks; the demo role switcher/header is not proof of identity. Demo seeds are for development only, with no credentials or passwords.
 - Back up PostgreSQL and the private file directory together. A database-only restore cannot recover uploaded bytes. Storage keys remain opaque server-owned references; future object storage can replace local file resolution without exposing local paths or turning private uploads into public URLs.
+
+## TEA-02-notes integration contract
+
+See [TEA-02 notes contract](../workflow/specs/TEA-02-notes/plan.md) for exact endpoints, representations, errors, limits and test interfaces. This is an implemented additive draft-generation slice; editing and publication remain deferred.
+
+- `study_note_draft`: UUID `id` PK; UUID `course_id` and `source_material_id` not null, composite FK to material `(id, course_id)` and course FK; `created_by` varchar(64) user FK; `title` varchar(200) not null snapshot; `content` text not null with length 1–2,000 DB constraint; `created_at` timestamptz not null default now(). Add material uniqueness `(id, course_id)`. All UUIDs generated server-side; no nullable fields. Generation accepts only nonblank output shorter than 2,000 chars to reject potential clipping. Append-only generation never overwrites drafts.
+- Metadata JSON is `{id, course_id, source_material_id, created_by, title, created_at}`; retrieve/create adds `content`. UUIDs are strings and timestamps UTC Z. Course lists omit content, newest first then ID descending. Current teacher-role membership controls every read/create, not creator ownership. Source uploads remain private; drafts are not lessons and have no student endpoint/publication state.
+- POST `/api/teacher/materials/{material_id}/note-drafts`, GET `/api/teacher/courses/{course_id}/note-drafts`, GET `/api/teacher/note-drafts/{draft_id}` use the existing demo gate/header and safe error envelope. No editable fields in this increment.
+- Reuse **`src/backend/llm_client.py`** for Teacher and Admin AI. `get_llm_client()` supplies `complete(messages, max_tokens=, caller_id=)`; keep access checks, selected context, prompts and feature-specific output validation in the calling service. The client itself knows nothing about roles, practice sets or leak checks. Teacher notes use `teacher:{resolved_user_id}` caller IDs, fixed system instructions and one authorised source only. Do not change client limits or student behaviour for this increment.
+- Notes accept strict UTF-8/plain PDF extraction, maximum 100 PDF pages and 8,000 normalised characters. No truncation, OCR, extraction persistence or multi-source retrieval. Draft editing/publication later must reference these IDs and retain course checks; never publish by merely exposing this teacher API.

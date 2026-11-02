@@ -18,12 +18,11 @@ The sun/moon button toggles light/dark mode. The initial theme follows your oper
 
 ## Teacher
 
-- Overview displays sample participation and draft-review information.
-- Materials loads courses you manage. Choose a course and topic filter, search titles or filenames, upload a PDF or UTF-8 text file up to 10 MiB with a title and optional topic, change a material topic, or download the original. Uploads remain private source files and do not publish lessons. A failed load offers Retry. This local demo uses a spoofable teacher identity header when the development gate is enabled; it is not production login.
-- AI content studio lets you select source and draft type. Preview generation shows fixed sample notes or MCQs, including answer choices; changing the source does not generate different content.
-- Review & publish offers tabs for notes and MCQs, their choices, answer keys and explanations. Edit locally and preview publication; nothing is saved or published.
-- Practice sets lets you edit the title/topic and select questions. The preview action does not save a set.
-- Inbox and feedback follow the same preview behaviour as the student workspace.
+- Materials library uses real PostgreSQL records and private source files. Select a managed course, optionally filter by topic or search, upload a PDF or UTF-8 text file (up to 10 MiB), download the original, or change its topic. Cancelling upload clears the form and errors. Uploading does not publish a lesson.
+- AI content studio generates concise, read-only study-note drafts from one source. Choose a course and source, then **Generate draft notes**. Generation sends source text to the SoC LLM; it needs the backend SOCLAAS settings. Inputs must have at most 8,000 normalised characters and 100 PDF pages. Scanned PDFs need a text-based source; longer sources are rejected rather than shortened.
+- Successful drafts are saved in PostgreSQL and listed under **Saved drafts**. Open a draft to see its source title, creator and creation time. The URL can reopen the draft after refresh/restart. Every success creates a new unpublished draft; no student can read it through the teacher API. Notes may be inaccurate and require teacher review. Editing, MCQ generation, approval and publication are not implemented in this increment.
+- Generation failures keep the selected source and existing drafts. Try generation again explicitly; if the previous response was lost, another saved draft may be created. Rate-limit failures say how long to wait when available.
+- The workspace uses an explicitly labelled development identity, not real authentication. Other teacher screens remain sample previews.
 
 ## Admin
 
