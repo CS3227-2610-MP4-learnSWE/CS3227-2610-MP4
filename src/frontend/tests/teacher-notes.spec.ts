@@ -28,7 +28,7 @@ test("tea02 studio generates, saves and reopens a draft with explicit real-call 
   await expect(page.getByText(/8,000 characters/)).toBeVisible();
   await expect(page.getByText(/100 pages/)).toBeVisible();
   await expect(
-    page.getByText("MCQ generation is not available in this increment."),
+    page.getByRole("tab", { name: "Practice questions", exact: true }),
   ).toBeVisible();
   await page
     .getByRole("button", { name: "Generate draft notes", exact: true })
