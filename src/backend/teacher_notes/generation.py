@@ -4,6 +4,7 @@ from pathlib import Path
 from pypdf import PdfReader
 
 from errors import ApiError
+from text_validation import is_postgres_text
 from llm_client import (
     ChatMessage, LlmBadResponse, LlmBusy, LlmClient, LlmError, LlmInputTooLarge,
     LlmNotConfigured, LlmRateLimited, LlmTimeout, LlmUpstreamError,
@@ -86,6 +87,7 @@ def generate_notes(llm: LlmClient, text: str, teacher_id: str) -> str:
     except LlmError as exc:
         raise _llm_error(exc) from None
     if (not isinstance(reply.text, str) or not reply.text.strip()
-            or len(reply.text) >= 2_000 or reply.finish_reason == "length"):
+            or len(reply.text) >= 2_000 or reply.finish_reason == "length"
+            or not is_postgres_text(reply.text)):
         raise _llm_error(LlmBadResponse("Unusable reply"))
     return reply.text.strip()

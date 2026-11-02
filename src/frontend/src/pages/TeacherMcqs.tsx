@@ -1,5 +1,5 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { Link, useLocation, useSearchParams } from "react-router";
+import { useEffect, useState } from "react";
+import { Link, useSearchParams } from "react-router";
 import { Button, MenuItem, TextField } from "@mui/material";
 import { FileText, Sparkles } from "lucide-react";
 import {
@@ -10,128 +10,38 @@ import {
   Tag,
 } from "../components/ui";
 import { teacherGenerationError } from "../services/teacherGeneration";
-import {
-  listTeacherCourses,
-  listTeacherMaterials,
-  type Course,
-  type Material,
-} from "../services/teacherMaterials";
+import { useTeacherStudioSources } from "../hooks/useTeacherStudioSources";
+import { useStudioGeneration } from "../hooks/useStudioGeneration";
 import {
   generateMcqDraft,
   getMcqDraft,
   listMcqDrafts,
   type McqDraft,
-  type McqDraftMetadata,
 } from "../services/teacherMcqs";
 
 export default function TeacherMcqs() {
-  const location = useLocation();
-  const navigationEpoch = useRef(0);
-  useLayoutEffect(() => {
-    // A departed request stays stale even if history returns to the same URL.
-    navigationEpoch.current += 1;
-  }, [location]);
   const [params, setParams] = useSearchParams();
   const queryCourse = params.get("course") || "";
   const draftId = params.get("batch") || "";
-  const [courses, setCourses] = useState<Course[]>([]);
-  const [coursesReady, setCoursesReady] = useState(false);
-  const [coursesError, setCoursesError] = useState("");
-  const [coursesReload, setCoursesReload] = useState(0);
-  const [resources, setResources] = useState<{
-    course: string;
-    materials: Material[];
-    drafts: McqDraftMetadata[];
-  }>({ course: "", materials: [], drafts: [] });
-  const [resourcesLoading, setResourcesLoading] = useState(false);
-  const [resourcesError, setResourcesError] = useState("");
-  const [reload, setReload] = useState(0);
-  const [sourceId, setSourceId] = useState("");
+  const studio = useTeacherStudioSources(queryCourse, listMcqDrafts);
   const [draft, setDraft] = useState<McqDraft | null>(null);
   const [draftLoading, setDraftLoading] = useState(false);
   const [draftError, setDraftError] = useState("");
   const [draftReload, setDraftReload] = useState(0);
-  const [busy, setBusy] = useState(false);
-  const busyRef = useRef(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const courseId =
-    coursesReady && (!queryCourse || courses.some((c) => c.id === queryCourse))
-      ? queryCourse || courses[0]?.id || ""
-      : "";
-  const viewKey = `${courseId}/${sourceId}/${draftId}`;
-  const currentView = useRef(viewKey);
-  currentView.current = viewKey;
-  const mounted = useRef(true);
+  const { busy, start } = useStudioGeneration(
+    `${studio.courseId}/${studio.sourceId}/${draftId}`,
+  );
   useEffect(() => {
-    mounted.current = true;
-    return () => {
-      mounted.current = false;
-    };
-  }, []);
-
-  useEffect(() => {
-    let active = true;
-    setCoursesError("");
-    setCoursesReady(false);
-    listTeacherCourses()
-      .then((items) => {
-        if (!active) return;
-        setCourses(items);
-        setCoursesReady(true);
-      })
-      .catch(() => {
-        if (active)
-          setCoursesError("Could not load courses. Please try again.");
-      });
-    return () => {
-      active = false;
-    };
-  }, [coursesReload]);
-
-  useEffect(() => {
-    setSourceId("");
     setError("");
     setSuccess("");
-  }, [courseId]);
-
-  useEffect(() => {
-    let active = true;
-    setResourcesError("");
-    if (!courseId) {
-      setResourcesLoading(false);
-      return;
-    }
-    setResourcesLoading(true);
-    Promise.all([listTeacherMaterials(courseId), listMcqDrafts(courseId)])
-      .then(([materials, drafts]) => {
-        if (!active) return;
-        setResources({ course: courseId, materials, drafts });
-        setSourceId((previous) =>
-          materials.some((m) => m.id === previous)
-            ? previous
-            : materials[0]?.id || "",
-        );
-      })
-      .catch(() => {
-        if (active)
-          setResourcesError(
-            "Could not load sources and saved drafts. Please try again.",
-          );
-      })
-      .finally(() => {
-        if (active) setResourcesLoading(false);
-      });
-    return () => {
-      active = false;
-    };
-  }, [courseId, reload]);
-
+  }, [studio.courseId]);
   useEffect(() => {
     let active = true;
     setDraft(null);
     setDraftError("");
-    if (!courseId || !draftId) {
+    if (!studio.courseId || !draftId) {
       setDraftLoading(false);
       return;
     }
@@ -139,7 +49,7 @@ export default function TeacherMcqs() {
     getMcqDraft(draftId)
       .then((item) => {
         if (!active) return;
-        if (item.course_id !== courseId || item.id !== draftId)
+        if (item.course_id !== studio.courseId || item.id !== draftId)
           throw new Error("Wrong draft");
         setDraft(item);
       })
@@ -155,55 +65,42 @@ export default function TeacherMcqs() {
     return () => {
       active = false;
     };
-  }, [courseId, draftId, draftReload]);
-
-  const materials = resources.course === courseId ? resources.materials : [];
-  const drafts = resources.course === courseId ? resources.drafts : [];
+  }, [studio.courseId, draftId, draftReload]);
   const shownDraft =
-    draft?.course_id === courseId && draft.id === draftId ? draft : null;
+    draft?.course_id === studio.courseId && draft.id === draftId ? draft : null;
   const changeCourse = (id: string) => {
     setParams(id ? { tab: "questions", course: id } : { tab: "questions" });
   };
   const generate = async () => {
-    if (busyRef.current || !courseId || !sourceId) return;
-    busyRef.current = true;
-    setBusy(true);
+    if (!studio.courseId || !studio.sourceId) return;
+    const request = start();
+    if (!request) return;
     setError("");
     setSuccess("");
-    const startedView = viewKey;
-    const startedEpoch = navigationEpoch.current;
     try {
-      const created = await generateMcqDraft(sourceId);
+      const created = await generateMcqDraft(studio.sourceId);
+      if (!request.isCurrent()) return;
       if (
-        !mounted.current ||
-        currentView.current !== startedView ||
-        navigationEpoch.current !== startedEpoch
-      )
-        return;
-      if (
-        created.course_id !== courseId ||
-        created.source_material_id !== sourceId
+        created.course_id !== studio.courseId ||
+        created.source_material_id !== studio.sourceId
       )
         throw new Error("Unexpected draft");
-      setParams({ tab: "questions", course: courseId, batch: created.id });
+      setParams({
+        tab: "questions",
+        course: studio.courseId,
+        batch: created.id,
+      });
       setSuccess("Draft MCQs generated and saved.");
-      setReload((value) => value + 1);
+      studio.reloadResources();
     } catch (reason) {
-      if (
-        mounted.current &&
-        currentView.current === startedView &&
-        navigationEpoch.current === startedEpoch
-      )
-        setError(teacherGenerationError(reason, "MCQs"));
+      if (request.isCurrent()) setError(teacherGenerationError(reason, "MCQs"));
     } finally {
-      busyRef.current = false;
-      if (mounted.current) setBusy(false);
+      request.finish();
     }
   };
   const demoEnabled =
     import.meta.env.VITE_APP_ENV === "development" &&
     import.meta.env.VITE_ALLOW_DEMO_IDENTITY === "true";
-
   return (
     <>
       <PageHeading
@@ -218,19 +115,21 @@ export default function TeacherMcqs() {
           : "disabled (configure local .env)"}
         . Local testing only; this is not a real login.
       </PreviewNote>
-      {coursesError && (
+      {studio.coursesError && (
         <div className="library-status" role="alert">
-          {coursesError}
-          <Button onClick={() => setCoursesReload((n) => n + 1)}>Retry</Button>
+          {studio.coursesError}
+          <Button onClick={studio.retryCourses}>Retry</Button>
         </div>
       )}
-      {!coursesReady && !coursesError && <p role="status">Loading courses…</p>}
-      {coursesReady && queryCourse && !courseId && (
+      {!studio.coursesReady && !studio.coursesError && (
+        <p role="status">Loading courses…</p>
+      )}
+      {studio.coursesReady && queryCourse && !studio.courseId && (
         <div className="library-status" role="alert">
           This course is unavailable. Choose a managed course below.
         </div>
       )}
-      {coursesReady && !courses.length && (
+      {studio.coursesReady && !studio.courses.length && (
         <EmptyState title="No courses yet">
           You do not manage a course.
         </EmptyState>
@@ -245,11 +144,11 @@ export default function TeacherMcqs() {
             <TextField
               select
               label="Course"
-              value={courseId}
+              value={studio.courseId}
               onChange={(event) => changeCourse(event.target.value)}
-              disabled={!coursesReady || busy}
+              disabled={!studio.coursesReady || busy}
             >
-              {courses.map((course) => (
+              {studio.courses.map((course) => (
                 <MenuItem key={course.id} value={course.id}>
                   {course.title}
                 </MenuItem>
@@ -258,15 +157,21 @@ export default function TeacherMcqs() {
             <TextField
               select
               label="Source material"
-              value={materials.some((m) => m.id === sourceId) ? sourceId : ""}
+              value={
+                studio.materials.some((m) => m.id === studio.sourceId)
+                  ? studio.sourceId
+                  : ""
+              }
               onChange={(event) => {
-                setSourceId(event.target.value);
+                studio.setSourceId(event.target.value);
                 setError("");
                 setSuccess("");
               }}
-              disabled={busy || resourcesLoading || !materials.length}
+              disabled={
+                busy || studio.resourcesLoading || !studio.materials.length
+              }
             >
-              {materials.map((material) => (
+              {studio.materials.map((material) => (
                 <MenuItem key={material.id} value={material.id}>
                   {material.title}
                 </MenuItem>
@@ -281,10 +186,10 @@ export default function TeacherMcqs() {
               AI-generated questions may be inaccurate. Review every question
               before use.
             </p>
-            {!resourcesLoading &&
-              courseId &&
-              resources.course === courseId &&
-              !materials.length && (
+            {!studio.resourcesLoading &&
+              studio.courseId &&
+              studio.resourcesReady &&
+              !studio.materials.length && (
                 <p>
                   Upload a source material to generate MCQs.{" "}
                   <Link to="/teacher/materials">Open materials library</Link>
@@ -294,7 +199,12 @@ export default function TeacherMcqs() {
               fullWidth
               variant="contained"
               startIcon={<Sparkles size={17} />}
-              disabled={busy || !sourceId || !courseId || resourcesLoading}
+              disabled={
+                busy ||
+                !studio.sourceId ||
+                !studio.courseId ||
+                studio.resourcesLoading
+              }
               onClick={generate}
             >
               {busy ? "Generating…" : "Generate 3 draft MCQs"}
@@ -309,21 +219,21 @@ export default function TeacherMcqs() {
           </Panel>
           <Panel className="notes-list">
             <h2>Saved MCQ batches</h2>
-            {resourcesLoading && (
+            {studio.resourcesLoading && (
               <p role="status">Loading sources and saved drafts…</p>
             )}
-            {resourcesError && (
+            {studio.resourcesError && (
               <div role="alert">
-                {resourcesError}
-                <Button onClick={() => setReload((n) => n + 1)}>Retry</Button>
+                {studio.resourcesError}
+                <Button onClick={studio.reloadResources}>Retry</Button>
               </div>
             )}
-            {!resourcesLoading &&
-              !resourcesError &&
-              courseId &&
-              !drafts.length && <p>No saved MCQ batches yet</p>}
+            {!studio.resourcesLoading &&
+              !studio.resourcesError &&
+              studio.courseId &&
+              !studio.drafts.length && <p>No saved MCQ batches yet</p>}
             <ul>
-              {drafts.map((item) => (
+              {studio.drafts.map((item) => (
                 <li key={item.id}>
                   <Button
                     startIcon={<FileText size={16} />}
@@ -331,7 +241,7 @@ export default function TeacherMcqs() {
                     onClick={() =>
                       setParams({
                         tab: "questions",
-                        course: courseId,
+                        course: studio.courseId,
                         batch: item.id,
                       })
                     }
@@ -356,7 +266,7 @@ export default function TeacherMcqs() {
               </Button>
               <Button
                 onClick={() =>
-                  setParams({ tab: "questions", course: courseId })
+                  setParams({ tab: "questions", course: studio.courseId })
                 }
               >
                 Clear draft selection
