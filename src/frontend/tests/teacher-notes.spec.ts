@@ -1,5 +1,11 @@
 import { test, expect, type Page } from "@playwright/test";
-import { mockTeacherNotesApi, COURSE_A, NEW, SAVED } from "./teacherNotesApi";
+import {
+  mockTeacherNotesApi,
+  COURSE_A,
+  NEW,
+  OLD,
+  SAVED,
+} from "./teacherNotesApi";
 
 async function choose(page: Page, label: string, name: string) {
   await page
@@ -314,7 +320,11 @@ test("tea02 generation times out at forty-five seconds without losing choices or
   release();
 });
 
-for (const navigation of ["course-return", "draft-history"] as const) {
+for (const navigation of [
+  "course-return",
+  "draft-history",
+  "source-return",
+] as const) {
   for (const outcome of ["success", "failure"] as const) {
     test(`teacher review ignores obsolete note generation ${outcome} after ${navigation}`, async ({
       page,
@@ -348,6 +358,15 @@ for (const navigation of ["course-return", "draft-history"] as const) {
         await expect(
           page.getByRole("combobox", { name: /^Course/ }),
         ).toContainText("Software Engineering");
+      } else if (navigation === "source-return") {
+        await choose(page, "Source material", OLD.title);
+        await expect(
+          page.getByRole("combobox", { name: /^Source material/ }),
+        ).toContainText(OLD.title);
+        await choose(page, "Source material", NEW.title);
+        await expect(
+          page.getByRole("combobox", { name: /^Source material/ }),
+        ).toContainText(NEW.title);
       } else {
         await page.goBack();
         await expect(page).not.toHaveURL(/draft=/);
