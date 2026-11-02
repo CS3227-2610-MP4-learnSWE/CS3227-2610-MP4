@@ -5,6 +5,13 @@ Newest entry first. Use `templates/handoff.md`. Older entries describe the state
 
 
 
+
+## 2026-11-02: Teacher PostgreSQL original-file storage in progress (orchestrator)
+- User approved fresh-database BYTEA storage,100MiB total/10MiB per file, atomic metadata/content, advisory-lock quota, same teacher APIs/generation/access and no FILE_STORAGE_DIR runtime dependency.
+- Clean master6d65273/PR13 confirmed; branchfix/teacher-postgres-file-storage created. Existing developer DB/files/.env remain untouched. Populated conversion/downgrade must refuse; no import/delete/reset/deployment.
+- Baseline483backendpassed using isolated PostgreSQL schema/tempfiles. Spec writer preparing contract before application edits; Variant B developer/test-designer from same recorded start then independent verifier.
+- Next: commit approved docs, independent source/test work, migrate test fixture assumptions and verify quota/concurrency/data preservation. Parent owns logs/TeacherDatabaseStorage.md, security/resource/handoff. No live LLM/push/PR/master merge.
+
 ## 2026-11-02: Teacher Ponytail review fixes complete locally (orchestrator)
 - All four findings resolved on feat/tea02-generate-mcqs: permanent note/MCQ request invalidation across navigation/selection round trips; generated invalid Unicode502; invalid upload title422 before storage; focused shared studio source/loading and generation hooks. Valid astral Unicode, access checks, retries, existing draft editing/blockers preserved. No migrations, dependencies or llm_client.py changes.
 - Workflow: approved corrective contractd02418b; independent regressions292af7d committed before source, four browser/four backend RED plus valid-Unicode positive control. Source/productdocs81ba253; unchanged original nine regressions GREEN. Additional source-only success/failure coverageabc92df passed after integration (not claimed RED).
