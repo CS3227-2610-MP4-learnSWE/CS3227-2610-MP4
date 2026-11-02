@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from "react";
-import { Link, useSearchParams } from "react-router";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { Link, useLocation, useSearchParams } from "react-router";
 import { Button, MenuItem, TextField } from "@mui/material";
 import { FileText, Sparkles } from "lucide-react";
 import {
@@ -25,6 +25,12 @@ import {
 } from "../services/teacherMcqs";
 
 export default function TeacherMcqs() {
+  const location = useLocation();
+  const navigationEpoch = useRef(0);
+  useLayoutEffect(() => {
+    // A departed request stays stale even if history returns to the same URL.
+    navigationEpoch.current += 1;
+  }, [location]);
   const [params, setParams] = useSearchParams();
   const queryCourse = params.get("course") || "";
   const draftId = params.get("batch") || "";
@@ -165,9 +171,15 @@ export default function TeacherMcqs() {
     setError("");
     setSuccess("");
     const startedView = viewKey;
+    const startedEpoch = navigationEpoch.current;
     try {
       const created = await generateMcqDraft(sourceId);
-      if (!mounted.current || currentView.current !== startedView) return;
+      if (
+        !mounted.current ||
+        currentView.current !== startedView ||
+        navigationEpoch.current !== startedEpoch
+      )
+        return;
       if (
         created.course_id !== courseId ||
         created.source_material_id !== sourceId
@@ -177,7 +189,11 @@ export default function TeacherMcqs() {
       setSuccess("Draft MCQs generated and saved.");
       setReload((value) => value + 1);
     } catch (reason) {
-      if (mounted.current && currentView.current === startedView)
+      if (
+        mounted.current &&
+        currentView.current === startedView &&
+        navigationEpoch.current === startedEpoch
+      )
         setError(teacherGenerationError(reason, "MCQs"));
     } finally {
       busyRef.current = false;
