@@ -3,6 +3,13 @@
 Newest entry first. Use `templates/handoff.md`. Older entries describe the state at the time; the newest entry supersedes their open/merged status.
 
 
+
+## 2026-11-02: Ponytail full review of all teacher increments (orchestrator)
+- Read-only application review at2c36951 with strongest independent verifier, including earlier materials/notes/editing and current MCQs plus shared docs.
+- Findings: note generation revives stale success/error after returning to same view; generated NUL/surrogate notes reach DB (503/unhandled UnicodeEncodeError); NUL material title gives503 instead of documented422. Five isolated/mock probes reproduced these. No fixes made.
+- Conciseness: duplicated studio lifecycle and access-check logic is the main simplification opportunity; MCQ-only stale guard fix demonstrates divergence. Keep feature-specific parsing/editing distinct.
+- Evidence/report: logs/PonytailTeacherReview.md. Previous478backend/149browser checks remain historical evidence; full suites not repeated in this review. No live LLM/developer data/push/PR. Next: repair confirmed defects with regression tests before claiming docs/implementation fully aligned.
+
 ## 2026-11-02: TEA-02 MCQ generation complete locally (orchestrator)
 - Done: feat/tea02-generate-mcqs adds authorised generate/save/reopen for three private MCQs, four choices, one correct answer and explanation per question; strict JSON validation, atomic PostgreSQL batches, course/source attribution and read-only studio tab. Notes editing/routes preserved; shared llm_client.py unchanged. Editing questions, practice-set assembly and publication remain future increments.
 - Prior increment: user merged TEA-03 through PR12; clean updated master3069053 confirmed. Historical pending-PR entries below are superseded for TEA-03.
