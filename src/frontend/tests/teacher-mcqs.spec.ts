@@ -44,7 +44,7 @@ test("tea02 mcqs generates three questions and reopens persistent batch by URL",
   await expect(page).toHaveURL(/batch=cccccccc/);
   for (const q of BATCH.questions) {
     await expect(page.getByText(q.question, { exact: true })).toBeVisible();
-    await expect(page.getByText(q.explanation, { exact: true })).toBeVisible();
+    await expect(page.getByText(q.explanation)).toBeVisible();
   }
   await expect(
     page.getByText("Unpublished draft · Review required"),

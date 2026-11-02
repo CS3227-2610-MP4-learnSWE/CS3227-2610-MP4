@@ -1,3 +1,4 @@
+import { mockCompanionApi } from "./companionApi";
 import { mockTeacherNotesApi } from "./teacherNotesApi";
 import { test, expect } from "@playwright/test";
 import { mockPracticeApi } from "./practiceApi";
@@ -303,6 +304,7 @@ test("lesson outline links to the corresponding section", async ({ page }) => {
 test("student companion is a persistent minimisable widget with clear history", async ({
   page,
 }) => {
+  await mockCompanionApi(page);
   await page.goto("/student/overview");
   await page.getByRole("button", { name: "Open study companion" }).click();
   const chat = page.getByRole("dialog", { name: "Your study companion" });
