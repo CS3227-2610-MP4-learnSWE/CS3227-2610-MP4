@@ -415,3 +415,42 @@ for (const [width, theme] of [
     });
   });
 }
+
+test("tea03 late latest-version read cannot overwrite a different selected course", async ({
+  page,
+}) => {
+  const api = await mockTeacherNotesApi(page);
+  await edit(page);
+  await dirty(page);
+  api.failPatchStatus = 409;
+  await page.getByRole("button", { name: "Save changes", exact: true }).click();
+  let release!: () => void;
+  let received = false;
+  const held = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route(`**/api/teacher/note-drafts/${SAVED.id}`, async (route) => {
+    if (route.request().method() !== "GET") return route.fallback();
+    received = true;
+    await held;
+    await route.fulfill({
+      json: { ...SAVED, version: 3, title: "Late remote title" },
+    });
+  });
+  await page
+    .getByRole("button", { name: "Load latest saved version", exact: true })
+    .click();
+  await page
+    .getByRole("dialog", { name: "Load latest saved version?", exact: true })
+    .getByRole("button", { name: "Discard changes", exact: true })
+    .click();
+  await expect.poll(() => received).toBe(true);
+  await choose(page, "Course", "Programming");
+  await discard(page);
+  await expect(page).toHaveURL(/course=22222222/);
+  release();
+  await expect(
+    page.getByText("Late remote title", { exact: true }),
+  ).toHaveCount(0);
+  await expect(page.getByLabel("Note title", { exact: true })).toHaveCount(0);
+});
