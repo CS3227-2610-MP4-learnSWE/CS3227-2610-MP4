@@ -3465,6 +3465,7 @@ td .MuiButton-root {
 }
 .notes-studio .notes-viewer {
   min-width: 0;
+  overflow-wrap: anywhere;
 }
 .note-content {
   white-space: pre-wrap;
