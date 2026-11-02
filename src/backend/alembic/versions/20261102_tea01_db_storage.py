@@ -9,6 +9,8 @@ depends_on = None
 
 
 def upgrade():
+    # Hold the emptiness decision stable against concurrent legacy uploads.
+    op.execute("LOCK TABLE material IN ACCESS EXCLUSIVE MODE")
     if op.get_bind().scalar(sa.text("SELECT EXISTS (SELECT 1 FROM material)")):
         raise RuntimeError("Existing materials cannot be converted automatically. Configure a fresh empty database; keep the previous database and uploaded files unchanged.")
     op.create_table("material_file",
@@ -19,6 +21,7 @@ def upgrade():
 
 
 def downgrade():
+    op.execute("LOCK TABLE material IN ACCESS EXCLUSIVE MODE")
     if op.get_bind().scalar(sa.text("SELECT EXISTS (SELECT 1 FROM material)")):
         raise RuntimeError("Cannot downgrade file storage while materials exist. Keep this database and restore the previous code, database and files instead.")
     op.drop_table("material_file")
