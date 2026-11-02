@@ -44,6 +44,7 @@ export class TeacherNotesApi extends TeacherMaterialsApi {
   holdPatch: Promise<void> | null = null;
   patchCalls = 0;
   failPatchStatus = 0;
+  editorId = "demo-teacher";
   override async handle(route: Route) {
     const request = route.request();
     const path = new URL(request.url()).pathname;
@@ -94,7 +95,7 @@ export class TeacherNotesApi extends TeacherMaterialsApi {
         content: body.content,
         version: old.version + 1,
         updated_at: "2026-11-02T12:00:00Z",
-        updated_by: "demo-teacher",
+        updated_by: this.editorId,
       };
       this.drafts[index] = updated;
       return json(200, updated);

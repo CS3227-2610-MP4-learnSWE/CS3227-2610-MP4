@@ -539,3 +539,49 @@ test("tea03 discard during latest read and same-draft query navigation leaves a 
     release();
   }
 });
+
+test("tea03 mobile read-only notes wrap maximum-length unbroken titles and metadata", async ({
+  page,
+}) => {
+  const title = "W".repeat(200);
+  const source = "S".repeat(200);
+  const creator = "C".repeat(64);
+  const editor = "E".repeat(64);
+  await page.setViewportSize({ width: 390, height: 900 });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  const api = await mockTeacherNotesApi(page);
+  api.drafts = [
+    { ...SAVED, source_title: source, created_by: creator, updated_by: editor },
+  ];
+  api.editorId = editor;
+  await edit(page);
+  await page.getByLabel("Note title", { exact: true }).fill(title);
+  await page.getByRole("button", { name: "Save changes", exact: true }).click();
+  await expect(
+    page.getByText("Draft changes saved.", { exact: true }),
+  ).toBeVisible();
+  const viewer = page.locator(".notes-viewer");
+  const heading = viewer.getByRole("heading", { name: title, exact: true });
+  const metadata = viewer.locator("p.muted").first();
+  await expect(heading).toHaveText(title);
+  await expect(metadata).toContainText(source);
+  await expect(metadata).toContainText(creator);
+  await expect(metadata).toContainText(editor);
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+  for (const element of [heading, metadata]) {
+    expect(
+      await element.evaluate((node) => node.scrollWidth <= node.clientWidth),
+    ).toBe(true);
+    const box = await element.boundingBox();
+    expect(box).not.toBeNull();
+    expect(box!.x).toBeGreaterThanOrEqual(0);
+    expect(box!.x + box!.width).toBeLessThanOrEqual(390);
+    expect(
+      await element.evaluate((node) => getComputedStyle(node).overflowX),
+    ).not.toMatch(/hidden|clip/);
+  }
+});
