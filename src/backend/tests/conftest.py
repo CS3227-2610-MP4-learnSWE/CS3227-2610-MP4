@@ -41,7 +41,7 @@ def pytest_sessionstart(session):
         conn.execute(f'CREATE SCHEMA "{_schema}"')
     env = os.environ
     env["DATABASE_URL"] = _schema_url(_base_url, _schema)
-    env["FILE_STORAGE_DIR"] = str(_storage)
+    env.pop("FILE_STORAGE_DIR", None)
     env["APP_ENV"] = "development"
     env["ALLOW_DEMO_IDENTITY"] = "true"
     backend = Path(__file__).resolve().parents[1]

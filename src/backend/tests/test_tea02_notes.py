@@ -94,9 +94,9 @@ def pdf_bytes(texts):
 
 
 def replace_bytes(db, root, material, data):
-    key = db.execute("SELECT storage_key FROM material WHERE id=%s", (material["id"],)).fetchone()[0]
+    # Corrupt only this test's persistent source bytes, not any developer file.
+    db.execute("UPDATE material_file SET content=%s WHERE material_id=%s", (data, material["id"]))
     db.commit()
-    (root / key).write_bytes(data)
 
 
 def test_tea02_text_draft_persists_lists_and_reopens_in_new_process(notes):
@@ -190,9 +190,8 @@ def test_tea02_invalid_sources_never_call_model(notes, tea01_database, tea01_sto
         monkeypatch.setattr(PageObject, "extract_text", lambda *a, **k: pytest.fail("must check page count before extraction"))
         expected = (422, "source_text_too_large")
     else:
-        key = tea01_database.execute("SELECT storage_key FROM material WHERE id=%s", (source["id"],)).fetchone()[0]
+        tea01_database.execute("DELETE FROM material_file WHERE material_id=%s", (source["id"],))
         tea01_database.commit()
-        (tea01_storage / key).unlink()
         expected = (503, "service_unavailable")
     error(generate(app, source), *expected)
     assert not fake.calls
@@ -352,7 +351,7 @@ def test_tea02_fresh_and_existing_schema_migrations_preserve_materials(tea01_dat
                 cur.execute('INSERT INTO "user"(id,display_name,role) VALUES(\'demo-teacher\',\'Teacher\',\'teacher\')')
                 mid = uuid.uuid4()
                 cur.execute("INSERT INTO material(id,course_id,uploaded_by,title,original_filename,media_type,size_bytes,storage_key) VALUES(%s,%s,'demo-teacher','Keep source','a.txt','text/plain',1,'private')", (mid, COURSE))
-                migrate("upgrade", "head")
+                migrate("upgrade", "20261102_tea02_mcqs")
                 assert cur.execute("SELECT title FROM material WHERE id=%s", (mid,)).fetchone()[0] == "Keep source"
                 assert cur.execute("SELECT to_regclass('study_note_draft')").fetchone()[0]
                 with pytest.raises(psycopg.Error):
@@ -360,7 +359,7 @@ def test_tea02_fresh_and_existing_schema_migrations_preserve_materials(tea01_dat
                 migrate("downgrade", "20261030_tea01")
                 assert cur.execute("SELECT to_regclass('study_note_draft')").fetchone()[0] is None
                 assert cur.execute("SELECT title FROM material WHERE id=%s", (mid,)).fetchone()[0] == "Keep source"
-                migrate("upgrade", "head")
+                migrate("upgrade", "20261102_tea02_mcqs")
                 assert cur.execute("SELECT to_regclass('study_note_draft')").fetchone()[0]
         finally:
             conn.execute("SET search_path TO public")
@@ -389,8 +388,8 @@ def test_tea02_missing_configuration_and_storage_fail_controlled(notes, monkeypa
     blocked.write_text("file")
     with monkeypatch.context() as patch:
         patch.setenv("FILE_STORAGE_DIR", str(blocked))
-        error(generate(app, source), 503, "service_unavailable")
-    assert not fake.calls
+        assert generate(app, source).status_code == 201
+    assert len(fake.calls) == 1
 
 
 def test_tea02_source_removed_during_generation_cannot_save(notes, tea01_database):
