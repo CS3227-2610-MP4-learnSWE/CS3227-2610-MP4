@@ -89,3 +89,23 @@ Independent initial verification:412backend/130browser, types/lint/format/build 
 Shared llm_client.py unchanged; editing does not consume model usage. Production identity and publication remain outside this increment.
 
 Final TEA-03 verdict: strongest independent verifier PASS at2de07d15a610f1dc74b426b7db9a92801aae6e79 after two correction rounds. Final17focusededitingtests passed; independent full132browser/types/lint/format/build passed. Backendunchangedfrom412-passrevision. Second valid-input layout finding (200-char unbroken title/source and64-char userIDs) reproduced beforefixf256e55 and passed regression659d590 afterwards; full text wraps without hiding/truncation. No outstanding findings.
+
+
+## 2026-11-02 — TEA-02 private MCQ generation
+
+Independent integration at79b5aa0:478 backend/147 browser, types/lint/format/build passed. Fake LLM only; isolated PostgreSQL schemas and temporary source files. Strongest verifier final PASS at3ebc6462b65c09e71a7fa141763409c402e2f9c4 after one correction round; no open findings.
+
+| Case | Expected control | Independent tests |
+|---|---|---|
+| Gate/identity/role/course/source/batch | Server checks before file/model;401/403/404 and no cross-course records | Passed |
+| Untrusted source / prompt injection | Fixed system instruction; source-only user message, no tools; server caller ID | Passed |
+| Strict model JSON | Exact3 questions/four distinct choices, strict integer answer, bounded Unicode fields; reject extra/duplicate keys, malformed/truncated/unsafe strings | Passed |
+| Pre-save access and transaction boundary | No open transaction during model; access/source recheck, failed saves create no partial batch | Passed |
+| Concurrent generation / persistence | Independent complete batches, reopen across process; migration constraints | Passed |
+| Source rejection / model failures | Extraction caps and no model call on rejection; safe errors/retry metadata | Passed |
+| Teacher-only answers / rendering | No student endpoint; escaped output, no private paths or keys | Passed |
+| Browser lifecycle |45s timeout, no autoPOST retry/duplicate click, stale-response guards and note unsaved tab protection | Passed |
+
+Shared client unchanged. Development identity remains local-only/spoofable. Factual question quality still requires teacher review; editing/publication/student release are deferred.
+
+Final MCQ review: verifier independently reran478 backend/147 initial browser/types/lint/format/build and extra role-revocation/source-course-change probes (403/404, zero rows). One uncovered history-return stale-response defect was reproduced by independentaaa55bc success/failure RED regressions, fixed198c3f4, then both GREEN unchanged. Final full149 browser/build passed; strongest verifier reran17 focused MCQ cases/types/lint/format and PASS at3ebc6462b65c09e71a7fa141763409c402e2f9c4. Backend unchanged since fresh478 run. No live provider, hosted CI or production authentication tested.
