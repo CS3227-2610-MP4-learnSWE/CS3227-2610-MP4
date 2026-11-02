@@ -455,3 +455,87 @@ test("tea03 late latest-version read cannot overwrite a different selected cours
   ).toHaveCount(0);
   await expect(page.getByLabel("Note title", { exact: true })).toHaveCount(0);
 });
+
+test("tea03 discard during latest read and same-draft query navigation leaves a usable fresh editor", async ({
+  page,
+}) => {
+  const api = await mockTeacherNotesApi(page);
+  await page.goto(`/teacher/generate?draft=${SAVED.id}&course=${COURSE_A}`);
+  await page.getByRole("button", { name: "Edit notes", exact: true }).click();
+  await dirty(page);
+  api.failPatchStatus = 409;
+  await page.getByRole("button", { name: "Save changes", exact: true }).click();
+  await expect(
+    page.getByText(
+      "This draft has changed. Load the latest saved version before saving.",
+      { exact: true },
+    ),
+  ).toBeVisible();
+  let release!: () => void;
+  let received = false;
+  const held = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route(`**/api/teacher/note-drafts/${SAVED.id}`, async (route) => {
+    if (route.request().method() !== "GET") return route.fallback();
+    received = true;
+    await held;
+    await route.fulfill({
+      json: { ...SAVED, version: 2, title: "Stale abandoned read" },
+    });
+  });
+  await page
+    .getByRole("button", { name: "Load latest saved version", exact: true })
+    .click();
+  await page
+    .getByRole("dialog", { name: "Load latest saved version?", exact: true })
+    .getByRole("button", { name: "Discard changes", exact: true })
+    .click();
+  await expect.poll(() => received).toBe(true);
+  // Clicking the current draft only normalises the query order; its keyed editor survives.
+  await page
+    .getByRole("button", { name: new RegExp(`^${SAVED.title}`) })
+    .click();
+  await discard(page);
+  await expect(page).toHaveURL(url);
+  await page.getByRole("button", { name: "Edit notes", exact: true }).click();
+  try {
+    // This must work while the abandoned GET is still held, not just after it settles.
+    await expect(page.getByLabel("Note title", { exact: true })).toBeEditable();
+    await page
+      .getByLabel("Note title", { exact: true })
+      .fill("Fresh local change");
+    await expect(
+      page.getByRole("button", { name: "Cancel", exact: true }),
+    ).toBeEnabled();
+    let releaseSave!: () => void;
+    api.holdPatch = new Promise<void>((resolve) => {
+      releaseSave = resolve;
+    });
+    await page
+      .getByRole("button", { name: "Save changes", exact: true })
+      .click();
+    await expect.poll(() => api.patchCalls).toBe(2);
+    release();
+    await expect(page.getByLabel("Note title", { exact: true })).toHaveValue(
+      "Fresh local change",
+    );
+    await expect(page.getByLabel("Note title", { exact: true })).toBeDisabled();
+    await expect(
+      page.getByRole("button", { name: "Cancel", exact: true }),
+    ).toBeDisabled();
+    releaseSave();
+    await expect(
+      page.getByText("Draft changes saved.", { exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Fresh local change", exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByText("Stale abandoned read", { exact: true }),
+    ).toHaveCount(0);
+    expect(patches(api)).toHaveLength(2);
+  } finally {
+    release();
+  }
+});
