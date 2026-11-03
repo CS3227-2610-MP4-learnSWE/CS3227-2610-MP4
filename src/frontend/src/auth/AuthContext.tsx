@@ -90,7 +90,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         /* the cookie may already be gone; the local state is cleared either way */
       }
       clear();
-      navigate("/login", { replace: true });
+      // Pushed, not replaced: Back returns to the guarded area, which redirects to /login again.
+      navigate("/login");
     },
   };
   return <Context.Provider value={value}>{children}</Context.Provider>;

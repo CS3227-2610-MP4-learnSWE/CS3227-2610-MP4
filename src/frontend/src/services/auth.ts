@@ -28,11 +28,15 @@ function parseSession(data: unknown): Session {
   return data as Session;
 }
 
+// A slow or unreachable server must not hold the visitor on the loading status.
+const ME_TIMEOUT_MS = 2_500;
 let meInFlight: Promise<Session> | null = null;
 
 /** One request at a time: React StrictMode mounts twice in development. */
 export function me(): Promise<Session> {
-  meInFlight ??= request("GET", "/api/auth/me")
+  meInFlight ??= request("GET", "/api/auth/me", undefined, {
+    timeoutMs: ME_TIMEOUT_MS,
+  })
     .then(parseSession)
     .finally(() => {
       meInFlight = null;

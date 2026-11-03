@@ -189,20 +189,19 @@ export default function Login({
             </span>
             <h2>Welcome to learnSWE</h2>
             <p>Your space to keep moving forward.</p>
-            <Tabs
-              value={mode}
-              onChange={(_, value: Mode) => {
-                setMode(value);
+            <Button
+              fullWidth
+              variant="text"
+              onClick={() => {
+                setMode(mode === "signin" ? "signup" : "signin");
                 setError(null);
                 setAccepted(false);
               }}
-              variant="fullWidth"
-              aria-label="Account"
-              className="role-tabs"
             >
-              <Tab value="signin" label="Sign in" />
-              <Tab value="signup" label="Create account" />
-            </Tabs>
+              {mode === "signin"
+                ? "Create account"
+                : "Have an account? Use the sign-in form"}
+            </Button>
             {accepted && (
               <Alert severity="success" role="status" sx={{ mt: 2 }}>
                 Thanks. If this email can be used, your student account is

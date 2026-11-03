@@ -15,7 +15,7 @@ export function RequireRole({
   children: ReactNode;
 }) {
   const { status, user } = useAuth();
-  if (status === "loading") return <p role="status">Checking your session…</p>;
+  if (status === "loading") return <p role="status">Loading your session…</p>;
   if (status === "authenticated" && user)
     return user.role === role ? (
       children
@@ -29,6 +29,6 @@ export function RequireRole({
 /** "/" and unknown paths: signed-in users go home, everyone else to the login page. */
 export function RootRedirect() {
   const { status, user } = useAuth();
-  if (status === "loading") return <p role="status">Checking your session…</p>;
+  if (status === "loading") return <p role="status">Loading your session…</p>;
   return <Navigate to={user ? homePath(user.role) : "/login"} replace />;
 }
