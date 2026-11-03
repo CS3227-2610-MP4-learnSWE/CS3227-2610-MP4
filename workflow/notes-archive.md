@@ -202,3 +202,9 @@ Entries moved unchanged from `notes.md` on 2026-11-03, newest first. They descri
 - Workflow: approved start97ae30b; developerde1cc1c; independent tests committed before integration, first merged6945eb5. Fixde9738c adds saved-list creator and contract clarity; independent creator RED/GREEN plus fake-clock timeout regressions integrated06311ac. Four initial harness selector corrections preserved assertions. Correction source preceded regression commit while completed test agent was being reactivated; timing deviation recorded in logs/TEA02Session.md/resource record.
 - Next: human reviews local branch and authorises push/PR. Nothing pushed, no PR opened and no master merge. Spoofable development identity remains local-only; fixed source/output limits and duplicate-generation-on-explicit-retry warning are intentional.
 - Files: workflow/specs/TEA-02-notes, docs/SharedDataContract.md and guides, src/backend/teacher_notes plus migration, frontend TeacherNotes/services, independent tests, logs/TEA02Session.md and resource/security records.
+
+## 2026-11-02: TEA-03-notes approved contract (spec-writer)
+- Done: user-approved notes-only editing plan recorded in workflow/specs/TEA-03-notes with migration/backfill, strict versioned PATCH, conflict recovery, source-title snapshot, router blocking and independent test interfaces. No application code/tests changed.
+- Prior state: TEA-02 merged through PR11 at040dc07; user reports real generation worked. Older waiting-for-approval entries below are historical and superseded on that point.
+- Next: orchestrator records spec commit; developer and independent test-designer start together from it, separate worktrees. No open questions. No live LLM call, push or PR.
+- Files: workflow/specs/TEA-03-notes/{spec,plan,tasks}.md and workflow/notes.md. Resource totals unavailable; spec-writer inherited model configuration.

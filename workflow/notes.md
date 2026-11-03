@@ -2,6 +2,12 @@
 
 Newest entry first. Use `templates/handoff.md`. Older entries describe the state at the time; the newest entry supersedes their open/merged status. Keep the newest 10 entries here; older ones are in `notes-archive.md`. Feature state is in `STATUS.md`.
 
+## 2026-11-03: Fix Vite undefined backend port (single session)
+- Done: proxy supports existing API_PROXY_TARGET, current API_PORT and default8000, in that precedence. Existing frontend env used old URL setting; master expected onlyport. README and four-case regression updated.
+- Verification: pre-fix actual config assertion RED; focused regression GREEN; types/lint/format/build passed. Live backend health/proxied health/teacher courses all200. No actual.env edits or backend/data writes; full suites not repeated for config-only fix.
+- Next: refresh frontend; restart npm run dev if old proxy persists. No publishing. Files: vite.config.ts, tests/vite-proxy.spec.ts, README, logs/ViteProxyFix20261103.md.
+- Resource use: tracker no (unmeasured), inherited Codex, tokens/cost unavailable; wrong-workdir formatter cancelled then correct-dir checks passed; revision rounds0.
+
 ## 2026-11-03: Clean obsolete filesystem test scaffolding (single session)
 - Done: removed unused session-wide upload-folder fixture, dead fixture/helper arguments and unused imports. Filename traversal assertions now use isolated tmp_path. Runtime storage.py still validates uploads; no unused runtime file was found for deletion.
 - Verification:504backend passed; all213 assertions in four touched suites retained. No frontend/runtime/API changes; prior frontend checks not repeated. No user data/.env/old uploads/dependencies or migration/history files removed; legacy private-files ignore rule retained.
@@ -66,9 +72,3 @@ Newest entry first. Use `templates/handoff.md`. Older entries describe the state
 - Existing backend382 passed, one expected old TEA-02 exact metadata shape assertion awaits independent fixture update; frontend types/lint/build/changed-source formatting pass. Independent tests have not been read or modified.
 - Guides/shared contract/app-help describe current editing and source attribution. TEA-02 PR11/master040dc07 and user-reported successful real generation recorded. Tests use isolated schemas/files only; no development data or .env changes, live calls, push or PR.
 - Next: integrate independent tests, verifier checks, then corrections if needed. Parent owns resource/security/session records.
-
-## 2026-11-02: TEA-03-notes approved contract (spec-writer)
-- Done: user-approved notes-only editing plan recorded in workflow/specs/TEA-03-notes with migration/backfill, strict versioned PATCH, conflict recovery, source-title snapshot, router blocking and independent test interfaces. No application code/tests changed.
-- Prior state: TEA-02 merged through PR11 at040dc07; user reports real generation worked. Older waiting-for-approval entries below are historical and superseded on that point.
-- Next: orchestrator records spec commit; developer and independent test-designer start together from it, separate worktrees. No open questions. No live LLM call, push or PR.
-- Files: workflow/specs/TEA-03-notes/{spec,plan,tasks}.md and workflow/notes.md. Resource totals unavailable; spec-writer inherited model configuration.

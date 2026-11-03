@@ -75,6 +75,8 @@ Remaining preview state and the current student practice session are temporary. 
 
 FastAPI's generated API documentation is at `/docs` on the backend (the port in `src/frontend/.env.example`). Teacher Materials endpoints and BYTEA storage are specified in [the shared data contract](docs/SharedDataContract.md).
 
+The frontend proxy uses `API_PORT` (default `8000`). Existing `API_PROXY_TARGET` URLs remain supported and take precedence. After changing frontend environment settings, restart `npm run dev`.
+
 ## Verify
 
 ```sh
