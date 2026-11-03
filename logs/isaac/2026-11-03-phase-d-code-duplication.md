@@ -29,3 +29,10 @@ Model: Claude Sonnet 5.5. Each refactor is on its own local branch cut from `mas
 
 1. Merge `request` and `requestTeacher` in `client.ts` (R5 finding)? Not done because the task only asked to investigate.
 2. Make `_llm_error` public or move it to `llm_errors.py` (R4 finding)? Not done for the same reason.
+
+## Follow-ups (same day, after the user approved both open decisions)
+
+| Branch | Commit | Change | Tests |
+|---|---|---|---|
+| `refactor/r4-llm-errors` | `refactor(teacher): move the generation error mapping to llm_errors (R4 follow-up)` | New `src/backend/llm_errors.py` with `generation_error` (the former `teacher_notes.generation._llm_error`); notes and MCQ generation import it. Codes and messages unchanged. The companion mapping is untouched. | Backend 483 passed. |
+| `refactor/r5-client-transport` | `refactor(frontend): share one transport core in client.ts (R5 follow-up)` | `request` and `requestTeacher` call a private `send()` and `errorFrom()`; signatures unchanged. One small side effect: teacher errors now also carry `missing` if the server sends it (none does). | `npm run typecheck`, `npm run lint`, `npm test` (mocked suite): 155 passed. The first run failed everywhere because Playwright's Chromium was not installed on this machine; after `npx playwright install chromium` it passed. The real-backend test was not run. |
