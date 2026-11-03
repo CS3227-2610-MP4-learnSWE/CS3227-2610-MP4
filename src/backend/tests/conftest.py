@@ -1,10 +1,8 @@
 """Isolate TEA-01 database tests without touching any existing schema."""
 
 import os
-import shutil
 import subprocess
 import sys
-import tempfile
 import uuid
 from pathlib import Path
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
@@ -13,7 +11,6 @@ import pytest
 
 
 _schema = None
-_storage = None
 _base_url = None
 
 
@@ -29,14 +26,13 @@ def _schema_url(url, schema):
 
 
 def pytest_sessionstart(session):
-    global _schema, _storage, _base_url
+    global _schema, _base_url
     _base_url = os.environ.get("TEA01_TEST_DATABASE_URL")
     if not _base_url:
         return
     import psycopg
 
     _schema = "tea01_" + uuid.uuid4().hex
-    _storage = Path(tempfile.mkdtemp(prefix="tea01-files-"))
     with psycopg.connect(_psycopg_url(_base_url), autocommit=True) as conn:
         conn.execute(f'CREATE SCHEMA "{_schema}"')
     env = os.environ
@@ -54,16 +50,13 @@ def pytest_sessionstart(session):
 
 
 def _cleanup():
-    global _schema, _storage
+    global _schema
     if _schema and _base_url:
         import psycopg
 
         with psycopg.connect(_psycopg_url(_base_url), autocommit=True) as conn:
             conn.execute(f'DROP SCHEMA IF EXISTS "{_schema}" CASCADE')
         _schema = None
-    if _storage:
-        shutil.rmtree(_storage, ignore_errors=True)
-        _storage = None
 
 
 def pytest_sessionfinish(session, exitstatus):
@@ -78,13 +71,6 @@ def tea01_database():
 
     with psycopg.connect(_psycopg_url(os.environ["DATABASE_URL"])) as conn:
         yield conn
-
-
-@pytest.fixture
-def tea01_storage():
-    if not _storage:
-        pytest.skip("TEA01_TEST_DATABASE_URL is not set")
-    return _storage
 
 
 @pytest.fixture

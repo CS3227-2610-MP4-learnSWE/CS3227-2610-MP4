@@ -13,5 +13,5 @@ test-results/
 
 # Local token-tracker output (personal usage history; commit only per-run summaries)
 workflow/tools/token-tracker/usage*.csv
-# Private TEA-01 uploads
+# Legacy private uploads: keep old local files out of Git
 private-files/

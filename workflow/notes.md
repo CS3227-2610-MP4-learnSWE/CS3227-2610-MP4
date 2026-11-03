@@ -2,6 +2,12 @@
 
 Newest entry first. Use `templates/handoff.md`. Older entries describe the state at the time; the newest entry supersedes their open/merged status. Keep the newest 10 entries here; older ones are in `notes-archive.md`. Feature state is in `STATUS.md`.
 
+## 2026-11-03: Clean obsolete filesystem test scaffolding (single session)
+- Done: removed unused session-wide upload-folder fixture, dead fixture/helper arguments and unused imports. Filename traversal assertions now use isolated tmp_path. Runtime storage.py still validates uploads; no unused runtime file was found for deletion.
+- Verification:504backend passed; all213 assertions in four touched suites retained. No frontend/runtime/API changes; prior frontend checks not repeated. No user data/.env/old uploads/dependencies or migration/history files removed; legacy private-files ignore rule retained.
+- Next: human publishing gate unchanged. Files: backend tests/conftest and four test suites, .gitignore comment, logs/DatabaseStorageCleanup20261103.md.
+- Resource use: tracker no (not measured), inherited Codex model, tokens/cost unavailable, retries/revision rounds0. Small mechanical cleanup uses single-session workflow.
+
 ## 2026-11-03: Merge master into PostgreSQL storage branch (single session)
 - Done: merged local master da389a5 (PR14 workflow/shared-helper refactors) into fix/teacher-postgres-file-storage. Retained PostgreSQL BYTEA/atomic uploads/quota/migration guards and master's teacher_access, timestamps, text normalisation, llm_errors and shared frontend transport.
 - Conflict resolution: materials/notes/MCQ routers use shared teacher access; teacher_access drops obsolete storage_root requirement and retains READ COMMITTED for quota correctness. README/shared contract describe current BYTEA storage and shared helpers. Handoff history retained with older entries archived; STATUS updated.
@@ -66,11 +72,3 @@ Newest entry first. Use `templates/handoff.md`. Older entries describe the state
 - Prior state: TEA-02 merged through PR11 at040dc07; user reports real generation worked. Older waiting-for-approval entries below are historical and superseded on that point.
 - Next: orchestrator records spec commit; developer and independent test-designer start together from it, separate worktrees. No open questions. No live LLM call, push or PR.
 - Files: workflow/specs/TEA-03-notes/{spec,plan,tasks}.md and workflow/notes.md. Resource totals unavailable; spec-writer inherited model configuration.
-
-## 2026-11-01: TEA-02 notes complete locally, awaiting human PR approval (orchestrator)
-- Done: feat/tea02-generate-notes generates, saves and reopens concise private draft notes from authorised UTF-8/text-based PDF source materials. Shared llm_client.py unchanged. No editing/MCQs/publication/OCR/student access; US-TEA-02-01 editable criterion remains deferred to TEA-03.
-- Shared contract: new study_note_draft entity, source/course/creator relationships, API/error representations and future LLM integration documented. Historical TEA-01 migration frozen; additive draft migration handles fresh/existing schema upgrades and downgrade/re-upgrade. Run `uv run --env-file .env alembic upgrade head` from src/backend before testing an existing development database; tests used isolated schemas/files only.
-- Verification: independent verifier PASS at06311acc29e0e52ce3115085a09744d5dfafc6ad after one correction round, no open findings. Backend383 passed; final browser115, types/lint/format/build passed. All four initial theme/width screenshots inspected; corrected screenshots also checked. No live model/provider-quality or hosted CI/deployment check.
-- Workflow: approved start97ae30b; developerde1cc1c; independent tests committed before integration, first merged6945eb5. Fixde9738c adds saved-list creator and contract clarity; independent creator RED/GREEN plus fake-clock timeout regressions integrated06311ac. Four initial harness selector corrections preserved assertions. Correction source preceded regression commit while completed test agent was being reactivated; timing deviation recorded in logs/TEA02Session.md/resource record.
-- Next: human reviews local branch and authorises push/PR. Nothing pushed, no PR opened and no master merge. Spoofable development identity remains local-only; fixed source/output limits and duplicate-generation-on-explicit-retry warning are intentional.
-- Files: workflow/specs/TEA-02-notes, docs/SharedDataContract.md and guides, src/backend/teacher_notes plus migration, frontend TeacherNotes/services, independent tests, logs/TEA02Session.md and resource/security records.

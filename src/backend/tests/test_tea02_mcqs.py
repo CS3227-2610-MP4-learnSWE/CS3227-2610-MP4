@@ -105,18 +105,18 @@ def test_tea02_mcqs_pdf_order_prompt_injection_and_no_transaction(mcqs):
 
 
 @pytest.mark.parametrize('kind', ['empty', 'too_long', 'bad_utf8', 'scanned', 'malformed', 'encrypted', 'pages', 'missing'])
-def test_tea02_mcqs_rejected_source_does_not_call_llm(mcqs, tea01_database, tea01_storage, kind):
+def test_tea02_mcqs_rejected_source_does_not_call_llm(mcqs, tea01_database, kind):
     app, fake = mcqs
     source = upload(app)
     status, code = 422, 'source_unreadable'
     if kind == 'empty':
-        replace_bytes(tea01_database, tea01_storage, source, b' \r\n\t ')
+        replace_bytes(tea01_database, source, b' \r\n\t ')
         code = 'source_text_empty'
     elif kind == 'too_long':
-        replace_bytes(tea01_database, tea01_storage, source, ('é' * 8001).encode())
+        replace_bytes(tea01_database, source, ('é' * 8001).encode())
         code = 'source_text_too_large'
     elif kind == 'bad_utf8':
-        replace_bytes(tea01_database, tea01_storage, source, b'\xff')
+        replace_bytes(tea01_database, source, b'\xff')
     elif kind in {'scanned', 'pages', 'malformed', 'encrypted'}:
         source = upload(app, pdf_bytes(['' if kind == 'scanned' else 'text'] * (101 if kind == 'pages' else 1)), name='input.pdf')
         if kind == 'scanned':
@@ -124,14 +124,14 @@ def test_tea02_mcqs_rejected_source_does_not_call_llm(mcqs, tea01_database, tea0
         elif kind == 'pages':
             code = 'source_text_too_large'
         elif kind == 'malformed':
-            replace_bytes(tea01_database, tea01_storage, source, b'%PDF-broken')
+            replace_bytes(tea01_database, source, b'%PDF-broken')
         else:
             import io
             from pypdf import PdfReader, PdfWriter
             writer = PdfWriter(clone_from=PdfReader(io.BytesIO(pdf_bytes(['text']))))
             writer.encrypt('private')
             stream = io.BytesIO(); writer.write(stream)
-            replace_bytes(tea01_database, tea01_storage, source, stream.getvalue())
+            replace_bytes(tea01_database, source, stream.getvalue())
     else:
         tea01_database.execute('DELETE FROM material_file WHERE material_id=%s', (source['id'],))
         tea01_database.commit()

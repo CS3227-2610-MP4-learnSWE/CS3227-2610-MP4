@@ -93,7 +93,7 @@ def pdf_bytes(texts):
     return result.getvalue()
 
 
-def replace_bytes(db, root, material, data):
+def replace_bytes(db, material, data):
     # Corrupt only this test's persistent source bytes, not any developer file.
     db.execute("UPDATE material_file SET content=%s WHERE material_id=%s", (data, material["id"]))
     db.commit()
@@ -163,14 +163,14 @@ def test_tea02_normalised_text_boundaries(notes, text, valid):
 
 
 @pytest.mark.parametrize("kind", ["scanned", "invalid_utf8", "malformed", "encrypted", "over_pages", "missing"])
-def test_tea02_invalid_sources_never_call_model(notes, tea01_database, tea01_storage, kind, monkeypatch):
+def test_tea02_invalid_sources_never_call_model(notes, tea01_database, kind, monkeypatch):
     app, fake = notes
     source = upload(app)
     if kind == "scanned":
         source = upload(app, pdf_bytes([""]), name="blank.pdf")
         expected = (422, "source_text_empty")
     elif kind == "invalid_utf8":
-        replace_bytes(tea01_database, tea01_storage, source, b"\xff")
+        replace_bytes(tea01_database, source, b"\xff")
         expected = (422, "source_unreadable")
     elif kind in {"malformed", "encrypted"}:
         source = upload(app, pdf_bytes(["valid"]), name="valid.pdf")
@@ -182,7 +182,7 @@ def test_tea02_invalid_sources_never_call_model(notes, tea01_database, tea01_sto
             writer.encrypt("secret")
             writer.write(out)
             content = out.getvalue()
-        replace_bytes(tea01_database, tea01_storage, source, content)
+        replace_bytes(tea01_database, source, content)
         expected = (422, "source_unreadable")
     elif kind == "over_pages":
         source = upload(app, pdf_bytes(["part"] * 101), name="large.pdf")

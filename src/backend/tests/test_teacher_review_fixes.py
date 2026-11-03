@@ -5,7 +5,7 @@ from test_tea02_notes import BASE, COURSE, call, error, generate, notes, upload
 
 
 @pytest.mark.parametrize("bad", ["\x00", "\ud800", "\udfff"], ids=["nul", "high-surrogate", "low-surrogate"])
-def test_teacher_review_invalid_generated_unicode_is_bad_response_and_preserves_work(notes, tea01_database, tea01_storage, bad):
+def test_teacher_review_invalid_generated_unicode_is_bad_response_and_preserves_work(notes, tea01_database, bad):
     app, fake = notes
     source = upload(app)
     saved = generate(app, source).json()
@@ -21,7 +21,7 @@ def test_teacher_review_invalid_generated_unicode_is_bad_response_and_preserves_
     assert tea01_database.execute("SELECT material_id, content FROM material_file ORDER BY material_id").fetchall() == files
 
 
-def test_teacher_review_nul_upload_title_is_validation_error_before_file_creation(notes, tea01_database, tea01_storage):
+def test_teacher_review_nul_upload_title_is_validation_error_before_file_creation(notes, tea01_database):
     app, fake = notes
     before = tea01_database.execute("SELECT count(*) FROM material").fetchone()[0]
     tea01_database.commit()

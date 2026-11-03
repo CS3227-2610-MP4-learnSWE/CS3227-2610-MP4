@@ -6,7 +6,6 @@ import json
 import os
 import subprocess
 import sys
-import tempfile
 import uuid
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
@@ -95,7 +94,7 @@ def stored_blobs(db):
     return {str(row[0]): bytes(row[1]) for row in db.execute("SELECT material_id, content FROM material_file").fetchall()}
 
 
-def test_tea01_upload_pdf_and_text_persists_metadata_and_bytes(app, tea01_database, tea01_storage):
+def test_tea01_upload_pdf_and_text_persists_metadata_and_bytes(app, tea01_database):
     for name, content, media in [("guide.PDF", pdf_bytes(), "application/pdf"), ("notes.TXT", "π lesson".encode(), "text/plain; charset=utf-8")]:
         response = upload(app, name, content, title="  Persistent source  ", mime="image/png")
         assert response.status_code == 201, response.text
@@ -183,7 +182,7 @@ def test_tea01_cross_course_access_is_hidden(app):
     assert call(app, "GET", COURSES, user="demo-teacher-other").json()[0]["id"] == COURSE_B
 
 
-def test_tea01_rejects_file_types_sizes_and_bad_content(app, tea01_database, tea01_storage):
+def test_tea01_rejects_file_types_sizes_and_bad_content(app, tea01_database):
     baseline = (len(material_rows(tea01_database)), stored_blobs(tea01_database))
     bad = [
         (upload(app, "evil.exe", b"hello"), 415, "unsupported_media_type", ("PDF", "UTF-8 text")),
@@ -260,8 +259,8 @@ def test_tea01_seed_is_idempotent_and_preserves_uploads(app, tea01_database):
     assert call(app, "GET", f"{BASE}/materials/{material['id']}/file").content == b"keep my source"
 
 
-def test_tea01_filename_cannot_read_local_files(app, tea01_database, tea01_storage):
-    outside = tea01_storage / "outside-secret.txt"
+def test_tea01_filename_cannot_read_local_files(app, tea01_database, tmp_path):
+    outside = tmp_path / "outside-secret.txt"
     outside.write_bytes(b"outside secret")
     for name in ["../../outside-secret.txt", str(outside), "..\\outside-secret.txt"]:
         response = upload(app, name, b"inside only")
@@ -274,10 +273,10 @@ def test_tea01_filename_cannot_read_local_files(app, tea01_database, tea01_stora
         assert b"outside secret" not in downloaded.content
         assert bytes(tea01_database.execute("SELECT content FROM material_file WHERE material_id=%s", (material["id"],)).fetchone()[0]) == b"inside only"
     assert outside.read_bytes() == b"outside secret"
-    assert list(tea01_storage.iterdir()) == [outside]
+    assert list(tmp_path.iterdir()) == [outside]
 
 
-def test_tea01_failed_upload_cleans_files_and_rows(app, tea01_database, tea01_storage):
+def test_tea01_failed_upload_cleans_files_and_rows(app, tea01_database):
     baseline = (len(material_rows(tea01_database)), stored_blobs(tea01_database))
     tea01_database.execute("CREATE FUNCTION tea01_fail_material() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'fixture forced insert failure'; END $$")
     tea01_database.execute("CREATE TRIGGER tea01_fail_insert BEFORE INSERT ON material FOR EACH ROW EXECUTE FUNCTION tea01_fail_material()")
@@ -295,7 +294,7 @@ def test_tea01_failed_upload_cleans_files_and_rows(app, tea01_database, tea01_st
         tea01_database.commit()
 
 
-def test_tea01_concurrent_uploads_and_assignments(app, tea01_database, tea01_storage):
+def test_tea01_concurrent_uploads_and_assignments(app, tea01_database):
     with ThreadPoolExecutor(max_workers=2) as pool:
         uploaded = list(pool.map(lambda n: upload(app, f"parallel-{n}.txt", f"content {n}".encode(), f"Parallel {n}"), (1, 2)))
     assert all(r.status_code == 201 for r in uploaded), [r.text for r in uploaded]
@@ -313,7 +312,7 @@ def test_tea01_concurrent_uploads_and_assignments(app, tea01_database, tea01_sto
     assert {k: v for k, v in final.items() if k not in {"topic_id", "updated_at"}} == {k: v for k, v in initial.items() if k not in {"topic_id", "updated_at"}}
 
 
-def test_tea01_post_commit_read_failure_never_orphans_metadata(app, tea01_database, tea01_storage, monkeypatch):
+def test_tea01_post_commit_read_failure_never_orphans_metadata(app, tea01_database, monkeypatch):
     from sqlalchemy.exc import OperationalError
     from sqlalchemy.orm import Session
 
@@ -368,7 +367,7 @@ def test_tea01_delayed_clear_is_last_committed_topic_update(app, tea01_database)
     assert final == (None, created["title"], created["original_filename"], created["size_bytes"])
 
 
-def test_tea01_chunked_oversize_stops_reading_at_file_limit(app, tea01_database, tea01_storage):
+def test_tea01_chunked_oversize_stops_reading_at_file_limit(app, tea01_database):
     before = (len(material_rows(tea01_database)), stored_blobs(tea01_database))
     chunk = b"x" * 65536
     consumed = 0
@@ -393,7 +392,7 @@ def test_tea01_chunked_oversize_stops_reading_at_file_limit(app, tea01_database,
     assert (len(material_rows(tea01_database)), stored_blobs(tea01_database)) == before
 
 
-def test_tea01_multipart_topic_must_be_text_field(app, tea01_database, tea01_storage):
+def test_tea01_multipart_topic_must_be_text_field(app, tea01_database):
     before = (len(material_rows(tea01_database)), stored_blobs(tea01_database))
     response = call(app, "POST", MATERIALS_A, data={"title": "Bad topic shape"}, files={"file": ("source.txt", b"source"), "topic_id": ("topic.txt", TOPIC_A.encode(), "text/plain")})
     assert_error(response, 422, "validation_error")
