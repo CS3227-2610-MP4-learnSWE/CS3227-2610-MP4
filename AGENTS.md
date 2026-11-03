@@ -1,8 +1,8 @@
-# learnSWE: instructions for Codex
+# learnSWE: project instructions
 
-Mirror of `CLAUDE.md` and `.claude/agents/*.md` for Codex. If they diverge, update both. Codex reads this file automatically; it has no per-agent files here, so each role is defined below. Work in one role at a time and say which role you are in.
+Single source of the shared rules for all coding agents. Codex reads this file directly; `CLAUDE.md` imports it, so edit rules here only. Claude-only notes go in `CLAUDE.md`.
 
-Programming/SE learning web app with three roles (student, teacher, admin), each with at least one SoC-LLM feature. CS3227 MP4: spec-driven, multi-agent, security-tested, deployed with separate dev/prod. Deadline: 13 Nov 2026, 2pm SGT, on `master`.
+Programming/SE learning web app with three roles (student, teacher, admin), each with at least one SoC-LLM feature. CS3227 MP4: spec-driven, multi-agent, security-tested, deployed with separate dev/prod. Deadline and owners: see `workflow/checklist.md`.
 
 ## Read first (in this order, only what the task needs)
 1. `workflow/README.md`: index of process files and the agent roster.
@@ -22,17 +22,20 @@ Programming/SE learning web app with three roles (student, teacher, admin), each
 - No build-and-host tools for deployment; use GitHub Actions in the team's repo.
 - Never commit secrets. Use `.env` files (ignored) and `.env.example`.
 
-## Commands (PowerShell 5.1: no `&&`; one command per line, start with the full `cd`)
-- Backend: `cd "C:\Users\yikbi\NUS\CS3227\MP4\CS3227-2610-MP4\src\backend"` then `uv sync --frozen`, `uv run pytest -q`, `uv run uvicorn main:app --host 127.0.0.1 --port 8000 --reload`.
-- Frontend: `cd "C:\Users\yikbi\NUS\CS3227\MP4\CS3227-2610-MP4\src\frontend"` then `npm ci`, `npm run dev`, `npm run typecheck`, `npm run lint`, `npm test`.
+## Commands (PowerShell 5.1: no `&&`; one command per line; first go to the repo root)
+Run `Set-Location (git rev-parse --show-toplevel)` first, then:
+- Backend: `Set-Location src\backend`, then `uv sync --frozen`, `uv run pytest -q`, `uv run uvicorn main:app --host 127.0.0.1 --port 8000 --reload`.
+- Frontend: `Set-Location src\frontend`, then `npm ci`, `npm run dev`, `npm run typecheck`, `npm run lint`, `npm test`.
 
 ## Git
 Work on a feature branch and open a pull request into `master`; never commit or push directly to `master`. A teammate reviews and merges after tests pass. `master` must always be gradeable.
 
 ## Agent roles
 
+Each role is defined below, because Codex has no per-agent files. Work in one role at a time and say which role you are in.
+
 ### spec-writer (model: mid-tier)
-Writes specifications; never application code. Input: a feature ID. The plan must fix the contract (endpoint paths, request/response schemas, function signatures, error codes), because developer and test-designer work in parallel without seeing each other. Read only `docs/FeatureList.md`, the matching section of `docs/UserStories.md`, and existing files in `workflow/specs/<id>/`. Output in `workflow/specs/<id>/` using `workflow/templates/`: `spec.md` (behaviour, testable acceptance criteria, out of scope, security and AI-safeguard requirements), `plan.md` (data model, API endpoints, components and shared modules reused, test plan), `tasks.md` (ordered small tasks tagged with owning role). Copy acceptance criteria from the user stories; flag ambiguities as "Open questions"; end with a handoff entry in `workflow/notes.md`.
+Writes specifications; never application code. Input: a feature ID. The plan must fix the contract (endpoint paths, request/response schemas, function signatures, error codes), because developer and test-designer work in parallel without seeing each other. Read only `docs/FeatureList.md`, the matching section of `docs/UserStories.md`, its "Shared acceptance criteria" (SHR-01 to SHR-05) and "Decisions to resolve before implementation" sections, and existing files in `workflow/specs/<id>/`. Output in `workflow/specs/<id>/` using `workflow/templates/`: `spec.md` (behaviour, testable acceptance criteria, out of scope, security and AI-safeguard requirements), `plan.md` (data model, API endpoints, components and shared modules reused, test plan), `tasks.md` (ordered small tasks tagged with owning role). Copy acceptance criteria from the user stories; flag ambiguities, and each listed decision that affects the feature, as "Open questions"; end with a handoff entry in `workflow/notes.md`.
 
 ### test-designer (model: mid-tier)
 Designs tests; never writes feature code. Runs in parallel with the developer in its own git worktree, so neither sees the other's files. First, reset the worktree to the run's start commit given by the orchestrator (`git reset --hard <start-commit>`), because a new worktree may be cut from a branch without the spec; if no start commit was given, ask for it and never read the spec from the run branch. Read only `workflow/specs/<id>/`, `workflow/security/threat-model.md`, `docs/UserStories.md` and existing test folders; do NOT read implementation code under `src/` (outside test folders), the run branch or the main folder until verification. The plan's contract (paths, schemas, signatures, error codes) is your only source for names and shapes; if ambiguous, stop and report it to the orchestrator. Each acceptance criterion maps to at least one test named with the feature ID (e.g. `test_stu02_...`); for AI, auth and user-data features also write adversarial tests from the threat model. Mock the SoC LLM in tests. Write only test files, stage them by path (never `git add -A` or `git add .`) and commit them on your worktree branch. At verification, merge the run branch into your worktree, run the suite (backend: `uv run pytest -q` in `src/backend`; frontend: `npm test` in `src/frontend`) and report pass/fail per test, distinguishing contract mismatches from logic bugs; the orchestrator then merges your tests into the run branch. Never weaken a test to make it pass. Do not edit `workflow/notes.md`; put your handoff in your final report.

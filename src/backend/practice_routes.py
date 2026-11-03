@@ -1,5 +1,5 @@
 """HTTP routes for practice sets and attempts."""
-from fastapi import APIRouter, Depends, Header, Request
+from fastapi import APIRouter, Depends, Request
 from fastapi.responses import JSONResponse
 
 import practice_logic as logic
@@ -14,6 +14,7 @@ from practice_schemas import (
     ResultsOut,
     SubmitOut,
 )
+from student_identity import require_student
 
 router = APIRouter(prefix="/api")
 
@@ -23,13 +24,6 @@ def error_response(_: Request, exc: ApiError) -> JSONResponse:
     retry_after = exc.extra.get("retry_after_seconds")
     headers = {"Retry-After": str(retry_after)} if retry_after is not None else None
     return JSONResponse(status_code=exc.status, content={"detail": detail}, headers=headers)
-
-
-def require_student(x_student_id: str | None = Header(default=None)) -> str:
-    student = (x_student_id or "").strip()
-    if not student:
-        raise ApiError(401, "missing_student", "X-Student-Id header is required.")
-    return student
 
 
 def _set_or_404(set_id: str) -> PracticeSet:

@@ -4,4 +4,9 @@
 - Files touched:
 - Decisions / open questions:
 - Blocking findings:
-- Resource use: model, approx tokens, retries
+- Resource use (all required; write "n/a" only with a reason):
+  - Tracker run: yes | no
+  - Model:
+  - Total tokens:
+  - Cost (USD):
+  - Retries and revision rounds:

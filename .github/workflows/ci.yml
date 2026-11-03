@@ -96,6 +96,8 @@ jobs:
     name: Real backend end-to-end
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    env:
+      API_PORT: "8000"
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
@@ -112,9 +114,9 @@ jobs:
       - name: Start backend
         working-directory: src/backend
         run: |
-          nohup uv run uvicorn main:app --host 127.0.0.1 --port 8000 > "$RUNNER_TEMP/backend.log" 2>&1 &
+          nohup uv run uvicorn main:app --host 127.0.0.1 --port "$API_PORT" > "$RUNNER_TEMP/backend.log" 2>&1 &
           for i in $(seq 1 30); do
-            curl -sf http://127.0.0.1:8000/api/health && exit 0
+            curl -sf "http://127.0.0.1:$API_PORT/api/health" && exit 0
             sleep 1
           done
           cat "$RUNNER_TEMP/backend.log"

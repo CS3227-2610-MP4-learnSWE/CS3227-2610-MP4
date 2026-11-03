@@ -71,8 +71,9 @@ Tests use a real isolated PostgreSQL schema, not SQLite: read `TEA01_TEST_DATABA
 Keep module boundaries single-purpose; these names are the shared implementation interface, while HTTP tests rely only on the API above:
 
 - `src/backend/teacher_materials/models.py`: SQLAlchemy `User`, `Course`, `CourseMembership`, `Topic`, `Material` models with the columns above.
-- `src/backend/teacher_materials/demo_identity.py`: `require_teacher(request, session) -> User`, which enforces the gate, resolves the header, and checks role; `require_managed_course(session, teacher, course_id) -> Course`, which returns 404 for absent or inaccessible courses.
+- `src/backend/teacher_materials/demo_identity.py`: `require_demo_enabled() -> None`, which enforces the development-only gate (called once, by `teacher_access.teacher_session`); `require_teacher(request, session) -> User`, which resolves the header and checks role; `require_managed_course(session, teacher, course_id) -> Course`, which returns 404 for absent or inaccessible courses.
 - `src/backend/teacher_materials/storage.py`: `save_upload(upload, storage_root) -> StoredFile`, where `StoredFile` has `storage_key`, `original_filename`, `media_type`, `size_bytes`; `remove_file(storage_root, storage_key) -> None`; `resolve_file(storage_root, storage_key) -> Path` rejects escape paths.
+- `src/backend/teacher_access.py`: `teacher_session(request)` (gate, header, database session and storage check, shared by all teacher routers), `owned_material(session, teacher, material_id)` and `parse_uuid(value)`. `src/backend/timestamps.py`: `utc_timestamp(value)`.
 - `src/backend/teacher_materials/routes.py`: `router` containing the six operations above. It uses one synchronous SQLAlchemy session per request, checks access before querying records, and handles file/DB cleanup at the transaction boundary.
 - `src/backend/teacher_materials/seed.py`: `seed_demo(session: Session) -> None` and the exact rerunnable CLI `uv run python -m teacher_materials.seed` from `src/backend`; document its invocation in `docs/DeveloperGuide.md`.
 
