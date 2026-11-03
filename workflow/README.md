@@ -6,7 +6,9 @@ Everything about how this project is built. The default agent definitions live i
 |---|---|
 | `coordination.md` | Coordination pattern: generator-verifier with an independent test designer; triggers, isolation, handoffs, revision caps, conflict resolution, verification. |
 | `variants/` | Workflow variants under comparison (A split verification, B merged verification, single-session baseline) and how to switch between them. |
-| `notes.md` | Live handoff log between agents/sessions. Newest entry first. |
+| `STATUS.md` | One row per feature: stage, branch, PR, open items. |
+| `notes.md` | Live handoff log between agents/sessions. Newest 10 entries, newest first. |
+| `notes-archive.md` | Older handoff entries, moved unchanged from `notes.md`. |
 | `templates/` | `spec.md`, `plan.md`, `tasks.md`, `handoff.md` templates. |
 | `specs/<feature-id>/` | Per-feature spec, plan and tasks (spec-driven development). |
 | `experiments/context-engineering.md` | Context-engineering experiments and results. |
