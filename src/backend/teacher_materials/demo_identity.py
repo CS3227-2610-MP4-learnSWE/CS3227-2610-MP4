@@ -10,9 +10,12 @@ from errors import ApiError
 from teacher_materials.models import Course, CourseMembership, User
 
 
-def require_teacher(request: Request, session: Session) -> User:
+def require_demo_enabled() -> None:
     if os.getenv("APP_ENV") != "development" or os.getenv("ALLOW_DEMO_IDENTITY", "").lower() != "true":
         raise ApiError(403, "demo_identity_disabled", "Demo teacher identity is disabled.")
+
+
+def require_teacher(request: Request, session: Session) -> User:
     user_id = request.headers.get("X-Demo-User-Id")
     if not user_id:
         raise ApiError(401, "unauthenticated", "Demo user identity is required.")
