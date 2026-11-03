@@ -2,6 +2,11 @@
 
 Entries moved unchanged from `notes.md` on 2026-11-03, newest first. They describe the state at the time; `notes.md` and `STATUS.md` supersede them.
 
+## 2026-11-01: merge local master into teacher branch (developer)
+- User requested local master merge. Merged master 778c696 into feat/tea01-materials, preserving student companion and teacher materials routers, dependency sets, isolated database and fake-LLM test fixtures, environment examples and both workflow histories.
+- Resolved guide conflicts to describe both implemented slices and their limitations; regenerated uv.lock with httpx as a runtime dependency.
+- Verification: backend 343 passed against the isolated test database; mocked browser suite 102 passed; frontend typecheck, lint and production build passed. No live LLM calls, deployment, push or PR. Local .env values untouched by merge.
+
 ## 2026-11-01: TEA-01 materials error spacing (developer, small UI correction)
 - Follow-up: upload cancellation now resets all fields/native file input and validation errors; shared reset also used for Escape/backdrop dismissal and successful upload.
 - Added padded loading/error rows and an explanation for disabled upload when no course has loaded. Existing course-load failure disables upload intentionally.

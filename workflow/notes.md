@@ -5,6 +5,12 @@ Newest entry first. Use `templates/handoff.md`. Older entries describe the state
 
 
 
+## 2026-11-03: R4 and R5 duplication checks closed with no code change (single session)
+- R4 (LLM error mapping): not duplicated across the teacher routers. `teacher_notes/generation._llm_error` is the one teacher mapping and `teacher_mcqs/generation.py` imports it. `companion_routes._map_error` is a second mapping with different codes (`rate_limited`, `companion_internal`) and student wording that tests assert, so merging would change error codes, which is out of scope. Optional follow-up: `teacher_mcqs` imports the private name `_llm_error` from `teacher_notes`; making it public or moving it to a small `llm_errors.py` would remove that.
+- R5 (frontend requests): no service builds its own fetch, timeout or error handling. `companion.ts` and `practice.ts` call `request`; `teacherMaterials.ts`, `teacherMcqs.ts` and `teacherNotes.ts` call `requestTeacher`; `teacherGeneration.ts` only maps error codes to messages. The overlap is inside `client.ts`: `request` and `requestTeacher` each repeat the AbortController timeout and ApiError construction (they differ in headers and body parsing). `components/Shell.tsx` has one health-check `fetch`. Not changed; merging the two transports is a separate refactor that needs a decision.
+- Next: user decides whether to merge `request` and `requestTeacher`, and whether to make `_llm_error` public.
+- Resource use: tracker run no; model Sonnet 5.5; total tokens and cost not measured yet; retries 0.
+
 ## 2026-11-02: Teacher Ponytail review fixes complete locally (orchestrator)
 - All four findings resolved on feat/tea02-generate-mcqs: permanent note/MCQ request invalidation across navigation/selection round trips; generated invalid Unicode502; invalid upload title422 before storage; focused shared studio source/loading and generation hooks. Valid astral Unicode, access checks, retries, existing draft editing/blockers preserved. No migrations, dependencies or llm_client.py changes.
 - Workflow: approved corrective contractd02418b; independent regressions292af7d committed before source, four browser/four backend RED plus valid-Unicode positive control. Source/productdocs81ba253; unchanged original nine regressions GREEN. Additional source-only success/failure coverageabc92df passed after integration (not claimed RED).
@@ -67,8 +73,3 @@ Newest entry first. Use `templates/handoff.md`. Older entries describe the state
 - Decisions: editing criterion remains deferred to TEA-03; one source/one bounded model call, oversized source rejection, unchanged llm_client.py. Output >=2,000 rejected; >100 PDF pages uses source_text_too_large. No live LLM calls.
 - Next: orchestrator records this spec commit as the shared start, then developer/test-designer work independently per Variant B. Implementation request explicitly approved the plan; no new scope approval pending.
 - Files: workflow/specs/TEA-02-notes/{spec,plan,tasks}.md, docs/SharedDataContract.md, workflow/notes.md. No application/test code read or changed. Exact tokens/cost unavailable; one spec-writing pass.
-
-## 2026-11-01: merge local master into teacher branch (developer)
-- User requested local master merge. Merged master 778c696 into feat/tea01-materials, preserving student companion and teacher materials routers, dependency sets, isolated database and fake-LLM test fixtures, environment examples and both workflow histories.
-- Resolved guide conflicts to describe both implemented slices and their limitations; regenerated uv.lock with httpx as a runtime dependency.
-- Verification: backend 343 passed against the isolated test database; mocked browser suite 102 passed; frontend typecheck, lint and production build passed. No live LLM calls, deployment, push or PR. Local .env values untouched by merge.
