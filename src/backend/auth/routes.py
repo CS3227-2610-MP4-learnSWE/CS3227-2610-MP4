@@ -141,17 +141,15 @@ def login(request: Request, raw: bytes = Depends(raw_body), db: Session = Depend
         (f"login:ip:{client_ip(request, settings)}", settings.login_max_failures_per_ip, window),
         (f"login:email:{email}", settings.login_max_failures_per_email, window),
     ]
-    wait = rate_limit.reserve(keys)
-    if wait is not None:
-        raise rate_limit.limited(wait)
-    failed = True
-    try:
+    # One attempt per key at a time: the failures recorded so far are then seen by the next attempt.
+    with rate_limit.serialised(keys):
+        wait = rate_limit.blocked(keys)
+        if wait is not None:
+            raise rate_limit.limited(wait)
         user = db.scalar(select(User).where(User.email == email))
-        failed = not verify_password(body.password, user.password_hash if user else None) or user is None
-    finally:
-        rate_limit.settle(keys, failed)
-    if failed:
-        raise ApiError(401, "invalid_credentials", "Email or password is incorrect.")
+        if not verify_password(body.password, user.password_hash if user else None) or user is None:
+            rate_limit.record_failure(keys)
+            raise ApiError(401, "invalid_credentials", "Email or password is incorrect.")
     token, session_row = create_session(db, user, settings.session_ttl_seconds)
     response = JSONResponse({"user": AuthUser.from_row(user).as_json(), "csrf_token": session_row.csrf_token})
     response.set_cookie(value=token, max_age=settings.session_ttl_seconds, **_set_cookie_args(settings))

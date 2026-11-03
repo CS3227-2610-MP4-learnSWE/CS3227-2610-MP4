@@ -1,13 +1,15 @@
 """Per-process rate limits on the shared sliding-window limiter, all updated under one lock."""
 import threading
 import time
+from collections.abc import Iterator
+from contextlib import contextmanager
 
 from errors import ApiError
 from sliding_window import SlidingWindowLimiter
 
 _lock = threading.Lock()
 _limiters: dict[tuple[int, int], SlidingWindowLimiter] = {}
-_in_flight: dict[str, int] = {}
+_key_locks: dict[str, list] = {}  # key -> [lock, users]
 
 
 def _limiter(limit: int, window: int) -> SlidingWindowLimiter:
@@ -26,35 +28,48 @@ def admit(key: str, limit: int, window: int) -> int | None:
         return wait
 
 
-def reserve(attempts: list[tuple[str, int, int]]) -> int | None:
-    """Atomically refuse (seconds to wait) or reserve a slot on every (key, limit, window).
+@contextmanager
+def serialised(attempts: list[tuple[str, int, int]]) -> Iterator[None]:
+    """Hold a per-key lock on every key, taken in sorted order, so attempts on one key run one at a time.
 
-    Recorded failures plus attempts still being verified count against the limit, so parallel
-    guesses cannot all pass before the first failure is recorded. The first key is checked first
-    and a limited key reserves nothing. Pair every success with `settle`.
+    Inside, `blocked` sees the failures recorded by every earlier attempt, so parallel wrong guesses
+    cannot all pass the check first, while correct logins are never counted or refused for others.
+    The lock table drops a key's lock when nobody uses it. Always released, also on exceptions.
     """
+    keys = sorted({key for key, _, _ in attempts})
+    held: list[threading.Lock] = []
     with _lock:
-        for key, limit, window in attempts:
-            limiter = _limiter(limit, window)
-            pending = _in_flight.get(key, 0)
-            if limiter.count(key) + pending >= limit:
-                return limiter.retry_after(key) or 1
-        for key, _, _ in attempts:
-            _in_flight[key] = _in_flight.get(key, 0) + 1
-        return None
+        for key in keys:
+            entry = _key_locks.setdefault(key, [threading.Lock(), 0])
+            entry[1] += 1
+    try:
+        for key in keys:
+            lock = _key_locks[key][0]
+            lock.acquire()
+            held.append(lock)
+        yield
+    finally:
+        for lock in reversed(held):
+            lock.release()
+        with _lock:
+            for key in keys:
+                entry = _key_locks[key]
+                entry[1] -= 1
+                if entry[1] == 0:
+                    del _key_locks[key]
 
 
-def settle(attempts: list[tuple[str, int, int]], failed: bool) -> None:
-    """Release the reservation; turn it into a recorded failure when the attempt failed."""
+def blocked(attempts: list[tuple[str, int, int]]) -> int | None:
+    """Seconds to wait when any key has reached its limit of recorded failures; nothing is recorded."""
+    with _lock:
+        waits = [w for key, limit, window in attempts if (w := _limiter(limit, window).retry_after(key)) is not None]
+    return max(waits) if waits else None
+
+
+def record_failure(attempts: list[tuple[str, int, int]]) -> None:
     with _lock:
         for key, limit, window in attempts:
-            left = _in_flight.get(key, 0) - 1
-            if left > 0:
-                _in_flight[key] = left
-            else:
-                _in_flight.pop(key, None)
-            if failed:
-                _limiter(limit, window).record(key)
+            _limiter(limit, window).record(key)
 
 
 def limited(wait: int) -> ApiError:
