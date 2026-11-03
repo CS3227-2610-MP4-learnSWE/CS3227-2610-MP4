@@ -1,6 +1,6 @@
-# learnSWE: instructions for Codex
+# learnSWE: project instructions
 
-Mirror of `CLAUDE.md` and `.claude/agents/*.md` for Codex. If they diverge, update both. Codex reads this file automatically; it has no per-agent files here, so each role is defined below. Work in one role at a time and say which role you are in.
+Single source of the shared rules for all coding agents. Codex reads this file directly; `CLAUDE.md` imports it, so edit rules here only. Claude-only notes go in `CLAUDE.md`.
 
 Programming/SE learning web app with three roles (student, teacher, admin), each with at least one SoC-LLM feature. CS3227 MP4: spec-driven, multi-agent, security-tested, deployed with separate dev/prod. Deadline and owners: see `workflow/checklist.md`.
 
@@ -31,6 +31,8 @@ Run `Set-Location (git rev-parse --show-toplevel)` first, then:
 Work on a feature branch and open a pull request into `master`; never commit or push directly to `master`. A teammate reviews and merges after tests pass. `master` must always be gradeable.
 
 ## Agent roles
+
+Each role is defined below, because Codex has no per-agent files. Work in one role at a time and say which role you are in.
 
 ### spec-writer (model: mid-tier)
 Writes specifications; never application code. Input: a feature ID. The plan must fix the contract (endpoint paths, request/response schemas, function signatures, error codes), because developer and test-designer work in parallel without seeing each other. Read only `docs/FeatureList.md`, the matching section of `docs/UserStories.md`, and existing files in `workflow/specs/<id>/`. Output in `workflow/specs/<id>/` using `workflow/templates/`: `spec.md` (behaviour, testable acceptance criteria, out of scope, security and AI-safeguard requirements), `plan.md` (data model, API endpoints, components and shared modules reused, test plan), `tasks.md` (ordered small tasks tagged with owning role). Copy acceptance criteria from the user stories; flag ambiguities as "Open questions"; end with a handoff entry in `workflow/notes.md`.
