@@ -22,9 +22,10 @@ Programming/SE learning web app with three roles (student, teacher, admin), each
 - No build-and-host tools for deployment; use GitHub Actions in the team's repo.
 - Never commit secrets. Use `.env` files (ignored) and `.env.example`.
 
-## Commands (PowerShell 5.1: no `&&`; one command per line, start with the full `cd`)
-- Backend: `cd "C:\Users\yikbi\NUS\CS3227\MP4\CS3227-2610-MP4\src\backend"` then `uv sync --frozen`, `uv run pytest -q`, `uv run uvicorn main:app --host 127.0.0.1 --port 8000 --reload`.
-- Frontend: `cd "C:\Users\yikbi\NUS\CS3227\MP4\CS3227-2610-MP4\src\frontend"` then `npm ci`, `npm run dev`, `npm run typecheck`, `npm run lint`, `npm test`.
+## Commands (PowerShell 5.1: no `&&`; one command per line; first go to the repo root)
+Run `Set-Location (git rev-parse --show-toplevel)` first, then:
+- Backend: `Set-Location src\backend`, then `uv sync --frozen`, `uv run pytest -q`, `uv run uvicorn main:app --host 127.0.0.1 --port 8000 --reload`.
+- Frontend: `Set-Location src\frontend`, then `npm ci`, `npm run dev`, `npm run typecheck`, `npm run lint`, `npm test`.
 
 ## Git
 Work on a feature branch and open a pull request into `master`; never commit or push directly to `master`. A teammate reviews and merges after tests pass. `master` must always be gradeable.
