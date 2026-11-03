@@ -3,6 +3,7 @@ import { mockTeacherNotesApi } from "./teacherNotesApi";
 import { test, expect } from "@playwright/test";
 import { mockPracticeApi } from "./practiceApi";
 import { mockTeacherMaterialsApi, OLD } from "./teacherMaterialsApi";
+import { mockAuthApi } from "./authApi";
 
 test.beforeEach(async ({ page }) => {
   await page.route("**/api/health", (route) =>
@@ -13,35 +14,27 @@ test.beforeEach(async ({ page }) => {
   await mockTeacherMaterialsApi(page);
 });
 
-test("login tabs explore selected roles without authentication requests", async ({
+test("login page explore buttons open the demo without authentication requests", async ({
   page,
 }) => {
+  // SHR-01: the form on /login is now a real sign-in (see auth-login.spec.ts); only the demo
+  // shortcut is checked here. The page asks /api/auth/me once and sends no credentials.
   const requests: string[] = [];
   page.on("request", (request) => {
-    if (
-      request.url().includes("/api/") &&
-      !request.url().endsWith("/api/health")
-    )
-      requests.push(request.url());
+    const path = new URL(request.url()).pathname;
+    if (path.startsWith("/api/") && path !== "/api/health")
+      requests.push(`${request.method()} ${path}`);
   });
+  await mockAuthApi(page, { user: null });
   await page.goto("/login");
   await page.getByRole("tab", { name: "Teacher" }).click();
-  await page.getByLabel("Email address").fill("demo@example.com");
-  await page.getByLabel("Password", { exact: true }).fill("preview-only");
-  await page.getByRole("button", { name: "Sign in", exact: true }).click();
-  await expect(page.getByRole("status")).toContainText(
-    "Not available in this preview",
-  );
-  await page.getByRole("button", { name: "Create account" }).click();
-  await expect(page.getByRole("status")).toContainText(
-    "Not available in this preview",
-  );
   await page.getByRole("link", { name: "Explore teacher demo" }).click();
   await expect(page).toHaveURL(/\/teacher\/overview$/);
   await expect(page.getByRole("heading", { level: 1 })).toContainText(
     "Teaching",
   );
-  expect(requests).toEqual([]);
+  expect(requests.filter((r) => !r.endsWith("/api/auth/me"))).toEqual([]);
+  expect(requests.filter((r) => r.startsWith("POST"))).toEqual([]);
 });
 
 test("lesson completion is reversible and reflected in dashboard", async ({

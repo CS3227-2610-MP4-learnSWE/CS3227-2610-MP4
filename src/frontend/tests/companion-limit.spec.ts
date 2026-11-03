@@ -1,6 +1,7 @@
 import { test, expect, type Page } from "@playwright/test";
 import { mockPracticeApi } from "./practiceApi";
 import { mockCompanionApi } from "./companionApi";
+import { STUDENT, mockAuthApi } from "./authApi";
 
 /**
  * STU-03 widget: the message box holds at most 1,000 characters and tells the
@@ -14,6 +15,8 @@ test.beforeEach(async ({ page }) => {
   await page.route("**/api/health", (route) =>
     route.fulfill({ json: { status: "ok" } }),
   );
+  // SHR-01: the live companion needs a signed-in student; the session exists before the page opens.
+  await mockAuthApi(page, { user: STUDENT });
 });
 
 async function openChat(page: Page) {

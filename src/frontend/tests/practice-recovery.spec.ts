@@ -5,6 +5,7 @@ import {
   apiError,
   mockPracticeApi,
 } from "./practiceApi";
+import { STUDENT, mockAuthApi } from "./authApi";
 
 /** STU-02-frontend AC6: the attempt disappears on the server at the results step. */
 
@@ -14,6 +15,8 @@ test.beforeEach(async ({ page }) => {
   await page.route("**/api/health", (route) =>
     route.fulfill({ json: { status: "ok" } }),
   );
+  // SHR-01: live practice needs a signed-in student; the session exists before the page opens.
+  await mockAuthApi(page, { user: STUDENT });
 });
 
 async function fillAndSubmit(page: Page) {

@@ -1,4 +1,5 @@
 import type { Page, Route } from "@playwright/test";
+import type { AuthApiMock } from "./authApi";
 
 /**
  * Mock of the STU-03 companion endpoint (contract: workflow/specs/STU-03/plan.md,
@@ -61,6 +62,8 @@ export function companionError(
 }
 
 export class CompanionApiMock {
+  /** When set, a signed-out auth mock makes every call 401 and the CSRF header is enforced. */
+  auth?: AuthApiMock;
   readonly requests: RecordedCompanionRequest[] = [];
   private readonly queue: CompanionReply[] = [];
   private readonly waiting: (() => void)[] = [];
@@ -99,6 +102,20 @@ export class CompanionApiMock {
       body,
       raw: request.postData(),
     });
+    if (this.auth) {
+      const code = !this.auth.user
+        ? "unauthenticated"
+        : request.headers()["x-csrf-token"] !== this.auth.csrf
+          ? "csrf_failed"
+          : "";
+      if (code) {
+        await route.fulfill({
+          status: code === "unauthenticated" ? 401 : 403,
+          json: { detail: { code, message: code } },
+        });
+        return;
+      }
+    }
     const scripted = this.queue.shift();
     if (scripted?.abort) {
       await route.abort("connectionrefused");
@@ -127,8 +144,10 @@ export class CompanionApiMock {
 export async function mockCompanionApi(
   page: Page,
   replies: CompanionReply[] = [],
+  auth?: AuthApiMock,
 ): Promise<CompanionApiMock> {
   const mock = new CompanionApiMock();
+  mock.auth = auth;
   mock.script(...replies);
   await page.route(
     (url) => url.pathname === COMPANION_PATH,

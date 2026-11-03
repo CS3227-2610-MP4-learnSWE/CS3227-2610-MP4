@@ -13,6 +13,7 @@ import {
   type CompanionApiMock,
   type CompanionReply,
 } from "./companionApi";
+import { STUDENT, mockAuthApi } from "./authApi";
 
 /**
  * STU-03 widget: sends to the companion endpoint (mocked), pending and error
@@ -29,6 +30,8 @@ test.beforeEach(async ({ page }) => {
   await page.route("**/api/health", (route) =>
     route.fulfill({ json: { status: "ok" } }),
   );
+  // SHR-01: the live companion needs a signed-in student; the session exists before the page opens.
+  await mockAuthApi(page, { user: STUDENT });
 });
 
 function chatOf(page: Page) {
@@ -144,7 +147,8 @@ test("stu03 AC27 a withheld reply is shown like any other reply", async ({
 // ------------------------------------------------------------------ AC28
 const FAILURES: [string, CompanionReply, RegExp | null][] = [
   ["network failure", { abort: true }, null],
-  ["401", companionError(401, "missing_student"), null],
+  // SHR-01: a 401 `unauthenticated` is no longer a generic failure. It clears the session and goes
+  // to /login when signed in, or shows the sign-in notice in demo mode (auth-session.spec.ts).
   ["404", companionError(404, "attempt_not_found"), null],
   ["422", companionError(422, "invalid_message"), null],
   [
