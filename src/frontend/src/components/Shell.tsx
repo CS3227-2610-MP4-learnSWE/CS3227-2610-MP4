@@ -70,6 +70,7 @@ export default function Shell({
   const [open, setOpen] = useState(false);
   const { messages } = useDemo();
   const { status, user, logout } = useAuth();
+  const [logoutFailed, setLogoutFailed] = useState(false);
   // Anonymous visitors are in demo mode (sample data, no session); signed-in users are real.
   const demoMode = status !== "authenticated";
   const displayName = user?.display_name ?? "";
@@ -185,11 +186,17 @@ export default function Shell({
           ) : (
             <Button
               size="small"
-              onClick={logout}
+              onClick={() => {
+                setLogoutFailed(false);
+                logout().catch(() => setLogoutFailed(true));
+              }}
               startIcon={<LogOut size={16} />}
             >
               Log out
             </Button>
+          )}
+          {logoutFailed && (
+            <span role="alert">Could not log out. Try again.</span>
           )}
         </div>
       </div>

@@ -14,7 +14,11 @@ import {
   signup as signupRequest,
   type AuthUser,
 } from "../services/auth";
-import { setCsrfToken, setUnauthenticatedHandler } from "../services/client";
+import {
+  ApiError,
+  setCsrfToken,
+  setUnauthenticatedHandler,
+} from "../services/client";
 
 type Status = "loading" | "anonymous" | "authenticated";
 type Auth = {
@@ -86,8 +90,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     logout: async () => {
       try {
         await logoutRequest();
-      } catch {
-        /* the cookie may already be gone; the local state is cleared either way */
+      } catch (error) {
+        // Any other failure means the server session may still be valid: stay signed in and let the caller retry.
+        if (!(error instanceof ApiError && error.status === 401)) throw error;
       }
       clear();
       // Pushed, not replaced: Back returns to the guarded area, which redirects to /login again.

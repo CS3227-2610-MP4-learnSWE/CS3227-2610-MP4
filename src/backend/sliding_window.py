@@ -14,10 +14,20 @@ class SlidingWindowLimiter:
         self._hits: dict[str, deque[float]] = {}
 
     def _prune(self, key: str, now: float) -> deque[float]:
-        hits = self._hits.setdefault(key, deque())
+        """Live hits for the key. Reads create nothing; a key with no live hits is dropped."""
+        hits = self._hits.get(key)
+        if hits is None:
+            return deque()
         while hits and hits[0] <= now - self._window:
             hits.popleft()
+        if not hits:
+            del self._hits[key]
+            return deque()
         return hits
+
+    def count(self, key: str) -> int:
+        """Hits currently inside the window."""
+        return len(self._prune(key, self._clock()))
 
     def retry_after(self, key: str) -> int | None:
         """Seconds (at least 1) until a slot frees up, or None if a request is allowed now."""
@@ -29,4 +39,5 @@ class SlidingWindowLimiter:
 
     def record(self, key: str) -> None:
         now = self._clock()
-        self._prune(key, now).append(now)
+        self._prune(key, now)
+        self._hits.setdefault(key, deque()).append(now)
