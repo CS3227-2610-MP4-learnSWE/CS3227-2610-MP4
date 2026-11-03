@@ -66,7 +66,7 @@ Validate bounded upload bytes before insertion, then acquire transaction advisor
 
 Metadata and original bytes commit atomically; failure rolls both back. Lists query metadata only. Downloads and generation fetch bytes only after current teacher/course authorisation. An externally missing content row returns 503 service_unavailable, `Stored material content is unavailable.`, before inference; metadata can still be listed without loading/checking bytes. No permanent files/public file URLs are created. Multipart may use temporary spooled files which are closed after each request.
 
-Revision `20261102_tea01_db_storage` refuses upgrade before any DDL when material rows exist; create a separately named fresh database, keep old data/files untouched and re-upload. Downgrade also refuses while any material exists. Empty downgrade restores the old storage_key column, but never reconstructs files. Existing IDs, references and metadata fields are preserved by current operations; there is no cross-database import. See README setup instructions.
+Alembic explicitly uses READ COMMITTED before its first query, independent of the database default; this prevents a pre-lock repeatable-read snapshot from hiding concurrent uploads. Revision `20261102_tea01_db_storage` refuses upgrade before any DDL when material rows exist; create a separately named fresh database, keep old data/files untouched and re-upload. Downgrade also refuses while any material exists. Empty downgrade restores the old storage_key column, but never reconstructs files. Existing IDs, references and metadata fields are preserved by current operations; there is no cross-database import. See README setup instructions.
 
 ## Integration test setup
 

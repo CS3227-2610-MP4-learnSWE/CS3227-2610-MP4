@@ -12,7 +12,7 @@ Stages: not started, spec, build, verified (local), merged.
 | STU-04 | not started | | | |
 | STU-05 | not started | | | |
 | STU-06 | not started | | | |
-| TEA-01 | merged; database storage verified (local) | `feat/tea01-materials`, `fix/teacher-postgres-file-storage` | 10 | BYTEA storage branch awaits publishing approval; placeholder identity header. |
+| TEA-01 | merged; database storage verified (local) | `feat/tea01-materials`, `fix/teacher-postgres-file-storage` | 10 | Migration-isolation review finding resolved; BYTEA branch awaits publishing approval. Placeholder identity header. |
 | TEA-02 | merged (notes and MCQs) | `feat/tea02-generate-notes`, `feat/tea02-generate-mcqs` | 11, 13 | Live provider quality checked only by user report. |
 | TEA-03 | partly merged (notes editing) | `feat/tea03-edit-notes` | 12 | MCQ editing, publishing and full revision history not built. |
 | TEA-04 | not started | | | |
