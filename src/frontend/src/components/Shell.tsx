@@ -20,6 +20,7 @@ import {
 import { Brand, Icon, ThemeToggle } from "./ui";
 import { navigation, names, roles, type Role } from "../data";
 import { useDemo } from "../state";
+import { useAuth } from "../auth/AuthContext";
 import StudyCompanion, { CompanionTrigger } from "./StudyCompanion";
 
 function Health() {
@@ -68,6 +69,10 @@ export default function Shell({
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const { messages } = useDemo();
+  const { status, user, logout } = useAuth();
+  // Anonymous visitors are in demo mode (sample data, no session); signed-in users are real.
+  const demoMode = status !== "authenticated";
+  const displayName = user?.display_name ?? "";
   const unread = messages[role].filter((message) => message.unread).length;
   const section = location.pathname.split("/")[2];
   const current =
@@ -155,28 +160,37 @@ export default function Shell({
               fontSize: 13,
             }}
           >
-            {names[role][0]}
-            {role === "student" ? "L" : "W"}
+            {demoMode
+              ? `${names[role][0]}${role === "student" ? "L" : "W"}`
+              : displayName.slice(0, 2).toUpperCase()}
           </Avatar>
           <div>
-            <strong>
-              {names[role]} {role === "student" ? "Lee" : "Wong"}
-            </strong>
+            <strong>{demoMode ? "Demo (not signed in)" : displayName}</strong>
             <small>
               {role === "admin"
                 ? "Administrator"
                 : `${role[0].toUpperCase()}${role.slice(1)} account`}
             </small>
           </div>
-          <Tooltip title="Back to login preview">
-            <IconButton
-              component={Link}
-              to="/login"
-              aria-label="Back to login preview"
+          {demoMode ? (
+            <Tooltip title="Back to login preview">
+              <IconButton
+                component={Link}
+                to="/login"
+                aria-label="Back to login preview"
+              >
+                <LogOut size={16} />
+              </IconButton>
+            </Tooltip>
+          ) : (
+            <Button
+              size="small"
+              onClick={logout}
+              startIcon={<LogOut size={16} />}
             >
-              <LogOut size={16} />
-            </IconButton>
-          </Tooltip>
+              Log out
+            </Button>
+          )}
         </div>
       </div>
     </>
@@ -212,23 +226,25 @@ export default function Shell({
             <span className="demo-pill">
               <span /> Demo · Sample data
             </span>
-            <div className="role-select">
-              <Select
-                value={role}
-                onChange={(event) =>
-                  navigate(`/${event.target.value}/overview`)
-                }
-                size="small"
-                inputProps={{ "aria-label": "Demo role" }}
-                IconComponent={ChevronDown}
-              >
-                {roles.map((item) => (
-                  <MenuItem key={item} value={item}>
-                    {item[0].toUpperCase() + item.slice(1)}
-                  </MenuItem>
-                ))}
-              </Select>
-            </div>
+            {demoMode && (
+              <div className="role-select">
+                <Select
+                  value={role}
+                  onChange={(event) =>
+                    navigate(`/${event.target.value}/overview`)
+                  }
+                  size="small"
+                  inputProps={{ "aria-label": "Demo role" }}
+                  IconComponent={ChevronDown}
+                >
+                  {roles.map((item) => (
+                    <MenuItem key={item} value={item}>
+                      {item[0].toUpperCase() + item.slice(1)}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </div>
+            )}
             <ThemeToggle dark={dark} toggle={toggle} />
           </div>
         </header>
@@ -238,9 +254,11 @@ export default function Shell({
         <footer className="app-footer">
           <span>Small steps. Meaningful progress.</span>
           <Health />
-          <Button component={Link} to="/login" size="small">
-            Login preview
-          </Button>
+          {demoMode && (
+            <Button component={Link} to="/login" size="small">
+              Login preview
+            </Button>
+          )}
         </footer>
         {role === "student" && <StudyCompanion />}
       </div>

@@ -481,6 +481,17 @@ button:focus-visible {
   line-height: 1.65;
   margin: 13px 4px 0;
 }
+.demo-shortcut-heading {
+  font-size: 12px;
+  line-height: 1.5;
+  text-align: center;
+  color: var(--muted);
+  margin: 0 0 4px;
+}
+.login-form form > small {
+  color: var(--muted);
+  font-size: 11px;
+}
 .login-footer {
   display: flex;
   justify-content: space-between;

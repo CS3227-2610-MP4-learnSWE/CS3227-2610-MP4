@@ -22,6 +22,8 @@ import { lessons, navigation } from "../data";
 import { usePractice } from "../practice/PracticeContext";
 import { ApiError } from "../services/client";
 import { sendCompanionMessage } from "../services/companion";
+import { useAuth } from "../auth/AuthContext";
+import SignInNotice, { isSignInNeeded } from "../auth/SignInNotice";
 
 type Message = {
   from: "you" | "companion";
@@ -103,6 +105,8 @@ export default function StudyCompanion() {
   const [draft, setDraft] = useState("");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [signInNeeded, setSignInNeeded] = useState(false);
+  const demoMode = useAuth().status === "anonymous";
   // Bumped by "Clear chat" so a reply that arrives later is ignored.
   const generation = useRef(0);
   const { submitted, submittedAttemptId, setId } = usePractice();
@@ -152,6 +156,7 @@ export default function StudyCompanion() {
       }));
     const run = ++generation.current;
     setError(null);
+    setSignInNeeded(false);
     setPending(true);
     setMessages((items) => [
       ...items.filter((m) => !(m.failed && m.text === text)),
@@ -182,6 +187,7 @@ export default function StudyCompanion() {
         ),
       );
       setDraft((current) => current || text);
+      setSignInNeeded(isSignInNeeded(caught) && demoMode);
       setError(failureMessage(caught));
     } finally {
       if (run === generation.current) {
@@ -217,6 +223,7 @@ export default function StudyCompanion() {
                   generation.current++;
                   setPending(false);
                   setError(null);
+                  setSignInNeeded(false);
                   setMessages([]);
                   setDraft("");
                   input.current?.focus();
@@ -275,7 +282,8 @@ export default function StudyCompanion() {
             )}
             <div ref={end} />
           </div>
-          {error && (
+          {signInNeeded && <SignInNotice />}
+          {error && !signInNeeded && (
             <p role="alert" className="companion-error">
               {error}
             </p>

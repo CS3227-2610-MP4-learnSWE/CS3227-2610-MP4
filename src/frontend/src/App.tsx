@@ -9,6 +9,8 @@ import {
   useMediaQuery,
 } from "@mui/material";
 import { DemoProvider } from "./state";
+import { AuthProvider } from "./auth/AuthContext";
+import { RequireRole, RootRedirect } from "./auth/RequireRole";
 import Login from "./pages/Login";
 import { CompanionProvider } from "./components/StudyCompanion";
 import Shell from "./components/Shell";
@@ -75,60 +77,78 @@ export default function App() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <DemoProvider>
-        <Routes>
-          <Route
-            path="/login"
-            element={<Login dark={dark} toggle={toggle} notify={notify} />}
-          />
-          <Route
-            path="/student"
-            element={
-              <PracticeProvider>
-                <CompanionProvider>
-                  <Shell role="student" dark={dark} toggle={toggle} />
-                </CompanionProvider>
-              </PracticeProvider>
-            }
-          >
-            <Route index element={<Navigate to="overview" replace />} />
-            <Route path="inbox" element={<InboxPage role="student" />} />
-            <Route path="feedback" element={<FeedbackForm notify={notify} />} />
-            <Route path="*" element={<Student />} />
-          </Route>
-          <Route
-            path="/teacher"
-            element={<Shell role="teacher" dark={dark} toggle={toggle} />}
-          >
-            <Route index element={<Navigate to="overview" replace />} />
-            <Route path="inbox" element={<InboxPage role="teacher" />} />
-            <Route path="feedback" element={<FeedbackForm notify={notify} />} />
+      <AuthProvider>
+        <DemoProvider>
+          <Routes>
             <Route
-              path="*"
-              element={
-                <Suspense fallback={<p role="status">Loading…</p>}>
-                  <Teacher notify={notify} />
-                </Suspense>
-              }
+              path="/login"
+              element={<Login dark={dark} toggle={toggle} />}
             />
-          </Route>
-          <Route
-            path="/admin"
-            element={<Shell role="admin" dark={dark} toggle={toggle} />}
-          >
-            <Route index element={<Navigate to="overview" replace />} />
             <Route
-              path="*"
+              path="/student"
               element={
-                <Suspense fallback={<p role="status">Loading…</p>}>
-                  <Admin notify={notify} />
-                </Suspense>
+                <RequireRole role="student">
+                  <PracticeProvider>
+                    <CompanionProvider>
+                      <Shell role="student" dark={dark} toggle={toggle} />
+                    </CompanionProvider>
+                  </PracticeProvider>
+                </RequireRole>
               }
-            />
-          </Route>
-          <Route path="*" element={<Navigate to="/login" replace />} />
-        </Routes>
-      </DemoProvider>
+            >
+              <Route index element={<Navigate to="overview" replace />} />
+              <Route path="inbox" element={<InboxPage role="student" />} />
+              <Route
+                path="feedback"
+                element={<FeedbackForm notify={notify} />}
+              />
+              <Route path="*" element={<Student />} />
+            </Route>
+            <Route
+              path="/teacher"
+              element={
+                <RequireRole role="teacher">
+                  <Shell role="teacher" dark={dark} toggle={toggle} />
+                </RequireRole>
+              }
+            >
+              <Route index element={<Navigate to="overview" replace />} />
+              <Route path="inbox" element={<InboxPage role="teacher" />} />
+              <Route
+                path="feedback"
+                element={<FeedbackForm notify={notify} />}
+              />
+              <Route
+                path="*"
+                element={
+                  <Suspense fallback={<p role="status">Loading…</p>}>
+                    <Teacher notify={notify} />
+                  </Suspense>
+                }
+              />
+            </Route>
+            <Route
+              path="/admin"
+              element={
+                <RequireRole role="admin">
+                  <Shell role="admin" dark={dark} toggle={toggle} />
+                </RequireRole>
+              }
+            >
+              <Route index element={<Navigate to="overview" replace />} />
+              <Route
+                path="*"
+                element={
+                  <Suspense fallback={<p role="status">Loading…</p>}>
+                    <Admin notify={notify} />
+                  </Suspense>
+                }
+              />
+            </Route>
+            <Route path="*" element={<RootRedirect />} />
+          </Routes>
+        </DemoProvider>
+      </AuthProvider>
       <Snackbar
         open={!!notice}
         autoHideDuration={5000}
