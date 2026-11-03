@@ -1,6 +1,6 @@
-# Spec: SHR-01 Authentication and authorisation
+﻿# Spec: SHR-01 Authentication and authorisation
 
-Status: Draft revision 2, awaiting human approval (spec-writer, 2026-11-03). Decisions in the "Approved decisions" section were made by the user and are not open. Revision 2 keeps the existing demo access, leaves teacher specs and routes unchanged, and records the user's answers to former open questions 1, 2, 3, 5, 7 and 8.
+Status: Approved by the user on 2026-11-03 and implemented (verifier round 2 PASS at aca74c0). Decisions in the Approved decisions section are final; open questions 4 (cookie settings for the chosen hosting) and the deployment decisions listed in docs/DeveloperGuide.md remain.
 
 ## Goal
 

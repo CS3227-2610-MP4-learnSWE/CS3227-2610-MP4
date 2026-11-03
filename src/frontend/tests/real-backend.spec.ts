@@ -9,7 +9,10 @@ test("student answers, submits and sees the server's score", async ({
   // used to run `python -m auth.seed` (never committed): E2E_STUDENT_EMAIL / E2E_STUDENT_PASSWORD.
   const email = process.env.E2E_STUDENT_EMAIL;
   const password = process.env.E2E_STUDENT_PASSWORD;
-  test.skip(!email || !password, "E2E_STUDENT_EMAIL / E2E_STUDENT_PASSWORD not set");
+  test.skip(
+    !email || !password,
+    "E2E_STUDENT_EMAIL / E2E_STUDENT_PASSWORD not set",
+  );
   await page.goto("/login");
   await page.getByLabel(/^e-?mail( address)?\s*\*?$/i).fill(email!);
   await page.getByLabel(/^password\s*\*?$/i).fill(password!);

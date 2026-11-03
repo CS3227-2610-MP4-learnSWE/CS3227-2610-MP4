@@ -1,6 +1,6 @@
-# Plan: SHR-01 Authentication and authorisation
+﻿# Plan: SHR-01 Authentication and authorisation
 
-Status: Draft revision 2, awaiting human approval. Open items: spec Open questions 4, 6 and 7 only. This plan fixes the contract; developer and test-designer work from it in parallel.
+Status: Approved by the user on 2026-11-03 and implemented (verifier round 2 PASS at aca74c0). Decisions in the Approved decisions section are final; open questions 4 (cookie settings for the chosen hosting) and the deployment decisions listed in docs/DeveloperGuide.md remain.
 
 ## Data model
 

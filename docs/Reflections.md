@@ -1,4 +1,4 @@
-# Reflections
+﻿# Reflections
 
 Concrete examples backed by results in `workflow/experiments/`, `workflow/security/` and `logs/`. Sections not yet backed by an experiment are marked as still to do.
 
@@ -58,6 +58,15 @@ This run shows concrete value from checking recovery paths and normal test setti
 
 A later small, single-session wrong-answer colour fix added three tests, bringing the recorded mocked suite to 65; it was included in merged PR 5 but was not independently reviewed by the verifier. Dark-mode colours still need an eye check. The source records are `workflow/notes.md`, `workflow/experiments/resource-log.md` and `logs/Stu02FrontendSpecSummary.md`; the documentation reconciliation did not re-run these tests.
 
+### SHR-01 (authentication): what the build showed
+SHR-01 was built with Variant B: a developer and an independent test-designer in parallel from the approved spec, then a verifier, with at most two correction rounds. Evidence: `logs/Shr01SpecSession.md`, `logs/Shr01BuildSession.md`, `workflow/security/test-log.md` and `workflow/notes.md`.
+
+- **Tests written only from the spec miss what the spec does not name.** The spec said login counters are updated under a lock, yet no test sent parallel requests. The verifier found that parallel wrong-password logins could all pass the limit check before any failure was recorded (a bypass of the brute-force limit). Concurrency has to be a written acceptance criterion for security features.
+- **A fix can create a new defect, and a control test catches it.** The independent test-designer added three failing concurrency tests plus one that passed on the old code (parallel correct logins must not be throttled). The first fix made that control test fail, because in-flight attempts were counted as failures. A second round (per-key serialisation) passed all 23 rate-limit tests.
+- **Most integration failures were unspecified UI details, not logic.** Loading text, "Create account" as a tab versus a button, logout failure behaviour, the `/api/auth/me` timeout and a lone-surrogate password all came out at integration. The first merged Playwright runs had 19 to 26 failures; after one developer round and two test-side edits the full run was 216 of 217. The STU-02 build had the same lesson (UI wording was not in its spec).
+- **Independence has a cost, and it worked as designed.** The test-designer could not see selectors, so mismatches appeared late. In return the tests were not shaped to fit the code, and the backend suite was 659 passed and 7 failed on its first merged run (six test-side problems, one docs gap), 666 passed after those fixes and 670 passed on the final code.
+- **Reviews separate "ran" from "read".** The verifier could not run the backend tests in round 1 because its test database had expired, said so, and gave findings from reading only. Round 2 added a database-free probe (200 threads) that confirmed the limiter fix.
+- **Open risks were recorded, not hidden.** After the two rounds the verifier left five non-blocking notes (a denial-of-service path from serialising logins per IP, partial limiter memory cleanup, dead code, a stale guide line, deployment notes). They are in the threat model and security log for the team.
 ## Context Engineering and Resource-aware Use
 
 ### Measured observations so far
@@ -84,3 +93,10 @@ We measured the SoC LLM before writing the STU-03 spec instead of guessing limit
 - What belongs in notes and handoff documents beyond the handoff template.
 - Model choice per task beyond the Sonnet/Opus split used here.
 - Other token-monitoring and reduction approaches, and the most token-hungry task types once more features are built.
+
+### SHR-01: resource use (what was costly, what helped)
+- **Full-suite reruns were the biggest avoidable cost.** The backend suite takes 17 to 29 minutes because every test builds its own isolated database schema, runs the account seed and hashes passwords with scrypt. It was run in full several times (test-designer's RED run, developer's runs, three of mine). Cheaper setup (seed once per session, lower hash cost in tests) and scoped reruns would have saved time and usage.
+- **Overlapping runs gave misleading results.** A Playwright run alongside the backend suite had 19 failures (many timeouts), but a quiet rerun had 26, so load was not the main cause and the overlap only muddied the picture. Run browser and backend suites one at a time.
+- **Scoped verification and reuse paid off.** Rounds used a scoped verifier (review plus targeted test reruns instead of the whole suite), and resumed agents with `SendMessage` kept their context instead of paying for a cold start. The usage limit (69% at one point) shaped decisions: consolidating docs and logs into one final pass, and deferring the verifier until the failures were understood.
+- **Token figures are approximate.** The harness reported about 138k subagent tokens for the two spec-writer runs, about 240k and 95k for the developer (initial build, then fix rounds), about 330k for the test-designer and about 131k for the two verifier rounds. Resumed agents report cumulative totals, and cost was not measured. See `workflow/experiments/resource-log.md`.
+- **Agent bookkeeping cost time.** One agent committed to the wrong branch, and agents left servers and temporary databases running because process kills were denied. Define branch ownership and cleanup before agents start.

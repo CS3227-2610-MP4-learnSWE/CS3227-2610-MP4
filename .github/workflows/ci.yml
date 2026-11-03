@@ -96,6 +96,25 @@ jobs:
     name: Real backend end-to-end
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: learnswe
+          POSTGRES_PASSWORD: learnswe-local-only
+          POSTGRES_DB: learnswe
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U learnswe -d learnswe"
+          --health-interval 2s --health-timeout 2s --health-retries 20
+    env:
+      DATABASE_URL: postgresql+psycopg://learnswe:learnswe-local-only@127.0.0.1:5432/learnswe
+      FILE_STORAGE_DIR: ${{ runner.temp }}/learnswe-materials
+      APP_ENV: development
+      ALLOW_DEMO_IDENTITY: "true"
+      SESSION_COOKIE_SECURE: "false"
+      ALLOWED_ORIGINS: http://localhost:5173,http://127.0.0.1:5173
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
@@ -109,6 +128,18 @@ jobs:
       - name: Install backend
         working-directory: src/backend
         run: uv sync --frozen
+      - name: Migrate and seed the database
+        working-directory: src/backend
+        run: |
+          # The seeded student's password is generated for this run only and is masked in the log.
+          pw="$(openssl rand -hex 16)"
+          echo "::add-mask::$pw"
+          echo "E2E_STUDENT_EMAIL=ci-student@example.com" >> "$GITHUB_ENV"
+          echo "E2E_STUDENT_PASSWORD=$pw" >> "$GITHUB_ENV"
+          export SEED_STUDENT_EMAIL=ci-student@example.com SEED_STUDENT_PASSWORD="$pw"
+          uv run alembic upgrade head
+          uv run python -m teacher_materials.seed
+          uv run python -m auth.seed
       - name: Start backend
         working-directory: src/backend
         run: |

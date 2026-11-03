@@ -693,9 +693,7 @@ test("stu02fe AC11 every state-changing practice request sends the session CSRF 
   const auth = await mockAuthApi(page, { user: STUDENT });
   const mock = await mockPracticeApi(page, { auth });
   await submitCompleteSet(page, mock, TWO_OF_THREE);
-  const unsafe = mock
-    .of("start")
-    .concat(mock.of("save"), mock.of("submit"));
+  const unsafe = mock.of("start").concat(mock.of("save"), mock.of("submit"));
   expect(unsafe).toHaveLength(3);
   for (const r of unsafe) expect(r.headers["x-csrf-token"]).toBe(auth.csrf);
   for (const r of mock.requests) {

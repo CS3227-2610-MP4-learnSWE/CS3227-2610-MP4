@@ -1,4 +1,4 @@
-# Resource log
+﻿# Resource log
 
 One hand-written row per notable task. Take the numbers from a token-tracker summary (see "Measuring token usage" in `../README.md`) and link the summary file; do not paste raw logs. Mark estimates as estimates.
 
@@ -47,3 +47,5 @@ Also record: tasks that consumed the most tokens, what was tried to reduce it, a
 | 2026-11-03 | SHR-01 auth spec | feat/shr01-auth-spec | Variant B, orchestrator + spec-writer (two runs: draft, then revision) | Claude Sonnet 5.5 | n/a | n/a | n/a | n/a | n/a | 1 | Harness-reported subagent tokens about 88k (52 tool uses) and 50k (35 tool uses); cost not measured. Spec only, no code or tests, no live calls. Revision round followed user decisions on demo access and the limiter. Details: logs/Shr01SpecSession.md. |
 
 | 2026-11-03 | SHR-01 auth build (partial) | feat/shr01-auth-spec + worktree-agent-aec0315bda91006b3 | Variant B, developer + independent test-designer in parallel, one test fix round | Claude Sonnet 5.5 | n/a | n/a | n/a | n/a | n/a | 1 | Harness-reported subagent tokens: developer about 239k (113+ tool uses), test-designer about 314k (175 tool uses); cost not measured. Backend 666 passed after one test-fix round; Playwright 191 passed, 26 failed, not green. Verifier not run (user's usage limit). logs/Shr01BuildSession.md. |
+
+| 2026-11-04 | SHR-01 auth build (final) | feat/shr01-auth-spec | Variant B: developer + independent test-designer, verifier x2, 2 correction rounds (cap) | Claude Sonnet 5.5 | n/a | n/a | n/a | n/a | n/a | 2 | Harness-reported subagent tokens (cumulative per resumed agent, cost not measured): developer about 240k then 95k, test-designer about 331k, verifier about 71k and 60k. Backend 670 passed; Playwright 219 passed (final code); real-backend test passed locally; verifier round 2 PASS. Verifier was scoped to save usage. Details: logs/Shr01BuildSession.md, docs/Reflections.md. |

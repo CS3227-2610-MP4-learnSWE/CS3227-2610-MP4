@@ -124,3 +124,25 @@ Final strongest verifier PASS atabc92dfe29743b2ad746ba4f90e9c852da9ff0f9, zero c
 | Existing teacher security/editor behaviour | Fresh483backend/155browser tests cover access/revocation/concurrency/rollback/limits/escaped output and unsaved/pending-save guards |
 
 Types/lint/format/diff passed in strongest recheck; fullbuild passed independent designer. Fake LLM only, isolated PostgreSQL schemas and temporary files, no developer data or live calls. No shared-client/migration/auth-scope changes. Guides/shared contract match corrected behaviour.
+
+## 2026-11-04: SHR-01 authentication and authorisation
+
+Independent backend tests (`test_shr01_accounts.py`, `test_shr01_access.py`, `test_shr01_ratelimit.py`, `test_shr01_seed_migration.py`) were written from the spec before the code was visible to their author. Full backend suite on the final code: 670 passed (isolated PostgreSQL schemas on a temporary `pgserver` Postgres, not Docker). Verifier round 1 at 193b3a4: NOT PASS (one blocking concurrency defect). Verifier round 2 at aca74c0: PASS. Fake LLM only; no developer data or live calls.
+
+| Case | Expected | Result |
+|---|---|---|
+| SEC-AUTH-01 signup with `role` admin/teacher or any extra field | 422, no user created, every signup user is a student | Pass (parametrised tests) |
+| SEC-AUTH-02/03 anonymous or wrong-role access to student routes | 401 / 403 | Pass |
+| SEC-AUTH-04 forged, expired or logged-out session cookie | 401, expired row deleted | Pass |
+| SEC-AUTH-05 cross-student attempt access; leftover `X-Student-Id` | 404 / header ignored | Pass |
+| SEC-AUTH-06 CSRF: missing or wrong token, foreign Origin | 403 `csrf_failed` | Pass |
+| SEC-AUTH-07 enumeration: duplicate signup, wrong password vs unknown email | Identical responses | Pass for single requests; timing parity checked by reading |
+| SEC-AUTH-08 brute-force limits (5 per email, 20 per IP) | Hold under concurrency | Initially FAILED under concurrency (verifier B1; 3 of 4 new parallel tests RED). Fixed by per-key serialisation; 23 rate-limit tests pass; verifier probe with 200 threads recorded exactly 5 failures |
+| SEC-AUTH-09 cookie flags and token storage | HttpOnly, SameSite, nothing in browser storage | Pass |
+| SEC-AUTH-10 no hash or token in responses, logs or database plaintext | None | Pass |
+| SEC-AUTH-11 answer release unchanged after migration | Unchanged | Pass (identity-only diff, STU-02/STU-03 suites) |
+| SEC-AUTH-12 misconfiguration in production (insecure cookie, bad SameSite, bad or missing database URL) | 503, fail closed, no unauthenticated fallback | Pass |
+| SEC-AUTH-13 non-member vs unknown course | Same 404 | Pass |
+| SEC-AUTH-14 demo headers on migrated routes | 401 | Pass |
+
+Known gaps, recorded not hidden: (1) serialising logins per IP lets one IP flooding correct logins hold worker threads with no lock-wait timeout, which can stall the app (verifier finding 1; needs a decision before deployment); (2) the limiter drops expired keys only when the same key is reused, so memory can grow across many distinct IPs; (3) Python and PostgreSQL may disagree on lower-casing some non-ASCII emails (503 instead of 202); (4) `TRUST_PROXY_HEADERS` and `ALLOWED_ORIGINS` need correct settings behind a reverse proxy; (5) the limiter is per process. Lone-surrogate passwords return 422 with an empty `fields` list (user-accepted spec ambiguity).
