@@ -1,5 +1,8 @@
 # Spec: TEA-01 Manage learning materials
 
+> Storage contract update (2026-11-02): filesystem-specific requirements in this historical increment are superseded by [TEA-01 database storage](../TEA-01-db-storage/plan.md). Other feature behaviour remains binding. Current runtime storage uses PostgreSQL BYTEA after that increment is implemented.
+
+
 Status: Approved (human plan approval, 2026-10-30; details below are implementation defaults within that approval)
 
 ## Goal

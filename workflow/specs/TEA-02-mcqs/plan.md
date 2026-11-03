@@ -1,5 +1,8 @@
 # Plan: TEA-02-mcqs — Generate and save draft MCQs
 
+> Storage contract update (2026-11-02): filesystem-specific requirements in this historical increment are superseded by [TEA-01 database storage](../TEA-01-db-storage/plan.md). Other feature behaviour remains binding. Current runtime storage uses PostgreSQL BYTEA after that increment is implemented.
+
+
 Status: Approved through explicit user implementation request,2026-11-02. Developer and independent test-designer use this binding contract from the same recorded start commit. Derived details below require no redundant approval.
 
 ## Data and migration

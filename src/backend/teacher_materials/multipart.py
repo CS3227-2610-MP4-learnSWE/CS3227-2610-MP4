@@ -47,7 +47,7 @@ async def material_form(request: Request):
     except UploadTooLarge as exc:
         raise ApiError(413, "file_too_large", "File must be no larger than 10 MiB.") from exc
     except OSError as exc:
-        raise ApiError(503, "service_unavailable", "Private file storage is unavailable.") from exc
+        raise ApiError(503, "service_unavailable", "Upload processing is unavailable.") from exc
     except Exception as exc:
         raise ApiError(422, "validation_error", "Valid multipart upload fields are required.") from exc
     try:

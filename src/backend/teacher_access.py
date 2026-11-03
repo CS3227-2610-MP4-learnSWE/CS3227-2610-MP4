@@ -12,7 +12,6 @@ from sqlalchemy.orm import Session
 from errors import ApiError
 from teacher_materials.demo_identity import require_demo_enabled, require_teacher
 from teacher_materials.models import CourseMembership, Material, User
-from teacher_materials.storage import storage_root
 
 
 def parse_uuid(value: str) -> UUID:
@@ -33,10 +32,9 @@ def teacher_session(request: Request) -> Iterator[tuple[Session, User]]:
     if not url or not url.startswith("postgresql+psycopg://"):
         raise ApiError(503, "service_unavailable", "Teacher materials service is unavailable.")
     try:
-        engine = create_engine(url, pool_pre_ping=True)
+        engine = create_engine(url, pool_pre_ping=True, isolation_level="READ COMMITTED")
         with Session(engine) as session:
             teacher = require_teacher(request, session)
-            storage_root()
             yield session, teacher
     except SQLAlchemyError as exc:
         raise ApiError(503, "service_unavailable", "Teacher materials service is unavailable.") from exc

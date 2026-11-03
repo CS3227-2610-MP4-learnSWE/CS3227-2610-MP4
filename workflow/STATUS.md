@@ -1,6 +1,6 @@
 # Feature status
 
-One row per feature in `docs/FeatureList.md` (plus workflow tooling). The orchestrator updates the row when a feature changes stage. State as of 2026-11-03 on `master` at `6d65273` (PR 13 merged). Details and history: `notes.md`, `notes-archive.md`.
+One row per feature in `docs/FeatureList.md` (plus workflow tooling). The orchestrator updates the row when a feature changes stage. State as of 2026-11-03 on `fix/teacher-postgres-file-storage`, with `master` at `da389a5` (PR 14) merged in. Details and history: `notes.md`, `notes-archive.md`.
 
 Stages: not started, spec, build, verified (local), merged.
 
@@ -12,7 +12,7 @@ Stages: not started, spec, build, verified (local), merged.
 | STU-04 | not started | | | |
 | STU-05 | not started | | | |
 | STU-06 | not started | | | |
-| TEA-01 | merged | `feat/tea01-materials` | 10 | Placeholder identity header. |
+| TEA-01 | merged; database storage verified (local) | `feat/tea01-materials`, `fix/teacher-postgres-file-storage` | 10 | Migration-isolation review finding resolved; BYTEA branch awaits publishing approval. Placeholder identity header. |
 | TEA-02 | merged (notes and MCQs) | `feat/tea02-generate-notes`, `feat/tea02-generate-mcqs` | 11, 13 | Live provider quality checked only by user report. |
 | TEA-03 | partly merged (notes editing) | `feat/tea03-edit-notes` | 12 | MCQ editing, publishing and full revision history not built. |
 | TEA-04 | not started | | | |

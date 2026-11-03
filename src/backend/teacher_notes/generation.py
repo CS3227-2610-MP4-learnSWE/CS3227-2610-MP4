@@ -1,5 +1,5 @@
 """Extract bounded source text and generate plain notes through the shared client."""
-from pathlib import Path
+from io import BytesIO
 
 from pypdf import PdfReader
 
@@ -27,10 +27,10 @@ def _bounded(text: str) -> str:
     return text
 
 
-def extract_source(path: Path, media_type: str) -> str:
+def extract_source(content: bytes, media_type: str) -> str:
     try:
         if media_type == "application/pdf":
-            reader = PdfReader(path)
+            reader = PdfReader(BytesIO(content))
             if reader.is_encrypted or not reader.pages:
                 raise ValueError("unreadable PDF")
             if len(reader.pages) > MAX_PDF_PAGES:
@@ -41,11 +41,9 @@ def extract_source(path: Path, media_type: str) -> str:
                 _bounded("\n".join(pages))
             text = "\n".join(pages)
         else:
-            text = path.read_text(encoding="utf-8", errors="strict")
+            text = content.decode("utf-8", errors="strict")
     except ApiError:
         raise
-    except OSError as exc:
-        raise ApiError(503, "service_unavailable", "Private file storage is unavailable.") from exc
     except Exception as exc:
         raise ApiError(422, "source_unreadable", "Source cannot be read as UTF-8 text or a text-based PDF.") from exc
     text = _bounded(text)

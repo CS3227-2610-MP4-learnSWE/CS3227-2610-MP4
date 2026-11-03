@@ -7,10 +7,10 @@ from sqlalchemy import select
 
 from errors import ApiError
 from llm_client import LlmClient, get_llm_client
-from teacher_access import owned_material, parse_uuid, teacher_session
 from teacher_materials.demo_identity import require_managed_course
 from teacher_materials.models import CourseMembership, Material, McqDraftBatch, McqDraftQuestion, User
-from teacher_materials.storage import resolve_file, storage_root
+from teacher_materials.routes import _material_content
+from teacher_access import owned_material, parse_uuid, teacher_session
 from timestamps import utc_timestamp
 from teacher_notes.generation import extract_source
 from teacher_mcqs.generation import generate_mcqs
@@ -36,8 +36,8 @@ def create_mcq_draft(request: Request, material_id: str, llm: LlmClient = Depend
     with teacher_session(request) as (session, teacher):
         material = owned_material(session, teacher, material_id)
         teacher_id, source_id, course_id, title = teacher.id, material.id, material.course_id, material.title
-        path, media_type = resolve_file(storage_root(), material.storage_key), material.media_type
-    text = extract_source(path, media_type)
+        source_content, media_type = _material_content(session, material.id), material.media_type
+    text = extract_source(source_content, media_type)
     questions = generate_mcqs(llm, text, teacher_id)
     with teacher_session(request) as (session, teacher):
         user = session.scalar(select(User).where(User.id == teacher_id).with_for_update(read=True).execution_options(populate_existing=True))

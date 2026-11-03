@@ -155,7 +155,7 @@ def test_tea03_migration_backfill_downgrade_and_existing_rows(tea01_database):
             mid,nid=uuid.uuid4(),uuid.uuid4()
             conn.execute("INSERT INTO material(id,course_id,uploaded_by,title,original_filename,media_type,size_bytes,storage_key) VALUES(%s,%s,'demo-teacher','Source','a.txt','text/plain',1,'private')",(mid,COURSE))
             conn.execute("INSERT INTO study_note_draft(id,course_id,source_material_id,created_by,title,content,created_at) VALUES(%s,%s,%s,'demo-teacher','Old title','Keep text','2026-11-01T10:00:00Z')",(nid,COURSE,mid))
-            migration("upgrade","head")
+            migration("upgrade","20261102_tea02_mcqs")
             row=conn.execute("SELECT title,content,source_title,version,created_at,updated_at,created_by,updated_by FROM study_note_draft WHERE id=%s",(nid,)).fetchone()
             assert row[:4]==("Old title","Keep text","Old title",1)
             assert row[4]==row[5] and row[6]==row[7]=="demo-teacher"
@@ -163,7 +163,7 @@ def test_tea03_migration_backfill_downgrade_and_existing_rows(tea01_database):
                 with pytest.raises(psycopg.Error):conn.execute(sql)
             migration("downgrade","20261101_tea02")
             assert conn.execute("SELECT title,content FROM study_note_draft WHERE id=%s",(nid,)).fetchone()==("Old title","Keep text")
-            migration("upgrade","head")
+            migration("upgrade","20261102_tea02_mcqs")
             assert conn.execute("SELECT source_title,version FROM study_note_draft WHERE id=%s",(nid,)).fetchone()==("Old title",1)
         finally:
             conn.execute("SET search_path TO public");conn.execute(f'DROP SCHEMA "{schema}" CASCADE')

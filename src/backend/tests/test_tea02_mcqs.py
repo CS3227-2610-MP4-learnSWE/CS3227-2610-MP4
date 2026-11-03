@@ -105,18 +105,18 @@ def test_tea02_mcqs_pdf_order_prompt_injection_and_no_transaction(mcqs):
 
 
 @pytest.mark.parametrize('kind', ['empty', 'too_long', 'bad_utf8', 'scanned', 'malformed', 'encrypted', 'pages', 'missing'])
-def test_tea02_mcqs_rejected_source_does_not_call_llm(mcqs, tea01_database, tea01_storage, kind):
+def test_tea02_mcqs_rejected_source_does_not_call_llm(mcqs, tea01_database, kind):
     app, fake = mcqs
     source = upload(app)
     status, code = 422, 'source_unreadable'
     if kind == 'empty':
-        replace_bytes(tea01_database, tea01_storage, source, b' \r\n\t ')
+        replace_bytes(tea01_database, source, b' \r\n\t ')
         code = 'source_text_empty'
     elif kind == 'too_long':
-        replace_bytes(tea01_database, tea01_storage, source, ('é' * 8001).encode())
+        replace_bytes(tea01_database, source, ('é' * 8001).encode())
         code = 'source_text_too_large'
     elif kind == 'bad_utf8':
-        replace_bytes(tea01_database, tea01_storage, source, b'\xff')
+        replace_bytes(tea01_database, source, b'\xff')
     elif kind in {'scanned', 'pages', 'malformed', 'encrypted'}:
         source = upload(app, pdf_bytes(['' if kind == 'scanned' else 'text'] * (101 if kind == 'pages' else 1)), name='input.pdf')
         if kind == 'scanned':
@@ -124,17 +124,17 @@ def test_tea02_mcqs_rejected_source_does_not_call_llm(mcqs, tea01_database, tea0
         elif kind == 'pages':
             code = 'source_text_too_large'
         elif kind == 'malformed':
-            replace_bytes(tea01_database, tea01_storage, source, b'%PDF-broken')
+            replace_bytes(tea01_database, source, b'%PDF-broken')
         else:
             import io
             from pypdf import PdfReader, PdfWriter
             writer = PdfWriter(clone_from=PdfReader(io.BytesIO(pdf_bytes(['text']))))
             writer.encrypt('private')
             stream = io.BytesIO(); writer.write(stream)
-            replace_bytes(tea01_database, tea01_storage, source, stream.getvalue())
+            replace_bytes(tea01_database, source, stream.getvalue())
     else:
-        key = tea01_database.execute('SELECT storage_key FROM material WHERE id=%s', (source['id'],)).fetchone()[0]
-        tea01_database.commit(); (tea01_storage / key).unlink()
+        tea01_database.execute('DELETE FROM material_file WHERE material_id=%s', (source['id'],))
+        tea01_database.commit()
         status, code = 503, 'service_unavailable'
     error(generate(app, source), status, code)
     assert fake.calls == [] and count(tea01_database, source) == 0
@@ -227,8 +227,8 @@ def test_tea02_mcqs_gate_uuid_unknown_and_configuration(mcqs, monkeypatch, tmp_p
     blocked = tmp_path / 'file'; blocked.write_text('not dir')
     with monkeypatch.context() as patch:
         patch.setenv('FILE_STORAGE_DIR',str(blocked))
-        error(generate(app, source),503,'service_unavailable')
-    assert not fake.calls
+        assert generate(app, source).status_code == 201
+    assert len(fake.calls) == 1
 
 
 def test_tea02_mcqs_revoked_access_before_save(mcqs, tea01_database):
@@ -318,12 +318,12 @@ def test_tea02_mcqs_migration_upgrade_downgrade_preserves_notes(tea01_database):
             mid,nid=uuid.uuid4(),uuid.uuid4()
             conn.execute("INSERT INTO material(id,course_id,uploaded_by,title,original_filename,media_type,size_bytes,storage_key) VALUES(%s,%s,'demo-teacher','Source','s.txt','text/plain',1,'private')",(mid,COURSE))
             conn.execute("INSERT INTO study_note_draft(id,course_id,source_material_id,created_by,title,content,source_title,updated_by) VALUES(%s,%s,%s,'demo-teacher','Edited','Keep notes','Original','demo-teacher')",(nid,COURSE,mid))
-            migrate('upgrade','head')
+            migrate('upgrade','20261102_tea02_mcqs')
             assert conn.execute("SELECT to_regclass('mcq_draft_question')").fetchone()[0]
             migrate('downgrade','20261102_tea03')
             assert conn.execute("SELECT to_regclass('mcq_draft_batch')").fetchone()[0] is None
             assert conn.execute('SELECT content,source_title FROM study_note_draft WHERE id=%s',(nid,)).fetchone() == ('Keep notes','Original')
-            migrate('upgrade','head')
+            migrate('upgrade','20261102_tea02_mcqs')
             assert conn.execute("SELECT to_regclass('mcq_draft_batch')").fetchone()[0]
         finally:
             conn.execute('SET search_path TO public'); conn.execute(f'DROP SCHEMA "{schema}" CASCADE')

@@ -5,11 +5,11 @@ from test_tea02_notes import BASE, COURSE, call, error, generate, notes, upload
 
 
 @pytest.mark.parametrize("bad", ["\x00", "\ud800", "\udfff"], ids=["nul", "high-surrogate", "low-surrogate"])
-def test_teacher_review_invalid_generated_unicode_is_bad_response_and_preserves_work(notes, tea01_database, tea01_storage, bad):
+def test_teacher_review_invalid_generated_unicode_is_bad_response_and_preserves_work(notes, tea01_database, bad):
     app, fake = notes
     source = upload(app)
     saved = generate(app, source).json()
-    files = {p.name: p.read_bytes() for p in tea01_storage.iterdir()}
+    files = tea01_database.execute("SELECT material_id, content FROM material_file ORDER BY material_id").fetchall()
     fake.text = f"valid note{bad}tail"
     response = generate(app, source)
     detail = error(response, 502, "llm_bad_response")
@@ -18,18 +18,18 @@ def test_teacher_review_invalid_generated_unicode_is_bad_response_and_preserves_
     assert len(fake.calls) == 2
     assert tea01_database.execute("SELECT count(*) FROM study_note_draft WHERE source_material_id=%s", (source["id"],)).fetchone()[0] == 1
     assert call(app, "GET", f"{BASE}/note-drafts/{saved['id']}").json() == saved
-    assert {p.name: p.read_bytes() for p in tea01_storage.iterdir()} == files
+    assert tea01_database.execute("SELECT material_id, content FROM material_file ORDER BY material_id").fetchall() == files
 
 
-def test_teacher_review_nul_upload_title_is_validation_error_before_file_creation(notes, tea01_database, tea01_storage):
+def test_teacher_review_nul_upload_title_is_validation_error_before_file_creation(notes, tea01_database):
     app, fake = notes
     before = tea01_database.execute("SELECT count(*) FROM material").fetchone()[0]
     tea01_database.commit()
-    files = {p.name for p in tea01_storage.iterdir()}
+    files = tea01_database.execute("SELECT material_id, content FROM material_file ORDER BY material_id").fetchall()
     response = call(app, "POST", f"{BASE}/courses/{COURSE}/materials", data={"title": "Unit\x00testing"}, files={"file": ("source.txt", b"A unit test isolates one behaviour.")})
     error(response, 422, "validation_error")
     assert tea01_database.execute("SELECT count(*) FROM material").fetchone()[0] == before
-    assert {p.name for p in tea01_storage.iterdir()} == files
+    assert tea01_database.execute("SELECT material_id, content FROM material_file ORDER BY material_id").fetchall() == files
     assert not fake.calls
 
 
