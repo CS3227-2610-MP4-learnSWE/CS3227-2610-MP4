@@ -10,6 +10,7 @@ Everything about how this project is built. The default agent definitions live i
 | `notes.md` | Live handoff log between agents/sessions. Newest 10 entries, newest first. |
 | `notes-archive.md` | Older handoff entries, moved unchanged from `notes.md`. |
 | `templates/` | `spec.md`, `plan.md`, `tasks.md`, `handoff.md` templates, and a filled sample tasks file (`tasks-sample-ADM-06.md`). |
+| `templates/retro.md` | One retro per feature when it closes: revision rounds, who found each defect, tokens and cost, RED-before-GREEN evidence, steps outside the pipeline. |
 | `specs/<feature-id>/` | Per-feature spec, plan and tasks (spec-driven development). |
 | `experiments/context-engineering.md` | Context-engineering experiments and results. |
 | `experiments/resource-log.md` | Per-task model, token, revision-round and retry records. |
