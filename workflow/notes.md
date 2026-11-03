@@ -5,6 +5,15 @@ Newest entry first. Use `templates/handoff.md`. Older entries describe the state
 
 
 
+## 2026-11-03: SHR-01 spec approved (orchestrator, student-role owner)
+- Done: on `feat/shr01-auth-spec` (from `master` `6d65273`, which pulled cleanly; no new teammate work on GitHub yet, so the Neon/file-storage change the user mentioned is not here) the spec-writer drafted and then revised `workflow/specs/SHR-01/{spec,plan,tasks}.md`. The user approved the spec and plan in chat. No code or tests exist; `src/` is untouched.
+- Decisions (user): one login system for all three roles (`user` table extended with email and password hash, new `auth_session` table, one migration); server-side session in an HttpOnly cookie, 12-hour absolute lifetime; stdlib scrypt; seeded accounts for all roles plus public signup that can only create students; shared `current_user(role=...)` and a course-access check for teammates; `SlidingWindowLimiter` moves to its own module with `llm_client.py` re-importing it unchanged in behaviour; admin gets no implicit course access.
+- Scope: auth core for all roles, login/signup UI, route guard, and migration of the STU-02/STU-03 routes off `X-Student-Id`. Demo access is kept (Explore demo buttons, role switcher, `demo_identity.py` and its dev gate); teacher routes and teacher Playwright specs must pass unchanged. Anonymous demo students cannot use live practice or the companion (accepted limitation).
+- Open: question 4, cookie settings depend on the undecided Render/Neon topology (same-site vs cross-site). Whether the deployed build turns demo access off (`VITE_ENABLE_DEMO_ACCESS=false`) is decided at deployment.
+- Handoff for teammates (not in this feature): migrate teacher routes from `demo_identity.py` to `current_user(role="teacher")`, add admin routes on the same core, and update the teacher specs to sign in when the demo access is removed. Tell the teacher owner before touching their modules.
+- Next: independent test-designer and developer from the spec commit, then verifier (Variant B). Nothing is pushed and no PR exists.
+- Resource use: two spec-writer runs (about 88k and 50k subagent tokens as reported by the harness; cost not measured). I did not read the revised spec in full; the user reviewed and approved it.
+
 ## 2026-11-02: Teacher Ponytail review fixes complete locally (orchestrator)
 - All four findings resolved on feat/tea02-generate-mcqs: permanent note/MCQ request invalidation across navigation/selection round trips; generated invalid Unicode502; invalid upload title422 before storage; focused shared studio source/loading and generation hooks. Valid astral Unicode, access checks, retries, existing draft editing/blockers preserved. No migrations, dependencies or llm_client.py changes.
 - Workflow: approved corrective contractd02418b; independent regressions292af7d committed before source, four browser/four backend RED plus valid-Unicode positive control. Source/productdocs81ba253; unchanged original nine regressions GREEN. Additional source-only success/failure coverageabc92df passed after integration (not claimed RED).
