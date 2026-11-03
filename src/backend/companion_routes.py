@@ -22,8 +22,8 @@ from llm_client import (
     get_llm_client,
 )
 from practice_data import PracticeSet, Question
-from practice_routes import require_student
 from question_match import find_match
+from student_identity import require_student
 
 router = APIRouter(prefix="/api")
 log = logging.getLogger("companion")

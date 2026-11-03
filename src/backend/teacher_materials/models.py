@@ -2,7 +2,7 @@
 from datetime import datetime
 from uuid import UUID, uuid4
 
-from sqlalchemy import BigInteger, CheckConstraint, DateTime, ForeignKey, ForeignKeyConstraint, Index, Integer, String, Text, UniqueConstraint, Uuid, func
+from sqlalchemy import BigInteger, CheckConstraint, DateTime, ForeignKey, ForeignKeyConstraint, Index, Integer, LargeBinary, String, Text, UniqueConstraint, Uuid, func
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
@@ -58,10 +58,16 @@ class Material(Base):
     original_filename: Mapped[str] = mapped_column(String(255))
     media_type: Mapped[str] = mapped_column(String(64))
     size_bytes: Mapped[int] = mapped_column(BigInteger)
-    storage_key: Mapped[str] = mapped_column(String(255), unique=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     __table_args__ = (ForeignKeyConstraint(["topic_id", "course_id"], ["topic.id", "topic.course_id"]), CheckConstraint("size_bytes between 1 and 10485760"), UniqueConstraint("id", "course_id", name="uq_material_id_course"))
+
+
+class MaterialFile(Base):
+    __tablename__ = "material_file"
+    material_id: Mapped[UUID] = mapped_column(Uuid, ForeignKey("material.id", ondelete="CASCADE"), primary_key=True)
+    content: Mapped[bytes] = mapped_column(LargeBinary)
+    __table_args__ = (CheckConstraint("octet_length(content) between 1 and 10485760", name="ck_material_file_length"),)
 
 
 class StudyNoteDraft(Base):

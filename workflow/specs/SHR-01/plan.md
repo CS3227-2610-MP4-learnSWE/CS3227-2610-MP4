@@ -4,7 +4,7 @@ Status: Approved by the user on 2026-11-03 and implemented (verifier round 2 PAS
 
 ## Data model
 
-One additive Alembic revision `20261103_shr01_auth`, `down_revision = "20261102_tea02_mcqs"`. Historical migrations are not edited.
+One additive Alembic revision `20261103_shr01_auth`, `down_revision = "20261102_tea01_db_storage"` (was `20261102_tea02_mcqs`; re-chained after merging master, which added the PostgreSQL file storage revision). Historical migrations are not edited.
 
 Table `user` (existing; columns added, nothing dropped):
 

@@ -33,4 +33,8 @@ Backend runs used a temporary pgserver Postgres, not Docker. The full mocked Pla
 
 ## Open
 
-Push and PR need the user. Deployment decisions (login DoS guard, proxy settings, cookie settings, demo flag, teacher file storage on Render) belong to the team.
+Push and PR need the user. Deployment decisions (login DoS guard, proxy settings, cookie settings, demo flag) belong to the team. Teacher file storage on Render is no longer open: master now keeps uploads in PostgreSQL.
+
+## Merge of master (2026-11-04)
+
+Master had 51 newer commits. Resolutions kept both sides' behaviour: session-based `require_student` lives in `student_identity.py`; `client.ts` uses master's shared `send` with credentials, CSRF and the 401 hook added only to the student `request`; CI merged `API_PORT` with the Postgres and seed steps. Git missed two Alembic heads, so the SHR-01 migration now follows `20261102_tea01_db_storage` and the storage tests upgrade to their own revision. Backend 692 passed; Playwright 223 passed and 1 failed, a teacher back/forward test that also fails on plain master.

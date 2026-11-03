@@ -6,8 +6,11 @@ Everything about how this project is built. The default agent definitions live i
 |---|---|
 | `coordination.md` | Coordination pattern: generator-verifier with an independent test designer; triggers, isolation, handoffs, revision caps, conflict resolution, verification. |
 | `variants/` | Workflow variants under comparison (A split verification, B merged verification, single-session baseline) and how to switch between them. |
-| `notes.md` | Live handoff log between agents/sessions. Newest entry first. |
-| `templates/` | `spec.md`, `plan.md`, `tasks.md`, `handoff.md` templates. |
+| `STATUS.md` | One row per feature: stage, branch, PR, open items. |
+| `notes.md` | Live handoff log between agents/sessions. Newest 10 entries, newest first. |
+| `notes-archive.md` | Older handoff entries, moved unchanged from `notes.md`. |
+| `templates/` | `spec.md`, `plan.md`, `tasks.md`, `handoff.md` templates, and a filled sample tasks file (`tasks-sample-ADM-06.md`). |
+| `templates/retro.md` | One retro per feature when it closes: revision rounds, who found each defect, tokens and cost, RED-before-GREEN evidence, steps outside the pipeline. |
 | `specs/<feature-id>/` | Per-feature spec, plan and tasks (spec-driven development). |
 | `experiments/context-engineering.md` | Context-engineering experiments and results. |
 | `experiments/resource-log.md` | Per-task model, token, revision-round and retry records. |
@@ -31,28 +34,13 @@ Everything about how this project is built. The default agent definitions live i
 
 This is Variant B (merged verification), chosen after a fair comparison in which A, B and a single-session baseline ran from the same commit with the same model and settings (`experiments/results/stu02-decision.md`). Variant A's separate reviewer and security-reviewer were removed; their record stays in `variants/` and `experiments/`.
 
-`AGENTS.md` at the repo root holds the same rules and role definitions for Codex. Edit all three places together (`CLAUDE.md`, `.claude/agents/`, `AGENTS.md`).
+`AGENTS.md` at the repo root is the single source of the shared rules and holds the role definitions; Codex reads it and `CLAUDE.md` imports it. Role text is also in `.claude/agents/`; edit both places together.
 
 The human team members approve each spec/plan and each PR. Nothing is committed directly to `master`.
 
 ## Measuring token usage
 
-The token tracker (`tools/token-tracker/`) reads your own local Claude Code and Codex logs, so each teammate runs it on their own machine. Use it after any notable task or experiment run, on the branch the work was done on.
-
-1. See where the tokens and cost went (branch names are matched against the git branch recorded in the logs):
-
-   ```powershell
-   cd "C:\Users\yikbi\NUS\CS3227\MP4\CS3227-2610-MP4\workflow\tools\token-tracker"
-   python -m tracker report --branch <branch-name>
-   ```
-
-2. For an experiment run or any result worth keeping, save the summary and commit that file:
-
-   ```powershell
-   cd "C:\Users\yikbi\NUS\CS3227\MP4\CS3227-2610-MP4\workflow\tools\token-tracker"
-   python -m tracker report --branch <branch-name> --out ..\..\experiments\results\<name>.csv
-   ```
-
-3. Add one row to `experiments/resource-log.md` (task, agent, model, the numbers from the summary, retries and a note).
-
-Only summaries under `experiments/results/` are committed. The row-level `usage.csv` holds your whole usage history, is gitignored, and stays on your machine. Cost is API list price (see the tool's README for limits and for keeping `prices.json` current). The numbers have not been checked against the Claude or Codex apps, so quote them as measured by the tracker, not as billed.
+After any notable task or experiment run, run the token tracker on your own machine for the branch the work was done on, save the summary under `experiments/results/`, and add one row to `experiments/resource-log.md`.
+Only summaries are committed; the row-level `usage.csv` stays local.
+A feature is not closed until its row exists in `experiments/resource-log.md`; every handoff states whether the tracker was run, total tokens, cost and retries (`templates/handoff.md`).
+Full steps, options and limits: [`tools/token-tracker/README.md`](tools/token-tracker/README.md#use-in-the-workflow).

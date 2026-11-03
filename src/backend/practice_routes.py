@@ -3,7 +3,6 @@ from fastapi import APIRouter, Depends, Request
 from fastapi.responses import JSONResponse
 
 import practice_logic as logic
-from auth.dependencies import AuthUser, current_user
 from attempt_store import Attempt, store
 from errors import ApiError
 from practice_data import PracticeSet, get_set
@@ -15,6 +14,7 @@ from practice_schemas import (
     ResultsOut,
     SubmitOut,
 )
+from student_identity import require_student
 
 router = APIRouter(prefix="/api")
 
@@ -24,11 +24,6 @@ def error_response(_: Request, exc: ApiError) -> JSONResponse:
     retry_after = exc.extra.get("retry_after_seconds")
     headers = {"Retry-After": str(retry_after)} if retry_after is not None else None
     return JSONResponse(status_code=exc.status, content={"detail": detail}, headers=headers)
-
-
-def require_student(user: AuthUser = Depends(current_user(role="student"))) -> str:
-    """The signed-in student's user id from the session; no header or client value is read."""
-    return user.id
 
 
 def _set_or_404(set_id: str) -> PracticeSet:

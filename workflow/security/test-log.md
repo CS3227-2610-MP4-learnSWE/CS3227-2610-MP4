@@ -125,6 +125,24 @@ Final strongest verifier PASS atabc92dfe29743b2ad746ba4f90e9c852da9ff0f9, zero c
 
 Types/lint/format/diff passed in strongest recheck; fullbuild passed independent designer. Fake LLM only, isolated PostgreSQL schemas and temporary files, no developer data or live calls. No shared-client/migration/auth-scope changes. Guides/shared contract match corrected behaviour.
 
+
+## 2026-11-02 — TEA-01 PostgreSQL originals
+
+Final strongest verifier PASS at1c7483370a02ccc6ae31c08e8416b81c5a7ba254, one correction round. Fresh499backend; earlier unchanged159browser/types/lint/format/build passed independently. Isolated schemas/tempfiles and fake LLM only.
+
+| Case | Control/evidence |
+|---|---|
+| Identity/course/guessed source | Gate/role/course checks before binary fetch; student/foreignteacher denied; metadata queries exclude BLOBs |
+| File/title/Unicode/multipart | Prior validation/10MiB ingress cap/filename sanitisation preserved; DB checks1–10MiB, valid Unicode remains supported |
+| Global100MiB quota | Actual octet lengths after transaction advisory lock, READ COMMITTED; exact boundary/concurrent upload and actual pg_locks waiter/fresh sum passed |
+| Atomicity/restart | Both metadata/content inserts and commit failure rollback; exact original bytes and new-process persistence without FILE_STORAGE_DIR |
+| Generation | Byte extraction/caps, safe missing-content503, no open inference transaction, current role/source/membership recheck, shared client unchanged |
+| Migration preservation | Populated upgrade/down refuse and preserve rows/schema/revision; empty cycles pass; initial concurrent-writer race reproduced then fixed with table lock before guard |
+| Migration regression | Independent8df7f8 RED beforeccd808b; GREEN unchanged at1c7483370a02ccc6ae31c08e8416b81c5a7ba254; legacy writer and destructive conversion cannot both succeed |
+| UI/documentation | Quota413 recovery, retained inputs/cancel reset, four theme/width layouts and truthful fresh-DB/backup/provider-capacity docs passed |
+
+Historical file-specific tests were adapted without removing validation/access/rollback/concurrency intent. One downgrade race RED was not added because old NOTNULL restoration already forces rollback; symmetric lock code plus existing guarded downgrade tests verified. No import/delete/publication/production auth changes. Live LLM, hosted CI/deployment and optional real-backend browser project were not checked.
+
 ## 2026-11-04: SHR-01 authentication and authorisation
 
 Independent backend tests (`test_shr01_accounts.py`, `test_shr01_access.py`, `test_shr01_ratelimit.py`, `test_shr01_seed_migration.py`) were written from the spec before the code was visible to their author. Full backend suite on the final code: 670 passed (isolated PostgreSQL schemas on a temporary `pgserver` Postgres, not Docker). Verifier round 1 at 193b3a4: NOT PASS (one blocking concurrency defect). Verifier round 2 at aca74c0: PASS. Fake LLM only; no developer data or live calls.

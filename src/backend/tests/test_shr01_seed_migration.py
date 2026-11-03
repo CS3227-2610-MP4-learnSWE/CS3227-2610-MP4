@@ -15,7 +15,7 @@ from auth_helpers import SEED_ENV, psycopg_url, schema_url
 BACKEND = Path(__file__).resolve().parents[1]
 REPO = BACKEND.parents[1]
 NEW_REVISION = "20261103_shr01_auth"
-PREVIOUS_REVISION = "20261102_tea02_mcqs"
+PREVIOUS_REVISION = "20261102_tea01_db_storage"
 COURSE_A = "11111111-1111-4111-8111-111111111111"
 
 

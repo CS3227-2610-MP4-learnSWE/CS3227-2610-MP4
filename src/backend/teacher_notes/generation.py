@@ -1,14 +1,12 @@
 """Extract bounded source text and generate plain notes through the shared client."""
-from pathlib import Path
+from io import BytesIO
 
 from pypdf import PdfReader
 
 from errors import ApiError
-from text_validation import is_postgres_text
-from llm_client import (
-    ChatMessage, LlmBadResponse, LlmBusy, LlmClient, LlmError, LlmInputTooLarge,
-    LlmNotConfigured, LlmRateLimited, LlmTimeout, LlmUpstreamError,
-)
+from llm_client import ChatMessage, LlmBadResponse, LlmClient, LlmError
+from llm_errors import generation_error
+from text_validation import is_postgres_text, normalise_newlines_and_trim
 
 MAX_SOURCE_CHARS = 8_000
 MAX_PDF_PAGES = 100
@@ -22,21 +20,17 @@ SYSTEM_INSTRUCTION = (
 )
 
 
-def _normalise(text: str) -> str:
-    return text.replace("\r\n", "\n").replace("\r", "\n").strip()
-
-
 def _bounded(text: str) -> str:
-    text = _normalise(text)
+    text = normalise_newlines_and_trim(text)
     if len(text) > MAX_SOURCE_CHARS:
         raise ApiError(422, "source_text_too_large", "Source text exceeds 8,000 characters. Choose a shorter source.")
     return text
 
 
-def extract_source(path: Path, media_type: str) -> str:
+def extract_source(content: bytes, media_type: str) -> str:
     try:
         if media_type == "application/pdf":
-            reader = PdfReader(path)
+            reader = PdfReader(BytesIO(content))
             if reader.is_encrypted or not reader.pages:
                 raise ValueError("unreadable PDF")
             if len(reader.pages) > MAX_PDF_PAGES:
@@ -47,35 +41,15 @@ def extract_source(path: Path, media_type: str) -> str:
                 _bounded("\n".join(pages))
             text = "\n".join(pages)
         else:
-            text = path.read_text(encoding="utf-8", errors="strict")
+            text = content.decode("utf-8", errors="strict")
     except ApiError:
         raise
-    except OSError as exc:
-        raise ApiError(503, "service_unavailable", "Private file storage is unavailable.") from exc
     except Exception as exc:
         raise ApiError(422, "source_unreadable", "Source cannot be read as UTF-8 text or a text-based PDF.") from exc
     text = _bounded(text)
     if not text:
         raise ApiError(422, "source_text_empty", "No usable source text was found. Scanned PDFs need a text-based source.")
     return text
-
-
-def _llm_error(exc: LlmError) -> ApiError:
-    if isinstance(exc, LlmRateLimited):
-        return ApiError(429, "llm_rate_limited", "Too many generation requests. Please wait before retrying.", retry_after_seconds=exc.retry_after_seconds)
-    if isinstance(exc, LlmBusy):
-        return ApiError(429, "llm_busy", "The AI service is busy. Please wait before retrying.", retry_after_seconds=exc.retry_after_seconds)
-    if isinstance(exc, LlmNotConfigured):
-        return ApiError(503, "llm_not_configured", "The AI service is not configured.")
-    if isinstance(exc, LlmInputTooLarge):
-        return ApiError(422, "source_text_too_large", "The source cannot fit the AI request limit. Choose a shorter source.")
-    if isinstance(exc, LlmTimeout):
-        return ApiError(504, "llm_timeout", "Generation timed out. Please try again.")
-    if isinstance(exc, LlmUpstreamError):
-        return ApiError(502, "llm_upstream_error", "The AI service could not generate content. Please try again.")
-    if isinstance(exc, LlmBadResponse):
-        return ApiError(502, "llm_bad_response", "The AI service returned unusable content. Please try again.")
-    return ApiError(503, "llm_unavailable", "The AI service is unavailable. Please try again later.")
 
 
 def generate_notes(llm: LlmClient, text: str, teacher_id: str) -> str:
@@ -85,9 +59,9 @@ def generate_notes(llm: LlmClient, text: str, teacher_id: str) -> str:
             max_tokens=600, caller_id=f"teacher:{teacher_id}",
         )
     except LlmError as exc:
-        raise _llm_error(exc) from None
+        raise generation_error(exc) from None
     if (not isinstance(reply.text, str) or not reply.text.strip()
             or len(reply.text) >= 2_000 or reply.finish_reason == "length"
             or not is_postgres_text(reply.text)):
-        raise _llm_error(LlmBadResponse("Unusable reply"))
+        raise generation_error(LlmBadResponse("Unusable reply"))
     return reply.text.strip()

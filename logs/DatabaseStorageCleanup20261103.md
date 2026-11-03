@@ -1,0 +1,7 @@
+# Database storage cleanup — 2026-11-03
+
+User requested removing repository leftovers after the PostgreSQL storage update. Audited tracked runtime files and callers. No obsolete standalone runtime files remain: teacher_materials/storage.py is actively used for bounded byte validation, and historical Alembic revisions remain necessary for migration chains and guarded downgrade checks.
+
+Removed obsolete session-wide filesystem fixture creation/cleanup, its unused test arguments, an unused upload-root helper argument and unused imports. The filename traversal regression uses pytest tmp_path instead, preserving its file-content and no-write assertions. Kept legacy private-files ignore protection, historical specs/logs, migration guards and FILE_STORAGE_DIR independence tests. No user-uploaded data, databases, .env, dependencies or generated review evidence removed.
+
+Single-session mechanical test cleanup, permitted by the repository's small-change workflow; no feature behaviour or new test logic. AST check confirmed all213 assertions in four affected test suites remain. Full504backend tests passed against an isolated PostgreSQL schema. No frontend/runtime changes; previous159browser/types/lint/format/build were not repeated. Diff whitespace check passed. Local commit only, no push/live LLM/deployment. Tracker not run; inherited Codex; exact tokens/cost unavailable; zero retries/revision rounds.

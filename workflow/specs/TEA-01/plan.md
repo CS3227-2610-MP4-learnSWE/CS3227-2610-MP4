@@ -1,5 +1,8 @@
 # Plan: TEA-01 Manage learning materials
 
+> Storage contract update (2026-11-02): filesystem-specific requirements in this historical increment are superseded by [TEA-01 database storage](../TEA-01-db-storage/plan.md). Other feature behaviour remains binding. Current runtime storage uses PostgreSQL BYTEA after that increment is implemented.
+
+
 ## Data model
 
 Implement the `user`, `course`, `course_membership`, `topic`, and `material` tables, constraints, UTC timestamps, and idempotent seed exactly as [SharedDataContract.md](../../../docs/SharedDataContract.md) defines. Use PostgreSQL 16 with synchronous SQLAlchemy 2 and psycopg; create tables through Alembic, not request-time DDL. Material metadata and files are private. A composite topic/course constraint or an equivalent transactionally safe check prevents cross-course assignment. Do not alter existing student data or endpoints.

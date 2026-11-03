@@ -1,0 +1,7 @@
+# Vite proxy compatibility fix — 2026-11-03
+
+User reported invalid http://127.0.0.1:undefined and ECONNREFUSED port80; upload disabled because teacher courses could not load. Root cause: master changed vite.config.ts to API_PORT only, while the existing ignored frontend .env still used API_PROXY_TARGET. Read only those two nonsecret settings; no backend secrets/.env changes.
+
+Before source edits, a Node assertion evaluating actual Vite config with the existing URL-only environment reproduced RED: actual undefined-port URL vs expected8000. Minimal fix: explicit API_PROXY_TARGET takes precedence, otherwise API_PORT, otherwise8000. Added a persistent one-test/four-case configuration regression covering legacy URL, configured port, missing settings and override precedence. Test uses temporary environment directory and restores cwd/process variables; no actual.env mutation. README documents settings/restart.
+
+Verification: focused regression passed; types/lint/format/build passed. Live local read-only health HTTP200 directly and through Vite; teacher courses via Vite HTTP200. Backend running on8000 remained untouched. Full browser/backend suites not repeated for this small config fix. No LLM, upload, database writes or deployment. Initial formatter invocation used wrong workdir and was cancelled before output; rerun from frontend succeeded. Single-session corrective change, no independent agents. Tracker not run, inherited Codex model; exact tokens/cost unavailable. No push/PR.

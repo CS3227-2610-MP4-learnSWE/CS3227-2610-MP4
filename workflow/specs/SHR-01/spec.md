@@ -94,7 +94,7 @@ Frontend:
 
 Documentation and migration:
 
-- [ ] AC24: The Alembic migration is additive (new revision after `20261102_tea02_mcqs`; historical migrations untouched), works on a fresh and a populated database, and downgrade removes only what it added. Existing demo users keep working for the teacher dev gate (teacher routes and specs unchanged). `docs/SharedDataContract.md`, `docs/DeveloperGuide.md` (usage of `current_user` and `require_course_member`, seed command, env vars) and `docs/UserGuide.md` (sign in, sign up, log out; only what works) are updated; `.env.example` files list the new variables with no real values.
+- [ ] AC24: The Alembic migration is additive (new revision after `20261102_tea01_db_storage` (re-chained from `20261102_tea02_mcqs` when master added that revision); historical migrations untouched), works on a fresh and a populated database, and downgrade removes only what it added. Existing demo users keep working for the teacher dev gate (teacher routes and specs unchanged). `docs/SharedDataContract.md`, `docs/DeveloperGuide.md` (usage of `current_user` and `require_course_member`, seed command, env vars) and `docs/UserGuide.md` (sign in, sign up, log out; only what works) are updated; `.env.example` files list the new variables with no real values.
 
 ## Out of scope
 

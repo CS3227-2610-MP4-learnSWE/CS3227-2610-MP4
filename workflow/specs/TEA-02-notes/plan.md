@@ -1,5 +1,8 @@
 # Plan: TEA-02-notes — Generate and save draft notes
 
+> Storage contract update (2026-11-02): filesystem-specific requirements in this historical increment are superseded by [TEA-01 database storage](../TEA-01-db-storage/plan.md). Other feature behaviour remains binding. Current runtime storage uses PostgreSQL BYTEA after that increment is implemented.
+
+
 Status: Approved through the user's implementation request, 2026-11-01. This is the developer/independent-test contract. Use Variant B from the same recorded spec commit; test-designer reads this contract, not feature source code.
 
 ## Data model and migration

@@ -1,10 +1,10 @@
 """Strict, all-or-nothing MCQ generation through the existing shared client."""
 import json
 
-from text_validation import is_postgres_text
+from text_validation import is_postgres_text, normalise_newlines_and_trim
 
 from llm_client import ChatMessage, LlmBadResponse, LlmClient, LlmError
-from teacher_notes.generation import _llm_error
+from llm_errors import generation_error
 
 SYSTEM_INSTRUCTION = (
     'Generate exactly three concise single-answer MCQs grounded only in the source. '
@@ -33,7 +33,7 @@ def _unique_object(pairs):
 def _text(value, maximum):
     if not isinstance(value, str) or not is_postgres_text(value):
         _reject()
-    value = value.replace("\r\n", "\n").replace("\r", "\n").strip()
+    value = normalise_newlines_and_trim(value)
     if not 1 <= len(value) <= maximum:
         _reject()
     return value
@@ -44,7 +44,7 @@ def generate_mcqs(llm: LlmClient, text: str, teacher_id: str) -> list[dict]:
         reply = llm.complete([ChatMessage("system", SYSTEM_INSTRUCTION), ChatMessage("user", text)],
                              max_tokens=800, caller_id=f"teacher:{teacher_id}")
     except LlmError as exc:
-        raise _llm_error(exc) from None
+        raise generation_error(exc) from None
     try:
         if not isinstance(reply.text, str) or not reply.text.strip() or len(reply.text) >= 2_000 or reply.finish_reason == "length":
             _reject()
@@ -71,4 +71,4 @@ def generate_mcqs(llm: LlmClient, text: str, teacher_id: str) -> list[dict]:
             questions.append(dict(question=question, choices=choices, correct_choice_index=answer, explanation=explanation))
         return questions
     except (ValueError, TypeError, RecursionError):
-        raise _llm_error(LlmBadResponse("Unusable MCQ response")) from None
+        raise generation_error(LlmBadResponse("Unusable MCQ response")) from None
