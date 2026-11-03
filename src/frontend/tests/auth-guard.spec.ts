@@ -271,11 +271,36 @@ test("shr01 AC22 after logout the back button does not show the signed-in area",
   expect(auth.user).toBeNull();
 });
 
-test("shr01 AC22 logout still ends the client session when the server call fails", async ({
+for (const [label, failure] of [
+  ["a network error", { abort: true }],
+  ["a 503", authError(503, "service_unavailable")],
+] as const) {
+  test(`shr01 AC22 a failed logout (${label}) keeps the user signed in, shows an alert, and a retry signs out`, async ({
+    page,
+  }) => {
+    const auth = await mockAuthApi(page, { user: STUDENT });
+    auth.script("logout", failure);
+    await page.goto("/student/overview");
+    const logout = page.getByRole("button", { name: /log out/i }).first();
+    await logout.click();
+    await expect(page.getByRole("alert")).toContainText(/could not log out/i);
+    await expect(page).toHaveURL(/\/student\/overview$/);
+    await expect(page.getByText("Sam Student").first()).toBeVisible();
+    expect(auth.user).not.toBeNull(); // the server session is still alive, so the UI must say so
+    // The server recovers: a second click retries and signs out.
+    await logout.click();
+    await expect(page).toHaveURL(/\/login$/);
+    expect(auth.count("logout")).toBe(2);
+    expect(auth.user).toBeNull();
+    await expect(page.getByText("Sam Student")).toHaveCount(0);
+  });
+}
+
+test("shr01 AC22 a 401 on logout still ends the client session", async ({
   page,
 }) => {
   const auth = await mockAuthApi(page, { user: STUDENT });
-  auth.script("logout", { abort: true });
+  auth.script("logout", authError(401, "unauthenticated"));
   await page.goto("/student/overview");
   await page
     .getByRole("button", { name: /log out/i })
