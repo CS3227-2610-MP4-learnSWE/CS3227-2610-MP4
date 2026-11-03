@@ -1,8 +1,9 @@
 """HTTP routes for practice sets and attempts."""
-from fastapi import APIRouter, Depends, Header, Request
+from fastapi import APIRouter, Depends, Request
 from fastapi.responses import JSONResponse
 
 import practice_logic as logic
+from auth.dependencies import AuthUser, current_user
 from attempt_store import Attempt, store
 from errors import ApiError
 from practice_data import PracticeSet, get_set
@@ -25,11 +26,9 @@ def error_response(_: Request, exc: ApiError) -> JSONResponse:
     return JSONResponse(status_code=exc.status, content={"detail": detail}, headers=headers)
 
 
-def require_student(x_student_id: str | None = Header(default=None)) -> str:
-    student = (x_student_id or "").strip()
-    if not student:
-        raise ApiError(401, "missing_student", "X-Student-Id header is required.")
-    return student
+def require_student(user: AuthUser = Depends(current_user(role="student"))) -> str:
+    """The signed-in student's user id from the session; no header or client value is read."""
+    return user.id
 
 
 def _set_or_404(set_id: str) -> PracticeSet:
@@ -56,7 +55,7 @@ def _attempt_out(a: Attempt) -> AttemptOut:
 
 
 @router.get("/practice-sets/{set_id}", response_model=PracticeSetOut)
-def read_set(set_id: str) -> PracticeSetOut:
+def read_set(set_id: str, _: str = Depends(require_student)) -> PracticeSetOut:
     s = _set_or_404(set_id)
     return PracticeSetOut.model_validate(
         {
