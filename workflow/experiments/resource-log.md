@@ -1,6 +1,6 @@
 # Resource log
 
-One hand-written row per notable task. Take the numbers from a token-tracker summary (see "Measuring token usage" in `../README.md`) and link the summary file; do not paste raw logs. Mark estimates as estimates.
+One hand-written row per notable task. Take the numbers from a token-tracker summary (see "Measuring token usage" in `../README.md`) and link the summary file; do not paste raw logs. Mark estimates as estimates. A feature is not closed until its row exists here; the handoff's resource fields (tracker run, total tokens, cost, retries) feed it.
 
 | Date | Task / feature | Branch | Agent / workflow | Model | Input tok | Cache read tok | Output tok | Reasoning tok | Cost USD | Revision rounds | Notes / summary file |
 |---|---|---|---|---|---|---|---|---|---|---|---|

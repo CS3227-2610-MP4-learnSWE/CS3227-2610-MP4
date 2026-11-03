@@ -41,4 +41,5 @@ The human team members approve each spec/plan and each PR. Nothing is committed 
 
 After any notable task or experiment run, run the token tracker on your own machine for the branch the work was done on, save the summary under `experiments/results/`, and add one row to `experiments/resource-log.md`.
 Only summaries are committed; the row-level `usage.csv` stays local.
+A feature is not closed until its row exists in `experiments/resource-log.md`; every handoff states whether the tracker was run, total tokens, cost and retries (`templates/handoff.md`).
 Full steps, options and limits: [`tools/token-tracker/README.md`](tools/token-tracker/README.md#use-in-the-workflow).
