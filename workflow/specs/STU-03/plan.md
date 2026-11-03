@@ -4,7 +4,7 @@ Status: Approved by the user on 2026-10-30 together with the spec (Draft v2 text
 
 ## Contract (fixed; developer and test-designer work from this alone)
 
-Identity: header `X-Student-Id`, same rule as STU-02 (`practice_routes.require_student`: trimmed, blank means 401). The companion route reuses that dependency; it does not copy it.
+Identity: header `X-Student-Id`, same rule as STU-02 (`student_identity.require_student`, moved from `practice_routes` after this plan was approved: trimmed, blank means 401). The companion route reuses that dependency; it does not copy it.
 
 Error body, always `{"detail": {"code": "<code>", "message": "<text>"}}` plus extra fields where stated, produced through the existing `ApiError` and handler. No message may contain an answer key, an explanation, the API key or the student's text. Malformed bodies (wrong JSON types, missing required fields) may use FastAPI's default 422 body; as in STU-02, the 401-before-422 order is only promised for well-formed bodies.
 
@@ -169,7 +169,7 @@ Backend (`src/backend/`; developer picks file names except where fixed above):
 - New `companion_prompts.py`, `companion_help.py`, `companion_config.py`: fixed text and constants.
 - New `question_match.py`, `leak_check.py` (signatures fixed above).
 - Changed `attempt_store.py` (`list_for_student`), `main.py` (include the router only), `.env.example` (names only), `pyproject.toml` and `uv.lock` if `httpx` is not already a runtime dependency (the virtual environment has it; whether `pyproject.toml` lists it as runtime or dev was not checked in this spec).
-- Reused, not duplicated: `ApiError` and its handler (`errors.py`, `practice_routes.error_response`), `require_student`, `practice_data.get_set` and the set/question types, the attempt store. The key is read only through `practice_data` types in `companion_service` (Explain context and the leak check); `practice_logic.py` stays the one place that builds results.
+- Reused, not duplicated: `ApiError` and its handler (`errors.py`, `practice_routes.error_response`), `student_identity.require_student`, `practice_data.get_set` and the set/question types, the attempt store. The key is read only through `practice_data` types in `companion_service` (Explain context and the leak check); `practice_logic.py` stays the one place that builds results.
 
 Frontend (`src/frontend/src/`):
 - Changed `services/client.ts`: `request(method, path, body?, options?: { timeoutMs?: number })` (default stays 10 s); `ApiError` gains `retryAfterSeconds: number | null`, read from the error body's `detail.retry_after_seconds`.

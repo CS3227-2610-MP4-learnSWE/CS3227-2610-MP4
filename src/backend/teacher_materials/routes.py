@@ -1,8 +1,4 @@
 """Teacher materials HTTP API with access checks before request-body validation."""
-import os
-from contextlib import contextmanager
-from datetime import timezone
-from typing import Iterator
 from uuid import UUID, uuid4
 from urllib.parse import quote
 
@@ -10,75 +6,35 @@ from fastapi import APIRouter, Request
 from starlette.datastructures import UploadFile
 from fastapi.responses import Response
 from pydantic import BaseModel, ConfigDict, ValidationError
-from sqlalchemy import create_engine, func, select, text
-from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy import func, select, text
 from sqlalchemy.orm import Session
 
 from errors import ApiError
+from teacher_access import owned_material, parse_uuid, teacher_session
+from timestamps import utc_timestamp
 from text_validation import is_postgres_text
-from teacher_materials.demo_identity import require_managed_course, require_teacher
-from teacher_materials.models import Course, CourseMembership, Material, MaterialFile, Topic, User
+from teacher_materials.demo_identity import require_managed_course
+from teacher_materials.models import Course, CourseMembership, Material, MaterialFile, Topic
 from teacher_materials.multipart import material_form
 from teacher_materials.storage import MAX_TOTAL_BYTES, validate_upload
 
 router = APIRouter(prefix="/api/teacher", tags=["teacher materials"])
 
 
-def _uuid(value: str) -> UUID:
-    try:
-        if not isinstance(value, str):
-            raise TypeError("UUID input must be a string")
-        return UUID(value)
-    except (ValueError, TypeError) as exc:
-        raise ApiError(422, "validation_error", "A valid UUID is required.") from exc
-
-
-def _timestamp(value):
-    return value.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
-
-
 def _course(row: Course) -> dict:
-    return {"id": str(row.id), "title": row.title, "created_at": _timestamp(row.created_at)}
+    return {"id": str(row.id), "title": row.title, "created_at": utc_timestamp(row.created_at)}
 
 
 def _topic(row: Topic) -> dict:
-    return {"id": str(row.id), "course_id": str(row.course_id), "name": row.name, "created_at": _timestamp(row.created_at)}
+    return {"id": str(row.id), "course_id": str(row.course_id), "name": row.name, "created_at": utc_timestamp(row.created_at)}
 
 
 def _material(row: Material) -> dict:
-    return {"id": str(row.id), "course_id": str(row.course_id), "topic_id": str(row.topic_id) if row.topic_id else None, "uploaded_by": row.uploaded_by, "title": row.title, "original_filename": row.original_filename, "media_type": row.media_type, "size_bytes": row.size_bytes, "created_at": _timestamp(row.created_at), "updated_at": _timestamp(row.updated_at)}
-
-
-@contextmanager
-def _teacher_session(request: Request) -> Iterator[tuple[Session, User]]:
-    if os.getenv("APP_ENV") != "development" or os.getenv("ALLOW_DEMO_IDENTITY", "").lower() != "true":
-        raise ApiError(403, "demo_identity_disabled", "Demo teacher identity is disabled.")
-    if not request.headers.get("X-Demo-User-Id"):
-        raise ApiError(401, "unauthenticated", "Demo user identity is required.")
-    url = os.getenv("DATABASE_URL")
-    if not url or not url.startswith("postgresql+psycopg://"):
-        raise ApiError(503, "service_unavailable", "Teacher materials service is unavailable.")
-    try:
-        engine = create_engine(url, pool_pre_ping=True, isolation_level="READ COMMITTED")
-        with Session(engine) as session:
-            teacher = require_teacher(request, session)
-            yield session, teacher
-    except SQLAlchemyError as exc:
-        raise ApiError(503, "service_unavailable", "Teacher materials service is unavailable.") from exc
-    finally:
-        if "engine" in locals():
-            engine.dispose()
-
-
-def _owned_material(session: Session, teacher: User, material_id: str) -> Material:
-    material = session.scalar(select(Material).join(CourseMembership, CourseMembership.course_id == Material.course_id).where(Material.id == _uuid(material_id), CourseMembership.user_id == teacher.id))
-    if material is None:
-        raise ApiError(404, "not_found", "Material not found.")
-    return material
+    return {"id": str(row.id), "course_id": str(row.course_id), "topic_id": str(row.topic_id) if row.topic_id else None, "uploaded_by": row.uploaded_by, "title": row.title, "original_filename": row.original_filename, "media_type": row.media_type, "size_bytes": row.size_bytes, "created_at": utc_timestamp(row.created_at), "updated_at": utc_timestamp(row.updated_at)}
 
 
 def _same_course_topic(session: Session, course_id: UUID, value: str) -> UUID:
-    topic_id = _uuid(value)
+    topic_id = parse_uuid(value)
     if session.scalar(select(Topic.id).where(Topic.id == topic_id, Topic.course_id == course_id)) is None:
         raise ApiError(404, "not_found", "Topic not found.")
     return topic_id
@@ -86,23 +42,23 @@ def _same_course_topic(session: Session, course_id: UUID, value: str) -> UUID:
 
 @router.get("/courses")
 def list_courses(request: Request):
-    with _teacher_session(request) as (session, teacher):
+    with teacher_session(request) as (session, teacher):
         rows = session.scalars(select(Course).join(CourseMembership, CourseMembership.course_id == Course.id).where(CourseMembership.user_id == teacher.id).order_by(Course.created_at, Course.id)).all()
         return [_course(row) for row in rows]
 
 
 @router.get("/courses/{course_id}/topics")
 def list_topics(request: Request, course_id: str):
-    with _teacher_session(request) as (session, teacher):
-        course = require_managed_course(session, teacher, _uuid(course_id))
+    with teacher_session(request) as (session, teacher):
+        course = require_managed_course(session, teacher, parse_uuid(course_id))
         rows = session.scalars(select(Topic).where(Topic.course_id == course.id).order_by(Topic.created_at, Topic.id)).all()
         return [_topic(row) for row in rows]
 
 
 @router.get("/courses/{course_id}/materials")
 def list_materials(request: Request, course_id: str):
-    with _teacher_session(request) as (session, teacher):
-        course = require_managed_course(session, teacher, _uuid(course_id))
+    with teacher_session(request) as (session, teacher):
+        course = require_managed_course(session, teacher, parse_uuid(course_id))
         query = select(Material).where(Material.course_id == course.id)
         if "topic_id" in request.query_params:
             topic_id = _same_course_topic(session, course.id, request.query_params["topic_id"])
@@ -113,8 +69,8 @@ def list_materials(request: Request, course_id: str):
 
 @router.post("/courses/{course_id}/materials", status_code=201)
 async def upload_material(request: Request, course_id: str):
-    with _teacher_session(request) as (session, teacher):
-        course = require_managed_course(session, teacher, _uuid(course_id))
+    with teacher_session(request) as (session, teacher):
+        course = require_managed_course(session, teacher, parse_uuid(course_id))
         async with material_form(request) as form:
             allowed = {"file", "title", "topic_id"}
             if (set(form.keys()) - allowed
@@ -151,8 +107,8 @@ class TopicPatch(BaseModel):
 
 @router.patch("/materials/{material_id}")
 async def assign_topic(request: Request, material_id: str):
-    with _teacher_session(request) as (session, teacher):
-        row = _owned_material(session, teacher, material_id)
+    with teacher_session(request) as (session, teacher):
+        row = owned_material(session, teacher, material_id)
         try:
             body = TopicPatch.model_validate(await request.json())
         except (ValueError, ValidationError) as exc:
@@ -178,8 +134,8 @@ def _material_content(session: Session, material_id: UUID) -> bytes:
 
 @router.get("/materials/{material_id}/file")
 def download_material(request: Request, material_id: str):
-    with _teacher_session(request) as (session, teacher):
-        row = _owned_material(session, teacher, material_id)
+    with teacher_session(request) as (session, teacher):
+        row = owned_material(session, teacher, material_id)
         content = _material_content(session, row.id)
         filename = quote(row.original_filename)
         disposition = f"attachment; filename*=utf-8''{filename}" if filename != row.original_filename else f'attachment; filename="{filename}"'

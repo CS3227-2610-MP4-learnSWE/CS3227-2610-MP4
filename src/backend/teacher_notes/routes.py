@@ -7,18 +7,20 @@ from sqlalchemy import select
 from pydantic import BaseModel, ConfigDict, Field, StrictInt, StrictStr, ValidationError
 
 from errors import ApiError
-from text_validation import is_postgres_text
+from text_validation import is_postgres_text, normalise_newlines_and_trim
 from llm_client import LlmClient, get_llm_client
 from teacher_materials.demo_identity import require_managed_course
 from teacher_materials.models import CourseMembership, Material, StudyNoteDraft, User
-from teacher_materials.routes import _material_content, _owned_material, _teacher_session, _timestamp, _uuid
+from teacher_materials.routes import _material_content
+from teacher_access import owned_material, parse_uuid, teacher_session
+from timestamps import utc_timestamp
 from teacher_notes.generation import extract_source, generate_notes
 
 router = APIRouter(prefix="/api/teacher", tags=["teacher note drafts"])
 
 
 def _draft(row: StudyNoteDraft, *, content: bool = False) -> dict:
-    result = {"id": str(row.id), "course_id": str(row.course_id), "source_material_id": str(row.source_material_id), "created_by": row.created_by, "title": row.title, "created_at": _timestamp(row.created_at), "source_title": row.source_title, "version": row.version, "updated_at": _timestamp(row.updated_at), "updated_by": row.updated_by}
+    result = {"id": str(row.id), "course_id": str(row.course_id), "source_material_id": str(row.source_material_id), "created_by": row.created_by, "title": row.title, "created_at": utc_timestamp(row.created_at), "source_title": row.source_title, "version": row.version, "updated_at": utc_timestamp(row.updated_at), "updated_by": row.updated_by}
     if content:
         result["content"] = row.content
     return result
@@ -26,15 +28,15 @@ def _draft(row: StudyNoteDraft, *, content: bool = False) -> dict:
 
 @router.post("/materials/{material_id}/note-drafts", status_code=201)
 def create_note_draft(request: Request, material_id: str, llm: LlmClient = Depends(get_llm_client)):
-    with _teacher_session(request) as (session, teacher):
-        material = _owned_material(session, teacher, material_id)
+    with teacher_session(request) as (session, teacher):
+        material = owned_material(session, teacher, material_id)
         teacher_id, source_id, course_id, title = teacher.id, material.id, material.course_id, material.title
         source_content = _material_content(session, material.id)
         media_type = material.media_type
     # Copy scalars and release the session before extraction and external work.
     text = extract_source(source_content, media_type)
     content = generate_notes(llm, text, teacher_id)
-    with _teacher_session(request) as (session, teacher):
+    with teacher_session(request) as (session, teacher):
         # Locks linearise access checks with concurrent role/membership changes.
         user = session.scalar(select(User).where(User.id == teacher_id).with_for_update(read=True).execution_options(populate_existing=True))
         if user is None or user.role != "teacher" or teacher.id != teacher_id:
@@ -55,16 +57,16 @@ def create_note_draft(request: Request, material_id: str, llm: LlmClient = Depen
 
 @router.get("/courses/{course_id}/note-drafts")
 def list_note_drafts(request: Request, course_id: str):
-    with _teacher_session(request) as (session, teacher):
-        course = require_managed_course(session, teacher, _uuid(course_id))
+    with teacher_session(request) as (session, teacher):
+        course = require_managed_course(session, teacher, parse_uuid(course_id))
         rows = session.scalars(select(StudyNoteDraft).where(StudyNoteDraft.course_id == course.id).order_by(StudyNoteDraft.created_at.desc(), StudyNoteDraft.id.desc())).all()
         return [_draft(row) for row in rows]
 
 
 @router.get("/note-drafts/{draft_id}")
 def get_note_draft(request: Request, draft_id: str):
-    with _teacher_session(request) as (session, teacher):
-        row = session.scalar(select(StudyNoteDraft).join(CourseMembership, CourseMembership.course_id == StudyNoteDraft.course_id).where(StudyNoteDraft.id == _uuid(draft_id), CourseMembership.user_id == teacher.id))
+    with teacher_session(request) as (session, teacher):
+        row = session.scalar(select(StudyNoteDraft).join(CourseMembership, CourseMembership.course_id == StudyNoteDraft.course_id).where(StudyNoteDraft.id == parse_uuid(draft_id), CourseMembership.user_id == teacher.id))
         if row is None:
             raise ApiError(404, "not_found", "Draft not found.")
         return _draft(row, content=True)
@@ -84,9 +86,9 @@ def _edit_error() -> ApiError:
 @router.patch("/note-drafts/{draft_id}")
 async def edit_note_draft(request: Request, draft_id: str):
     try:
-        with _teacher_session(request) as (session, teacher):
+        with teacher_session(request) as (session, teacher):
             try:
-                identifier = _uuid(draft_id)
+                identifier = parse_uuid(draft_id)
             except ApiError:
                 raise _edit_error() from None
             row = session.scalar(select(StudyNoteDraft).join(CourseMembership, CourseMembership.course_id == StudyNoteDraft.course_id).where(StudyNoteDraft.id == identifier, CourseMembership.user_id == teacher.id))
@@ -97,7 +99,7 @@ async def edit_note_draft(request: Request, draft_id: str):
             except (ValueError, ValidationError):
                 raise _edit_error() from None
             title = body.title.strip()
-            content = body.content.replace("\r\n", "\n").replace("\r", "\n").strip()
+            content = normalise_newlines_and_trim(body.content)
             if not 1 <= len(title) <= 200 or not 1 <= len(content) <= 2000 or not is_postgres_text(title + content):
                 raise _edit_error()
             # Shared locks hold role/membership stable until the versioned write commits.

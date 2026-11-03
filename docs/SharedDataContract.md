@@ -77,9 +77,10 @@ Tests use a real isolated PostgreSQL schema, not SQLite: read `TEA01_TEST_DATABA
 Keep module boundaries single-purpose; these names are the shared implementation interface, while HTTP tests rely only on the API above:
 
 - `src/backend/teacher_materials/models.py`: SQLAlchemy `User`, `Course`, `CourseMembership`, `Topic`, `Material`, `MaterialFile` models with the columns above.
-- `src/backend/teacher_materials/demo_identity.py`: `require_teacher(request, session) -> User`, which enforces the gate, resolves the header, and checks role; `require_managed_course(session, teacher, course_id) -> Course`, which returns 404 for absent or inaccessible courses.
-- `src/backend/teacher_materials/storage.py`: `validate_upload(upload) -> ValidatedUpload` with `original_filename`, `media_type`, `size_bytes`, `content: bytes`; `MAX_BYTES` 10 MiB and `MAX_TOTAL_BYTES` 100 MiB. It validates bytes without permanent filesystem storage.
-- `src/backend/teacher_materials/routes.py`: `router` containing the six operations above. It uses one synchronous SQLAlchemy session per request, checks access before querying records, and rolls metadata/content back together at the transaction boundary.
+- `src/backend/teacher_materials/demo_identity.py`: `require_demo_enabled() -> None`, called once by the shared teacher session; `require_teacher(request, session) -> User` resolves identity/role; `require_managed_course(session, teacher, course_id) -> Course` returns 404 for absent or inaccessible courses.
+- `src/backend/teacher_materials/storage.py`: `validate_upload(upload) -> ValidatedUpload` with `original_filename`, `media_type`, `size_bytes`, `content: bytes`; `MAX_BYTES` 10 MiB and `MAX_TOTAL_BYTES` 100 MiB. No permanent filesystem storage.
+- `src/backend/teacher_access.py`: `teacher_session(request)` (gate, header and READ COMMITTED database session), `owned_material(session, teacher, material_id)` and `parse_uuid(value)`. `src/backend/timestamps.py`: `utc_timestamp(value)`.
+- `src/backend/teacher_materials/routes.py`: six operations, authorised content retrieval and atomic metadata/content writes.
 - `src/backend/teacher_materials/seed.py`: `seed_demo(session: Session) -> None` and the exact rerunnable CLI `uv run python -m teacher_materials.seed` from `src/backend`; document its invocation in `docs/DeveloperGuide.md`.
 
 The test-designer must not import these internals or implementation files. The seed CLI path is fixed because the independent test fixture invokes it.

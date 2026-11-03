@@ -53,7 +53,7 @@ In PowerShell, use `Copy-Item .env.example .env` instead of `cp` if preferred. P
 
 Open [the local preview](http://127.0.0.1:5173/login). Select a role tab, then **Explore … demo**. No credentials are needed. Sign-in and Create account only display a preview message.
 
-Preview screens work without the backend, but Student Practice, the study companion, Teacher Materials and Teacher AI content studio require it. Copy `src/frontend/.env.example` to `src/frontend/.env` for the local teacher demo header. An optional `src/frontend/.env` can override `API_PROXY_TARGET`; see `.env.example`. AI calls also require the backend `SOCLAAS_BASE_URL`, `SOCLAAS_API_KEY` and `SOCLAAS_MODEL` settings; keep the key in the ignored backend `.env`.
+Preview screens work without the backend, but Student Practice, the study companion, Teacher Materials and Teacher AI content studio require it. Copy `src/frontend/.env.example` to `src/frontend/.env` for the local teacher demo header. `API_PORT` in that file is the backend port the Vite dev server proxies `/api` to. AI calls also require the backend `SOCLAAS_BASE_URL`, `SOCLAAS_API_KEY` and `SOCLAAS_MODEL` settings; keep the key in the ignored backend `.env`.
 
 ## What you can explore
 
@@ -73,7 +73,7 @@ Remaining preview state and the current student practice session are temporary. 
 | `GET /api/health` | `200 {"status":"ok"}` | API process can serve a request. |
 | `GET /api/health/ready` | `200 {"status":"ready"}` | Process readiness only; does not check PostgreSQL or AI. |
 
-FastAPI's generated API documentation is at [localhost:8000/docs](http://127.0.0.1:8000/docs). Teacher Materials endpoints and BYTEA storage are specified in [the shared data contract](docs/SharedDataContract.md).
+FastAPI's generated API documentation is at `/docs` on the backend (the port in `src/frontend/.env.example`). Teacher Materials endpoints and BYTEA storage are specified in [the shared data contract](docs/SharedDataContract.md).
 
 ## Verify
 
