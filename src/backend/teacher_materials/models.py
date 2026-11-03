@@ -2,7 +2,7 @@
 from datetime import datetime
 from uuid import UUID, uuid4
 
-from sqlalchemy import BigInteger, CheckConstraint, DateTime, ForeignKey, ForeignKeyConstraint, Integer, String, Text, UniqueConstraint, Uuid, func
+from sqlalchemy import BigInteger, CheckConstraint, DateTime, ForeignKey, ForeignKeyConstraint, Index, Integer, String, Text, UniqueConstraint, Uuid, func
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
@@ -16,8 +16,14 @@ class User(Base):
     id: Mapped[str] = mapped_column(String(64), primary_key=True)
     display_name: Mapped[str] = mapped_column(String(200))
     role: Mapped[str] = mapped_column(String(16))
+    email: Mapped[str | None] = mapped_column(String(254), nullable=True)
+    password_hash: Mapped[str | None] = mapped_column(String(255), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
-    __table_args__ = (CheckConstraint("role in ('student', 'teacher', 'admin')"),)
+    __table_args__ = (
+        CheckConstraint("role in ('student', 'teacher', 'admin')"),
+        CheckConstraint("email = lower(email)", name="ck_user_email_lower"),
+        Index("ux_user_email", "email", unique=True),
+    )
 
 
 class Course(Base):

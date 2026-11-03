@@ -1,6 +1,16 @@
-import { STUDENT_ID } from "../config";
-
 export const REQUEST_TIMEOUT_MS = 10_000;
+
+// The CSRF token lives in memory only; AuthContext sets it after sign-in or /api/auth/me.
+let csrfToken: string | null = null;
+export function setCsrfToken(token: string | null) {
+  csrfToken = token;
+}
+// Called on 401 "unauthenticated" from `request`; the callback decides by auth state what to do.
+let onUnauthenticated: (() => void) | null = null;
+export function setUnauthenticatedHandler(handler: (() => void) | null) {
+  onUnauthenticated = handler;
+}
+const SAFE_METHODS = ["GET", "HEAD", "OPTIONS"];
 
 export class ApiError extends Error {
   status: number;
@@ -37,9 +47,12 @@ export async function request(
     const response = await fetch(path, {
       method,
       signal: controller.signal,
+      credentials: "same-origin",
       headers: {
-        "X-Student-Id": STUDENT_ID,
         ...(body === undefined ? {} : { "Content-Type": "application/json" }),
+        ...(csrfToken && !SAFE_METHODS.includes(method.toUpperCase())
+          ? { "X-CSRF-Token": csrfToken }
+          : {}),
       },
       body: body === undefined ? undefined : JSON.stringify(body),
     });
@@ -58,6 +71,8 @@ export async function request(
         ? detail.missing.filter((id): id is string => typeof id === "string")
         : [];
       const retry = detail?.retry_after_seconds;
+      if (response.status === 401 && code === "unauthenticated")
+        onUnauthenticated?.();
       throw new ApiError(
         response.status,
         code,

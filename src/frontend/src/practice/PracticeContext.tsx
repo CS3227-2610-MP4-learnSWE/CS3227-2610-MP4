@@ -17,6 +17,7 @@ import {
   type Results,
 } from "../services/practice";
 import { PRACTICE_SET_ID } from "../config";
+import { isSignInNeeded } from "../auth/SignInNotice";
 
 type Phase = "editing" | "submitting" | "submitted";
 type Message = "incomplete" | "retry" | null;
@@ -35,6 +36,8 @@ type PracticeState = {
   locked: boolean;
   // The attempt id while the results are shown, for the study companion. Null otherwise.
   submittedAttemptId: string | null;
+  // The last failure was 401: the page shows the sign-in notice when the visitor is in demo mode.
+  signInNeeded: boolean;
 };
 
 type Practice = PracticeState & {
@@ -56,6 +59,7 @@ const initial: PracticeState = {
   missing: [],
   locked: false,
   submittedAttemptId: null,
+  signInNeeded: false,
 };
 const Context = createContext<Practice | null>(null);
 
@@ -77,7 +81,13 @@ export function PracticeProvider({ children }: { children: ReactNode }) {
     setState((s) => ({ ...s, load: "loading" }));
     getSet(PRACTICE_SET_ID)
       .then((set) => setState((s) => ({ ...s, load: "ready", set })))
-      .catch(() => setState((s) => ({ ...s, load: "error" })))
+      .catch((error) =>
+        setState((s) => ({
+          ...s,
+          load: "error",
+          signInNeeded: isSignInNeeded(error),
+        })),
+      )
       .finally(() => {
         loading.current = false;
       });
@@ -145,11 +155,12 @@ export function PracticeProvider({ children }: { children: ReactNode }) {
           } else throw error;
         }
       }
-    } catch {
+    } catch (error) {
       patch({
         phase: "editing",
         message: "retry",
         locked: step.current !== "save",
+        signInNeeded: isSignInNeeded(error),
       });
     }
   };

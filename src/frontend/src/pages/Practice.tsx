@@ -15,9 +15,12 @@ import {
   Tag,
 } from "../components/ui";
 import { usePractice } from "../practice/PracticeContext";
+import { useAuth } from "../auth/AuthContext";
+import SignInNotice from "../auth/SignInNotice";
 
 export default function Practice() {
   const p = usePractice();
+  const demoMode = useAuth().status === "anonymous";
   const { load, loadSet, set, choices, results, submitted } = p;
   const [hint, setHint] = useState(false);
   useEffect(() => {
@@ -35,17 +38,21 @@ export default function Practice() {
     return (
       <>
         {heading}
-        <Alert
-          severity="error"
-          sx={{ my: 2 }}
-          action={
-            <Button color="inherit" size="small" onClick={loadSet}>
-              Try again
-            </Button>
-          }
-        >
-          We could not load the practice set. Please try again.
-        </Alert>
+        {p.signInNeeded && demoMode ? (
+          <SignInNotice />
+        ) : (
+          <Alert
+            severity="error"
+            sx={{ my: 2 }}
+            action={
+              <Button color="inherit" size="small" onClick={loadSet}>
+                Try again
+              </Button>
+            }
+          >
+            We could not load the practice set. Please try again.
+          </Alert>
+        )}
       </>
     );
   if (!set)
@@ -85,7 +92,10 @@ export default function Practice() {
                 ` Still to answer: question ${missingNumbers.join(", ")}.`}
             </Alert>
           )}
-          {p.message === "retry" && (
+          {p.message === "retry" && p.signInNeeded && demoMode && (
+            <SignInNotice />
+          )}
+          {p.message === "retry" && !(p.signInNeeded && demoMode) && (
             <Alert
               severity="error"
               sx={{ my: 2 }}
