@@ -173,3 +173,79 @@ def test_shr01_ac18_rate_limited_response_before_validation_free_of_secrets(low_
     assert_429(r)
     assert pw not in r.text and s.email not in r.text
     assert code_of(r) == "rate_limited"
+
+
+# ------------------------------------------------------------------ concurrency (verifier B1)
+def burst(fn, n):
+    """Run fn(i) in n threads released together, so every request is in flight at once."""
+    from concurrent.futures import ThreadPoolExecutor
+    from threading import Barrier
+
+    barrier = Barrier(n)
+
+    def run(i):
+        barrier.wait()
+        return fn(i)
+
+    with ThreadPoolExecutor(n) as pool:
+        return list(pool.map(run, range(n)))
+
+
+def test_shr01_sec_auth_08_parallel_wrong_passwords_cannot_exceed_the_per_email_limit(monkeypatch):
+    monkeypatch.setenv("AUTH_LOGIN_MAX_FAILURES_PER_EMAIL", "3")
+    monkeypatch.setenv("AUTH_LOGIN_MAX_FAILURES_PER_IP", "1000")
+    s = new_student()
+    results = burst(lambda i: login(s.email, f"wrong-{i}-" + unique_password()), 10)
+    statuses = [r.status_code for r in results]
+    assert set(statuses) <= {401, 429}, statuses
+    assert statuses.count(401) <= 3, statuses
+    assert statuses.count(429) >= 7, statuses
+    for r in results:
+        if r.status_code == 429:
+            assert_429(r)
+        else:
+            assert code_of(r) == "invalid_credentials"
+    # The window is now full: even the correct password is refused.
+    assert_429(login(s.email, s.password))
+
+
+def test_shr01_sec_auth_08_parallel_wrong_passwords_cannot_exceed_the_per_ip_limit(monkeypatch):
+    monkeypatch.setenv("AUTH_LOGIN_MAX_FAILURES_PER_IP", "3")
+    monkeypatch.setenv("AUTH_LOGIN_MAX_FAILURES_PER_EMAIL", "1000")
+    ip = fresh_ip()
+    results = burst(lambda i: login(unique_email("ghost"), "wrong-" + unique_password(), ip=ip), 10)
+    statuses = [r.status_code for r in results]
+    assert set(statuses) <= {401, 429}, statuses
+    assert statuses.count(401) <= 3, statuses
+    assert statuses.count(429) >= 7, statuses
+    for r in results:
+        if r.status_code == 429:
+            assert_429(r)
+    assert login(unique_email("ghost"), "x", ip=fresh_ip()).status_code == 401  # other IPs unaffected
+
+
+def test_shr01_sec_auth_08_parallel_mixed_attempts_still_respect_the_email_limit(monkeypatch):
+    monkeypatch.setenv("AUTH_LOGIN_MAX_FAILURES_PER_EMAIL", "2")
+    monkeypatch.setenv("AUTH_LOGIN_MAX_FAILURES_PER_IP", "1000")
+    s = new_student()
+    results = burst(
+        lambda i: login(s.email, "wrong-" + unique_password()) if i % 2 else login(s.email, s.password), 10
+    )
+    assert len([r for r in results if r.status_code == 401]) <= 2, [r.status_code for r in results]
+
+
+def test_shr01_ac18_parallel_successful_logins_are_not_throttled_by_the_failure_limit(monkeypatch):
+    monkeypatch.setenv("AUTH_LOGIN_MAX_FAILURES_PER_EMAIL", "2")
+    monkeypatch.setenv("AUTH_LOGIN_MAX_FAILURES_PER_IP", "2")
+    s = new_student()
+    ip = fresh_ip()
+    results = burst(lambda i: login(s.email, s.password, ip=ip), 10)
+    assert [r.status_code for r in results] == [200] * 10
+    # successes left the failure counters untouched: exactly two failures are still allowed
+    assert login(s.email, "wrong-" + unique_password(), ip=ip).status_code == 401
+    assert login(s.email, "wrong-" + unique_password(), ip=ip).status_code == 401
+    assert_429(login(s.email, "wrong-" + unique_password(), ip=ip))
+
+
+# Unbounded limiter state (many distinct emails) cannot be observed over HTTP from the plan's
+# contract, so no test is written for it.
