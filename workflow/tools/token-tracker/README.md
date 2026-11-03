@@ -28,6 +28,16 @@ python -m tracker export --cwd-contains CS3227-2610-MP4
 
 Options on both commands: `--claude-dir` (default `~/.claude`), `--codex-dir` (default `~/.codex`), `--prices` (default `prices.json` here), `--cwd-contains TEXT`, `--since ISO-DATE`. `report` also takes `--branch` and `--out`; `export` takes `--out` (default `usage.csv`).
 
+## Use in the workflow
+
+Run it after any notable task or experiment run, on the branch the work was done on (branch names are matched against the git branch recorded in the logs). Each teammate runs it on their own machine.
+
+1. See where the tokens and cost went: the `report --branch <branch-name>` command above.
+2. For a result worth keeping, save the summary with `--out ..\..\experiments\results\<name>.csv` and commit that file.
+3. Add one row to `workflow/experiments/resource-log.md` (task, agent, model, the numbers from the summary, retries and a note).
+
+Only summaries under `experiments/results/` are committed; the row-level `usage.csv` holds your whole usage history and is gitignored. Quote numbers as measured by the tracker, not as billed (see Cost and Known limits).
+
 ## What it reads
 
 - Claude Code: `~/.claude/projects/**/*.jsonl`, including subagents in `<session>/subagents/agent-*.jsonl`. The agent type comes from the sibling `.meta.json`. Messages logged several times are counted once (largest `output_tokens`).
