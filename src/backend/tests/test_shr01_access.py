@@ -63,7 +63,9 @@ def test_shr01_ac15_student_session_reaches_every_migrated_route(fake):
     aid = start(s)
     for method, path, body in routes(aid):
         r = call(method, path, s, body)
-        assert r.status_code not in (401, 403), (method, path, r.status_code, r.text)
+        # Judge auth by error code: business 403s such as `not_submitted` are legitimate.
+        code = r.json().get("detail", {}).get("code") if r.status_code >= 400 else None
+        assert code not in ("unauthenticated", "forbidden", "csrf_failed"), (method, path, r.status_code, r.text)
     assert call("GET", f"/api/practice-sets/{SET_ID}", s).status_code == 200
 
 
@@ -102,6 +104,7 @@ def test_shr01_ac12_role_change_takes_effect_on_next_request():
     r = call("GET", f"/api/practice-sets/{SET_ID}", s)
     assert r.status_code == 403 and code_of(r) == "forbidden"
     assert call("GET", "/api/auth/me", s).json()["user"]["role"] == "teacher"
+    sql('UPDATE "user" SET role = %s WHERE id = %s', ("student", str(s)))  # leave no teacher row behind
 
 
 def test_shr01_ac12_deleted_user_gets_401_on_protected_route():
@@ -453,8 +456,9 @@ def test_shr01_sec_auth_12_database_unavailable_is_503_and_never_unauthenticated
     s = new_student()
     monkeypatch.setenv("DATABASE_URL", "postgresql+psycopg://nobody:nopass@127.0.0.1:1/none")
     exercise_all_auth_paths(s)
-    safe_error(call("POST", f"/api/practice-sets/{SET_ID}/attempts", None,
-                    headers={"X-Demo-User-Id": "demo-student"}))
+    # No session cookie never reaches the database: 401 is correct (check order), never access.
+    r = call("POST", f"/api/practice-sets/{SET_ID}/attempts", None, headers={"X-Demo-User-Id": "demo-student"})
+    assert r.status_code == 401 and code_of(r) == "unauthenticated"
 
 
 def test_shr01_sec_auth_12_missing_database_url_is_503(monkeypatch):

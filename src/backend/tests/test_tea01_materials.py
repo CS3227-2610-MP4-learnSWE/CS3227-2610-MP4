@@ -241,11 +241,14 @@ def test_tea01_validation_order_and_unknown_fields(app):
 
 
 def test_tea01_upload_does_not_publish(app, tea01_database):
-    before = call(app, "GET", "/api/practice-sets/intro-se-1")
+    from auth_helpers import call as student_call, new_student  # SHR-01: practice routes need a session
+
+    student = new_student()
+    before = student_call("GET", "/api/practice-sets/intro-se-1", student)
     assert before.status_code == 200
     result = upload(app, "private.txt", b"private draft source")
     assert result.status_code == 201
-    assert call(app, "GET", "/api/practice-sets/intro-se-1").json() == before.json()
+    assert student_call("GET", "/api/practice-sets/intro-se-1", student).json() == before.json()
     assert "private draft source" not in json.dumps(before.json())
     # TEA-01 creates source metadata only; the approved schema has no published lesson table.
     assert tea01_database.execute("SELECT count(*) FROM material WHERE id=%s", (result.json()["id"],)).fetchone()[0] == 1
