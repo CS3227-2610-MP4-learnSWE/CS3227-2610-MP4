@@ -1,6 +1,6 @@
 # learnSWE: project instructions
 
-Programming/SE learning web app with three roles (student, teacher, admin), each with at least one SoC-LLM feature. CS3227 MP4: spec-driven, multi-agent, security-tested, deployed with separate dev/prod. Deadline: 13 Nov 2026, 2pm SGT, on `master`.
+Programming/SE learning web app with three roles (student, teacher, admin), each with at least one SoC-LLM feature. CS3227 MP4: spec-driven, multi-agent, security-tested, deployed with separate dev/prod. Deadline and owners: see `workflow/checklist.md`.
 
 ## Read first (in this order, only what the task needs)
 1. `workflow/README.md`: index of process files and the agent roster.
