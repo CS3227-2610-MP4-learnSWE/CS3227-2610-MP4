@@ -611,6 +611,9 @@ test("stu02fe AC8 scripts downloaded for /student/practice contain no answer key
 test("stu02fe AC8 teacher pages still show their demo answers (loaded on demand)", async ({
   page,
 }) => {
+  // Teacher pages are demo-mode screens (AC25): visit anonymously; a student session would be
+  // redirected home (AC22). A later route registration overrides the beforeEach sign-in.
+  await mockAuthApi(page, { user: null });
   await mockPracticeApi(page);
   await page.goto("/teacher/practice");
   await expect(page.getByText(EXPLANATIONS[0]).first()).toBeVisible();

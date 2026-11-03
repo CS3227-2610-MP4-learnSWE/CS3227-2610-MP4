@@ -245,6 +245,10 @@ test("keyboard focus is visible and navigation supports back and forward", async
   page,
 }) => {
   await page.goto("/student/overview");
+  // AC22: the shell (and its skip link) renders only after the /api/auth/me response.
+  await expect(
+    page.getByRole("link", { name: "Skip to content" }),
+  ).toBeAttached();
   await page.keyboard.press("Tab");
   await expect(
     page.getByRole("link", { name: "Skip to content" }),
