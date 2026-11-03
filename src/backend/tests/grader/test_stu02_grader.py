@@ -3,12 +3,9 @@
 Never shown to the runs. Applied to a finished run's branch after the fact. It
 tests only the HTTP contract in workflow/specs/STU-02/plan.md.
 """
-import asyncio
 import json
-import uuid
 
-import httpx
-from main import app
+from auth_helpers import call, code_of, new_student  # session login replaces X-Student-Id (SHR-01)
 
 SET = "/api/practice-sets/intro-se-1"
 KEY = {"q1": "a", "q2": "b", "q3": "c"}
@@ -18,24 +15,6 @@ EXPLANATIONS = {
     "q3": "len returns the number of items. The list contains three items.",
 }
 WRONG = {"q1": "b", "q2": "a", "q3": "a"}
-
-
-def call(method, path, student=None, body=None):
-    headers = {"X-Student-Id": student} if student is not None else {}
-
-    async def send():
-        async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:
-            return await client.request(method, path, headers=headers, json=body)
-
-    return asyncio.run(send())
-
-
-def new_student():
-    return f"student-{uuid.uuid4().hex[:8]}"
-
-
-def code_of(response):
-    return response.json()["detail"]["code"]
 
 
 def start(student):
@@ -54,7 +33,7 @@ def leaks(response):
 
 
 def test_g01_set_has_questions_without_answers():
-    response = call("GET", SET)
+    response = call("GET", SET, new_student())
     assert response.status_code == 200
     data = response.json()
     assert data["id"] == "intro-se-1" and data["title"]
@@ -67,16 +46,16 @@ def test_g01_set_has_questions_without_answers():
 
 
 def test_g02_unknown_set_is_404():
-    response = call("GET", "/api/practice-sets/nope")
+    response = call("GET", "/api/practice-sets/nope", new_student())
     assert response.status_code == 404 and code_of(response) == "set_not_found"
     response = call("POST", "/api/practice-sets/nope/attempts", new_student())
     assert response.status_code == 404 and code_of(response) == "set_not_found"
 
 
-def test_g03_start_requires_student_header():
-    for header in (None, ""):
-        response = call("POST", f"{SET}/attempts", header)
-        assert response.status_code == 401 and code_of(response) == "missing_student"
+def test_g03_start_requires_student_session():
+    for headers in (None, {"Cookie": "learnswe_session="}):
+        response = call("POST", f"{SET}/attempts", headers=headers)
+        assert response.status_code == 401 and code_of(response) == "unauthenticated"
 
 
 def test_g04_start_creates_empty_in_progress_attempt():
@@ -87,7 +66,7 @@ def test_g04_start_creates_empty_in_progress_attempt():
     assert isinstance(data["attempt_id"], str) and len(data["attempt_id"]) >= 8
 
 
-def test_g05_attempt_endpoints_require_header():
+def test_g05_attempt_endpoints_require_session():
     student = new_student()
     attempt = start(student)
     for method, path in (
@@ -98,7 +77,7 @@ def test_g05_attempt_endpoints_require_header():
     ):
         body = {"answers": {}} if method == "PUT" else None
         response = call(method, path, None, body)
-        assert response.status_code == 401 and code_of(response) == "missing_student", path
+        assert response.status_code == 401 and code_of(response) == "unauthenticated", path
 
 
 def test_g06_answers_can_be_saved_merged_and_revised():
@@ -206,7 +185,7 @@ def test_g15_no_pre_submission_response_leaks_the_key():
     student = new_student()
     attempt = start(student)
     responses = [
-        call("GET", SET),
+        call("GET", SET, student),
         call("GET", f"/api/attempts/{attempt}", student),
         save(student, attempt, {"q1": "a"}),
         save(student, attempt, {"q9": "a"}),

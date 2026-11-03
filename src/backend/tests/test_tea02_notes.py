@@ -370,11 +370,14 @@ def test_tea02_fresh_and_existing_schema_migrations_preserve_materials(tea01_dat
 def test_tea02_accepted_output_boundary_and_no_student_publication(notes):
     app, fake = notes
     source = upload(app)
-    before = call(app, "GET", "/api/practice-sets/intro-se-1", headers={"X-Student-Id": "demo-student"})
+    from auth_helpers import call as student_call, new_student  # SHR-01: practice routes need a session
+
+    student = new_student()
+    before = student_call("GET", "/api/practice-sets/intro-se-1", student)
     fake.text = "x" * 1999
     created = generate(app, source)
     assert created.status_code == 201 and len(created.json()["content"]) == 1999
-    after = call(app, "GET", "/api/practice-sets/intro-se-1", headers={"X-Student-Id": "demo-student"})
+    after = student_call("GET", "/api/practice-sets/intro-se-1", student)
     assert before.status_code == after.status_code == 200 and before.json() == after.json()
     error(call(app, "GET", f"{BASE}/note-drafts/{created.json()['id']}", user="demo-student"), 403, "forbidden")
 

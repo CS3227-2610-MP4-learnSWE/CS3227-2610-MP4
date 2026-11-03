@@ -44,10 +44,21 @@ def pytest_sessionstart(session):
     env["FILE_STORAGE_DIR"] = str(_storage)
     env["APP_ENV"] = "development"
     env["ALLOW_DEMO_IDENTITY"] = "true"
+    # SHR-01: auth settings and test-only seed credentials (never real passwords).
+    from auth_helpers import AUTH_ENV, SEED_ENV, seed_state
+
+    env.update(AUTH_ENV)
+    env.update(SEED_ENV)
     backend = Path(__file__).resolve().parents[1]
     try:
         subprocess.run([sys.executable, "-m", "alembic", "upgrade", "head"], cwd=backend, env=env, check=True)
         subprocess.run([sys.executable, "-m", "teacher_materials.seed"], cwd=backend, env=env, check=True)
+        # Not check=True: before the auth code exists the failure must surface per auth test
+        # (see auth_helpers.require_db), not abort the whole session and the older suites.
+        seeded = subprocess.run([sys.executable, "-m", "auth.seed"], cwd=backend, env=env,
+                                capture_output=True, text=True)
+        seed_state["ready"] = seeded.returncode == 0
+        seed_state["error"] = (seeded.stderr or seeded.stdout)[-600:]
     except BaseException:
         _cleanup()
         raise

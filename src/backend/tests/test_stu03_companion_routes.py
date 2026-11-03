@@ -679,23 +679,25 @@ def test_stu03_ac19_unconfigured_real_client_gives_503(monkeypatch):
 
 
 # ---------------------------------------------------------------- AC25, AC26, check order
-def test_stu03_ac25_missing_or_blank_student_header_is_401_first(fake):
-    for header in (None, "", "   "):
-        r = call("POST", URL, header, body_of("hi"))
-        assert r.status_code == 401 and code_of(r) == "missing_student", header
+def test_stu03_ac25_missing_or_blank_session_is_401_first(fake):
+    """SHR-01: the signed-out 401 is `unauthenticated` (was `missing_student`)."""
+    for headers in (None, {"Cookie": "learnswe_session="}, {"Cookie": "learnswe_session=   "}):
+        r = call("POST", URL, None, body_of("hi"), headers=headers)
+        assert r.status_code == 401 and code_of(r) == "unauthenticated", headers
     # 401 comes before any other check, even for a bad message or unknown ids
     r = call("POST", URL, None, body_of("", page="practice", attempt_id="nope"))
     assert r.status_code == 401
     assert fake.calls == []
 
 
-def test_stu03_ac25_student_id_is_trimmed(fake):
+def test_stu03_ac25_session_user_is_the_identity_and_header_is_ignored(fake):
+    """Replaces the header-trimming test: the session user id is the caller and the attempt owner."""
     s = new_student()
-    r = call("POST", URL, f"  {s} ", body_of("hi"))
+    r = call("POST", URL, s, body_of("hi"), headers={"X-Student-Id": "  someone-else "})
     assert r.status_code == 200
     assert fake.last.caller_id == s
     aid = submitted_attempt(s)
-    r = call("POST", URL, f" {s}  ", body_of("hi", page="practice", attempt_id=aid))
+    r = call("POST", URL, s, body_of("hi", page="practice", attempt_id=aid), headers={"X-Student-Id": "x"})
     assert r.json()["mode"] == "explain"
 
 
