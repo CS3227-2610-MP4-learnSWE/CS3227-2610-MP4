@@ -9,7 +9,7 @@ Everything about how this project is built. The default agent definitions live i
 | `STATUS.md` | One row per feature: stage, branch, PR, open items. |
 | `notes.md` | Live handoff log between agents/sessions. Newest 10 entries, newest first. |
 | `notes-archive.md` | Older handoff entries, moved unchanged from `notes.md`. |
-| `templates/` | `spec.md`, `plan.md`, `tasks.md`, `handoff.md` templates. |
+| `templates/` | `spec.md`, `plan.md`, `tasks.md`, `handoff.md` templates, and a filled sample tasks file (`tasks-sample-ADM-06.md`). |
 | `specs/<feature-id>/` | Per-feature spec, plan and tasks (spec-driven development). |
 | `experiments/context-engineering.md` | Context-engineering experiments and results. |
 | `experiments/resource-log.md` | Per-task model, token, revision-round and retry records. |
