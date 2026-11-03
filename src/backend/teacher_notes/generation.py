@@ -4,11 +4,9 @@ from pathlib import Path
 from pypdf import PdfReader
 
 from errors import ApiError
+from llm_errors import generation_error
 from text_validation import is_postgres_text
-from llm_client import (
-    ChatMessage, LlmBadResponse, LlmBusy, LlmClient, LlmError, LlmInputTooLarge,
-    LlmNotConfigured, LlmRateLimited, LlmTimeout, LlmUpstreamError,
-)
+from llm_client import ChatMessage, LlmBadResponse, LlmClient, LlmError
 
 MAX_SOURCE_CHARS = 8_000
 MAX_PDF_PAGES = 100
@@ -60,24 +58,6 @@ def extract_source(path: Path, media_type: str) -> str:
     return text
 
 
-def _llm_error(exc: LlmError) -> ApiError:
-    if isinstance(exc, LlmRateLimited):
-        return ApiError(429, "llm_rate_limited", "Too many generation requests. Please wait before retrying.", retry_after_seconds=exc.retry_after_seconds)
-    if isinstance(exc, LlmBusy):
-        return ApiError(429, "llm_busy", "The AI service is busy. Please wait before retrying.", retry_after_seconds=exc.retry_after_seconds)
-    if isinstance(exc, LlmNotConfigured):
-        return ApiError(503, "llm_not_configured", "The AI service is not configured.")
-    if isinstance(exc, LlmInputTooLarge):
-        return ApiError(422, "source_text_too_large", "The source cannot fit the AI request limit. Choose a shorter source.")
-    if isinstance(exc, LlmTimeout):
-        return ApiError(504, "llm_timeout", "Generation timed out. Please try again.")
-    if isinstance(exc, LlmUpstreamError):
-        return ApiError(502, "llm_upstream_error", "The AI service could not generate content. Please try again.")
-    if isinstance(exc, LlmBadResponse):
-        return ApiError(502, "llm_bad_response", "The AI service returned unusable content. Please try again.")
-    return ApiError(503, "llm_unavailable", "The AI service is unavailable. Please try again later.")
-
-
 def generate_notes(llm: LlmClient, text: str, teacher_id: str) -> str:
     try:
         reply = llm.complete(
@@ -85,9 +65,9 @@ def generate_notes(llm: LlmClient, text: str, teacher_id: str) -> str:
             max_tokens=600, caller_id=f"teacher:{teacher_id}",
         )
     except LlmError as exc:
-        raise _llm_error(exc) from None
+        raise generation_error(exc) from None
     if (not isinstance(reply.text, str) or not reply.text.strip()
             or len(reply.text) >= 2_000 or reply.finish_reason == "length"
             or not is_postgres_text(reply.text)):
-        raise _llm_error(LlmBadResponse("Unusable reply"))
+        raise generation_error(LlmBadResponse("Unusable reply"))
     return reply.text.strip()
