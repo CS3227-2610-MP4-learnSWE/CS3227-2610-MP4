@@ -21,54 +21,45 @@ export class ApiError extends Error {
   }
 }
 
-/** Calls the business API. Throws ApiError for HTTP errors and network/timeout/bad JSON (status 0). */
-export async function request(
-  method: string,
+/** Builds the ApiError for a non-2xx response from the body's `detail`, if it is JSON. */
+async function errorFrom(response: Response): Promise<ApiError> {
+  let data: unknown;
+  try {
+    data = await response.json();
+  } catch {
+    data = undefined;
+  }
+  const detail = (data as { detail?: unknown } | undefined)?.detail as
+    | { code?: unknown; missing?: unknown; retry_after_seconds?: unknown }
+    | undefined;
+  const code = typeof detail?.code === "string" ? detail.code : "";
+  const missing = Array.isArray(detail?.missing)
+    ? detail.missing.filter((id): id is string => typeof id === "string")
+    : [];
+  const retry = detail?.retry_after_seconds;
+  return new ApiError(
+    response.status,
+    code,
+    missing,
+    typeof retry === "number" && Number.isInteger(retry) && retry > 0
+      ? retry
+      : null,
+  );
+}
+
+/** The one place that applies the timeout, runs fetch and maps failures to ApiError. */
+async function send(
   path: string,
-  body?: unknown,
-  options: { timeoutMs?: number } = {},
+  init: RequestInit,
+  timeoutMs: number,
+  readOk: (response: Response) => Promise<unknown>,
 ): Promise<unknown> {
   const controller = new AbortController();
-  const timer = setTimeout(
-    () => controller.abort(),
-    options.timeoutMs ?? REQUEST_TIMEOUT_MS,
-  );
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    const response = await fetch(path, {
-      method,
-      signal: controller.signal,
-      headers: {
-        "X-Student-Id": STUDENT_ID,
-        ...(body === undefined ? {} : { "Content-Type": "application/json" }),
-      },
-      body: body === undefined ? undefined : JSON.stringify(body),
-    });
-    let data: unknown;
-    try {
-      data = await response.json();
-    } catch {
-      data = undefined;
-    }
-    if (!response.ok) {
-      const detail = (data as { detail?: unknown } | undefined)?.detail as
-        | { code?: unknown; missing?: unknown; retry_after_seconds?: unknown }
-        | undefined;
-      const code = typeof detail?.code === "string" ? detail.code : "";
-      const missing = Array.isArray(detail?.missing)
-        ? detail.missing.filter((id): id is string => typeof id === "string")
-        : [];
-      const retry = detail?.retry_after_seconds;
-      throw new ApiError(
-        response.status,
-        code,
-        missing,
-        typeof retry === "number" && Number.isInteger(retry) && retry > 0
-          ? retry
-          : null,
-      );
-    }
-    if (data === undefined) throw new ApiError(0, "bad_response");
-    return data;
+    const response = await fetch(path, { ...init, signal: controller.signal });
+    if (!response.ok) throw await errorFrom(response);
+    return await readOk(response);
   } catch (error) {
     if (error instanceof ApiError) throw error;
     throw new ApiError(0, "network");
@@ -77,16 +68,45 @@ export async function request(
   }
 }
 
+/** Calls the business API. Throws ApiError for HTTP errors and network/timeout/bad JSON (status 0). */
+export function request(
+  method: string,
+  path: string,
+  body?: unknown,
+  options: { timeoutMs?: number } = {},
+): Promise<unknown> {
+  return send(
+    path,
+    {
+      method,
+      headers: {
+        "X-Student-Id": STUDENT_ID,
+        ...(body === undefined ? {} : { "Content-Type": "application/json" }),
+      },
+      body: body === undefined ? undefined : JSON.stringify(body),
+    },
+    options.timeoutMs ?? REQUEST_TIMEOUT_MS,
+    async (response) => {
+      let data: unknown;
+      try {
+        data = await response.json();
+      } catch {
+        data = undefined;
+      }
+      if (data === undefined) throw new ApiError(0, "bad_response");
+      return data;
+    },
+  );
+}
+
 /** Teacher-only transport. The demo header is sent only with an explicit local gate. */
-export async function requestTeacher(
+export function requestTeacher(
   method: string,
   path: string,
   body?: FormData | object,
   blob = false,
   timeoutMs = REQUEST_TIMEOUT_MS,
 ): Promise<unknown> {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
   const headers: Record<string, string> = {};
   if (
     import.meta.env.VITE_APP_ENV === "development" &&
@@ -97,10 +117,10 @@ export async function requestTeacher(
   }
   if (body !== undefined && !(body instanceof FormData))
     headers["Content-Type"] = "application/json";
-  try {
-    const response = await fetch(path, {
+  return send(
+    path,
+    {
       method,
-      signal: controller.signal,
       headers,
       body:
         body instanceof FormData
@@ -108,25 +128,8 @@ export async function requestTeacher(
           : body === undefined
             ? undefined
             : JSON.stringify(body),
-    });
-    if (!response.ok) {
-      let code = "";
-      let retryAfter: number | null = null;
-      try {
-        const data = await response.json();
-        code = typeof data?.detail?.code === "string" ? data.detail.code : "";
-        const retry = data?.detail?.retry_after_seconds;
-        if (Number.isInteger(retry) && retry > 0) retryAfter = retry;
-      } catch {
-        /* unavailable response body */
-      }
-      throw new ApiError(response.status, code, [], retryAfter);
-    }
-    return blob ? response.blob() : response.json();
-  } catch (error) {
-    if (error instanceof ApiError) throw error;
-    throw new ApiError(0, "network");
-  } finally {
-    clearTimeout(timer);
-  }
+    },
+    timeoutMs,
+    (response) => (blob ? response.blob() : response.json()),
+  );
 }
