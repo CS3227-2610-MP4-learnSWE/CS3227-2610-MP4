@@ -42,14 +42,16 @@ The token tracker (`tools/token-tracker/`) reads your own local Claude Code and 
 1. See where the tokens and cost went (branch names are matched against the git branch recorded in the logs):
 
    ```powershell
-   cd "C:\Users\yikbi\NUS\CS3227\MP4\CS3227-2610-MP4\workflow\tools\token-tracker"
+   Set-Location (git rev-parse --show-toplevel)
+   Set-Location workflow\tools\token-tracker
    python -m tracker report --branch <branch-name>
    ```
 
 2. For an experiment run or any result worth keeping, save the summary and commit that file:
 
    ```powershell
-   cd "C:\Users\yikbi\NUS\CS3227\MP4\CS3227-2610-MP4\workflow\tools\token-tracker"
+   Set-Location (git rev-parse --show-toplevel)
+   Set-Location workflow\tools\token-tracker
    python -m tracker report --branch <branch-name> --out ..\..\experiments\results\<name>.csv
    ```
 

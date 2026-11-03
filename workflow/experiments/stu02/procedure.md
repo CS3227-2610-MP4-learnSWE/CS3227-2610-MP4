@@ -1,5 +1,7 @@
 # STU-02 workflow comparison: procedure
 
+> Historical: this experiment finished on 29 Oct 2026 (see `../results/stu02-decision.md`). The commands below record what was run, including a machine-specific path, and are not maintained.
+
 Question: which workflow gives the best result per cost for the same feature? Claude only. One run per condition; this is anecdotal evidence, not a statistical result.
 
 This folder is kept off the run branches. The runs must not see the grader or the rubric.

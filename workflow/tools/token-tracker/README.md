@@ -5,21 +5,24 @@ Reads the local session logs of Claude Code and Codex and reports token use and 
 ## Run (from this folder)
 
 ```powershell
-cd "C:\Users\yikbi\NUS\CS3227\MP4\CS3227-2610-MP4\workflow\tools\token-tracker"
+Set-Location (git rev-parse --show-toplevel)
+Set-Location workflow\tools\token-tracker
 python -m tracker report --cwd-contains CS3227-2610-MP4
 ```
 
 Per-run summary for an experiment branch, saved for committing:
 
 ```powershell
-cd "C:\Users\yikbi\NUS\CS3227\MP4\CS3227-2610-MP4\workflow\tools\token-tracker"
+Set-Location (git rev-parse --show-toplevel)
+Set-Location workflow\tools\token-tracker
 python -m tracker report --branch exp/stu02-A --out ..\..\experiments\results\stu02-A.csv
 ```
 
 Row-level CSV of every request (rewritten from scratch each time, never appended):
 
 ```powershell
-cd "C:\Users\yikbi\NUS\CS3227\MP4\CS3227-2610-MP4\workflow\tools\token-tracker"
+Set-Location (git rev-parse --show-toplevel)
+Set-Location workflow\tools\token-tracker
 python -m tracker export --cwd-contains CS3227-2610-MP4
 ```
 
@@ -47,7 +50,8 @@ Only numbers, ids, model names, branch names and folder paths are written. No pr
 ## Tests
 
 ```powershell
-cd "C:\Users\yikbi\NUS\CS3227\MP4\CS3227-2610-MP4\workflow\tools\token-tracker"
+Set-Location (git rev-parse --show-toplevel)
+Set-Location workflow\tools\token-tracker
 python -m unittest discover -s tests
 ```
 
