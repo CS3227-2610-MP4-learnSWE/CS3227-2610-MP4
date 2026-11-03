@@ -27,7 +27,7 @@ Enforced by separate folders, not only by instruction. The developer works in th
 Each agent reads only the files named in its definition plus the feature's folder under `specs/`. Claude Code loads agent definitions from the main project folder, not from a worktree: before starting a feature session, check out a branch with the current `.claude/agents/` in the main folder, keep it there until the session ends, and confirm the registered agent types. State passes through files, never assumed memory: `spec.md`, `plan.md`, `tasks.md`, and a handoff entry in `notes.md`.
 
 ## Handoff
-Every agent ends with a handoff using `templates/handoff.md` (done, next, open questions, files touched, rough resource use). Only the developer and the orchestrator write `notes.md`. The test-designer and verifier put their handoff at the end of their report and the orchestrator records it, so read-only agents stay read-only and `notes.md` never conflicts at merge. Security cases go only into the existing `security/test-log.md`.
+Every agent ends with a handoff using `templates/handoff.md` (done, next, open questions, files touched, rough resource use). Only the spec-writer, the developer and the orchestrator write `notes.md`. The test-designer and verifier put their handoff at the end of their report and the orchestrator records it, so read-only agents stay read-only and `notes.md` never conflicts at merge. Security cases go only into the existing `security/test-log.md`.
 
 Every agent stages files by path when committing, never `git add -A` or `git add .`, so it cannot pick up another agent's files.
 

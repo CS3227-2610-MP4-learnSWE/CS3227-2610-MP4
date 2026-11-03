@@ -31,7 +31,7 @@ Everything about how this project is built. The default agent definitions live i
 
 This is Variant B (merged verification), chosen after a fair comparison in which A, B and a single-session baseline ran from the same commit with the same model and settings (`experiments/results/stu02-decision.md`). Variant A's separate reviewer and security-reviewer were removed; their record stays in `variants/` and `experiments/`.
 
-`AGENTS.md` at the repo root holds the same rules and role definitions for Codex. Edit all three places together (`CLAUDE.md`, `.claude/agents/`, `AGENTS.md`).
+`AGENTS.md` at the repo root is the single source of the shared rules and holds the role definitions; Codex reads it and `CLAUDE.md` imports it. Role text is also in `.claude/agents/`; edit both places together.
 
 The human team members approve each spec/plan and each PR. Nothing is committed directly to `master`.
 
