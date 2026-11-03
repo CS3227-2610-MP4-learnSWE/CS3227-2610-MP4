@@ -23,3 +23,11 @@ Second pass (what I had not checked): searched `docs/`, `workflow/specs/`, READM
 
 ## Limits
 - `gh` is not installed, so the PR is opened by the user from the branch link.
+
+## Pre-PR verification (user asked for a PR that is not stale and introduces no bugs)
+- Not stale: `git fetch` shows `origin/master` is `6d65273`, the merge base of the branch; nothing to rebase or merge.
+- Run on the merged branch, mirroring each CI job: backend `pytest` 488 passed; frontend typecheck, lint, `prettier --check` (ignoring Windows line endings), `build`, student-bundle answer-key scan (control found in the Teacher chunk, no leak in student bundles), mocked browser suite 155 passed; real-backend test 1 passed; token tracker 25 tests and experiment-script tests 11 passed.
+- CI port mechanism (the T3 risk): with no `.env`, Vite with `API_PORT=8011` (nothing listening) returned 500 on `/api/health`, and with `API_PORT=8010` (backend running) returned 200. So the port comes from the environment as CI sets it.
+- Markdown links and backticked repo paths: 104 files checked; the only misses are two removed agent files named inside `procedure.md`, which is marked historical.
+- Stale status fixed: `workflow/checklist.md` "Current state" said PRs 1–5 and backend 60; it now states the latest merged PR (13) and the counts measured today.
+- Not run: GitHub Actions itself, the dependency audit (no dependency files changed), Codex. Pre-existing `workflow/notes.md` and spec text that quote older test counts are dated records and were left as written.
