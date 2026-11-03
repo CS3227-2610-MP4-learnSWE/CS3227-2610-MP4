@@ -128,3 +128,37 @@ All endpoints require current teacher membership through the same development-on
 Metadata: `{id,course_id,source_material_id,source_title,created_by,created_at,question_count}` (question_count integer3, other fields strings, UUID IDs and UTC Z timestamp). Detail adds `questions` ordered by position, each `{id,position,question,choices,correct_choice_index,explanation}`. Choices preserve order; index0 corresponds to the first. These are unreviewed teacher-only answers, not approved student practice records. Future question editing/practice-set/publication must reuse these IDs and enforce server-side release rules through separate endpoints.
 
 Source limits/errors match note generation (8,000 characters/100 pages, no OCR/truncation). Safe existing identity401/403/resource404/validation422/service503 envelopes apply. Model errors preserve429 retry information,503 unconfigured/unavailable,504 timeout and502 upstream/bad-response. Invalid/truncated output returns502 `llm_bad_response` and creates nothing; failed persistence rolls back the entire new batch. Reuse `src/backend/llm_client.py` unchanged for teacher/admin AI; MCQs use800 tokens and the same teacher caller identity, so note/MCQ requests share its per-teacher quota. Strict structure does not ensure factual accuracy; review is required. No automatic generation retry or idempotency: an explicit retry after a lost response can create another saved batch.
+
+
+## SHR-01 authentication contract
+
+Exact rules: [SHR-01 plan](../workflow/specs/SHR-01/plan.md). Real sessions replace the placeholder student header; the teacher routes above still use the gated demo header until their owners migrate them.
+
+- `user` additions (nullable, additive): `email` varchar(254), stored trimmed and lower-case (CHECK `email = lower(email)`), unique index `ux_user_email`; `password_hash` varchar(255), format `scrypt$n$r$p$salt$hash`. NULL `password_hash` means the user cannot sign in. New signups get id `u-` plus 32 hex characters and role `student`.
+- `auth_session`: `id` UUID PK; `token_hash` varchar(64) not null unique (SHA-256 hex of the cookie token, the raw token is never stored); `user_id` varchar(64) not null FK `user.id` ON DELETE CASCADE, indexed; `csrf_token` varchar(64) not null; `created_at` timestamptz not null default now; `expires_at` timestamptz not null, indexed (created plus `SESSION_TTL_SECONDS`, default 43200).
+- Cookie `learnswe_session` (name from `SESSION_COOKIE_NAME`): HttpOnly, Path `/`, Max-Age equal to the session lifetime, SameSite from `SESSION_COOKIE_SAMESITE` (default Lax), Secure by default (required when `APP_ENV=production`).
+
+| Method and path | Auth | Request | Success |
+|---|---|---|---|
+| `POST /api/auth/signup` | none | exactly `{display_name, email, password}` | 202 `{"status":"accepted"}`, no cookie; same reply for an already registered email; always creates a student |
+| `POST /api/auth/login` | none | exactly `{email, password}` | 200 `{"user":{id,email,display_name,role},"csrf_token"}` and `Set-Cookie` |
+| `POST /api/auth/logout` | session optional | none | 200 `{"status":"ok"}`, cookie cleared, session row deleted; a live session needs `X-CSRF-Token` |
+| `GET /api/auth/me` | any session | none | 200 `{"user":{...},"csrf_token"}` |
+| `GET /api/courses/{course_id}` | any role, course member | none | 200 `{id, title, created_at}` |
+
+Every `/api/auth/*` response has `Cache-Control: no-store`. State-changing requests (POST, PUT, PATCH, DELETE) that use a session must send `X-CSRF-Token` equal to the session's token, and a present `Origin` must be in `ALLOWED_ORIGINS` or the server's own origin. Existing `/api/practice-sets/*`, `/api/attempts/*` and `POST /api/companion/messages` now require a `student` session; `X-Student-Id` is ignored.
+
+| Status | `detail.code` | Condition |
+|---|---|---|
+| 401 | `unauthenticated` | no, unknown or expired session cookie, or user gone (replaces the student routes' `missing_student`) |
+| 401 | `invalid_credentials` | login failed for any reason |
+| 403 | `forbidden` | signed in but role not permitted |
+| 403 | `csrf_failed` | missing or wrong `X-CSRF-Token`, or a disallowed `Origin` |
+| 404 | `not_found` | course missing or caller not a member (same reply) |
+| 422 | `validation_error` | invalid body or path; `fields` lists names only |
+| 429 | `rate_limited` | login or signup limits; includes `retry_after_seconds` and `Retry-After` |
+| 503 | `service_unavailable` | database or auth configuration unavailable or invalid |
+
+Check order for a protected route: 401, then 403 `csrf_failed` (unsafe methods), then 403 `forbidden`. Role is re-read from the database on every request.
+
+Shared handoff (`src/backend/auth/dependencies.py`): `current_user(role=None | "teacher" | ("teacher","admin")) -> Callable[..., AuthUser]` is a FastAPI dependency factory returning `AuthUser(id, email, display_name, role)`; `require_course_member(db, user, course_id) -> Course` raises 404 `not_found` unless a `course_membership` row exists (no admin bypass). Never read identity from a header, query or body. Seed login credentials with `uv run python -m auth.seed` after the teacher seed, using the `SEED_*` environment variables; nothing real is committed.
