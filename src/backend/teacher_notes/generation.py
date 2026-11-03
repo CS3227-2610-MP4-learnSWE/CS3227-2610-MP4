@@ -4,7 +4,7 @@ from pathlib import Path
 from pypdf import PdfReader
 
 from errors import ApiError
-from text_validation import is_postgres_text
+from text_validation import is_postgres_text, normalise_newlines_and_trim
 from llm_client import (
     ChatMessage, LlmBadResponse, LlmBusy, LlmClient, LlmError, LlmInputTooLarge,
     LlmNotConfigured, LlmRateLimited, LlmTimeout, LlmUpstreamError,
@@ -22,12 +22,8 @@ SYSTEM_INSTRUCTION = (
 )
 
 
-def _normalise(text: str) -> str:
-    return text.replace("\r\n", "\n").replace("\r", "\n").strip()
-
-
 def _bounded(text: str) -> str:
-    text = _normalise(text)
+    text = normalise_newlines_and_trim(text)
     if len(text) > MAX_SOURCE_CHARS:
         raise ApiError(422, "source_text_too_large", "Source text exceeds 8,000 characters. Choose a shorter source.")
     return text

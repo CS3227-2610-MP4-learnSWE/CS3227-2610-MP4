@@ -7,7 +7,7 @@ from sqlalchemy import select
 from pydantic import BaseModel, ConfigDict, Field, StrictInt, StrictStr, ValidationError
 
 from errors import ApiError
-from text_validation import is_postgres_text
+from text_validation import is_postgres_text, normalise_newlines_and_trim
 from llm_client import LlmClient, get_llm_client
 from teacher_access import owned_material, parse_uuid, teacher_session
 from teacher_materials.demo_identity import require_managed_course
@@ -99,7 +99,7 @@ async def edit_note_draft(request: Request, draft_id: str):
             except (ValueError, ValidationError):
                 raise _edit_error() from None
             title = body.title.strip()
-            content = body.content.replace("\r\n", "\n").replace("\r", "\n").strip()
+            content = normalise_newlines_and_trim(body.content)
             if not 1 <= len(title) <= 200 or not 1 <= len(content) <= 2000 or not is_postgres_text(title + content):
                 raise _edit_error()
             # Shared locks hold role/membership stable until the versioned write commits.
