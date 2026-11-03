@@ -307,3 +307,58 @@ command.upgrade(Config('alembic.ini'),'head')
                 try: process.communicate(timeout=5)
                 except subprocess.TimeoutExpired:
                     process.kill();process.communicate()
+
+
+def test_tea01_db_storage_repeatable_read_default_cannot_hide_prelock_upload(tea01_database, tmp_path):
+    """A pre-lock Alembic snapshot must not hide a committed legacy source."""
+    import time
+    with migration_schema() as (db, migrate):
+        migrate('upgrade', LEGACY)
+        db.execute("INSERT INTO course(id,title) VALUES(%s,'Old course')", (COURSE_A,))
+        db.execute('INSERT INTO "user"(id,display_name,role) VALUES(%s,%s,%s)', ('demo-teacher', 'Teacher', 'teacher'))
+        schema = db.execute('SELECT current_schema()').fetchone()[0]
+        parts = urlsplit(os.environ['TEA01_TEST_DATABASE_URL'])
+        query = dict(parse_qsl(parts.query))
+        query['options'] = f'-csearch_path={schema} ' r'-cdefault_transaction_isolation=repeatable\ read'
+        env = dict(os.environ, DATABASE_URL=urlunsplit(parts._replace(query=urlencode(query))))
+        ready, release = tmp_path / 'before-lock', tmp_path / 'release-lock'
+        script = f"""
+import os, time
+from pathlib import Path
+from sqlalchemy import create_engine, event
+from sqlalchemy.engine import Engine
+from alembic import command
+from alembic.config import Config
+with create_engine(os.environ['DATABASE_URL']).connect() as connection:
+    assert connection.get_isolation_level() == 'REPEATABLE READ'
+@event.listens_for(Engine, 'before_cursor_execute')
+def pause_before_lock(connection, cursor, statement, parameters, context, executemany):
+    if statement.startswith('LOCK TABLE material IN ACCESS EXCLUSIVE MODE'):
+        Path({str(ready)!r}).touch()
+        deadline = time.monotonic() + 15
+        while not Path({str(release)!r}).exists():
+            if time.monotonic() > deadline:
+                raise RuntimeError('migration test barrier timed out')
+            time.sleep(.01)
+command.upgrade(Config('alembic.ini'), 'head')
+"""
+        process = subprocess.Popen([sys.executable, '-c', script], env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        mid = uuid.uuid4()
+        try:
+            deadline = time.monotonic() + 10
+            while not ready.exists() and process.poll() is None and time.monotonic() < deadline:
+                time.sleep(.01)
+            assert ready.exists(), 'migration did not reach the pre-lock barrier'
+            db.execute("INSERT INTO material(id,course_id,uploaded_by,title,original_filename,media_type,size_bytes,storage_key) VALUES(%s,%s,'demo-teacher','Pre-lock source','keep.txt','text/plain',1,'keep.txt')", (mid, COURSE_A))
+            release.touch()
+            stdout, stderr = process.communicate(timeout=15)
+            assert process.returncode != 0, 'stale migration snapshot missed a committed legacy upload'
+            assert 'Configure a fresh empty database' in stderr, stdout + stderr
+            assert db.execute('SELECT version_num FROM alembic_version').fetchone()[0] == LEGACY
+            assert db.execute('SELECT storage_key FROM material WHERE id=%s', (mid,)).fetchone()[0] == 'keep.txt'
+            assert db.execute("SELECT to_regclass('material_file')").fetchone()[0] is None
+        finally:
+            release.touch()
+            if process.poll() is None:
+                process.kill()
+                process.communicate()
