@@ -57,7 +57,7 @@ Source column names where the rule comes from. Tier 1 rules apply to every non-w
 | UI items (nine, below) | 2 | spec.md or plan.md | UI | labelled item | yes | yes | role: every visible state |
 | Security items (two, below) | 2 | spec.md | Security and AI safeguards | labelled item | no | yes | template spec.md security note |
 
-Item table (labels the spec-writer, the templates and the spec-writer text must use; matching is on the lowercased label text, before the first `:` or the first table cell; a label of 80 characters or more never matches):
+Item table (labels the spec-writer, the templates and the spec-writer text must use; matching is on the lowercased label text, before the first `:` or the first table cell; a label longer than 80 characters never matches):
 
 | Item code | Matcher (AND within a group; groups OR'd) | Example label to write | Where searched | Source rule |
 |---|---|---|---|---|
@@ -71,7 +71,7 @@ Item table (labels the spec-writer, the templates and the spec-writer text must 
 | LONGEST_WAIT | `longest wait` ; or `timeout` | Longest wait before an error | UI | the longest time any screen waits before showing an error |
 | NO_GENERIC_FAILURE | `generic` | No generic failure message | UI | no failure hides behind a generic message |
 | CONCURRENT_REQUESTS | `concurrent` ; or `same time` | Concurrent requests (same time) | spec.md Security and AI safeguards | what must hold when two requests for the same record arrive at the same time |
-| NORMALISATION | `normalis` | Normalisation | spec.md Security and AI safeguards | how identifiers and inputs are normalised |
+| NORMALISATION | `normali[sz]` (British and American spelling) | Normalisation | spec.md Security and AI safeguards | how identifiers and inputs are normalised |
 
 "UI" means the "UI states and copy" section of `spec.md` or the "UI contract" section of `plan.md`; either place satisfies the item. Tooling or record-free specs write `Label: not applicable: reason`.
 
@@ -80,7 +80,7 @@ Item table (labels the spec-writer, the templates and the spec-writer text must 
 - `speccheck.parse.find_section(secs: list[Section], name: str) -> Section | None`: first section whose key equals `name` lowercased.
 - `speccheck.parse.tables(section: Section) -> list[Table]`; `Table(header: list[str], rows: list[tuple[int, list[str]]])`. A table is a run of consecutive lines starting with `|` whose second line is a separator row (every cell matches `:?-{1,}:?`). Cells split on `|` not preceded by a backslash, outer pipes dropped, trimmed. Data rows exclude header and separator; row numbers are 1-based among data rows.
 - `speccheck.parse.placeholders(line: str) -> list[str]`: matched placeholder text in a line after removing backtick code spans. Case-insensitive: `\b(TBD|TODO|TBC|FIXME|XXX)\b`, the literal `???`, and `<[^<>\n]+>` (except `<br>`, `<br/>`). The caller skips fenced-block lines. `rules.py` passes a flag so that in `tasks.md` `TODO` is ignored.
-- `speccheck.parse.labelled_entries(section: Section) -> list[Entry]`; `Entry(label: str, content: str, line: int)`. Forms: list item (`-`, `*`, `+`, `1.`), table data row (label = first cell; content = other cells joined with a space, trimmed), bold at line start (`**label**` or `**label:**`), heading (its text). Label = text before the first `:`, with `*`, backticks and list marker stripped. Content = text after the colon; if empty (and not a table row), the following non-blank lines up to a blank line or heading, joined with a space. A list item without `:` uses its whole text as label under the same rule. Sub-headings of the section are scanned.
+- `speccheck.parse.labelled_entries(section: Section) -> list[Entry]`; `Entry(label: str, content: str, line: int)`. Forms: list item (`-`, `*`, `+`, `1.`), table data row (label = first cell; content = other cells joined with a space, trimmed), bold at line start (`**label**` or `**label:**`), heading (its text). Label = text before the first `:`, with `*`, backticks and list marker stripped. Content = text after the colon; if empty (and not a table row), the following non-blank lines up to a blank line or heading, joined with a space; for a heading or bold label, blank lines directly after the label are skipped first (round 1 ruling, so `### Refresh` then a blank line then text is content). A list item without `:` uses its whole text as label under the same rule. Sub-headings of the section are scanned.
 - `speccheck.registry.RULES: tuple[Rule, ...]`.
 - `speccheck.rules.check_spec_dir(path: Path, waivers: dict[str, Waiver]) -> list[Finding]`: spec id is `path.name`. Returns `[]` when waived with `all` (the CLI prints WAIVED); omits all ITEM_* findings (and their searches) when waived with `added-items`. Findings sorted by `(file, line, rule order)`; the CLI sorts across specs by spec id.
 - `speccheck.waivers.load_waivers(path: Path) -> dict[str, Waiver]`: raises `WaiverError(line, message)` on malformed line (not three fields, empty field), unknown scope, or duplicate id. A missing file raises `FileNotFoundError` (the CLI decides). Blank lines and lines starting (after spaces) with `#` are ignored.
