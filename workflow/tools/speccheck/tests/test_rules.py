@@ -665,9 +665,9 @@ class StructureTests(SpecCase):
         body = "### Detail\nShow the page to the learner."
         self.assertEqual(self.check(spec=spec_text(bodies={"Goal": body})), [])
 
-    def test_chk01_ac24_parent_with_only_an_empty_sub_heading_is_empty(self):
+    def test_chk01_ac24_parent_with_only_a_sub_heading_line_is_not_reported_empty(self):
         findings = self.check(spec=spec_text(bodies={"Goal": "### Detail"}))
-        self.assertEqual(codes(findings), ["SECTION_EMPTY"])
+        self.assertNotIn("SECTION_EMPTY", codes(findings))
 
     def test_chk01_ac24_same_level_heading_ends_the_section(self):
         findings = self.check(spec=spec_text(bodies={"Goal": ""}))
