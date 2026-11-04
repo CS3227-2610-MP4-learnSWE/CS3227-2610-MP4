@@ -6,7 +6,7 @@ Stages: not started, spec, build, verified (local), merged.
 
 | ID | Stage | Branch | PR | Open items |
 |---|---|---|---|---|
-| STU-01 | build (developer done, tests and verifier pending) | `feat/stu01-spec` | | Lessons come from `study_lessons.seed` until TEA-03 publication calls `publish_lesson`. |
+| STU-01 | verified (local) | `feat/stu01-spec` | | Lessons come from `study_lessons.seed` until TEA-03 publication calls `publish_lesson` (teammate task). Real students see lessons only after ADM-05 course access exists. Known limits in `docs/DeveloperGuide.md`. |
 | STU-02 | merged | `feat/stu02-practice-api-workflow-b`, `feat/stu02-frontend-run-b` | 1–5 (numbers per `checklist.md`) | Placeholder identity and server-memory storage; no persistence or real login. |
 | STU-03 | merged | `feat/stu03-run-b` | 8 | Live provider quality unchecked; no authenticated persistence of chat history. |
 | STU-04 | not started | | | |
@@ -24,7 +24,7 @@ Stages: not started, spec, build, verified (local), merged.
 | ADM-04 | not started | | | |
 | ADM-05 | not started | | | |
 | ADM-06 | not started | | | |
-| SHR-01 | not started | | | Only the placeholder identity headers exist. |
+| SHR-01 | merged | `feat/shr01-auth-spec` | 16 | Open items before deployment are in `notes.md` (2026-11-04 SHR-01 entry). |
 | SHR-02 to SHR-05 | in progress per feature | | | Enforced and tested inside each feature so far; no cross-feature check yet. |
 | OPT-01 to OPT-03 | not started | | | Outside the MVP. |
 | CI-01 | merged | `chore/ci` | 4 | Deployment jobs blocked on hosting; see `deployment.md`. |

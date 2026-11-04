@@ -164,3 +164,27 @@ Independent backend tests (`test_shr01_accounts.py`, `test_shr01_access.py`, `te
 | SEC-AUTH-14 demo headers on migrated routes | 401 | Pass |
 
 Known gaps, recorded not hidden: (1) serialising logins per IP lets one IP flooding correct logins hold worker threads with no lock-wait timeout, which can stall the app (verifier finding 1; needs a decision before deployment); (2) the limiter drops expired keys only when the same key is reused, so memory can grow across many distinct IPs; (3) Python and PostgreSQL may disagree on lower-casing some non-ASCII emails (503 instead of 202); (4) `TRUST_PROXY_HEADERS` and `ALLOWED_ORIGINS` need correct settings behind a reverse proxy; (5) the limiter is per process. Lone-surrogate passwords return 422 with an empty `fields` list (user-accepted spec ambiguity).
+
+## 2026-11-04: STU-01 study materials (student read and completion)
+
+Independent test-designer tests plus verifier review at fc84290 (round 1 NOT PASS, round 2 PASS). No AI call; no answer data in lesson payloads.
+
+| Case | Expected | Result |
+|---|---|---|
+| Signed out, every `/api/study` endpoint | 401 `unauthenticated` | Pass |
+| Teacher or admin session (also a teacher who is a course member) | 403 `forbidden` | Pass |
+| PUT without CSRF token or with a foreign Origin | 403 `csrf_failed`, nothing stored | Pass |
+| `X-Student-Id` / `X-Demo-User-Id` headers; `user_id` in the body | Ignored / 422 | Pass |
+| Draft id, withdrawn lesson, lesson of another course, random UUID | Identical 404 "Lesson not found." | Pass |
+| Lessons of a course the student is not a member of | Same 404 as a missing course | Pass |
+| Non-bool `completed`, extra field, missing body | 422 `validation_error`, no values echoed | Pass |
+| Order of checks (401, CSRF, role, path 422, 404, body 422) | As in the plan | Pass |
+| Concurrent PUTs, same student and lesson; two students on one lesson | One row, no 500; independent rows | Pass |
+| Stored `<script>` or `<img onerror>` in lesson content | Shown as text | Pass |
+| Another student's completion state or counts | Never visible | Pass (cross-user tests) |
+| In-flight GET shared across logout and login (A's totals shown to B) | B gets a fresh request with B's data | Initially FAILED (verifier round 1, reproduced). Fixed by a session-generation and write-counter key; four regression tests (`stu01-sessions.spec.ts`) pass; verifier round 2 PASS |
+| Out-of-date list after a completion save and Back/Forward | New state shown from a new request | Initially FAILED; fixed as above |
+| `Cache-Control: no-store` on `/api/study` responses | On every response including errors | Initially success responses only; middleware now covers errors; checked by hand (no automated test on error responses) |
+| `publish_lesson` bypass | No student route; course and topic consistency by foreign key | Pass |
+
+Known gaps: lessons past the 500 cap are listed oldest-published first, not in topic order; the PUT body has no size cap; `?course=` is case-sensitive; a withdrawal racing a PUT can leave one visible result; a page opened while a completion PUT is still pending can show the earlier state until reload; the TEA-03 caller of `publish_lesson` must check ownership and approval.
