@@ -1,5 +1,6 @@
 """Cookie-authenticated teacher transactions and current course access."""
 from contextlib import contextmanager
+from datetime import datetime, timezone
 from typing import Iterator
 from uuid import UUID
 
@@ -8,7 +9,8 @@ from sqlalchemy import create_engine, select
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.orm import Session
 
-from auth.dependencies import AuthUser, current_user, require_course_member, session_context
+from auth.dependencies import AuthUser, SessionContext, current_user, require_course_member, session_context, unauthenticated
+from auth.csrf import check_csrf
 from auth.models import AuthSession
 from auth.sessions import hash_token
 from auth.settings import load_settings
@@ -33,13 +35,18 @@ def teacher_session(request: Request) -> Iterator[tuple[Session, AuthUser]]:
         with Session(engine) as session:
             writing = request.method not in {"GET", "HEAD", "OPTIONS"}
             session.info["teacher_write"] = writing
-            if writing:
-                # Hold the live cookie session stable against logout through the mutation commit.
-                token = request.cookies.get(settings.cookie_name, "")
-                row = session.scalar(select(AuthSession).where(AuthSession.token_hash == hash_token(token)).with_for_update(read=True))
-                if row is not None:
-                    session.scalar(select(User).where(User.id == row.user_id).with_for_update(read=True).execution_options(populate_existing=True))
             teacher = current_user(role="teacher")(session_context(request, session))
+            if writing:
+                # Expired-session cleanup runs before share locks, avoiding DELETE lock upgrades.
+                token = request.cookies.get(settings.cookie_name, "")
+                row = session.scalar(select(AuthSession).where(AuthSession.token_hash == hash_token(token)).with_for_update(read=True).execution_options(populate_existing=True))
+                if row is None or row.user_id != teacher.id:
+                    raise unauthenticated()
+                user = session.scalar(select(User).where(User.id == row.user_id).with_for_update(read=True).execution_options(populate_existing=True))
+                if user is None or row.expires_at <= datetime.now(timezone.utc):
+                    raise unauthenticated()
+                check_csrf(request, row)
+                teacher = current_user(role="teacher")(SessionContext(AuthUser.from_row(user), row.csrf_token))
             yield session, teacher
     except SQLAlchemyError as exc:
         raise ApiError(503, "service_unavailable", "Teacher service is unavailable. Please try again.") from exc

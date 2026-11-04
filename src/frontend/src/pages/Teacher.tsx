@@ -182,6 +182,11 @@ function Materials({ notify }: Props) {
   const [busy, setBusy] = useState(false);
   const [uploadError, setUploadError] = useState("");
   const [success, setSuccess] = useState("");
+  const listHeading = useRef<HTMLHeadingElement>(null);
+  const [deletions, setDeletions] = useState(0);
+  useEffect(() => {
+    if (deletions) listHeading.current?.focus();
+  }, [deletions]);
   const operation = useRef(0);
   const uploadPending = useRef(false);
   useLayoutEffect(() => {
@@ -346,7 +351,7 @@ function Materials({ notify }: Props) {
       {success && <p role="status">{success}</p>}
       <Panel className="library-panel">
         <div className="library-toolbar">
-          <h2>
+          <h2 ref={listHeading} tabIndex={-1}>
             Course materials{" "}
             <span className="count-badge">{materials.length}</span>
           </h2>
@@ -461,7 +466,11 @@ function Materials({ notify }: Props) {
                         name={item.title}
                         remove={() => deleteTeacherMaterial(item.id)}
                         onDeleted={() => {
+                          setMaterials((items) =>
+                            items.filter((material) => material.id !== item.id),
+                          );
                           setSuccess("Material deleted.");
+                          setDeletions((value) => value + 1);
                           refresh();
                         }}
                       />
