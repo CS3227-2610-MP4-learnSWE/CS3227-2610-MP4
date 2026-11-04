@@ -174,7 +174,7 @@ Shared handoff (`src/backend/auth/dependencies.py`): `current_user(role=None | "
 
 Exact rules: [STU-01 plan](../workflow/specs/STU-01/plan.md). Migration `20261104_stu01_lessons` (after `20261104_tea03_mcq_edit`) adds two tables.
 
-- `published_lesson`: `id` UUID PK; `course_id` FK `course`; `topic_id` nullable, composite FK (`topic_id`, `course_id`) to `topic`; `title` 1 to 200 characters; `content` 1 to 2000 characters, plain text; `source_draft_id` nullable FK `study_note_draft` ON DELETE SET NULL; `published_by` FK `user`; `published_at`; `withdrawn_at` (NULL = visible). Unique (`id`, `course_id`).
+- `published_lesson`: `id` UUID PK; `course_id` FK `course`; `topic_id` nullable, composite FK (`topic_id`, `course_id`) to `topic`; `title` 1 to 200 characters; `content` 1 to 2000 characters, plain text; `source_draft_id` nullable FK `study_note_draft` ON DELETE RESTRICT (a draft with a published lesson cannot be deleted; the teacher delete route returns 409 `draft_in_use`); `published_by` FK `user`; `published_at`; `withdrawn_at` (NULL = visible). Unique (`id`, `course_id`).
 - `lesson_completion`: PK (`user_id`, `lesson_id`); `course_id` (composite FK with `lesson_id` to `published_lesson`); `completed`; `completed_at` (CHECK `completed = (completed_at is not null)`); `updated_at`. Rows are never deleted; incomplete is `completed = false`.
 
 | Method and path | Success |

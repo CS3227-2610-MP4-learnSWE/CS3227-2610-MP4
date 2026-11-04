@@ -15,7 +15,7 @@ class PublishedLesson(Base):
     topic_id: Mapped[UUID | None] = mapped_column(Uuid, nullable=True)
     title: Mapped[str] = mapped_column(String(200))
     content: Mapped[str] = mapped_column(Text)
-    source_draft_id: Mapped[UUID | None] = mapped_column(Uuid, ForeignKey("study_note_draft.id", ondelete="SET NULL"), nullable=True)
+    source_draft_id: Mapped[UUID | None] = mapped_column(Uuid, ForeignKey("study_note_draft.id", ondelete="RESTRICT"), nullable=True)
     published_by: Mapped[str] = mapped_column(String(64), ForeignKey("user.id"))
     published_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     withdrawn_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)

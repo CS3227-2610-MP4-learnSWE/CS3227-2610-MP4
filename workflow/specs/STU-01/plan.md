@@ -15,7 +15,7 @@ One additive Alembic revision `20261104_stu01_lessons`, `down_revision = "202611
 | `topic_id` | UUID NULL | composite FK (`topic_id`, `course_id`) to `topic` (`id`, `course_id`) (constraint exists as `UniqueConstraint("id","course_id")`); NULL means "General" |
 | `title` | varchar(200) NOT NULL | CHECK `char_length(title) between 1 and 200` |
 | `content` | text NOT NULL | CHECK `char_length(content) between 1 and 2000`; plain text |
-| `source_draft_id` | UUID NULL | FK `study_note_draft.id` ON DELETE SET NULL; traceability only, never read by student routes |
+| `source_draft_id` | UUID NULL | FK `study_note_draft.id` ON DELETE RESTRICT, so a draft with a published lesson cannot be deleted (the teacher delete route returns 409 `draft_in_use`); traceability only, never read by student routes |
 | `published_by` | varchar(64) NOT NULL | FK `user.id` |
 | `published_at` | timestamptz NOT NULL | default now() |
 | `withdrawn_at` | timestamptz NULL | NULL = visible; set = hidden from students |

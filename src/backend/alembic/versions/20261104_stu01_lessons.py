@@ -15,7 +15,7 @@ def upgrade():
         sa.Column("topic_id", sa.Uuid(), nullable=True),
         sa.Column("title", sa.String(200), nullable=False),
         sa.Column("content", sa.Text(), nullable=False),
-        sa.Column("source_draft_id", sa.Uuid(), sa.ForeignKey("study_note_draft.id", ondelete="SET NULL"), nullable=True),
+        sa.Column("source_draft_id", sa.Uuid(), sa.ForeignKey("study_note_draft.id", ondelete="RESTRICT"), nullable=True),
         sa.Column("published_by", sa.String(64), sa.ForeignKey("user.id"), nullable=False),
         sa.Column("published_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
         sa.Column("withdrawn_at", sa.DateTime(timezone=True), nullable=True),
