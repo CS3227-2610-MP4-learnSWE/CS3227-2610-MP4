@@ -187,3 +187,10 @@ All existing drafts are unpublished. Future publication/practice-set integration
 ### Independent review supplement — correction round 2 pending
 
 Fresh strongest-verifier suites passed727backend/245browser, but extra probes found gaps outside those original assertions: concurrent expired-cookie mutations returned503/401 due shared-lock upgrade deadlock; successful deletions left focus on BODY. Independent regressions94901d4 were RED before application fixes (backend and all three deletion types). Both findings must be resolved and rechecked before acceptance; earlier integrated Pass rows do not supersede them. No unauthorized successful mutation was found.
+
+
+### Final scoped review — PASS at5df6934
+
+Both blockers are resolved by6c18dc9 and unchanged regressions94901d4/340154a pass. Original expired-cookie probe returns401/401; all three original focus probes now find the intended H2 focused. Fresh strongest-verifier728backend/245browser and types/lint/format/build passed, as did successful/failed dirty logout. Current guide claims corrected; no remaining blockers or fix-related regressions. Two correction rounds used. Additional PostgreSQL16 Docker run is tracked separately in the session log; verifier tests used isolated PostgreSQL14.24.
+
+Additional parent verification: the full728backend suite passed against the separate Docker/PostgreSQL16 test container (104.65s), using isolated schemas. Development container/data untouched; no live provider requests.

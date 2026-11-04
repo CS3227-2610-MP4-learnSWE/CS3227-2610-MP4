@@ -2,6 +2,14 @@
 
 Newest entry first. Use `templates/handoff.md`. Older entries describe the state at the time; the newest entry supersedes their open/merged status. Keep the newest 10 entries here; older ones are in `notes-archive.md`. Feature state is in `STATUS.md`.
 
+## 2026-11-04: Authenticated MCQ editing and unpublished deletion verified locally (orchestrator)
+- Done on `feat/tea03-edit-mcqs-delete-drafts`: all teacher APIs use shared cookie/CSRF authentication and current course access; versioned three-question MCQ editing; confirmed permanent note/batch deletion; original-file deletion only without draft references. Source metadata and bytes delete atomically; quota/reference/version protections remain. Guides, stories, app help and shared contract updated. No publication/unpublishing or student-history changes.
+- Workflow: clean master `da57eab` (PR16 after PR15); approved specification `0038b47`. Independent tests committed before source visibility; developer `d19bdf4`. Integration fixes `66ccbd8`; final regressions `94901d4` were RED before source `6c18dc9` and GREEN unchanged. Final integrated application/test tree `5df6934`.
+- Verification: strongest read-only reviewer PASS at `5df6934`; fresh 728 backend / 245 browser tests, types/lint/format/build and extra expired-cookie/focus/logout probes passed. Two correction rounds used (cap2), no remaining findings. Isolated PostgreSQL14.24 checks passed; additional full Docker/PostgreSQL16 run also passed728backend (104.65s) after the user started Docker. Temporary native test cluster stopped; Docker development database untouched. No developer data, .env or live LLM touched.
+- Try: from src/backend run `uv run --env-file .env alembic upgrade head`, restart the backend, refresh and sign in as a seeded teacher. Run auth.seed with existing SEED_* configuration if credentials have not been seeded. Existing data is preserved; no fresh database is needed for this additive migration.
+- Next: human review/push/PR/merge gate. Implementation is committed locally; nothing pushed, published or deployed. See logs/TeacherMcqEditingDeletion.md and workflow/specs/TEA-03-mcqs-cleanup/retro.md.
+- Resources: tracker attempted, no matching branch-attributed requests; actual tokens/cost unavailable (not zero). Inherited Codex roles plus gpt-6-astra high read-only verifier. Two application correction rounds; test-harness and sandbox retries documented in the session log.
+
 ## 2026-11-04: Authenticated MCQ editing/deletion build started (orchestrator)
 - Approved user plan and spec0038b47; clean masterda57eab includes PR15 PostgreSQL storage and PR16 login. Branch feat/tea03-edit-mcqs-delete-drafts. Stories expanded for MCQ editing and unpublished note/batch/unused-source deletion.
 - VariantB: spec-writer completed; developer mainfolder and independent designer work/mcq-cleanup-tests start from identical0038b47. Designer cannot see source until own tests committed. Strongest read-only verifier required after integration; max2 correction rounds; publishing human-gated.
@@ -9,11 +17,13 @@ Newest entry first. Use `templates/handoff.md`. Older entries describe the state
 - Next: authenticated teacher transport/access, versioned MCQ editor and atomic confirmed deletions; integrate independent tests/review, then localcommit only. Details logs/TeacherMcqEditingDeletion.md.
 - Resources: tracker pending; inherited Codex roles, tokens/cost not yet available; correction rounds0. One sandbox initdb retry with approval; no data workaround.
 
+
 ## 2026-11-03: Fix Alembic repeatable-read migration race (single session + verifier)
 - Done: online Alembic engine explicitly uses READ COMMITTED before its first query, preventing stale version-table snapshots from bypassing locked empty-material guard. One-line source change; no new schema revision/API change.
 - Evidence: independent reviewer confirmed prior defect; persistent regression6d8951e committed after RED and before source fix. Same regression GREEN, full505backendPASS. Strongest reviewer5migration casesPASS/no remaining findings. Docs/contract/plan updated; STATUS unblocked. Report logs/MigrationIsolationFix20261103.md.
 - Next: human review/publishing gate; no current-database migration rerun needed solely for this engine setting. No developer DB/files/.env/live provider touched, nothing pushed. Frontend unchanged; prior160browser and frontendchecks not repeated.
 - Resource use: tracker no (not measured), inherited Codex +gpt-6-astra high reviewer; tokens/cost unavailable; initial path/sandbox test launches corrected, verifier correction rounds0.
+
 
 
 ## 2026-11-03: Ponytail full PostgreSQL storage review (orchestrator)
@@ -23,6 +33,7 @@ Newest entry first. Use `templates/handoff.md`. Older entries describe the state
 - Resource use: tracker no (not measured), inherited Codex +gpt-6-astra high verifier, tokens/cost unavailable, application revision rounds0. Review only; no publishing.
 
 
+
 ## 2026-11-03: Fix Vite undefined backend port (single session)
 - Done: proxy supports existing API_PROXY_TARGET, current API_PORT and default8000, in that precedence. Existing frontend env used old URL setting; master expected onlyport. README and four-case regression updated.
 - Verification: pre-fix actual config assertion RED; focused regression GREEN; types/lint/format/build passed. Live backend health/proxied health/teacher courses all200. No actual.env edits or backend/data writes; full suites not repeated for config-only fix.
@@ -30,11 +41,13 @@ Newest entry first. Use `templates/handoff.md`. Older entries describe the state
 - Resource use: tracker no (unmeasured), inherited Codex, tokens/cost unavailable; wrong-workdir formatter cancelled then correct-dir checks passed; revision rounds0.
 
 
+
 ## 2026-11-03: Clean obsolete filesystem test scaffolding (single session)
 - Done: removed unused session-wide upload-folder fixture, dead fixture/helper arguments and unused imports. Filename traversal assertions now use isolated tmp_path. Runtime storage.py still validates uploads; no unused runtime file was found for deletion.
 - Verification:504backend passed; all213 assertions in four touched suites retained. No frontend/runtime/API changes; prior frontend checks not repeated. No user data/.env/old uploads/dependencies or migration/history files removed; legacy private-files ignore rule retained.
 - Next: human publishing gate unchanged. Files: backend tests/conftest and four test suites, .gitignore comment, logs/DatabaseStorageCleanup20261103.md.
 - Resource use: tracker no (not measured), inherited Codex model, tokens/cost unavailable, retries/revision rounds0. Small mechanical cleanup uses single-session workflow.
+
 
 
 ## 2026-11-03: Merge master into PostgreSQL storage branch (single session)
@@ -45,11 +58,13 @@ Newest entry first. Use `templates/handoff.md`. Older entries describe the state
 - Resource use: tracker run no (not measured); model inherited Codex; tokens/cost n/a (unavailable); one backend test launch retried after unavailable Docker, zero code-fix revision rounds.
 
 
+
 ## 2026-11-03: R4 and R5 duplication checks closed with no code change (single session)
 - R4 (LLM error mapping): not duplicated across the teacher routers. `teacher_notes/generation._llm_error` is the one teacher mapping and `teacher_mcqs/generation.py` imports it. `companion_routes._map_error` is a second mapping with different codes (`rate_limited`, `companion_internal`) and student wording that tests assert, so merging would change error codes, which is out of scope. Optional follow-up: `teacher_mcqs` imports the private name `_llm_error` from `teacher_notes`; making it public or moving it to a small `llm_errors.py` would remove that.
 - R5 (frontend requests): no service builds its own fetch, timeout or error handling. `companion.ts` and `practice.ts` call `request`; `teacherMaterials.ts`, `teacherMcqs.ts` and `teacherNotes.ts` call `requestTeacher`; `teacherGeneration.ts` only maps error codes to messages. The overlap is inside `client.ts`: `request` and `requestTeacher` each repeat the AbortController timeout and ApiError construction (they differ in headers and body parsing). `components/Shell.tsx` has one health-check `fetch`. Not changed; merging the two transports is a separate refactor that needs a decision.
 - Follow-ups done on 2026-11-03 at the user's request, each on its own branch: `_llm_error` moved to `llm_errors.generation_error` (`refactor/r4-llm-errors`); `request` and `requestTeacher` share one private `send()` (`refactor/r5-client-transport`).
 - Resource use: tracker run no; model Sonnet 5.5; total tokens and cost not measured yet; retries 0.
+
 
 
 ## 2026-11-02: Teacher PostgreSQL original-file storage complete locally (orchestrator)
@@ -60,6 +75,7 @@ Newest entry first. Use `templates/handoff.md`. Older entries describe the state
 - Correction: verifier found concurrent legacy insert between empty guard and DDL could lose mapping. Independent8df7f8 regression RED before sourceccd808b lock fix, GREEN unchanged; full499backend passed. Contract clarificationd1b8de3 recorded. No other findings.
 - Evidence: logs/TeacherDatabaseStorage.md and security/resource logs. Tests used isolated PostgreSQL schemas/tempfiles and fake LLM; no live provider, deployment, production auth or optional real-backend browser project checked.
 - Next: human review/publishing gate. Local commits only; nothing pushed, no PR/master merge. Follow fresh-database README before starting this version; do not migrate the old populated database.
+
 
 
 ## 2026-11-04: SHR-01 in review as PR 16 (orchestrator, student-role owner)
@@ -74,13 +90,4 @@ Newest entry first. Use `templates/handoff.md`. Older entries describe the state
 - Spec-writer change (2026-11-04, user-approved): from the UI failures at integration, `workflow/templates/spec.md` has a "UI states and copy" table, `workflow/templates/plan.md` a "UI contract" (role and name of every control tests use), and `.claude/agents/spec-writer.md` and `AGENTS.md` require both for any feature with a screen. Effect to check on the next feature: count UI-detail failures at first integration (SHR-01: 19 to 26 browser tests). Usage was measured with the token tracker (`workflow/experiments/results/shr01.csv`, about $30.24 at list prices) and the numbers are in the resource log and `docs/Reflections.md`. Presentation deck: `SHR01-Auth-Learnings.pptx` in the user's `MP4 presentation` folder (outside the repo).
 - Next: a teammate reviews and merges. Not verified: Docker Postgres in CI, any deployment, load behaviour.
 - Resource use: see `workflow/experiments/resource-log.md` and `docs/Reflections.md`. Session notes: `logs/Shr01SpecSession.md`, `logs/Shr01BuildSession.md`.
-
-## 2026-11-03: SHR-01 build paused before the verifier (orchestrator; superseded by the 2026-11-04 entry above)
-- State: developer (4 commits on `feat/shr01-auth-spec`, to `4540741`) and independent test-designer (`f353b89`, `27c8eae`, fixes `4a4ef16`) finished. The developer's docs fix `8a3ad9d` landed on the test branch `worktree-agent-aec0315bda91006b3` (merge `3271262` of the run branch plus those commits). That test branch holds everything; it is NOT yet merged into `feat/shr01-auth-spec`. Nothing pushed, no PR.
-- Backend: full suite on the merged test branch, 666 passed (rerun after test fixes; first run 659 passed, 7 failed: 6 test-side, 1 docs gap, all fixed). Ran against a pgserver Postgres, not Docker.
-- Frontend: typecheck and lint passed per the developer. Mocked Playwright is NOT green: 191 passed, 26 failed (an earlier run overlapping the backend suite had 19 failed). Failures include all five teacher specs that the spec says must pass unchanged, so this blocks the feature. Likely causes, not confirmed: (1) every page now waits for `/api/auth/me`, which the old specs do not mock and which may hang with no backend; (2) code text "Checking your session…" vs tests expecting "Loading"; (3) the Create account control is a tab where four tests expect a button; (4) one guard test lands on /login instead of /student/practice. The teacher specs show `Expected "demo-teacher", Received undefined`; the `VITE_*` settings from ci.yml were set in the shell but the cause is unproven.
-- Decision (user, 2026-11-03): accepted that a lone-surrogate password returns 422 with an empty `fields` list; the test accepts it and AC5 in spec.md now says so. The code is unchanged.
-- Not done: developer fix round for the frontend, verifier (read-only code and security review), merge of the test branch into the run branch, SEC-AUTH-01..14 entries in `workflow/security/test-log.md`, threat model update, CI changes (the real-backend job needs Postgres, both seeds, `SEED_*` and a sign-in step), PR.
-- Next: developer fixes the frontend failures (decide how `/api/auth/me` failure/slowness must not block demo pages), rerun Playwright alone, then verifier, then merge and PR.
-- Resource use: see resource-log; session near the user's 5 hour limit, so the verifier was deferred on purpose.
 

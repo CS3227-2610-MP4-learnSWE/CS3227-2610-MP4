@@ -12,9 +12,9 @@ Stages: not started, spec, build, verified (local), merged.
 | STU-04 | not started | | | |
 | STU-05 | not started | | | |
 | STU-06 | not started | | | |
-| TEA-01 | merged; deletion/auth build | `feat/tea03-edit-mcqs-delete-drafts` | 10, 15 | PostgreSQL originals merged. Auth migration and unused-source deletion in progress. |
+| TEA-01 | merged; cleanup/auth verified (local) | `feat/tea03-edit-mcqs-delete-drafts` | 10, 15 | PostgreSQL originals merged. Auth integration and unused-source deletion verified locally; human publishing gate. |
 | TEA-02 | merged (notes and MCQs) | `feat/tea02-generate-notes`, `feat/tea02-generate-mcqs` | 11, 13 | Live provider quality checked only by user report. |
-| TEA-03 | build (MCQ editing/deletion) | `feat/tea03-edit-mcqs-delete-drafts` | 12 | Notes editing merged; MCQ editing and unpublished draft deletion in progress. Publication remains future. |
+| TEA-03 | partly merged; editing/deletion verified (local) | `feat/tea03-edit-mcqs-delete-drafts` | 12 | MCQ editing and unpublished deletion verified; [retro](specs/TEA-03-mcqs-cleanup/retro.md). Publication remains future; human publishing gate. |
 | TEA-04 | not started | | | |
 | TEA-05 | not started | | | |
 | TEA-06 | not started | | | |
@@ -24,7 +24,7 @@ Stages: not started, spec, build, verified (local), merged.
 | ADM-04 | not started | | | |
 | ADM-05 | not started | | | |
 | ADM-06 | not started | | | |
-| SHR-01 | merged; teacher integration build | `feat/shr01-auth-spec`, `feat/tea03-edit-mcqs-delete-drafts` | 16 | Login/student integration merged; teacher session integration in progress. |
+| SHR-01 | merged; teacher integration verified (local) | `feat/shr01-auth-spec`, `feat/tea03-edit-mcqs-delete-drafts` | 16 | Login/student integration merged; teacher cookie/CSRF integration verified locally. |
 | SHR-02 to SHR-05 | in progress per feature | | | Enforced and tested inside each feature so far; no cross-feature check yet. |
 | OPT-01 to OPT-03 | not started | | | Outside the MVP. |
 | CI-01 | merged | `chore/ci` | 4 | Deployment jobs blocked on hosting; see `deployment.md`. |

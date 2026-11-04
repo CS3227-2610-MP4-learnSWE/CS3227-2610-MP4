@@ -41,3 +41,12 @@ The strongest read-only verifier reran the frozen tree: 727 backend passed (121.
 3. UserGuide and DeveloperGuide still contained old demo-authorization statements.
 
 Final correction round starts at `83d34c3` (application/test tree unchanged from0ca14b1). Independent regressions `94901d4`, with formatting-only `78622a5`, were committed before fixes. Backend RED reproduced503 instead of401 (1.51s); all three browser deletion-focus checks were RED. The developer was released to change application code only after these results. The fix must retain concurrent live-session writes, revocation protection and normal dirty navigation. A scoped verifier recheck is required after integration; no additional correction round remains beyond this one.
+
+
+## Final scoped review
+
+Source6c18dc9 resolves the expired-session race without serializing all live-cookie writes, restores surviving-heading focus after all three delete types and fixes stale guides. Independent regressions were unchanged after RED and passed; final integrated tree5df6934 passed728backend/245browser plus types/lint/format/build.
+
+The strongest read-only verifier returned PASS at5df6934 after fresh728backend (121.70s),245browser (2.2m), frontend checks and the original expired-cookie, focus and dirty-logout probes. No remaining blockers or fix-related regressions. Two correction rounds used, cap respected. Shared llm_client.py unchanged.
+
+Local fallback database was PostgreSQL14.24. The user subsequently started Docker; parent restarted only the separate learnswe-tea01-test PostgreSQL16 container on55432, leaving the development container on5433 untouched. Additional full PostgreSQL16 backend verification passed728tests in104.65s. The parent stopped its temporary native PostgreSQL14 cluster after all review jobs completed; Docker services and developer data were left intact. No CI, deployment or live LLM execution is claimed.
