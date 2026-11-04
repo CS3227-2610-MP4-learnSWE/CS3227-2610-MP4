@@ -4,6 +4,7 @@ import { test, expect } from "@playwright/test";
 import { mockPracticeApi } from "./practiceApi";
 import { mockTeacherMaterialsApi, OLD } from "./teacherMaterialsApi";
 import { mockAuthApi } from "./authApi";
+import { L_TESTING, mockLessonsApi, signedInStudy } from "./lessonsApi";
 
 test.beforeEach(async ({ page }) => {
   await page.route("**/api/health", (route) =>
@@ -12,6 +13,8 @@ test.beforeEach(async ({ page }) => {
   // Tests that open /student/practice get the default practice API mock.
   await mockPracticeApi(page);
   await mockTeacherMaterialsApi(page);
+  // STU-01: the student materials and Overview read /api/study (the built-in sample lessons are gone).
+  await mockLessonsApi(page);
 });
 
 test("login page explore buttons open the demo without authentication requests", async ({
@@ -40,7 +43,9 @@ test("login page explore buttons open the demo without authentication requests",
 test("lesson completion is reversible and reflected in dashboard", async ({
   page,
 }) => {
-  await page.goto("/student/materials/clean-code");
+  // STU-01 AC16: rewritten for server-stored completion (fixture: 4 published lessons, 0 complete).
+  const { api } = await signedInStudy(page);
+  await page.goto(`/student/materials/${L_TESTING}`);
   await page
     .getByRole("button", { name: "Mark as complete", exact: true })
     .click();
@@ -48,18 +53,21 @@ test("lesson completion is reversible and reflected in dashboard", async ({
     page.getByRole("button", { name: "Mark as incomplete" }),
   ).toBeVisible();
   await page.getByRole("link", { name: "Overview", exact: true }).click();
-  await expect(page.getByText("3 of 8 lessons")).toBeVisible();
-  await page.goto("/student/materials/clean-code");
+  await expect(page.getByText("1 of 4 lessons")).toBeVisible();
+  await page.goto(`/student/materials/${L_TESTING}`);
   await expect(
-    page.getByRole("button", { name: "Mark as complete", exact: true }),
+    page.getByRole("button", { name: "Mark as incomplete", exact: true }),
   ).toBeVisible();
-  await page
-    .getByRole("button", { name: "Mark as complete", exact: true })
-    .click();
   await page.getByRole("button", { name: "Mark as incomplete" }).click();
   await expect(
     page.getByRole("button", { name: "Mark as complete", exact: true }),
   ).toBeVisible();
+  await page.getByRole("link", { name: "Overview", exact: true }).click();
+  await expect(page.getByText("0 of 4 lessons")).toBeVisible();
+  expect(api.of("put").map((r) => r.body)).toEqual([
+    { completed: true },
+    { completed: false },
+  ]);
 });
 
 test("inbox opening marks message read and survey opens a form", async ({
@@ -188,7 +196,7 @@ test("desktop and mobile layouts render without overflow in both themes", async 
         "/login",
         "/student/overview",
         "/student/materials",
-        "/student/materials/clean-code",
+        `/student/materials/${L_TESTING}`,
         "/student/practice",
         "/student/assistant",
         "/student/inbox",
@@ -289,13 +297,19 @@ test("teacher upload picker can be opened with the keyboard", async ({
   await expect(dialog.getByText("sample-notes.txt")).toBeVisible();
 });
 
-test("lesson outline links to the corresponding section", async ({ page }) => {
-  await page.goto("/student/materials/clean-code");
-  await page.getByRole("link", { name: "Easy to change", exact: true }).click();
-  await expect(page).toHaveURL(/#easy-to-change$/);
-  await expect(page.locator("#easy-to-change")).toHaveText(
-    "02 / Make it easy to change",
-  );
+test("lesson page shows the stored lesson text and no sample outline", async ({
+  page,
+}) => {
+  // STU-01 AC16: replaces the outline test, which asserted the removed built-in sample lesson.
+  await signedInStudy(page);
+  await page.goto(`/student/materials/${L_TESTING}`);
+  await expect(
+    page.getByRole("region", { name: "Lesson content" }),
+  ).toContainText("Write small tests first.");
+  await expect(
+    page.getByRole("link", { name: "Easy to change", exact: true }),
+  ).toHaveCount(0);
+  await expect(page.locator("#easy-to-change")).toHaveCount(0);
 });
 
 test("student companion is a persistent minimisable widget with clear history", async ({

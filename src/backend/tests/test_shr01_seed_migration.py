@@ -221,7 +221,8 @@ def test_shr01_ac24_user_guide_describes_sign_in_without_overclaiming():
 
 # ------------------------------------------------------------------ AC24 migration
 def test_shr01_ac24_migration_on_a_fresh_schema_adds_only_the_planned_objects(iso):
-    iso.migrate("upgrade", "head")
+    # STU-01 adds a later revision, so this test upgrades to the SHR-01 revision explicitly, not 'head'.
+    iso.migrate("upgrade", NEW_REVISION)
     assert iso.sql("SELECT version_num FROM alembic_version")[0][0] == NEW_REVISION
     cols = {r[0]: (r[1], r[2]) for r in iso.sql(
         "SELECT column_name, data_type, is_nullable FROM information_schema.columns "
@@ -270,7 +271,7 @@ def test_shr01_ac24_migration_on_a_populated_schema_keeps_rows_and_downgrades_cl
     iso.sql("INSERT INTO course_membership(course_id, user_id) VALUES (%s, 'demo-student')", (COURSE_A,))
     before_users = iso.sql('SELECT id, display_name, role, created_at FROM "user" ORDER BY id')
 
-    iso.migrate("upgrade", "head")
+    iso.migrate("upgrade", NEW_REVISION)
     assert iso.sql('SELECT id, display_name, role, created_at FROM "user" ORDER BY id') == before_users
     assert iso.sql('SELECT email, password_hash FROM "user" WHERE id = \'demo-student\'')[0] == (None, None)
     assert iso.sql("SELECT to_regclass('auth_session')")[0][0] is not None
@@ -287,7 +288,7 @@ def test_shr01_ac24_migration_on_a_populated_schema_keeps_rows_and_downgrades_cl
     assert "ux_user_email" not in {r[0] for r in iso.sql(
         "SELECT indexname FROM pg_indexes WHERE schemaname = %s", (iso.schema,))}
 
-    iso.migrate("upgrade", "head")  # re-upgrade works
+    iso.migrate("upgrade", NEW_REVISION)  # re-upgrade works
     assert iso.sql("SELECT version_num FROM alembic_version")[0][0] == NEW_REVISION
     assert iso.sql('SELECT count(*) FROM "user"')[0][0] == 2
 
