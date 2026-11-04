@@ -222,7 +222,8 @@ As a teacher, I want to generate practice questions from selected source materia
 
 Acceptance criteria:
 
-- Generated drafts contain MCQs only, with answer choices, exactly one correct choice and an explanation per question; no free-text answer questions.
+- Each generated batch contains exactly three MCQs, with four choices, exactly one correct choice and an explanation per question; no free-text answer questions.
+- The complete batch is the unit of future practice-set publication; teachers do not assemble or mix individual questions.
 - Unusable output is identified clearly and failed requests preserve existing work.
 - Generated questions remain unpublished until reviewed and explicitly published.
 
@@ -265,6 +266,7 @@ As a teacher, I want to explicitly publish reviewed content so that I can make a
 Acceptance criteria:
 
 - Publication validates required content fields and requires my explicit action.
+- A practice-set publication includes all three saved questions from one reviewed MCQ batch, with its title and course topic; no selection or mixing step. Published content is an immutable snapshot, separate from editable drafts.
 - Authorised students can access published notes and practice questions while other drafts stay hidden.
 - Publishing does not expose answer keys or solution explanations before successful whole-set submission.
 
@@ -288,25 +290,29 @@ Acceptance criteria:
 - Batch and questions are removed atomically; stale versions cannot delete newer work and failures preserve unrelated records.
 - Published content and future publication/practice references remain protected; deletion does not remove student history or unpublish content.
 
-### TEA-04 — Manage practice sets
+### TEA-04 — Publish three-question practice sets
 
-#### US-TEA-04-01 — Assemble a practice set
+#### US-TEA-04-01 — Publish a reviewed MCQ batch as a practice set
 
-As a teacher, I want to select questions for a topic-based practice set so that I can give students focused practice.
-
-Acceptance criteria:
-
-- I can save a set containing MCQs only and a topic in a course I manage.
-- I can review the set before publishing it through the content publication workflow.
-
-#### US-TEA-04-02 — Maintain practice answers
-
-As a teacher, I want to update answer keys and explanations in a practice-set draft so that I can keep future practice accurate.
+As a teacher, I want to publish a reviewed batch of three MCQs as one topic-based practice set so that students can practise the content I prepared.
 
 Acceptance criteria:
 
-- I can save corrected keys and explanations before explicit publication.
-- Existing submitted attempts retain their original question and answer-key versions.
+- I provide a practice-set title and a topic in the course I manage, then explicitly publish through US-TEA-03-04.
+- The set contains all three saved questions from exactly one batch, in their existing order, with four choices and one correct choice per question.
+- There is no separate assembly screen, subset selection, mixing batches or adding/removing individual questions from a set.
+- Publication creates a separate immutable snapshot; only authorised students can access it, and answers/explanations remain hidden until whole-set submission.
+
+#### US-TEA-04-02 — Preserve published practice versions
+
+As a teacher, I want published practice content and student attempt versions to remain stable so that corrections to drafts cannot alter students’ existing work.
+
+Acceptance criteria:
+
+- Questions, choices, keys and explanations can be corrected in the originating batch draft using US-TEA-03-03 before publication.
+- Later draft edits never mutate a published snapshot or the versions referenced by student attempts.
+- Published references protect the originating batch/questions from permanent draft deletion; deleting a draft must not remove student history.
+- Unpublishing, published-content deletion and an additional practice-set editor are outside this scope.
 
 ### TEA-05 — Learning overview
 
