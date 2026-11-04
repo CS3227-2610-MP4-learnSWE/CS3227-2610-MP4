@@ -194,3 +194,10 @@ Fresh strongest-verifier suites passed727backend/245browser, but extra probes fo
 Both blockers are resolved by6c18dc9 and unchanged regressions94901d4/340154a pass. Original expired-cookie probe returns401/401; all three original focus probes now find the intended H2 focused. Fresh strongest-verifier728backend/245browser and types/lint/format/build passed, as did successful/failed dirty logout. Current guide claims corrected; no remaining blockers or fix-related regressions. Two correction rounds used. Additional PostgreSQL16 Docker run is tracked separately in the session log; verifier tests used isolated PostgreSQL14.24.
 
 Additional parent verification: the full728backend suite passed against the separate Docker/PostgreSQL16 test container (104.65s), using isolated schemas. Development container/data untouched; no live provider requests.
+
+
+## 2026-11-04 — Whole-batch publication scope preparation
+
+Teacher assembly preview/sidebar removed; old route redirects through unchanged role/data guards. No publication endpoint, database change or student runtime change. Whole-batch immutable publication, version/reference protection, course access and no early answers are future implementation requirements, not new capabilities.
+
+Strongest read-only scope review PASS at91a4bfa;38focused browser cases passed, including student bundle answer exclusion, whole-set submission, result-release, CSRF and duplicate submission. Parent final full247browser PASS with types/lint/format/build. Original removed-preview assertion was moved to the remaining sample Review screen with both explanation checks retained. No live LLM, .env or developer data accessed.
