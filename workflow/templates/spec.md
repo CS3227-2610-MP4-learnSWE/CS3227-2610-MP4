@@ -11,6 +11,14 @@ What the user can do and sees.
 ## Acceptance criteria
 - [ ] AC1 (testable)
 
+## UI states and copy
+For any feature with a screen. The test-designer cannot see the code, so every state a user can see is written here, not left to the developer. Write "not applicable" for a row that does not apply.
+
+| Screen or action | Control (button, tab, link, field) and its exact label | Loading | Success | Empty | Each failure that can happen (wrong input, 401, 403, 404, 409, 422, 429, network, timeout) and the exact message | After a failed action (what stays, what is retried) |
+|---|---|---|---|---|---|---|
+
+Also state: what a user sees on refresh, on Back and Forward, after logout or an expired session, and with the backend down; the longest time any screen waits before showing an error; and that no failure hides behind a generic message ("could not reach the server" is only for a real network failure).
+
 ## Out of scope
 
 ## Security and AI safeguards
