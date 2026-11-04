@@ -330,3 +330,16 @@ def test_tea03_mcq_edit_migration_backfill_down_up_and_constraints(tea01_databas
             assert db.execute('SELECT version,updated_by FROM mcq_draft_batch WHERE id=%s',(bid,)).fetchone()==(1,'demo-teacher')
         finally:
             db.execute('SET search_path TO public');db.execute(f'DROP SCHEMA "{schema}" CASCADE')
+
+
+def test_tea03_mcq_question_reference_blocks_whole_batch_delete_atomically(mcqs,tea01_database):
+    app,_,_,batch=prepared(mcqs)
+    ref='question_ref_'+uuid.uuid4().hex
+    tea01_database.execute(f'CREATE TABLE {ref}(question_id uuid REFERENCES mcq_draft_question(id))')
+    # Reference the final question so rollback must also restore any earlier child deletions.
+    tea01_database.execute(f'INSERT INTO {ref} VALUES(%s)',(batch['questions'][-1]['id'],));tea01_database.commit()
+    try:
+        error(delete(app,'mcq-drafts',batch),409,'draft_in_use')
+        assert get(app,batch).json()==batch
+    finally:
+        tea01_database.rollback();tea01_database.execute(f'DROP TABLE {ref}');tea01_database.commit()

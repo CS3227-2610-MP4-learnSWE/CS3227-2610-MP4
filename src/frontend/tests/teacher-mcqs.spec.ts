@@ -58,7 +58,8 @@ test("tea02 mcqs generates three questions and reopens persistent batch by URL",
   const post = api.requests.find((r) => r.method === "POST")!;
   expect(post.path).toBe(`/api/teacher/materials/${NEW.id}/mcq-drafts`);
   expect(post.body).toBeNull();
-  expect(post.headers["x-demo-user-id"]).toBe("demo-teacher");
+  expect(post.headers["x-demo-user-id"]).toBeUndefined();
+  expect(post.headers["x-csrf-token"]).toBe("csrf-token-fixture-0001");
   expect(post.headers["x-student-id"]).toBeUndefined();
   expect(api.generationCalls).toBe(0);
 });
