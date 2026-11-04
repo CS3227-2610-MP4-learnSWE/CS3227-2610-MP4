@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { TEACHER } from "./authApi";
+import { ADMIN, TEACHER } from "./authApi";
 import {
   COURSE_SE,
   L_GENERAL,
@@ -371,13 +371,31 @@ for (const [label, reply, message] of loadFailures) {
   });
 }
 
-test("stu01 AC13 lesson load 403 (teacher session) shows the access message and no retry", async ({
+for (const [label, user, area] of [
+  ["teacher", TEACHER, /\/teacher\//],
+  ["admin", ADMIN, /\/admin\//],
+] as const) {
+  test(`stu01 AC6 a ${label} who opens a lesson URL is redirected by the role guard and no study request is sent`, async ({
+    page,
+  }) => {
+    const { api } = await signedInStudy(page, { user });
+    await page.goto(`/student/materials/${L_TESTING}`);
+    await expect(page).toHaveURL(area);
+    await expect(alertWith(page, MSG.forbidden)).toHaveCount(0);
+    expect(api.requests).toHaveLength(0);
+  });
+}
+
+test("stu01 AC13 lesson load 403 (role changed after sign-in) shows the access message and no retry", async ({
   page,
 }) => {
-  await signedInStudy(page, { user: TEACHER });
+  const { api } = await signedInStudy(page, {
+    replies: { lesson: [studyError(403, "forbidden")] },
+  });
   await page.goto(`/student/materials/${L_TESTING}`);
   await expect(alertWith(page, MSG.forbidden)).toBeVisible();
   await expect(page.getByRole("button", { name: "Try again" })).toHaveCount(0);
+  expect(api.count("lesson")).toBe(1);
 });
 
 test("stu01 AC13 lesson load times out after 10 seconds", async ({ page }) => {

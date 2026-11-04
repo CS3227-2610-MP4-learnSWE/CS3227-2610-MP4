@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { NOTICE, STUDENT, TEACHER } from "./authApi";
+import { ADMIN, NOTICE, STUDENT, TEACHER } from "./authApi";
 import {
   COURSE_ALGO,
   COURSE_SE,
@@ -392,13 +392,31 @@ for (const [label, reply, message] of loadFailures) {
   });
 }
 
-test("stu01 AC13 a 403 forbidden (teacher or admin session) shows the access message and no retry", async ({
+for (const [label, user, area] of [
+  ["teacher", TEACHER, /\/teacher\//],
+  ["admin", ADMIN, /\/admin\//],
+] as const) {
+  test(`stu01 AC6 a ${label} who opens the materials URL is redirected by the role guard and no study request is sent`, async ({
+    page,
+  }) => {
+    const { api } = await signedInStudy(page, { user });
+    await page.goto("/student/materials");
+    await expect(page).toHaveURL(area);
+    await expect(alertWith(page, MSG.forbidden)).toHaveCount(0);
+    expect(api.requests).toHaveLength(0);
+  });
+}
+
+test("stu01 AC13 a 403 forbidden (role changed after sign-in) shows the access message and no retry", async ({
   page,
 }) => {
-  await signedInStudy(page, { user: TEACHER });
+  const { api } = await signedInStudy(page, {
+    replies: { courses: [studyError(403, "forbidden")] },
+  });
   await page.goto("/student/materials");
   await expect(alertWith(page, MSG.forbidden)).toBeVisible();
   await expect(page.getByRole("button", { name: "Try again" })).toHaveCount(0);
+  expect(api.count("courses")).toBe(1);
 });
 
 test("stu01 AC13 the courses request times out after 10 seconds with the unreachable message", async ({
@@ -628,10 +646,17 @@ test("stu01 AC13 Back from a lesson returns to the list of that course, reloaded
     page.getByRole("link", { name: /Unit testing basics/ }),
   ).toContainText("Complete");
   expect(api.isDone(L_TESTING)).toBe(true);
+  // History is list, lesson, list: the Back link is an ordinary push.
   await page.goBack();
-  await page.goBack();
+  await expect(
+    page.getByRole("heading", { level: 1, name: "Unit testing basics" }),
+  ).toBeVisible();
   await page.goForward();
+  await expect(page).toHaveURL(
+    new RegExp(`/student/materials\\?course=${COURSE_SE}$`),
+  );
   await expect(course(page)).toBeVisible();
+  await expect(page.getByText("1 of 3 lessons complete")).toBeVisible();
 });
 
 // ---------------------------------------------------------------- layout and theme
