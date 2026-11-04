@@ -25,3 +25,7 @@
 - Initial integratedbackend726PASS/1harnessfailure (httpx cannot serialize lone surrogate without JSONescaping); designer correctedwireencoding334367f, retainingadversarialassertion. Fullrerunpending.
 - Browser found two product issues: overlimitMCQfields hidecounter; expired401dirtyeditor clearsprivatebuffers but routerblocker intercepts/login redirect. Parent ruling requires shared/login redirect (anonymousbootstrapstillguidance), preserving ordinarydirtywarnings/logoutfailurebuffers. Developer addressingboth ascorrectionround1; cap2 total.
 - Exacttext locator encompassinganonymousAlertlink correctedto rolealert containment, preserving visibleguidance+zeroteachercallassertions. No weakening producttests.
+
+- Correction66ccbd8 retains invalid/duplicate MCQ counters and schedules expiry/logout navigation after protected views unmount; types/lint/build/diffcheckPASS.
+- Final integratedbackend727PASS (81.33s), followingescaped-surrogatewirefixturecorrection. Browserrerunpending.
+- MobileCancelinvestigation: screenshotjourney eventtrace provedpointerdown onCancel atscroll2558, pointerup/click ondifferentfields afterscroll1351. No Cancelclick reachesapp; no-screenshotjourney consistentlypasses. Designer separates visualfullpagecapture aslastaction fromfunctionalCancel/delete assertions; retains allassertions plusnormalmobileCancelregression. No speculativeappCSSfix. Parentinspected390light/1440dark editorimages: readable/focusvisible/nooverflow; otherwidth/themeconfirmationimagespending.
