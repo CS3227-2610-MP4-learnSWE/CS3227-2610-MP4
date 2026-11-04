@@ -55,7 +55,7 @@ def test_stu01_ac9_simultaneous_identical_puts_all_succeed_with_one_completed_at
 def test_stu01_ac9_first_ever_write_race_does_not_raise_a_unique_violation():
     # No row exists yet: every request takes the INSERT path at once.
     for _ in range(3):
-        cid, s, (lid, _) = world(1)
+        cid, s, (lid,) = world(1)
         results = fire([lambda: put_completion(s, lid, True) for _ in range(10)])
         assert {r.status_code for r in results} == {200}, [r.text for r in results if r.status_code != 200]
         assert len(completion_rows(s, lid)) == 1

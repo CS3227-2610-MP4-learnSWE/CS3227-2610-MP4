@@ -160,7 +160,8 @@ def test_stu01_ac6_role_change_takes_effect_on_the_next_request():
 
 
 def test_stu01_ac6_deleted_user_session_gets_401():
-    cid, s, (lid, _) = world()
+    cid, s, _ = world()
+    sql("DELETE FROM course_membership WHERE user_id = %s", (str(s),))
     sql('DELETE FROM "user" WHERE id = %s', (str(s),))
     r = call("GET", f"{STUDY}/courses", s)
     assert r.status_code == 401 and code_of(r) == "unauthenticated"
