@@ -19,4 +19,4 @@ I checked that the three spec files exist. I did not read the full spec; the use
 
 ## Open
 
-Cookie settings depend on the Render/Neon topology. Teacher file storage on Render is unresolved and belongs to the teacher owner. Nothing is pushed and no PR exists.
+Cookie settings depend on the Render/Neon topology. Teacher file storage was later moved into PostgreSQL by master (PR 15), so it is no longer open. The branch was later pushed as PR 16 (see `workflow/notes.md`).

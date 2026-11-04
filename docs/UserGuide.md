@@ -6,6 +6,8 @@ Start the app using [README.md](../README.md). This guide covers the current pre
 
 At `/login`, use **Sign in** with your email and password. The server decides your role (student, teacher or admin) and takes you to that workspace; opening another role's page sends you back to your own. To register, choose **Create account**, enter a display name, email and a password of 10 to 128 characters (not a common password and not your email), then sign in. Accounts created this way are always student accounts; the page gives the same reply whether or not the email was already registered. **Log out** in the sidebar ends the session. You stay signed in for up to 12 hours. After too many failed attempts the page says how long to wait.
 
+The Student, Teacher and Admin tabs on the login page only choose which demo shortcut to show; they do not change who you sign in as. After 5 wrong passwords for one email, sign-in for that email is refused for 15 minutes, even with the right password. Restarting the local backend clears this.
+
 Separately, the **Demo shortcut (development)** buttons under the form open sample-data screens with no account and no session. In that demo mode the sidebar says "Demo (not signed in)", and you can switch roles using the header selector or return to the login page using the footer link. Demo mode cannot use live practice or the study companion: those show "Sign in to use live practice and the study companion". A signed-in user does not see the role selector.
 
 The sun/moon button toggles light/dark mode. The initial theme follows your operating-system preference. Theme and other local state reset on refresh. On narrow screens, open the navigation drawer with the menu button.

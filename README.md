@@ -31,8 +31,11 @@ Edit `.env`: point `DATABASE_URL` at the fresh `learnswe_db_files` database on l
 ```sh
 uv run --env-file .env alembic upgrade head
 uv run --env-file .env python -m teacher_materials.seed
+uv run --env-file .env python -m auth.seed
 uv run --env-file .env uvicorn main:app --host 127.0.0.1 --port 8000 --reload
 ```
+
+Before `auth.seed`, set the `SEED_*` email and password variables in `.env` (names in `.env.example`; choose your own passwords, never commit them). `ALLOWED_ORIGINS` (also in `.env.example`) must list the frontend origin, or the browser's login is refused with a 403 and the login page says it could not reach the server. Restart the backend after editing `.env`; `--reload` does not re-read it.
 
 The storage conversion refuses migration when existing materials are present; use a fresh database rather than clearing the previous one. Old uploads and drafts do not appear in the fresh database; upload sources again. Populated downgrade is also refused because originals cannot be reconstructed as old filesystem files. To return to the old version, restore its code, database configuration and original files together.
 

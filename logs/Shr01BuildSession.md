@@ -33,7 +33,7 @@ Backend runs used a temporary pgserver Postgres, not Docker. The full mocked Pla
 
 ## Open
 
-Push and PR need the user. Deployment decisions (login DoS guard, proxy settings, cookie settings, demo flag) belong to the team. Teacher file storage on Render is no longer open: master now keeps uploads in PostgreSQL.
+The branch is pushed and PR 16 is open; all 5 GitHub checks passed after the merge. A teammate reviews and merges. Deployment decisions (login DoS guard, proxy settings, cookie settings, demo flag) belong to the team. Teacher file storage on Render is no longer open: master now keeps uploads in PostgreSQL.
 
 ## Merge of master (2026-11-04)
 
