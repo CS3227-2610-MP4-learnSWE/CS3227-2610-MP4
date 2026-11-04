@@ -6,6 +6,7 @@ not the HTTP routes. Imports are lazy so the other suites collect before the pac
 import os
 import uuid
 
+import psycopg
 import pytest
 from auth_helpers import require_db
 from stu01_helpers import sql
@@ -307,7 +308,7 @@ def test_stu01_publish_lesson_republishing_creates_a_new_lesson_with_a_new_id(db
     assert sql("SELECT count(*) FROM published_lesson WHERE source_draft_id = %s", (did,))[0][0] == 2
 
 
-def test_stu01_publish_lesson_deleting_the_draft_keeps_the_lesson(db):
+def test_stu01_publish_lesson_blocks_deleting_its_source_draft(db):
     from study_lessons.publish import publish_lesson
 
     cid = make_course()
@@ -315,5 +316,8 @@ def test_stu01_publish_lesson_deleting_the_draft_keeps_the_lesson(db):
     lesson = publish_lesson(db, load_draft(db, did), auth_user("demo-teacher", "teacher"))
     db.commit()
     db.expire_all()
-    sql("DELETE FROM study_note_draft WHERE id = %s", (did,))
-    assert sql("SELECT source_draft_id FROM published_lesson WHERE id = %s", (str(lesson.id),)) == [(None,)]
+    with pytest.raises(psycopg.errors.ForeignKeyViolation) as exc:
+        sql("DELETE FROM study_note_draft WHERE id = %s", (did,))
+    assert exc.value.sqlstate == "23503"
+    assert sql("SELECT source_draft_id::text FROM published_lesson WHERE id = %s", (str(lesson.id),)) == [(did,)]
+    assert sql("SELECT count(*) FROM study_note_draft WHERE id = %s", (did,))[0][0] == 1
