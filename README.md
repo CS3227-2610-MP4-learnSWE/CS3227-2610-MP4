@@ -39,7 +39,7 @@ Before `auth.seed`, set the `SEED_*` email and password variables in `.env` (nam
 
 The storage conversion refuses migration when existing materials are present; use a fresh database rather than clearing the previous one. Old uploads and drafts do not appear in the fresh database; upload sources again. Populated downgrade is also refused because originals cannot be reconstructed as old filesystem files. To return to the old version, restore its code, database configuration and original files together.
 
-The seed can be rerun; it does not erase uploads. The identity header is spoofable and must not be used as production authentication. The `--env-file` option is important: the API does not automatically load the backend `.env`.
+The seed can be rerun; it does not erase uploads. Teacher APIs ignore legacy identity headers and require a signed-in teacher account. The `--env-file` option is important: the API does not automatically load the backend `.env`.
 
 In another terminal, from the repository root:
 
