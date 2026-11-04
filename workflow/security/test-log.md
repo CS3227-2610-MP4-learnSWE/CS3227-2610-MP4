@@ -164,3 +164,33 @@ Independent backend tests (`test_shr01_accounts.py`, `test_shr01_access.py`, `te
 | SEC-AUTH-14 demo headers on migrated routes | 401 | Pass |
 
 Known gaps, recorded not hidden: (1) serialising logins per IP lets one IP flooding correct logins hold worker threads with no lock-wait timeout, which can stall the app (verifier finding 1; needs a decision before deployment); (2) the limiter drops expired keys only when the same key is reused, so memory can grow across many distinct IPs; (3) Python and PostgreSQL may disagree on lower-casing some non-ASCII emails (503 instead of 202); (4) `TRUST_PROXY_HEADERS` and `ALLOWED_ORIGINS` need correct settings behind a reverse proxy; (5) the limiter is per process. Lone-surrogate passwords return 422 with an empty `fields` list (user-accepted spec ambiguity).
+
+
+## 2026-11-04 — TEA-03 authenticated MCQ editing and unpublished deletion
+
+Independent tests were committed before implementation visibility. Integrated tree `0ca14b1`: 727 backend and 245 browser tests passed; types/lint/format/build passed. Strongest read-only verification is in progress. Only isolated PostgreSQL schemas, temporary test files and fake LLM responses were used.
+
+| Case | Expected and automated evidence | Integrated result |
+|---|---|---|
+| SEC-TEA-CLEANUP-01 identity/CSRF/course access | All teacher methods require cookies, ignore forged demo headers, enforce role/course and unsafe-method CSRF; `test_tea03_all_teacher_routes_cookie_role_csrf_and_demo_forgery` | Pass |
+| SEC-TEA-CLEANUP-02 revoked generation access | Session, role or membership revoked during model work prevents persistence; `test_tea03_session_and_access_revoked_during_generation_prevents_save` | Pass |
+| SEC-TEA-CLEANUP-03 strict editing and injection | Exact IDs/fields/types, Unicode limits, duplicate rejection and escaped text; `test_tea03_mcqs_invalid_bodies_are_atomic`, `test_tea03_mcqs_unicode_boundaries_and_no_aggregate_model_cap`, browser MCQ editing suite | Pass |
+| SEC-TEA-CLEANUP-04 lost updates | Version checks and atomic concurrent edit/delete; `test_tea03_mcqs_concurrent_saves_and_edit_delete` | Pass |
+| SEC-TEA-CLEANUP-05 destructive references | Sources remain referenced; note/batch/question restrictive FKs return409 without partial deletion; deletion suites including `test_tea03_mcq_question_reference_blocks_whole_batch_delete_atomically` | Pass |
+| SEC-TEA-CLEANUP-06 races and rollback | Generation/source deletion, body-waiting topic reassignment, failure rollback and quota reuse; matching `test_tea03_*` integration tests | Pass |
+| SEC-TEA-CLEANUP-07 account-owned buffers | Anonymous data pages make no teacher calls; expiry clears dirty content and redirects without resubmission; browser anonymous/expiry tests | Pass after round1 expiry fix66ccbd8 |
+| SEC-TEA-CLEANUP-08 confirmation and recovery | All deletes require confirmation;204 parsing, duplicate prevention, conflicts, navigation and both-theme mobile layout covered in teacher-mcqs-cleanup.spec.ts | Pass |
+
+All existing drafts are unpublished. Future publication/practice-set integrations must add restrictive references or equivalent guards before exposing teacher drafts to students. Existing SHR-01 deployment limitations above are unchanged; this feature does not deploy or broaden administration privileges.
+
+
+### Independent review supplement — correction round 2 pending
+
+Fresh strongest-verifier suites passed727backend/245browser, but extra probes found gaps outside those original assertions: concurrent expired-cookie mutations returned503/401 due shared-lock upgrade deadlock; successful deletions left focus on BODY. Independent regressions94901d4 were RED before application fixes (backend and all three deletion types). Both findings must be resolved and rechecked before acceptance; earlier integrated Pass rows do not supersede them. No unauthorized successful mutation was found.
+
+
+### Final scoped review — PASS at5df6934
+
+Both blockers are resolved by6c18dc9 and unchanged regressions94901d4/340154a pass. Original expired-cookie probe returns401/401; all three original focus probes now find the intended H2 focused. Fresh strongest-verifier728backend/245browser and types/lint/format/build passed, as did successful/failed dirty logout. Current guide claims corrected; no remaining blockers or fix-related regressions. Two correction rounds used. Additional PostgreSQL16 Docker run is tracked separately in the session log; verifier tests used isolated PostgreSQL14.24.
+
+Additional parent verification: the full728backend suite passed against the separate Docker/PostgreSQL16 test container (104.65s), using isolated schemas. Development container/data untouched; no live provider requests.

@@ -1,9 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import {
-  useBeforeUnload,
-  useBlocker,
-  type BlockerFunction,
-} from "react-router";
+import { useEffect, useRef, useState } from "react";
 import {
   Button,
   Dialog,
@@ -19,21 +14,8 @@ import {
   type NoteDraft,
 } from "../services/teacherNotes";
 
-// Match Python str.strip, including its four additional control whitespace characters.
-function strip(text: string) {
-  const whitespace = (char: string) =>
-    /\p{White_Space}/u.test(char) ||
-    [28, 29, 30, 31].includes(char.charCodeAt(0));
-  let start = 0;
-  let end = text.length;
-  while (start < end && whitespace(text[start])) start += 1;
-  while (end > start && whitespace(text[end - 1])) end -= 1;
-  return text.slice(start, end);
-}
-const normalise = (text: string) => strip(text.replace(/\r\n?/g, "\n"));
-const count = (text: string) => Array.from(text).length;
-const invalidText = (text: string) =>
-  text.includes("\0") || /[\ud800-\udfff]/u.test(text);
+import { strip, normalise, count, invalidText } from "../services/draftText";
+import { useDraftNavigationGuard } from "../hooks/useDraftNavigationGuard";
 const conflictMessage =
   "This draft has changed. Load the latest saved version before saving.";
 
@@ -77,16 +59,7 @@ export default function NoteDraftEditor({
     cleanTitle !== strip(baseline.title) ||
     cleanContent !== normalise(baseline.content);
   const validChange = titleValid && contentValid && changed;
-  const blocker = useBlocker(
-    useCallback<BlockerFunction>(
-      ({ currentLocation, nextLocation }) =>
-        (dirty || saving) &&
-        (currentLocation.pathname !== nextLocation.pathname ||
-          currentLocation.search !== nextLocation.search ||
-          currentLocation.hash !== nextLocation.hash),
-      [dirty, saving],
-    ),
-  );
+  const blocker = useDraftNavigationGuard(dirty, saving);
   const blocked = blocker.state === "blocked";
 
   useEffect(() => {
@@ -104,18 +77,6 @@ export default function NoteDraftEditor({
     onSavingChange(saving);
     return () => onSavingChange(false);
   }, [saving, onSavingChange]);
-  useBeforeUnload(
-    useCallback(
-      (event) => {
-        if (dirty || saving) {
-          event.preventDefault();
-          event.returnValue = "";
-        }
-      },
-      [dirty, saving],
-    ),
-  );
-
   const startEditing = () => {
     setBaseline(draft);
     setTitle(draft.title);
@@ -186,14 +147,6 @@ export default function NoteDraftEditor({
       }
     }
   };
-  // The async save closure may predate a blocked navigation. Reset its latest state on settlement.
-  const wasSaving = useRef(false);
-  useEffect(() => {
-    if (wasSaving.current && !saving && blocker.state === "blocked")
-      blocker.reset();
-    wasSaving.current = saving;
-  }, [saving, blocker]);
-
   const loadLatest = async () => {
     if (pending.current) return;
     setIntent(null);

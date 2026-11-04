@@ -1,6 +1,22 @@
-﻿# Handoff notes
+# Handoff notes
 
 Newest entry first. Use `templates/handoff.md`. Older entries describe the state at the time; the newest entry supersedes their open/merged status. Keep the newest 10 entries here; older ones are in `notes-archive.md`. Feature state is in `STATUS.md`.
+
+## 2026-11-04: Authenticated MCQ editing and unpublished deletion verified locally (orchestrator)
+- Done on `feat/tea03-edit-mcqs-delete-drafts`: all teacher APIs use shared cookie/CSRF authentication and current course access; versioned three-question MCQ editing; confirmed permanent note/batch deletion; original-file deletion only without draft references. Source metadata and bytes delete atomically; quota/reference/version protections remain. Guides, stories, app help and shared contract updated. No publication/unpublishing or student-history changes.
+- Workflow: clean master `da57eab` (PR16 after PR15); approved specification `0038b47`. Independent tests committed before source visibility; developer `d19bdf4`. Integration fixes `66ccbd8`; final regressions `94901d4` were RED before source `6c18dc9` and GREEN unchanged. Final integrated application/test tree `5df6934`.
+- Verification: strongest read-only reviewer PASS at `5df6934`; fresh 728 backend / 245 browser tests, types/lint/format/build and extra expired-cookie/focus/logout probes passed. Two correction rounds used (cap2), no remaining findings. Isolated PostgreSQL14.24 checks passed; additional full Docker/PostgreSQL16 run also passed728backend (104.65s) after the user started Docker. Temporary native test cluster stopped; Docker development database untouched. No developer data, .env or live LLM touched.
+- Try: from src/backend run `uv run --env-file .env alembic upgrade head`, restart the backend, refresh and sign in as a seeded teacher. Run auth.seed with existing SEED_* configuration if credentials have not been seeded. Existing data is preserved; no fresh database is needed for this additive migration.
+- Next: human review/push/PR/merge gate. Implementation is committed locally; nothing pushed, published or deployed. See logs/TeacherMcqEditingDeletion.md and workflow/specs/TEA-03-mcqs-cleanup/retro.md.
+- Resources: tracker attempted, no matching branch-attributed requests; actual tokens/cost unavailable (not zero). Inherited Codex roles plus gpt-6-astra high read-only verifier. Two application correction rounds; test-harness and sandbox retries documented in the session log.
+
+## 2026-11-04: Authenticated MCQ editing/deletion build started (orchestrator)
+- Approved user plan and spec0038b47; clean masterda57eab includes PR15 PostgreSQL storage and PR16 login. Branch feat/tea03-edit-mcqs-delete-drafts. Stories expanded for MCQ editing and unpublished note/batch/unused-source deletion.
+- VariantB: spec-writer completed; developer mainfolder and independent designer work/mcq-cleanup-tests start from identical0038b47. Designer cannot see source until own tests committed. Strongest read-only verifier required after integration; max2 correction rounds; publishing human-gated.
+- Baseline backend692PASS in isolated temporary PostgreSQL cluster localhost55439 (Docker executable unavailable); browser baseline pending. No .env/developer DB/liveLLM/deployment touched.
+- Next: authenticated teacher transport/access, versioned MCQ editor and atomic confirmed deletions; integrate independent tests/review, then localcommit only. Details logs/TeacherMcqEditingDeletion.md.
+- Resources: tracker pending; inherited Codex roles, tokens/cost not yet available; correction rounds0. One sandbox initdb retry with approval; no data workaround.
+
 
 ## 2026-11-03: Fix Alembic repeatable-read migration race (single session + verifier)
 - Done: online Alembic engine explicitly uses READ COMMITTED before its first query, preventing stale version-table snapshots from bypassing locked empty-material guard. One-line source change; no new schema revision/API change.
@@ -8,11 +24,15 @@ Newest entry first. Use `templates/handoff.md`. Older entries describe the state
 - Next: human review/publishing gate; no current-database migration rerun needed solely for this engine setting. No developer DB/files/.env/live provider touched, nothing pushed. Frontend unchanged; prior160browser and frontendchecks not repeated.
 - Resource use: tracker no (not measured), inherited Codex +gpt-6-astra high reviewer; tokens/cost unavailable; initial path/sandbox test launches corrected, verifier correction rounds0.
 
+
+
 ## 2026-11-03: Ponytail full PostgreSQL storage review (orchestrator)
 - Review at63b02bf: one confirmed blocker, no other concrete correctness/conciseness findings. Under REPEATABLE READ database default, Alembic establishes a snapshot before material lock; a concurrent pre-lock legacy upload is missed and migration loses its old key.
 - Next: set Alembic create_engine isolation_level="READ COMMITTED" and add pre-lock concurrent-writer regression with repeatable-read default. Temporary runtime fix probe preserved row/key/revision; no repository code fix applied.
 - Evidence: fresh504backend/160browser/types/lint/format/build passed, but default-isolation tests miss this sequence. Isolated probe schemas cleaned; no developer data/.env/liveLLM/deployment. Report logs/PonytailDatabaseReview20261103.md.
 - Resource use: tracker no (not measured), inherited Codex +gpt-6-astra high verifier, tokens/cost unavailable, application revision rounds0. Review only; no publishing.
+
+
 
 ## 2026-11-03: Fix Vite undefined backend port (single session)
 - Done: proxy supports existing API_PROXY_TARGET, current API_PORT and default8000, in that precedence. Existing frontend env used old URL setting; master expected onlyport. README and four-case regression updated.
@@ -20,11 +40,15 @@ Newest entry first. Use `templates/handoff.md`. Older entries describe the state
 - Next: refresh frontend; restart npm run dev if old proxy persists. No publishing. Files: vite.config.ts, tests/vite-proxy.spec.ts, README, logs/ViteProxyFix20261103.md.
 - Resource use: tracker no (unmeasured), inherited Codex, tokens/cost unavailable; wrong-workdir formatter cancelled then correct-dir checks passed; revision rounds0.
 
+
+
 ## 2026-11-03: Clean obsolete filesystem test scaffolding (single session)
 - Done: removed unused session-wide upload-folder fixture, dead fixture/helper arguments and unused imports. Filename traversal assertions now use isolated tmp_path. Runtime storage.py still validates uploads; no unused runtime file was found for deletion.
 - Verification:504backend passed; all213 assertions in four touched suites retained. No frontend/runtime/API changes; prior frontend checks not repeated. No user data/.env/old uploads/dependencies or migration/history files removed; legacy private-files ignore rule retained.
 - Next: human publishing gate unchanged. Files: backend tests/conftest and four test suites, .gitignore comment, logs/DatabaseStorageCleanup20261103.md.
 - Resource use: tracker no (not measured), inherited Codex model, tokens/cost unavailable, retries/revision rounds0. Small mechanical cleanup uses single-session workflow.
+
+
 
 ## 2026-11-03: Merge master into PostgreSQL storage branch (single session)
 - Done: merged local master da389a5 (PR14 workflow/shared-helper refactors) into fix/teacher-postgres-file-storage. Retained PostgreSQL BYTEA/atomic uploads/quota/migration guards and master's teacher_access, timestamps, text normalisation, llm_errors and shared frontend transport.
@@ -33,11 +57,15 @@ Newest entry first. Use `templates/handoff.md`. Older entries describe the state
 - Next: human review/publishing gate; feature branch remains local. No open merge findings.
 - Resource use: tracker run no (not measured); model inherited Codex; tokens/cost n/a (unavailable); one backend test launch retried after unavailable Docker, zero code-fix revision rounds.
 
+
+
 ## 2026-11-03: R4 and R5 duplication checks closed with no code change (single session)
 - R4 (LLM error mapping): not duplicated across the teacher routers. `teacher_notes/generation._llm_error` is the one teacher mapping and `teacher_mcqs/generation.py` imports it. `companion_routes._map_error` is a second mapping with different codes (`rate_limited`, `companion_internal`) and student wording that tests assert, so merging would change error codes, which is out of scope. Optional follow-up: `teacher_mcqs` imports the private name `_llm_error` from `teacher_notes`; making it public or moving it to a small `llm_errors.py` would remove that.
 - R5 (frontend requests): no service builds its own fetch, timeout or error handling. `companion.ts` and `practice.ts` call `request`; `teacherMaterials.ts`, `teacherMcqs.ts` and `teacherNotes.ts` call `requestTeacher`; `teacherGeneration.ts` only maps error codes to messages. The overlap is inside `client.ts`: `request` and `requestTeacher` each repeat the AbortController timeout and ApiError construction (they differ in headers and body parsing). `components/Shell.tsx` has one health-check `fetch`. Not changed; merging the two transports is a separate refactor that needs a decision.
 - Follow-ups done on 2026-11-03 at the user's request, each on its own branch: `_llm_error` moved to `llm_errors.generation_error` (`refactor/r4-llm-errors`); `request` and `requestTeacher` share one private `send()` (`refactor/r5-client-transport`).
 - Resource use: tracker run no; model Sonnet 5.5; total tokens and cost not measured yet; retries 0.
+
+
 
 ## 2026-11-02: Teacher PostgreSQL original-file storage complete locally (orchestrator)
 - Done on fix/teacher-postgres-file-storage: originals in material_file BYTEA, metadata/content atomic, authorised original download and byte-based notes/MCQ extraction.10MiB/file and100MiB total raw-byte quota serialised with transaction advisory lock32272610 and READ COMMITTED. Missing content503; quota413 storage_quota_exceeded; UI limits/error/recovery and same endpoint/metadata contracts. No runtime FILE_STORAGE_DIR or permanent private-file writes.
@@ -47,6 +75,8 @@ Newest entry first. Use `templates/handoff.md`. Older entries describe the state
 - Correction: verifier found concurrent legacy insert between empty guard and DDL could lose mapping. Independent8df7f8 regression RED before sourceccd808b lock fix, GREEN unchanged; full499backend passed. Contract clarificationd1b8de3 recorded. No other findings.
 - Evidence: logs/TeacherDatabaseStorage.md and security/resource logs. Tests used isolated PostgreSQL schemas/tempfiles and fake LLM; no live provider, deployment, production auth or optional real-backend browser project checked.
 - Next: human review/publishing gate. Local commits only; nothing pushed, no PR/master merge. Follow fresh-database README before starting this version; do not migrate the old populated database.
+
+
 
 ## 2026-11-04: SHR-01 in review as PR 16 (orchestrator, student-role owner)
 - Done: `feat/shr01-auth-spec` (pushed; PR 16 into `master`) adds one login system for all three roles: `user.email`/`password_hash` plus `auth_session` (migration `20261103_shr01_auth`), scrypt passwords, server-side session cookie, CSRF token and Origin check, seeded accounts via `auth.seed`, student-only public signup, `current_user(role=...)` and `require_course_member` for teammates, login/signup UI, route guard, logout. STU-02/STU-03 routes now use the session user. Demo access, `demo_identity.py` and the teacher routes/specs are unchanged. `SlidingWindowLimiter` moved to `sliding_window.py` (llm_client re-imports it).
@@ -60,42 +90,4 @@ Newest entry first. Use `templates/handoff.md`. Older entries describe the state
 - Spec-writer change (2026-11-04, user-approved): from the UI failures at integration, `workflow/templates/spec.md` has a "UI states and copy" table, `workflow/templates/plan.md` a "UI contract" (role and name of every control tests use), and `.claude/agents/spec-writer.md` and `AGENTS.md` require both for any feature with a screen. Effect to check on the next feature: count UI-detail failures at first integration (SHR-01: 19 to 26 browser tests). Usage was measured with the token tracker (`workflow/experiments/results/shr01.csv`, about $30.24 at list prices) and the numbers are in the resource log and `docs/Reflections.md`. Presentation deck: `SHR01-Auth-Learnings.pptx` in the user's `MP4 presentation` folder (outside the repo).
 - Next: a teammate reviews and merges. Not verified: Docker Postgres in CI, any deployment, load behaviour.
 - Resource use: see `workflow/experiments/resource-log.md` and `docs/Reflections.md`. Session notes: `logs/Shr01SpecSession.md`, `logs/Shr01BuildSession.md`.
-## 2026-11-03: SHR-01 build paused before the verifier (orchestrator; superseded by the 2026-11-04 entry above)
-- State: developer (4 commits on `feat/shr01-auth-spec`, to `4540741`) and independent test-designer (`f353b89`, `27c8eae`, fixes `4a4ef16`) finished. The developer's docs fix `8a3ad9d` landed on the test branch `worktree-agent-aec0315bda91006b3` (merge `3271262` of the run branch plus those commits). That test branch holds everything; it is NOT yet merged into `feat/shr01-auth-spec`. Nothing pushed, no PR.
-- Backend: full suite on the merged test branch, 666 passed (rerun after test fixes; first run 659 passed, 7 failed: 6 test-side, 1 docs gap, all fixed). Ran against a pgserver Postgres, not Docker.
-- Frontend: typecheck and lint passed per the developer. Mocked Playwright is NOT green: 191 passed, 26 failed (an earlier run overlapping the backend suite had 19 failed). Failures include all five teacher specs that the spec says must pass unchanged, so this blocks the feature. Likely causes, not confirmed: (1) every page now waits for `/api/auth/me`, which the old specs do not mock and which may hang with no backend; (2) code text "Checking your session…" vs tests expecting "Loading"; (3) the Create account control is a tab where four tests expect a button; (4) one guard test lands on /login instead of /student/practice. The teacher specs show `Expected "demo-teacher", Received undefined`; the `VITE_*` settings from ci.yml were set in the shell but the cause is unproven.
-- Decision (user, 2026-11-03): accepted that a lone-surrogate password returns 422 with an empty `fields` list; the test accepts it and AC5 in spec.md now says so. The code is unchanged.
-- Not done: developer fix round for the frontend, verifier (read-only code and security review), merge of the test branch into the run branch, SEC-AUTH-01..14 entries in `workflow/security/test-log.md`, threat model update, CI changes (the real-backend job needs Postgres, both seeds, `SEED_*` and a sign-in step), PR.
-- Next: developer fixes the frontend failures (decide how `/api/auth/me` failure/slowness must not block demo pages), rerun Playwright alone, then verifier, then merge and PR.
-- Resource use: see resource-log; session near the user's 5 hour limit, so the verifier was deferred on purpose.
 
-## 2026-11-03: SHR-01 spec approved (orchestrator, student-role owner)
-- Done: on `feat/shr01-auth-spec` (from `master` `6d65273`, which pulled cleanly; no new teammate work on GitHub yet, so the Neon/file-storage change the user mentioned is not here) the spec-writer drafted and then revised `workflow/specs/SHR-01/{spec,plan,tasks}.md`. The user approved the spec and plan in chat. No code or tests exist; `src/` is untouched.
-- Decisions (user): one login system for all three roles (`user` table extended with email and password hash, new `auth_session` table, one migration); server-side session in an HttpOnly cookie, 12-hour absolute lifetime; stdlib scrypt; seeded accounts for all roles plus public signup that can only create students; shared `current_user(role=...)` and a course-access check for teammates; `SlidingWindowLimiter` moves to its own module with `llm_client.py` re-importing it unchanged in behaviour; admin gets no implicit course access.
-- Scope: auth core for all roles, login/signup UI, route guard, and migration of the STU-02/STU-03 routes off `X-Student-Id`. Demo access is kept (Explore demo buttons, role switcher, `demo_identity.py` and its dev gate); teacher routes and teacher Playwright specs must pass unchanged. Anonymous demo students cannot use live practice or the companion (accepted limitation).
-- Open: question 4, cookie settings depend on the undecided Render/Neon topology (same-site vs cross-site). Whether the deployed build turns demo access off (`VITE_ENABLE_DEMO_ACCESS=false`) is decided at deployment.
-- Handoff for teammates (not in this feature): migrate teacher routes from `demo_identity.py` to `current_user(role="teacher")`, add admin routes on the same core, and update the teacher specs to sign in when the demo access is removed. Tell the teacher owner before touching their modules.
-- Next: independent test-designer and developer from the spec commit, then verifier (Variant B). Nothing is pushed and no PR exists.
-- Resource use: two spec-writer runs (about 88k and 50k subagent tokens as reported by the harness; cost not measured). I did not read the revised spec in full; the user reviewed and approved it.
-
-## 2026-11-02: Teacher Ponytail review fixes complete locally (orchestrator)
-- All four findings resolved on feat/tea02-generate-mcqs: permanent note/MCQ request invalidation across navigation/selection round trips; generated invalid Unicode502; invalid upload title422 before storage; focused shared studio source/loading and generation hooks. Valid astral Unicode, access checks, retries, existing draft editing/blockers preserved. No migrations, dependencies or llm_client.py changes.
-- Workflow: approved corrective contractd02418b; independent regressions292af7d committed before source, four browser/four backend RED plus valid-Unicode positive control. Source/productdocs81ba253; unchanged original nine regressions GREEN. Additional source-only success/failure coverageabc92df passed after integration (not claimed RED).
-- Verification: strongest independent verifier PASS atabc92dfe29743b2ad746ba4f90e9c852da9ff0f9, all four findings resolved, no blocking defects/material doc gaps, zero correction rounds for this corrective run. Fresh independent483backend/155browser/types/lint/format/diff passed. Designer fullbuild also passed. Shared frontend32net lines removed including hooks; editor/viewer logic stays separate. Docs UserGuide/DeveloperGuide/SharedDataContract verified accurate.
-- Evidence: logs/TeacherReviewFixes.md, original historical logs/PonytailTeacherReview.md, security/resource records. Tests used fake LLM, isolated PostgreSQL schemas/tempfiles; Docker Desktop and existing testcontainer started because stopped. No developer DB/private uploads/.env or live provider calls.
-- Next: human review/publishing gate retained. Local commits only; nothing pushed, no PR/master merge/deployment. Restart backend/refresh frontend to try fixes; no migration needed. Live provider quality and production auth remain unverified.
-
-## 2026-11-02: Ponytail full review of all teacher increments (orchestrator)
-- Read-only application review at2c36951 with strongest independent verifier, including earlier materials/notes/editing and current MCQs plus shared docs.
-- Findings: note generation revives stale success/error after returning to same view; generated NUL/surrogate notes reach DB (503/unhandled UnicodeEncodeError); NUL material title gives503 instead of documented422. Five isolated/mock probes reproduced these. No fixes made.
-- Conciseness: duplicated studio lifecycle and access-check logic is the main simplification opportunity; MCQ-only stale guard fix demonstrates divergence. Keep feature-specific parsing/editing distinct.
-- Evidence/report: logs/PonytailTeacherReview.md. Previous478backend/149browser checks remain historical evidence; full suites not repeated in this review. No live LLM/developer data/push/PR. Next: repair confirmed defects with regression tests before claiming docs/implementation fully aligned.
-
-## 2026-11-02: TEA-02 MCQ generation complete locally (orchestrator)
-- Done: feat/tea02-generate-mcqs adds authorised generate/save/reopen for three private MCQs, four choices, one correct answer and explanation per question; strict JSON validation, atomic PostgreSQL batches, course/source attribution and read-only studio tab. Notes editing/routes preserved; shared llm_client.py unchanged. Editing questions, practice-set assembly and publication remain future increments.
-- Prior increment: user merged TEA-03 through PR12; clean updated master3069053 confirmed. Historical pending-PR entries below are superseded for TEA-03.
-- Workflow: approved contract277aced65540f08781402cc2440943e2f4d4cdd4 before source; developer0567212 and independent testsaf54ee4 from same start, tests committed before source visibility. Initial integrated79b5aa0:478backend/147browser/types/lint/format/build passed. Two test-harness corrections preserved assertions (explanation label locator, inherited unmocked companion fixture).
-- Verification: strongest independent verifier PASS at3ebc6462b65c09e71a7fa141763409c402e2f9c4, no open findings. Final full149browser/types/lint/format/build passed; verifier fresh17MCQbrowser/types/lint/format recheck passed. Backend unchanged from verifier's fresh478-pass run. Parent inspected390/1440 light/dark populated long-content screenshots: readable, wrapping, visible focus, no overflow.
-- Correction: one round. Verifier uncovered stale generation after Back→Forward returned to the same URL; independent success/failure regressionsaaa55bc were RED before sourcefix198c3f4, then GREEN unchanged at3ebc6462b65c09e71a7fa141763409c402e2f9c4. Monotonic navigation invalidation suppresses obsolete success/error permanently. Security/session/resource records updated.
-- Try it: from src/backend run `uv run --env-file .env alembic upgrade head`, restart backend, refresh frontend; Teacher→AI content studio→Practice questions, select a short source and generate. Real manual generation needs existing SoC settings; agents used fakes only. Limits8,000sourcecharacters/100PDFpages and <2,000rawreplycharacters; invalid output rejects whole batch. Explicit retry after a lost response may create another batch.
-- Next: human reviews local branch and authorises push/PR publication. Nothing pushed/published/merged to master or deployed. Tests used isolated PostgreSQL schemas/tempfiles, not developer data/.env/private files. Production authentication and live provider quality remain unverified.

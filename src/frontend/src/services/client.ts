@@ -122,37 +122,50 @@ export async function request(
   }
 }
 
-/** Teacher-only transport. The demo header is sent only with an explicit local gate. */
-export function requestTeacher(
+/** Teacher transport shares cookie/CSRF identity; only successful DELETE may return no JSON. */
+export async function requestTeacher(
   method: string,
   path: string,
   body?: FormData | object,
   blob = false,
   timeoutMs = REQUEST_TIMEOUT_MS,
 ): Promise<unknown> {
+  const token = csrfToken;
   const headers: Record<string, string> = {};
-  if (
-    import.meta.env.VITE_APP_ENV === "development" &&
-    import.meta.env.VITE_ALLOW_DEMO_IDENTITY === "true"
-  ) {
-    headers["X-Demo-User-Id"] =
-      import.meta.env.VITE_DEMO_USER_ID || "demo-teacher";
-  }
+  if (token && !SAFE_METHODS.includes(method.toUpperCase()))
+    headers["X-CSRF-Token"] = token;
   if (body !== undefined && !(body instanceof FormData))
     headers["Content-Type"] = "application/json";
-  return send(
-    path,
-    {
-      method,
-      headers,
-      body:
-        body instanceof FormData
-          ? body
-          : body === undefined
-            ? undefined
-            : JSON.stringify(body),
-    },
-    timeoutMs,
-    (response) => (blob ? response.blob() : response.json()),
-  );
+  try {
+    return await send(
+      path,
+      {
+        method,
+        credentials: "same-origin",
+        headers,
+        body:
+          body instanceof FormData
+            ? body
+            : body === undefined
+              ? undefined
+              : JSON.stringify(body),
+      },
+      timeoutMs,
+      async (response) =>
+        response.status === 204
+          ? undefined
+          : blob
+            ? response.blob()
+            : response.json(),
+    );
+  } catch (error) {
+    if (
+      error instanceof ApiError &&
+      error.status === 401 &&
+      error.code === "unauthenticated" &&
+      token === csrfToken
+    )
+      onUnauthenticated?.();
+    throw error;
+  }
 }

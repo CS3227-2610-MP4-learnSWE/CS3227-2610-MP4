@@ -43,6 +43,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user: null,
     },
   );
+  const [signOutRedirect, setSignOutRedirect] = useState<
+    "expired" | "logout" | null
+  >(null);
   const status = useRef<Status>("loading");
   status.current = state.status;
 
@@ -73,10 +76,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUnauthenticatedHandler(() => {
       if (status.current !== "authenticated") return;
       clear();
-      navigate("/login", { replace: true });
+      setSignOutRedirect("expired");
     });
     return () => setUnauthenticatedHandler(null);
   }, [navigate]);
+
+  // Clear protected views (and their navigation blockers) before leaving the session.
+  useEffect(() => {
+    if (state.status !== "anonymous" || signOutRedirect === null) return;
+    setSignOutRedirect(null);
+    navigate("/login", { replace: signOutRedirect === "expired" });
+  }, [state.status, signOutRedirect, navigate]);
 
   const value: Auth = {
     ...state,
@@ -96,7 +106,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       clear();
       // Pushed, not replaced: Back returns to the guarded area, which redirects to /login again.
-      navigate("/login");
+      setSignOutRedirect("logout");
     },
   };
   return <Context.Provider value={value}>{children}</Context.Provider>;

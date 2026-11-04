@@ -1,3 +1,4 @@
+import { mockAuthApi, TEACHER } from "./authApi";
 import type { Page, Route } from "@playwright/test";
 
 export const COURSE_A = "11111111-1111-4111-8111-111111111111";
@@ -54,6 +55,10 @@ export class TeacherMaterialsApi {
   failTopics = 0;
   failMaterials = 0;
   failUpload = 0;
+  deleteCalls = 0;
+  failDeleteStatus = 0;
+  failDeleteCode = "service_unavailable";
+  holdDelete: Promise<void> | null = null;
 
   async handle(route: Route) {
     const request = route.request();
@@ -139,6 +144,16 @@ export class TeacherMaterialsApi {
     const material = url.pathname.match(
       /^\/api\/teacher\/materials\/([^/]+)(\/file)?$/,
     );
+    if (material && method === "DELETE") {
+      this.deleteCalls++;
+      if (this.holdDelete) await this.holdDelete;
+      if (this.failDeleteStatus)
+        return error(this.failDeleteStatus, this.failDeleteCode);
+      const found = this.materials.findIndex((m) => m.id === material[1]);
+      if (found < 0) return error(404, "not_found");
+      this.materials.splice(found, 1);
+      return route.fulfill({ status: 204 });
+    }
     if (material && method === "PATCH") {
       const index = this.materials.findIndex((m) => m.id === material[1]);
       if (index < 0) return error(404, "not_found");
@@ -166,7 +181,11 @@ export class TeacherMaterialsApi {
   }
 }
 
-export async function mockTeacherMaterialsApi(page: Page) {
+export async function mockTeacherMaterialsApi(
+  page: Page,
+  authenticated = true,
+) {
+  if (authenticated) await mockAuthApi(page, { user: TEACHER });
   const api = new TeacherMaterialsApi();
   await page.route(
     (url) => url.pathname.startsWith("/api/teacher/"),

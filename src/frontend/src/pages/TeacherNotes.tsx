@@ -1,4 +1,6 @@
-import { useEffect, useState } from "react";
+import DeleteTeacherItem from "../components/DeleteTeacherItem";
+import { useAuth } from "../auth/AuthContext";
+import { useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router";
 import { Button, MenuItem, TextField } from "@mui/material";
 import { FileText, Sparkles } from "lucide-react";
@@ -15,6 +17,7 @@ import { useTeacherStudioSources } from "../hooks/useTeacherStudioSources";
 import { useStudioGeneration } from "../hooks/useStudioGeneration";
 import {
   generateNoteDraft,
+  deleteNoteDraft,
   getNoteDraft,
   listNoteDrafts,
   type NoteDraft,
@@ -33,6 +36,11 @@ export default function TeacherNotes() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const listHeading = useRef<HTMLHeadingElement>(null);
+  const [deletions, setDeletions] = useState(0);
+  useEffect(() => {
+    if (deletions) listHeading.current?.focus();
+  }, [deletions]);
   const { busy, start } = useStudioGeneration(
     `${studio.courseId}/${studio.sourceId}/${draftId}`,
   );
@@ -98,9 +106,7 @@ export default function TeacherNotes() {
       request.finish();
     }
   };
-  const demoEnabled =
-    import.meta.env.VITE_APP_ENV === "development" &&
-    import.meta.env.VITE_ALLOW_DEMO_IDENTITY === "true";
+  const { user } = useAuth();
   return (
     <>
       <PageHeading
@@ -108,13 +114,7 @@ export default function TeacherNotes() {
         title="AI content studio"
         description="Turn a private source material into concise, unpublished draft notes."
       />
-      <PreviewNote>
-        Development identity:{" "}
-        {demoEnabled
-          ? import.meta.env.VITE_DEMO_USER_ID || "demo-teacher"
-          : "disabled (configure local .env)"}
-        . Local testing only; this is not a real login.
-      </PreviewNote>
+      <PreviewNote>Signed in as {user?.display_name}</PreviewNote>
       {studio.coursesError && (
         <div className="library-status" role="alert">
           {studio.coursesError}
@@ -216,7 +216,9 @@ export default function TeacherNotes() {
             {success && <p role="status">{success}</p>}
           </Panel>
           <Panel className="notes-list">
-            <h2>Saved drafts</h2>
+            <h2 ref={listHeading} tabIndex={-1}>
+              Saved drafts
+            </h2>
             {studio.resourcesLoading && (
               <p role="status">Loading sources and saved drafts…</p>
             )}
@@ -276,6 +278,35 @@ export default function TeacherNotes() {
                   studio.updateDraft(saved);
                 }}
               />
+              {!editing && (
+                <DeleteTeacherItem
+                  key={shownDraft.id}
+                  kind="note"
+                  name={shownDraft.title}
+                  remove={() =>
+                    deleteNoteDraft(shownDraft.id, shownDraft.version)
+                  }
+                  onDeleted={() => {
+                    setSuccess("Note draft deleted.");
+                    setDeletions((value) => value + 1);
+                    setParams({ course: studio.courseId });
+                    studio.reloadResources();
+                  }}
+                  onLatest={async () => {
+                    const request = start();
+                    if (!request) return;
+                    try {
+                      const latest = await getNoteDraft(shownDraft.id);
+                      if (request.isCurrent()) {
+                        setDraft(latest);
+                        studio.updateDraft(latest);
+                      }
+                    } finally {
+                      request.finish();
+                    }
+                  }}
+                />
+              )}
             </>
           ) : (
             !draftLoading &&

@@ -1,3 +1,4 @@
+import { mockAuthApi, TEACHER } from "./authApi";
 import type { Page, Route } from "@playwright/test";
 import {
   TeacherMaterialsApi,
@@ -70,6 +71,28 @@ export class TeacherNotesApi extends TeacherMaterialsApi {
       body: request.postData(),
       headers: request.headers(),
     });
+    if (get && method === "DELETE") {
+      this.deleteCalls++;
+      if (this.holdDelete) await this.holdDelete;
+      if (this.failDeleteStatus)
+        return json(this.failDeleteStatus, {
+          detail: { code: this.failDeleteCode, message: "private sentinel" },
+        });
+      const index = this.drafts.findIndex((item) => item.id === get[1]);
+      if (index < 0)
+        return json(404, {
+          detail: { code: "not_found", message: "Draft not found." },
+        });
+      if (
+        new URL(request.url()).searchParams.get("version") !==
+        String(this.drafts[index].version)
+      )
+        return json(409, {
+          detail: { code: "draft_conflict", message: "private sentinel" },
+        });
+      this.drafts.splice(index, 1);
+      return route.fulfill({ status: 204 });
+    }
     if (get && method === "PATCH") {
       this.patchCalls++;
       const body = JSON.parse(request.postData() || "{}");
@@ -145,7 +168,8 @@ export class TeacherNotesApi extends TeacherMaterialsApi {
     return json(405, {});
   }
 }
-export async function mockTeacherNotesApi(page: Page) {
+export async function mockTeacherNotesApi(page: Page, authenticated = true) {
+  if (authenticated) await mockAuthApi(page, { user: TEACHER });
   const api = new TeacherNotesApi();
   await page.route("**/api/health", (route) =>
     route.fulfill({ json: { status: "ok" } }),

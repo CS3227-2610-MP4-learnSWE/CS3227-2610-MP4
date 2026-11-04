@@ -195,6 +195,16 @@ Acceptance criteria:
 - I can assign a material to a topic in its course and find it under that topic.
 - I cannot organise or retrieve materials for courses I do not manage.
 
+#### US-TEA-01-03 — Delete unused source material
+
+As a teacher, I want to permanently delete an unused uploaded source so that I can remove unwanted files and recover upload capacity.
+
+Acceptance criteria:
+
+- Any teacher managing the course can delete the source after a confirmation naming it and explaining permanence.
+- Deletion is blocked while any note draft or MCQ batch references it; unrelated work remains unchanged.
+- Source metadata and original bytes are removed together; failures preserve the source and explain recovery.
+
 ### TEA-02 — AI content generation
 
 #### US-TEA-02-01 — Generate draft notes
@@ -244,6 +254,9 @@ Acceptance criteria:
 
 - I can review and correct each MCQ’s wording, answer choices, single correct choice and explanation.
 - Required fields and the single correct choice are validated; corrections persist when reopened.
+- All three questions in a generated batch save atomically, preserving identity and attribution while recording the last editor.
+- Concurrent changes cannot silently overwrite newer saved work; failures preserve local edits and conflicts offer loading the latest saved version.
+- Unsaved changes require confirmation before cancellation or navigation.
 
 #### US-TEA-03-04 — Publish reviewed content
 
@@ -254,6 +267,26 @@ Acceptance criteria:
 - Publication validates required content fields and requires my explicit action.
 - Authorised students can access published notes and practice questions while other drafts stay hidden.
 - Publishing does not expose answer keys or solution explanations before successful whole-set submission.
+
+#### US-TEA-03-05 — Delete unpublished note drafts
+
+As a teacher, I want to permanently delete unwanted unpublished note drafts so that I can keep my course workspace organised.
+
+Acceptance criteria:
+
+- Any teacher managing the course can delete a draft after confirmation naming it and explaining permanence.
+- A stale version cannot delete newer saved work; failures preserve unrelated work and provide recovery.
+- Published content and future publication/practice references remain protected; deletion does not remove student history or unpublish content.
+
+#### US-TEA-03-06 — Delete unpublished MCQ batches
+
+As a teacher, I want to permanently delete an unwanted unpublished MCQ batch so that I can remove its generated questions together.
+
+Acceptance criteria:
+
+- Any teacher managing the course can confirm deletion of the whole batch, explicitly including all three questions; individual-question deletion is not supported.
+- Batch and questions are removed atomically; stale versions cannot delete newer work and failures preserve unrelated records.
+- Published content and future publication/practice references remain protected; deletion does not remove student history or unpublish content.
 
 ### TEA-04 — Manage practice sets
 

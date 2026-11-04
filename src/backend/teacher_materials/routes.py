@@ -10,11 +10,11 @@ from sqlalchemy import func, select, text
 from sqlalchemy.orm import Session
 
 from errors import ApiError
-from teacher_access import owned_material, parse_uuid, teacher_session
+from teacher_access import commit_deletion, owned_material, parse_uuid, teacher_session
 from timestamps import utc_timestamp
 from text_validation import is_postgres_text
-from teacher_materials.demo_identity import require_managed_course
-from teacher_materials.models import Course, CourseMembership, Material, MaterialFile, Topic
+from teacher_access import require_managed_course
+from teacher_materials.models import Course, CourseMembership, Material, MaterialFile, McqDraftBatch, StudyNoteDraft, Topic
 from teacher_materials.multipart import material_form
 from teacher_materials.storage import MAX_TOTAL_BYTES, validate_upload
 
@@ -116,6 +116,8 @@ async def assign_topic(request: Request, material_id: str):
         topic_id = _same_course_topic(session, row.course_id, str(body.topic_id)) if body.topic_id else None
         # Lock row so the last committed assignment wins and unrelated columns stay untouched.
         row = session.scalar(select(Material).where(Material.id == row.id).with_for_update().execution_options(populate_existing=True))
+        if row is None:
+            raise ApiError(404, "not_found", "Material not found.")
         row.topic_id = topic_id
         row.updated_at = func.now()
         session.flush()
@@ -140,3 +142,19 @@ def download_material(request: Request, material_id: str):
         filename = quote(row.original_filename)
         disposition = f"attachment; filename*=utf-8''{filename}" if filename != row.original_filename else f'attachment; filename="{filename}"'
         return Response(content, media_type=row.media_type, headers={"Content-Disposition": disposition})
+
+
+@router.delete("/materials/{material_id}", status_code=204)
+def delete_material(request: Request, material_id: str):
+    with teacher_session(request) as (session, teacher):
+        row = owned_material(session, teacher, material_id)
+        session.execute(text("SELECT pg_advisory_xact_lock(32272610)"))
+        row = session.scalar(select(Material).where(Material.id == row.id).with_for_update().execution_options(populate_existing=True))
+        if row is None:
+            raise ApiError(404, "not_found", "Material not found.")
+        if (session.scalar(select(StudyNoteDraft.id).where(StudyNoteDraft.source_material_id == row.id).limit(1)) is not None
+                or session.scalar(select(McqDraftBatch.id).where(McqDraftBatch.source_material_id == row.id).limit(1)) is not None):
+            raise ApiError(409, "material_in_use", "Delete the note drafts and MCQ batches referencing this material first.")
+        with commit_deletion(session, material=True):
+            session.delete(row)
+        return Response(status_code=204)

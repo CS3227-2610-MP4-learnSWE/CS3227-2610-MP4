@@ -97,8 +97,11 @@ class McqDraftBatch(Base):
     source_material_id: Mapped[UUID] = mapped_column(Uuid)
     created_by: Mapped[str] = mapped_column(String(64), ForeignKey("user.id"))
     source_title: Mapped[str] = mapped_column(String(200))
+    version: Mapped[int] = mapped_column(Integer, server_default="1")
+    updated_by: Mapped[str] = mapped_column(String(64), ForeignKey("user.id"))
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
-    __table_args__ = (ForeignKeyConstraint(["source_material_id", "course_id"], ["material.id", "material.course_id"]),)
+    __table_args__ = (ForeignKeyConstraint(["source_material_id", "course_id"], ["material.id", "material.course_id"]), CheckConstraint("version >= 1", name="ck_mcq_version_positive"))
 
 
 class McqDraftQuestion(Base):
