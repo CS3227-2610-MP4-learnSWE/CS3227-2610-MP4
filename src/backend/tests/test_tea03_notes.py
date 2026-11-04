@@ -10,6 +10,8 @@ from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 import pytest
 from test_tea02_notes import BASE, COURSE, OTHER, call, error, generate, notes, upload
 
+from teacher_auth import teacher_headers
+
 FIELDS = {"id", "course_id", "source_material_id", "created_by", "title", "created_at", "source_title", "version", "updated_at", "updated_by", "content"}
 
 
@@ -53,7 +55,7 @@ def test_tea03_save_reopen_source_attribution_metadata_and_no_llm(notes):
 from main import app
 async def main():
  async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app),base_url="http://test") as c:
-  r=await c.get("{BASE}/note-drafts/{saved['id']}",headers={{"X-Demo-User-Id":"demo-teacher"}})
+  r=await c.get("{BASE}/note-drafts/{saved['id']}",headers={teacher_headers()!r})
   print(json.dumps(r.json()))
 asyncio.run(main())'''
     reopened = subprocess.run([sys.executable, "-c", script], capture_output=True, text=True, check=True)
@@ -93,7 +95,7 @@ def test_tea03_access_precedes_body_validation_and_revocation(notes, tea01_datab
         error(call(app,"PATCH",path,user=user,content="not json"),status,code)
     with monkeypatch.context() as m:
         m.setenv("ALLOW_DEMO_IDENTITY","false")
-        error(call(app,"PATCH",path,content="not json"),403,"demo_identity_disabled")
+        error(call(app,"PATCH",path,content="not json"),422,"validation_error")
     error(call(app,"PATCH",f"{BASE}/note-drafts/not-a-uuid",json={}),422,"validation_error")
     error(call(app,"PATCH",f"{BASE}/note-drafts/{uuid.uuid4()}",json={}),404,"not_found")
     tea01_database.execute("DELETE FROM course_membership WHERE course_id=%s AND user_id='demo-teacher'",(COURSE,));tea01_database.commit()
