@@ -168,9 +168,7 @@ test("tea03 dirty MCQ navigation protects tabs, sidebar, Back and Forward", asyn
 }) => {
   await mockTeacherMcqsApi(page);
   await page.goto("/teacher/overview");
-  await page
-    .getByRole("link", { name: /AI content studio/ })
-    .click();
+  await page.getByRole("link", { name: /AI content studio/ }).click();
   await page
     .getByRole("tab", { name: "Practice questions", exact: true })
     .click();
