@@ -57,12 +57,12 @@ def _folders(args, specs_dir: Path) -> list[Path]:
         if not specs_dir.is_dir():
             raise _UsageError(f"specs dir not found: {specs_dir}")
         return sorted(p for p in specs_dir.iterdir() if p.is_dir())
-    folders = []
+    folders = {}
     for name in args.dirs:
         folder = Path(name)
         if not folder.is_dir():
             raise _UsageError(f"not a folder: {name}")
-        folders.append(folder if folder.name else folder.resolve())
+        folders[folder.resolve()] = None
     return sorted(folders, key=lambda p: p.name)
 
 

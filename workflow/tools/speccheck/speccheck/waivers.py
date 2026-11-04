@@ -35,7 +35,7 @@ def _parse_line(number: int, text: str, seen: dict[str, Waiver]) -> Waiver:
 
 def load_waivers(path: Path) -> dict[str, Waiver]:
     """Read the waiver file; a missing file raises FileNotFoundError."""
-    text = path.read_bytes().decode("utf-8", errors="replace")
+    text = path.read_bytes().decode("utf-8-sig", errors="replace")
     waivers: dict[str, Waiver] = {}
     for number, raw in enumerate(text.split("\n"), 1):
         line = raw.strip()

@@ -3,7 +3,7 @@
 import re
 from dataclasses import dataclass
 
-_HEADING = re.compile(r"^ {0,3}(#{1,6})[ \t]+(.*\S)[ \t]*$")
+_HEADING = re.compile(r"^ {0,3}(#{1,6})[ \t]+(.*)$")
 _LIST_ITEM = re.compile(r"^(\s*)(?:[-*+]|\d+\.)\s+(.*)$")
 _BOLD = re.compile(r"^\*\*(.+?)\*\*(.*)$")
 _SEPARATOR_CELL = re.compile(r"^:?-+:?$")
@@ -14,7 +14,8 @@ _PLACEHOLDER = re.compile(
 )
 _TODO = re.compile(r"todo", re.IGNORECASE)
 _TRAILING = ".:;,!? \t"
-_MAX_CONTENT_LINES = 200
+_MAX_CONTENT_LINES = 20
+_CONTENT_BUDGET = 100_000
 
 Lines = list[tuple[int, str]]
 
@@ -38,6 +39,13 @@ class Entry:
     label: str
     content: str
     line: int
+
+
+def _heading(text: str) -> tuple[int, str] | None:
+    """(level, text) of an ATX heading line, or None."""
+    match = _HEADING.match(text)
+    title = match[2].strip() if match else ""
+    return (len(match[1]), title) if title else None
 
 
 def numbered(text: str) -> Lines:
@@ -75,14 +83,14 @@ def sections(text: str) -> list[Section]:
     for n, line in numbered(text):
         if _is_fence(line):
             inside = not inside
-        match = None if inside else _HEADING.match(line)
+        match = None if inside else _heading(line)
         if match:
-            level = len(match[1])
+            level = match[0]
             while open_entries and open_entries[-1][1] >= level:
                 open_entries.pop()
             for parent in open_entries:
                 parent[3].append((n, line))
-            entry = (match[2], level, n, [])
+            entry = (match[1], level, n, [])
             open_entries.append(entry)
             all_entries.append(entry)
         else:
@@ -171,12 +179,16 @@ def _split_label(text: str) -> tuple[str, str]:
     return _clean_label(label), tail.strip()
 
 
-def _continuation(lines: Lines, start: int, kind: str, indent: int) -> str:
+def _continuation(lines: Lines, start: int, kind: str, indent: int, budget: list[int]) -> str:
     gathered: list[str] = []
+    if kind != "list":
+        while start < len(lines) and not lines[start][1].strip():
+            start += 1
     for _, text in lines[start : start + _MAX_CONTENT_LINES]:
         stripped = text.strip()
-        if not stripped or _HEADING.match(text):
+        if not stripped or _heading(text) or budget[0] <= 0:
             break
+        budget[0] -= 1
         if kind != "heading" and stripped.startswith("**"):
             break
         if kind == "list" and _LIST_ITEM.match(text) and len(text) - len(text.lstrip()) <= indent:
@@ -190,15 +202,16 @@ def labelled_entries(section: Section) -> list[Entry]:
     lines = outside_fences(section.lines)
     rows = {n: cells for _, table in _raw_tables(lines) for n, cells in table}
     entries: list[Entry] = []
+    budget = [_CONTENT_BUDGET]
     for i, (n, text) in enumerate(lines):
         if n in rows:
             cells = rows[n]
             label, content = _clean_label(cells[0]), " ".join(c for c in cells[1:] if c)
             entries.append(Entry(label, content, n))
             continue
-        heading, item = _HEADING.match(text), _LIST_ITEM.match(text)
+        heading, item = _heading(text), _LIST_ITEM.match(text)
         if heading:
-            kind, body, indent = "heading", heading[2], 0
+            kind, body, indent = "heading", heading[1], 0
         elif item:
             kind, body, indent = "list", item[2], len(item[1])
         elif text.lstrip().startswith("**"):
@@ -207,7 +220,7 @@ def labelled_entries(section: Section) -> list[Entry]:
             continue
         label, content = _split_label(body)
         if not content:
-            content = _continuation(lines, i + 1, kind, indent)
+            content = _continuation(lines, i + 1, kind, indent, budget)
         if label:
             entries.append(Entry(label, content, n))
     return entries
