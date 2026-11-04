@@ -15,6 +15,7 @@ from test_tea02_notes import notes, upload, pdf_bytes, error, generate
 from test_tea02_mcqs import output
 
 MAX_FILE, QUOTA, LOCK = 10_485_760, 104_857_600, 32_272_610
+# SHR-01 adds a later revision, so these tests upgrade to the storage revision explicitly instead of 'head'.
 LEGACY, HEAD = '20261102_tea02_mcqs', '20261102_tea01_db_storage'
 
 
@@ -199,13 +200,13 @@ def migration_schema():
 
 def test_tea01_db_storage_fresh_empty_downgrade_reupgrade(tea01_database):
     with migration_schema() as (db,migrate):
-        migrate('upgrade','head')
+        migrate('upgrade',HEAD)
         assert db.execute('SELECT version_num FROM alembic_version').fetchone()[0]==HEAD
         assert db.execute("SELECT to_regclass('material_file')").fetchone()[0]
         migrate('downgrade',LEGACY)
         assert db.execute("SELECT to_regclass('material_file')").fetchone()[0] is None
         assert db.execute("SELECT is_nullable FROM information_schema.columns WHERE table_schema=current_schema() AND table_name='material' AND column_name='storage_key'").fetchone()[0]=='NO'
-        migrate('upgrade','head')
+        migrate('upgrade',HEAD)
         assert db.execute('SELECT version_num FROM alembic_version').fetchone()[0]==HEAD
 
 
@@ -218,7 +219,7 @@ def test_tea01_db_storage_populated_upgrade_refuses_unchanged(tea01_database,tmp
         mid,nid=uuid.uuid4(),uuid.uuid4()
         db.execute("INSERT INTO material(id,course_id,uploaded_by,title,original_filename,media_type,size_bytes,storage_key) VALUES(%s,%s,'demo-teacher','Old source','old.txt','text/plain',13,'old.txt')",(mid,COURSE_A))
         db.execute("INSERT INTO study_note_draft(id,course_id,source_material_id,created_by,title,content,source_title,updated_by) VALUES(%s,%s,%s,'demo-teacher','Old draft','Keep draft','Old source','demo-teacher')",(nid,COURSE_A,mid))
-        response=migrate('upgrade','head',ok=False)
+        response=migrate('upgrade',HEAD,ok=False)
         assert 'Configure a fresh empty database' in response.stderr
         assert db.execute('SELECT version_num FROM alembic_version').fetchone()[0]==LEGACY
         assert db.execute("SELECT to_regclass('material_file')").fetchone()[0] is None
@@ -229,7 +230,7 @@ def test_tea01_db_storage_populated_upgrade_refuses_unchanged(tea01_database,tmp
 
 def test_tea01_db_storage_populated_downgrade_refuses_without_blob(tea01_database):
     with migration_schema() as (db,migrate):
-        migrate('upgrade','head')
+        migrate('upgrade',HEAD)
         db.execute("INSERT INTO course(id,title) VALUES(%s,'Current')",(COURSE_A,))
         db.execute('INSERT INTO "user"(id,display_name,role) VALUES(\'demo-teacher\',\'Teacher\',\'teacher\')')
         mid=uuid.uuid4()
@@ -271,7 +272,7 @@ def paused(self,name,*args,**kwargs):
    time.sleep(.01)
  return original(self,name,*args,**kwargs)
 Operations.create_table=paused
-command.upgrade(Config('alembic.ini'),'head')
+command.upgrade(Config('alembic.ini'),'20261102_tea01_db_storage')
 '''
         process = subprocess.Popen([sys.executable, '-c', script, str(ready), str(release)], env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
         mid = uuid.uuid4()
@@ -340,7 +341,7 @@ def pause_before_lock(connection, cursor, statement, parameters, context, execut
             if time.monotonic() > deadline:
                 raise RuntimeError('migration test barrier timed out')
             time.sleep(.01)
-command.upgrade(Config('alembic.ini'), 'head')
+command.upgrade(Config('alembic.ini'), '20261102_tea01_db_storage')
 """
         process = subprocess.Popen([sys.executable, '-c', script], env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
         mid = uuid.uuid4()

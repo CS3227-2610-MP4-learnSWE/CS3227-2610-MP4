@@ -1,16 +1,17 @@
 """Shared helpers for the STU-03 companion tests (contract: workflow/specs/STU-03/plan.md).
 
+Identity (SHR-01): `call` and `new_student` come from auth_helpers. A student is a signed-in
+session (cookie plus CSRF token) and is also a str equal to the server user id.
+
 A FakeLlm replaces the shared client through
 app.dependency_overrides[llm_client.get_llm_client]; it records every call and
 never touches the network or a key.
 """
-import asyncio
 import threading
-import uuid
 from dataclasses import dataclass
 
-import httpx
 import llm_client
+from auth_helpers import call, new_student  # noqa: F401  (session login replaces X-Student-Id; SHR-01)
 from llm_client import LlmReply
 from main import app
 
@@ -94,23 +95,6 @@ def install(fake) -> None:
 
 def uninstall() -> None:
     app.dependency_overrides.pop(llm_client.get_llm_client, None)
-
-
-def call(method, path, student=None, json=None):
-    headers = {"X-Student-Id": student} if student is not None else {}
-
-    async def send():
-        async with httpx.AsyncClient(
-            transport=httpx.ASGITransport(app=app, raise_app_exceptions=False),
-            base_url="http://test",
-        ) as client:
-            return await client.request(method, path, headers=headers, json=json)
-
-    return asyncio.run(send())
-
-
-def new_student() -> str:
-    return "stu03-" + uuid.uuid4().hex
 
 
 def body_of(message="hello", page="other", set_id=None, attempt_id=None, history=None,

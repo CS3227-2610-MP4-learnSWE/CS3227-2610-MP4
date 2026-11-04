@@ -1,4 +1,5 @@
 import type { Page, Route } from "@playwright/test";
+import type { AuthApiMock } from "./authApi";
 
 /**
  * Mock of the STU-02 practice API (contract: workflow/specs/STU-02/plan.md).
@@ -116,6 +117,12 @@ export interface MockOptions {
   key?: Record<string, KeyEntry>;
   /** Replies consumed in order, one per request of that step. */
   replies?: Partial<Record<Step, Reply[]>>;
+  /**
+   * When given, the fake server behaves like the real one: a signed-out auth mock answers
+   * 401 `unauthenticated`, and a non-GET call without the session's X-CSRF-Token answers
+   * 403 `csrf_failed`. Without it the fake accepts every call (older specs).
+   */
+  auth?: AuthApiMock;
 }
 
 export interface RecordedRequest {
@@ -166,6 +173,9 @@ export function buildResults(
   };
 }
 
+/** The one signed-in student of the fake server (identity is the session, SHR-01). */
+const SESSION_STUDENT = "session-student";
+
 interface FakeAttempt {
   student: string;
   answers: Record<string, string>;
@@ -183,6 +193,7 @@ export class PracticeApiMock {
     readonly set: FixtureSet | unknown,
     readonly key: Record<string, KeyEntry>,
     replies: Partial<Record<Step, Reply[]>>,
+    readonly auth?: AuthApiMock,
   ) {
     this.replies = replies;
   }
@@ -263,12 +274,12 @@ export class PracticeApiMock {
         return;
       }
     }
-    const reply = this.defaultReply(
-      step,
-      attemptId,
-      request.headers()["x-student-id"]?.trim() ?? "",
-      body,
-    );
+    const denied = this.sessionError(method, request.headers());
+    if (denied) {
+      await route.fulfill({ status: denied.status, json: denied.json });
+      return;
+    }
+    const reply = this.defaultReply(step, attemptId, SESSION_STUDENT, body);
     await route.fulfill({ status: reply.status, json: reply.json });
   }
 
@@ -296,6 +307,21 @@ export class PracticeApiMock {
     return null;
   }
 
+  private sessionError(
+    method: string,
+    headers: Record<string, string>,
+  ): { status: number; json: unknown } | null {
+    if (!this.auth) return null;
+    const err = (status: number, code: string) => ({
+      status,
+      json: { detail: { code, message: code } },
+    });
+    if (!this.auth.user) return err(401, "unauthenticated");
+    if (method !== "GET" && headers["x-csrf-token"] !== this.auth.csrf)
+      return err(403, "csrf_failed");
+    return null;
+  }
+
   private defaultReply(
     step: Step,
     attemptId: string | null,
@@ -307,7 +333,6 @@ export class PracticeApiMock {
       json: { detail: { code, message: code, ...extra } },
     });
     if (step === "getSet") return { status: 200, json: this.set };
-    if (!student) return err(401, "missing_student");
     if (step === "start") {
       const id = `attempt-${String(++this.counter).padStart(4, "0")}`;
       this.attempts.set(id, {
@@ -401,6 +426,7 @@ export async function mockPracticeApi(
     Object.fromEntries(
       Object.entries(options.replies ?? {}).map(([k, v]) => [k, [...v]]),
     ),
+    options.auth,
   );
   await page.route(
     (url) =>

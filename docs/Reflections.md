@@ -1,4 +1,4 @@
-# Reflections
+﻿# Reflections
 
 Concrete examples backed by results in `workflow/experiments/`, `workflow/security/` and `logs/`. Sections not yet backed by an experiment are marked as still to do.
 
@@ -58,6 +58,15 @@ This run shows concrete value from checking recovery paths and normal test setti
 
 A later small, single-session wrong-answer colour fix added three tests, bringing the recorded mocked suite to 65; it was included in merged PR 5 but was not independently reviewed by the verifier. Dark-mode colours still need an eye check. The source records are `workflow/notes.md`, `workflow/experiments/resource-log.md` and `logs/Stu02FrontendSpecSummary.md`; the documentation reconciliation did not re-run these tests.
 
+### SHR-01 (authentication): what the build showed
+SHR-01 was built with Variant B: a developer and an independent test-designer in parallel from the approved spec, then a verifier, with at most two correction rounds. Evidence: `logs/Shr01SpecSession.md`, `logs/Shr01BuildSession.md`, `workflow/security/test-log.md` and `workflow/notes.md`.
+
+- **Tests written only from the spec miss what the spec does not name.** The spec said login counters are updated under a lock, yet no test sent parallel requests. The verifier found that parallel wrong-password logins could all pass the limit check before any failure was recorded (a bypass of the brute-force limit). Concurrency has to be a written acceptance criterion for security features.
+- **A fix can create a new defect, and a control test catches it.** The independent test-designer added three failing concurrency tests plus one that passed on the old code (parallel correct logins must not be throttled). The first fix made that control test fail, because in-flight attempts were counted as failures. A second round (per-key serialisation) passed all 23 rate-limit tests.
+- **Most integration failures were unspecified UI details, not logic.** Loading text, "Create account" as a tab versus a button, logout failure behaviour, the `/api/auth/me` timeout and a lone-surrogate password all came out at integration. The first merged Playwright runs had 19 to 26 failures; after one developer round and two test-side edits the full run was 216 of 217. The STU-02 build had the same lesson (UI wording was not in its spec).
+- **Independence has a cost, and it worked as designed.** The test-designer could not see selectors, so mismatches appeared late. In return the tests were not shaped to fit the code, and the backend suite was 659 passed and 7 failed on its first merged run (six test-side problems, one docs gap), 666 passed after those fixes and 670 passed on the final code.
+- **Reviews separate "ran" from "read".** The verifier could not run the backend tests in round 1 because its test database had expired, said so, and gave findings from reading only. Round 2 added a database-free probe (200 threads) that confirmed the limiter fix.
+- **Open risks were recorded, not hidden.** After the two rounds the verifier left five non-blocking notes (a denial-of-service path from serialising logins per IP, partial limiter memory cleanup, dead code, a stale guide line, deployment notes). They are in the threat model and security log for the team.
 ## Context Engineering and Resource-aware Use
 
 ### Measured observations so far
@@ -84,3 +93,14 @@ We measured the SoC LLM before writing the STU-03 spec instead of guessing limit
 - What belongs in notes and handoff documents beyond the handoff template.
 - Model choice per task beyond the Sonnet/Opus split used here.
 - Other token-monitoring and reduction approaches, and the most token-hungry task types once more features are built.
+
+### SHR-01: how the lesson changed our spec writing
+The integration failures came from UI states that no spec named (loading text, a button versus a tab, logout failure behaviour, the `/api/auth/me` timeout). The independent test-designer works from the spec and cannot see the code, so a state that is not written down becomes a guess. The change, made after the slice and tracked in git: the spec template has a "UI states and copy" table (controls and exact labels, loading, success, empty, each failure with its exact message, what stays after a failed action, refresh, Back, expired session, backend down, the longest wait) and the plan template has a "UI contract" (accessible role and name for every control tests use). The spec-writer agent definition and `AGENTS.md` now require both for any feature with a screen. We will check the effect on the next feature by counting UI-detail failures at first integration (SHR-01: 19 to 26 failing browser tests).
+
+### SHR-01: resource use (what was costly, what helped)
+- **Full-suite reruns were the biggest avoidable cost.** The backend suite takes 17 to 29 minutes because every test builds its own isolated database schema, runs the account seed and hashes passwords with scrypt. It was run in full several times (test-designer's RED run, developer's runs, three of mine). Cheaper setup (seed once per session, lower hash cost in tests) and scoped reruns would have saved time and usage.
+- **Overlapping runs gave misleading results.** A Playwright run alongside the backend suite had 19 failures (many timeouts), but a quiet rerun had 26, so load was not the main cause and the overlap only muddied the picture. Run browser and backend suites one at a time.
+- **Scoped verification and reuse paid off.** Rounds used a scoped verifier (review plus targeted test reruns instead of the whole suite), and resumed agents with `SendMessage` kept their context instead of paying for a cold start. The usage limit (69% at one point) shaped decisions: consolidating docs and logs into one final pass, and deferring the verifier until the failures were understood.
+- **Measured with the token tracker** (`workflow/experiments/results/shr01.csv`, 4 Nov 2026, list prices, not billed): 641 requests and about $30.24 for the whole slice. Test-designer $11.14 (37%), main session $9.61 (32%), developer $7.12 (24%), verifier $1.39 (5%), spec-writer $0.98 (3%). By kind, cache writes were $13.5 (45%), cache reads $10.9 (36%) and output $5.8 (19%): most of the cost is loading and re-reading context, not generating text. This replaces the harness estimates written earlier, which used different units.
+- **Scoping helped time more than tokens.** The initial developer build cost $5.17, the frontend fix round $1.95. The two verifier rounds cost the same ($0.69, then $0.70 scoped), so scoping the verifier saved no tokens, but a scoped test rerun took about 2.5 minutes against about 19 for the full backend suite. We never ran an unscoped copy of the same task, so there is no controlled before/after here.
+- **Agent bookkeeping cost time.** One agent committed to the wrong branch, and agents left servers and temporary databases running because process kills were denied. Define branch ownership and cleanup before agents start.

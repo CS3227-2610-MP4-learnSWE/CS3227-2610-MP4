@@ -1,6 +1,16 @@
-import { STUDENT_ID } from "../config";
-
 export const REQUEST_TIMEOUT_MS = 10_000;
+
+// The CSRF token lives in memory only; AuthContext sets it after sign-in or /api/auth/me.
+let csrfToken: string | null = null;
+export function setCsrfToken(token: string | null) {
+  csrfToken = token;
+}
+// Called on 401 "unauthenticated" from `request`; the callback decides by auth state what to do.
+let onUnauthenticated: (() => void) | null = null;
+export function setUnauthenticatedHandler(handler: (() => void) | null) {
+  onUnauthenticated = handler;
+}
+const SAFE_METHODS = ["GET", "HEAD", "OPTIONS"];
 
 export class ApiError extends Error {
   status: number;
@@ -69,34 +79,47 @@ async function send(
 }
 
 /** Calls the business API. Throws ApiError for HTTP errors and network/timeout/bad JSON (status 0). */
-export function request(
+export async function request(
   method: string,
   path: string,
   body?: unknown,
   options: { timeoutMs?: number } = {},
 ): Promise<unknown> {
-  return send(
-    path,
-    {
-      method,
-      headers: {
-        "X-Student-Id": STUDENT_ID,
-        ...(body === undefined ? {} : { "Content-Type": "application/json" }),
+  try {
+    return await send(
+      path,
+      {
+        method,
+        credentials: "same-origin",
+        headers: {
+          ...(body === undefined ? {} : { "Content-Type": "application/json" }),
+          ...(csrfToken && !SAFE_METHODS.includes(method.toUpperCase())
+            ? { "X-CSRF-Token": csrfToken }
+            : {}),
+        },
+        body: body === undefined ? undefined : JSON.stringify(body),
       },
-      body: body === undefined ? undefined : JSON.stringify(body),
-    },
-    options.timeoutMs ?? REQUEST_TIMEOUT_MS,
-    async (response) => {
-      let data: unknown;
-      try {
-        data = await response.json();
-      } catch {
-        data = undefined;
-      }
-      if (data === undefined) throw new ApiError(0, "bad_response");
-      return data;
-    },
-  );
+      options.timeoutMs ?? REQUEST_TIMEOUT_MS,
+      async (response) => {
+        let data: unknown;
+        try {
+          data = await response.json();
+        } catch {
+          data = undefined;
+        }
+        if (data === undefined) throw new ApiError(0, "bad_response");
+        return data;
+      },
+    );
+  } catch (error) {
+    if (
+      error instanceof ApiError &&
+      error.status === 401 &&
+      error.code === "unauthenticated"
+    )
+      onUnauthenticated?.();
+    throw error;
+  }
 }
 
 /** Teacher-only transport. The demo header is sent only with an explicit local gate. */

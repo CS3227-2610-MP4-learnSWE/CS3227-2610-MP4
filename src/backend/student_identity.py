@@ -1,11 +1,9 @@
-"""Placeholder student identity: the X-Student-Id header, trimmed. SHR-01 (real login) replaces this module."""
-from fastapi import Header
+"""Student identity for the practice and companion routes: the signed-in student's session user (SHR-01)."""
+from fastapi import Depends
 
-from errors import ApiError
+from auth.dependencies import AuthUser, current_user
 
 
-def require_student(x_student_id: str | None = Header(default=None)) -> str:
-    student = (x_student_id or "").strip()
-    if not student:
-        raise ApiError(401, "missing_student", "X-Student-Id header is required.")
-    return student
+def require_student(user: AuthUser = Depends(current_user(role="student"))) -> str:
+    """The signed-in student's user id from the session; no header or client value is read."""
+    return user.id

@@ -10,6 +10,7 @@ import {
   mockPracticeApi,
   type PracticeApiMock,
 } from "./practiceApi";
+import { STUDENT, mockAuthApi } from "./authApi";
 
 /**
  * STU-02-frontend: Student Practice page on the (mocked) practice API.
@@ -24,6 +25,8 @@ test.beforeEach(async ({ page }) => {
   await page.route("**/api/health", (route) =>
     route.fulfill({ json: { status: "ok" } }),
   );
+  // SHR-01: live practice needs a signed-in student; the session exists before the page opens.
+  await mockAuthApi(page, { user: STUDENT });
 });
 
 function choiceText(questionId: string, choiceId: string) {
@@ -608,6 +611,9 @@ test("stu02fe AC8 scripts downloaded for /student/practice contain no answer key
 test("stu02fe AC8 teacher pages still show their demo answers (loaded on demand)", async ({
   page,
 }) => {
+  // Teacher pages are demo-mode screens (AC25): visit anonymously; a student session would be
+  // redirected home (AC22). A later route registration overrides the beforeEach sign-in.
+  await mockAuthApi(page, { user: null });
   await mockPracticeApi(page);
   await page.goto("/teacher/practice");
   await expect(page.getByText(EXPLANATIONS[0]).first()).toBeVisible();
@@ -679,18 +685,22 @@ test("stu02fe AC10 results survive navigating away and back", async ({
   expect(mock.count("submit")).toBe(1);
 });
 
-test("stu02fe AC11 every practice request sends one constant X-Student-Id and no storage is used", async ({
+test("stu02fe AC11 every state-changing practice request sends the session CSRF token, no X-Student-Id, and no storage is used", async ({
   page,
 }) => {
-  const mock = await mockPracticeApi(page);
+  // SHR-01 (AC23): identity is the session cookie; the client only echoes the CSRF token.
+  // The fake server here enforces the session like the real one (401 / 403 csrf_failed).
+  const auth = await mockAuthApi(page, { user: STUDENT });
+  const mock = await mockPracticeApi(page, { auth });
   await submitCompleteSet(page, mock, TWO_OF_THREE);
-  const ids = mock
-    .of("start")
-    .concat(mock.of("save"), mock.of("submit"), mock.of("results"))
-    .map((r) => r.headers["x-student-id"]);
-  expect(ids).toHaveLength(4);
-  for (const id of ids) expect(id?.trim()).toBeTruthy();
-  expect(new Set(ids).size).toBe(1);
+  const unsafe = mock.of("start").concat(mock.of("save"), mock.of("submit"));
+  expect(unsafe).toHaveLength(3);
+  for (const r of unsafe) expect(r.headers["x-csrf-token"]).toBe(auth.csrf);
+  for (const r of mock.requests) {
+    expect(r.headers["x-student-id"]).toBeUndefined();
+    if (r.method === "GET") expect(r.headers["x-csrf-token"]).toBeUndefined();
+  }
+  expect(mock.count("results")).toBe(1);
   const storage = await page.evaluate(() => ({
     local: localStorage.length,
     session: sessionStorage.length,

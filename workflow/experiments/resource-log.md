@@ -1,4 +1,4 @@
-# Resource log
+﻿# Resource log
 
 One hand-written row per notable task. Take the numbers from a token-tracker summary (see "Measuring token usage" in `../README.md`) and link the summary file; do not paste raw logs. Mark estimates as estimates. A feature is not closed until its row exists here; the handoff's resource fields (tracker run, total tokens, cost, retries) feed it.
 
@@ -55,3 +55,15 @@ Also record: tasks that consumed the most tokens, what was tried to reduce it, a
 | 2026-11-03 | Ponytail full PostgreSQL branch review | fix/teacher-postgres-file-storage | parent frontend +independent read-only backend verifier | inherited Codex; gpt-6-astra high verifier | n/a | n/a | n/a | n/a | n/a | n/a | Fresh504backend/160browser/types/lint/format/build PASS; isolated repeatable-read migration probe found pre-lock snapshot defect. Runtime proposedfixprobe passes; no app changes. Tracker not run; usage unavailable. logs/PonytailDatabaseReview20261103.md. |
 
 | 2026-11-03 | Alembic migration snapshot fix | fix/teacher-postgres-file-storage | small corrective run +independent read-only recheck | inherited Codex; gpt-6-astra high reviewer | n/a | n/a | n/a | n/a | n/a | 0 | Regression6d8951e RED before1line engine fix; unchangedGREEN/full505backendPASS, independent5migrationcasesPASS/no remaining findings. Frontend unchanged/prior160checksnotrepeated. Tracker not run; totals unavailable. logs/MigrationIsolationFix20261103.md. |
+
+| 2026-11-03 | SHR-01 auth spec | feat/shr01-auth-spec | Variant B, orchestrator + spec-writer (two runs: draft, then revision) | Claude Sonnet 5.5 | n/a | n/a | n/a | n/a | n/a | 1 | Harness-reported subagent tokens about 88k (52 tool uses) and 50k (35 tool uses); cost not measured. Spec only, no code or tests, no live calls. Revision round followed user decisions on demo access and the limiter. Details: logs/Shr01SpecSession.md. |
+
+| 2026-11-03 | SHR-01 auth build (partial) | feat/shr01-auth-spec + worktree-agent-aec0315bda91006b3 | Variant B, developer + independent test-designer in parallel, one test fix round | Claude Sonnet 5.5 | n/a | n/a | n/a | n/a | n/a | 1 | Harness-reported subagent tokens: developer about 239k (113+ tool uses), test-designer about 314k (175 tool uses); cost not measured. Backend 666 passed after one test-fix round; Playwright 191 passed, 26 failed, not green. Verifier not run (user's usage limit). logs/Shr01BuildSession.md. |
+
+| 2026-11-04 | SHR-01 auth build (final) | feat/shr01-auth-spec | Variant B: developer + independent test-designer, verifier x2, 2 correction rounds (cap) | Claude Sonnet 5.5 | n/a | n/a | n/a | n/a | n/a | 2 | Harness-reported subagent tokens (cumulative per resumed agent, cost not measured): developer about 240k then 95k, test-designer about 331k, verifier about 71k and 60k. Backend 670 passed; Playwright 219 passed (final code); real-backend test passed locally; verifier round 2 PASS. Verifier was scoped to save usage. Details: logs/Shr01BuildSession.md, docs/Reflections.md. |
+
+| 2026-11-04 | SHR-01 merge of master | feat/shr01-auth-spec | single session, conflict resolution plus full test reruns (backend, Playwright, baseline comparison on master) | Claude Sonnet 5.5 | n/a | n/a | n/a | n/a | n/a | 0 | Tracker not run. Found one semantic conflict git missed (two Alembic heads). |
+
+| 2026-11-04 | SHR-01 first manual test and doc updates | feat/shr01-auth-spec | single session, diagnosis (CSRF origin config, lockout, demo tabs) and docs | Claude Sonnet 5.5 | n/a | n/a | n/a | n/a | n/a | 0 | Tracker not run. No code change; README, UserGuide, notes and logs updated. |
+
+| 2026-11-04 | SHR-01 whole slice, measured | feat/shr01-auth-spec | Variant B (all runs above) | sonnet; opus verifier | 1,440 | 107,607,896 | 556,058 | 157,677 | 30.24 | 2 | Tracker summary: `experiments/results/shr01.csv` (also 4.9M cache-write tokens, 641 requests). By agent: test-designer 11.14, main session 9.61, developer 7.12, verifier 1.39, spec-writer 0.98. Cost by kind: cache writes 13.5, cache reads 10.9, output 5.8. List prices as of 2026-10-29, not billed; the main session was still running when measured, so its share grows. Replaces the harness-reported token estimates in the SHR-01 rows above. |

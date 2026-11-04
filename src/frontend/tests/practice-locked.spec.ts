@@ -1,5 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 import { TWO_OF_THREE, apiError, mockPracticeApi } from "./practiceApi";
+import { STUDENT, mockAuthApi } from "./authApi";
 
 /** STU-02-frontend: locked state after a failure past the save, and shape-checked replies. */
 
@@ -11,6 +12,8 @@ test.beforeEach(async ({ page }) => {
   await page.route("**/api/health", (route) =>
     route.fulfill({ json: { status: "ok" } }),
   );
+  // SHR-01: live practice needs a signed-in student; the session exists before the page opens.
+  await mockAuthApi(page, { user: STUDENT });
 });
 
 async function fillAndSubmit(page: Page) {

@@ -1,9 +1,9 @@
-"""STU-02 practice attempt API, tested through the real ASGI app."""
-import asyncio
-import uuid
+"""STU-02 practice attempt API, tested through the real ASGI app.
 
-import httpx
-from main import app
+SHR-01: identity is a session login (auth_helpers); 401 `missing_student` is now `unauthenticated`.
+No assertion was weakened.
+"""
+from auth_helpers import call, code_of, new_student  # session login replaces X-Student-Id (SHR-01)
 
 SET_ID = "intro-se-1"
 CORRECT = {"q1": "a", "q2": "b", "q3": "c"}
@@ -13,24 +13,6 @@ EXPLANATIONS = [
     "len returns the number of items. The list contains three items.",
 ]
 LEAK_KEYS = ["correct_choice", "explanation", "key_version"]
-
-
-def call(method, path, student=None, json=None, headers=None):
-    hdrs = dict(headers or {})
-    if student is not None:
-        hdrs["X-Student-Id"] = student
-
-    async def send():
-        async with httpx.AsyncClient(
-            transport=httpx.ASGITransport(app=app), base_url="http://test"
-        ) as client:
-            return await client.request(method, path, headers=hdrs, json=json)
-
-    return asyncio.run(send())
-
-
-def new_student():
-    return "stu-" + uuid.uuid4().hex
 
 
 def start(student, set_id=SET_ID):
@@ -51,10 +33,6 @@ def results(aid, student):
     return call("GET", f"/api/attempts/{aid}/results", student)
 
 
-def code_of(r):
-    return r.json()["detail"]["code"]
-
-
 def assert_no_leak(r):
     text = r.text
     for k in LEAK_KEYS:
@@ -65,7 +43,7 @@ def assert_no_leak(r):
 
 # AC1
 def test_stu02_ac1_read_set_shape_and_order():
-    r = call("GET", f"/api/practice-sets/{SET_ID}")
+    r = call("GET", f"/api/practice-sets/{SET_ID}", new_student())
     assert r.status_code == 200
     body = r.json()
     assert body["id"] == SET_ID
@@ -84,13 +62,13 @@ def test_stu02_ac1_read_set_shape_and_order():
 
 
 def test_stu02_ac1_read_set_has_no_key_or_explanation():
-    r = call("GET", f"/api/practice-sets/{SET_ID}")
+    r = call("GET", f"/api/practice-sets/{SET_ID}", new_student())
     assert_no_leak(r)
     assert "correct" not in r.text.lower().replace("incorrect", "")
 
 
 def test_stu02_ac1_unknown_set_404():
-    r = call("GET", "/api/practice-sets/nope")
+    r = call("GET", "/api/practice-sets/nope", new_student())
     assert r.status_code == 404
     assert code_of(r) == "set_not_found"
 
@@ -106,16 +84,16 @@ def test_stu02_ac2_start_attempt():
     assert isinstance(body["attempt_id"], str) and len(body["attempt_id"]) >= 8
 
 
-def test_stu02_ac2_start_requires_header():
+def test_stu02_ac2_start_requires_session():
     r = call("POST", f"/api/practice-sets/{SET_ID}/attempts")
     assert r.status_code == 401
-    assert code_of(r) == "missing_student"
+    assert code_of(r) == "unauthenticated"
 
 
-def test_stu02_ac2_start_empty_header_rejected():
-    r = call("POST", f"/api/practice-sets/{SET_ID}/attempts", "")
+def test_stu02_ac2_start_empty_session_cookie_rejected():
+    r = call("POST", f"/api/practice-sets/{SET_ID}/attempts", headers={"Cookie": "learnswe_session="})
     assert r.status_code == 401
-    assert code_of(r) == "missing_student"
+    assert code_of(r) == "unauthenticated"
 
 
 def test_stu02_ac2_start_unknown_set():
@@ -124,7 +102,7 @@ def test_stu02_ac2_start_unknown_set():
     assert code_of(r) == "set_not_found"
 
 
-def test_stu02_ac2_get_attempt_and_header_required():
+def test_stu02_ac2_get_attempt_and_session_required():
     s = new_student()
     aid = start(s)
     r = call("GET", f"/api/attempts/{aid}", s)
@@ -137,10 +115,10 @@ def test_stu02_ac2_get_attempt_and_header_required():
     }
     r = call("GET", f"/api/attempts/{aid}")
     assert r.status_code == 401
-    assert code_of(r) == "missing_student"
+    assert code_of(r) == "unauthenticated"
 
 
-def test_stu02_ac2_header_required_on_all_attempt_endpoints():
+def test_stu02_ac2_session_required_on_all_attempt_endpoints():
     s = new_student()
     aid = start(s)
     for method, path, body in [
@@ -150,7 +128,7 @@ def test_stu02_ac2_header_required_on_all_attempt_endpoints():
     ]:
         r = call(method, path, None, body)
         assert r.status_code == 401, path
-        assert code_of(r) == "missing_student"
+        assert code_of(r) == "unauthenticated"
 
 
 # AC3
@@ -350,7 +328,7 @@ def test_stu02_ac8_no_leak_from_any_unsubmitted_response():
     r = call("POST", f"/api/practice-sets/{SET_ID}/attempts", s)
     resps.append(r)
     aid = r.json()["attempt_id"]
-    resps.append(call("GET", f"/api/practice-sets/{SET_ID}"))
+    resps.append(call("GET", f"/api/practice-sets/{SET_ID}", s))
     resps.append(call("GET", f"/api/attempts/{aid}", s))
     resps.append(save(aid, s, CORRECT | {"q3": "a"}))
     resps.append(save(aid, s, {"q1": "zzz"}))
@@ -360,7 +338,7 @@ def test_stu02_ac8_no_leak_from_any_unsubmitted_response():
     resps.append(results(aid, s))
     resps.append(call("GET", f"/api/attempts/{aid}"))
     resps.append(call("GET", "/api/attempts/nonexistent-attempt", s))
-    resps.append(call("GET", "/api/practice-sets/nope"))
+    resps.append(call("GET", "/api/practice-sets/nope", s))
     resps.append(call("POST", "/api/practice-sets/nope/attempts", s))
     for resp in resps:
         assert_no_leak(resp)

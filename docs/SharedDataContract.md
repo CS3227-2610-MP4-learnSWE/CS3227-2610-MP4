@@ -7,7 +7,7 @@ This is the shared handoff contract for TEA-01 source materials and the TEA-02 g
 - Python backend uses synchronous SQLAlchemy 2, psycopg, PostgreSQL 16, and Alembic. `DATABASE_URL` is a psycopg URL such as `postgresql+psycopg://user:password@localhost:5432/learnswe`. Original bytes also live in PostgreSQL; `FILE_STORAGE_DIR` is unused. Missing/invalid database configuration or unavailable database yields 503 with `service_unavailable` on teacher requests.
 - `APP_ENV` defaults to a non-development value; `ALLOW_DEMO_IDENTITY` defaults to false. The demo header is usable only when `APP_ENV=development` **and** `ALLOW_DEMO_IDENTITY=true`. Production and all other environments reject it with 403 `demo_identity_disabled`, even when the header is present. This header can be spoofed and must not be presented as authentication.
 - All records persist in PostgreSQL. IDs are canonical UUID strings except `user.id`, which is a stable string. Timestamps are UTC `timestamptz`; JSON timestamps use ISO 8601 with a `Z` suffix. Database uniqueness and foreign keys enforce membership/topic boundaries.
-- `user`: `id` varchar(64) primary key, `display_name` varchar(200) not null, `role` varchar(16) not null constrained to `student`, `teacher`, or `admin`, `created_at` timestamptz not null default current UTC time.
+- `user`: `id` varchar(64) primary key, `display_name` varchar(200) not null, `role` varchar(16) not null constrained to `student`, `teacher`, or `admin`, `created_at` timestamptz not null default current UTC time. SHR-01 adds nullable `email` varchar(254) (stored trimmed and lower-case, CHECK `email = lower(email)`, unique index `ux_user_email`) and nullable `password_hash` varchar(255) (`scrypt$n$r$p$salt$hash`; NULL means the user cannot sign in). Existing seed users keep their ids; `auth_session` (id UUID, `token_hash` unique SHA-256 hex, `user_id` FK cascade, `csrf_token`, `created_at`, `expires_at`) holds server-side sessions.
 - `course`: `id` UUID primary key default generated UUID, `title` varchar(200) not null, `created_at` timestamptz not null default current UTC time.
 - `course_membership`: `course_id` UUID not null foreign key, `user_id` varchar(64) not null foreign key, composite primary key (`course_id`, `user_id`). A teacher may manage a course only if this membership exists and their role is `teacher`.
 - `topic`: `id` UUID primary key default generated UUID, `course_id` UUID not null foreign key, `name` varchar(200) not null, `created_at` timestamptz not null default current UTC time; unique (`course_id`, `name`).
@@ -70,7 +70,7 @@ Alembic explicitly uses READ COMMITTED before its first query, independent of th
 
 ## Integration test setup
 
-Tests use a real isolated PostgreSQL schema, not SQLite: read `TEA01_TEST_DATABASE_URL` as the base database URL, create a unique schema for the run, set the app `DATABASE_URL` with psycopg `options=-csearch_path=<schema>` before importing/configuring the app, run `uv run alembic upgrade head` and `uv run python -m teacher_materials.seed`; no permanent file directory is needed. Set `APP_ENV=development`, `ALLOW_DEMO_IDENTITY=true`. Drop the test schema in teardown. Temporary files may check that no permanent files are created. The only application import required for black-box tests is `app`; HTTP requests and the seed CLI/SQL fixture can establish state. Existing student API tests must still pass unchanged. Configure environment before app import, or provide a documented app factory/config reset if the application loads settings at import time.
+Tests use a real isolated PostgreSQL schema, not SQLite: read `TEA01_TEST_DATABASE_URL` as the base database URL, create a unique schema for the run, set the app `DATABASE_URL` with psycopg `options=-csearch_path=<schema>` before importing/configuring the app, run `uv run alembic upgrade head` and `uv run python -m teacher_materials.seed`; no permanent file directory is needed. Set `APP_ENV=development`, `ALLOW_DEMO_IDENTITY=true`. Drop the test schema in teardown. Temporary files may check that no permanent files are created. The only application import required for black-box tests is `app`; HTTP requests and the seed CLI/SQL fixture can establish state. Student API tests authenticate through the session cookie (SHR-01); also run `uv run python -m auth.seed` with test-only `SEED_*` values after the teacher seed. Configure environment before app import, or provide a documented app factory/config reset if the application loads settings at import time.
 
 ## Internal handoff interfaces
 
@@ -89,8 +89,8 @@ The test-designer must not import these internals or implementation files. The s
 
 - These PostgreSQL users, courses, memberships and topics are the common foundation. Later student/admin work should reuse their IDs and relationships rather than create parallel teacher-specific copies.
 - A source `material` is private teacher input, **not** a published lesson or a student practice set. Generated content references its material ID through separate records. TEA-01 introduced sources only; TEA-02 now creates unpublished study-note drafts as described below. MCQ drafts are implemented below; publication and student answer release remain future work.
-- Current student practice still reads the server fixture `intro-se-1` and stores attempts in the in-memory `AttemptStore`. Its placeholder `X-Student-Id` is not a foreign-key integration with these new tables. Nothing automatically migrates attempts, enrolls students or changes the existing scoring flow.
-- Real authentication must resolve the signed-in account to the shared user ID on the server and replace the demo-header resolver. Keep the teacher-role and course-membership checks; the demo role switcher/header is not proof of identity. Demo seeds are for development only, with no credentials or passwords.
+- Current student practice still reads the server fixture `intro-se-1` and stores attempts in the in-memory `AttemptStore`. Since SHR-01 the attempt owner is the signed-in `user.id` (the old `X-Student-Id` header is gone and ignored), but attempts are not rows in these tables. Nothing automatically migrates attempts, enrolls students or changes the existing scoring flow.
+- SHR-01 implements real authentication: `POST /api/auth/signup|login|logout`, `GET /api/auth/me`, an HttpOnly session cookie, a per-session CSRF token (`X-CSRF-Token` on POST/PUT/PATCH/DELETE) and the reusable `auth.dependencies.current_user(role=...)` and `require_course_member(db, user, course_id)` (see `workflow/specs/SHR-01/plan.md` and the Developer Guide). Student practice and companion routes already use it. **Still to do (teammates):** the `/api/teacher/*` routes still resolve the gated, spoofable `X-Demo-User-Id` header through `demo_identity.py`; replace `require_teacher` with `current_user(role="teacher")` and keep `require_managed_course`, then retire the demo gate. The demo role switcher/header is not proof of identity. Seeded demo accounts get credentials only from the `SEED_*` environment through `uv run python -m auth.seed`; nothing real is committed.
 - Back up and restore PostgreSQL: it now contains both originals and metadata/drafts. No coordinated file-directory backup is required in the new mode. Returning to the historical filesystem version requires its prior code/configuration/database and original files; do not downgrade a populated database. Future object storage must retain private access and stable material references.
 
 ## TEA-02-notes integration contract
@@ -135,3 +135,37 @@ All endpoints require current teacher membership through the same development-on
 Metadata: `{id,course_id,source_material_id,source_title,created_by,created_at,question_count}` (question_count integer3, other fields strings, UUID IDs and UTC Z timestamp). Detail adds `questions` ordered by position, each `{id,position,question,choices,correct_choice_index,explanation}`. Choices preserve order; index0 corresponds to the first. These are unreviewed teacher-only answers, not approved student practice records. Future question editing/practice-set/publication must reuse these IDs and enforce server-side release rules through separate endpoints.
 
 Source limits/errors match note generation (8,000 characters/100 pages, no OCR/truncation). Safe existing identity401/403/resource404/validation422/service503 envelopes apply. Model errors preserve429 retry information,503 unconfigured/unavailable,504 timeout and502 upstream/bad-response. Invalid/truncated output returns502 `llm_bad_response` and creates nothing; failed persistence rolls back the entire new batch. Reuse `src/backend/llm_client.py` unchanged for teacher/admin AI; MCQs use800 tokens and the same teacher caller identity, so note/MCQ requests share its per-teacher quota. Strict structure does not ensure factual accuracy; review is required. No automatic generation retry or idempotency: an explicit retry after a lost response can create another saved batch.
+
+
+## SHR-01 authentication contract
+
+Exact rules: [SHR-01 plan](../workflow/specs/SHR-01/plan.md). Real sessions replace the placeholder student header; the teacher routes above still use the gated demo header until their owners migrate them.
+
+- `user` additions (nullable, additive): `email` varchar(254), stored trimmed and lower-case (CHECK `email = lower(email)`), unique index `ux_user_email`; `password_hash` varchar(255), format `scrypt$n$r$p$salt$hash`. NULL `password_hash` means the user cannot sign in. New signups get id `u-` plus 32 hex characters and role `student`.
+- `auth_session`: `id` UUID PK; `token_hash` varchar(64) not null unique (SHA-256 hex of the cookie token, the raw token is never stored); `user_id` varchar(64) not null FK `user.id` ON DELETE CASCADE, indexed; `csrf_token` varchar(64) not null; `created_at` timestamptz not null default now; `expires_at` timestamptz not null, indexed (created plus `SESSION_TTL_SECONDS`, default 43200).
+- Cookie `learnswe_session` (name from `SESSION_COOKIE_NAME`): HttpOnly, Path `/`, Max-Age equal to the session lifetime, SameSite from `SESSION_COOKIE_SAMESITE` (default Lax), Secure by default (required when `APP_ENV=production`).
+
+| Method and path | Auth | Request | Success |
+|---|---|---|---|
+| `POST /api/auth/signup` | none | exactly `{display_name, email, password}` | 202 `{"status":"accepted"}`, no cookie; same reply for an already registered email; always creates a student |
+| `POST /api/auth/login` | none | exactly `{email, password}` | 200 `{"user":{id,email,display_name,role},"csrf_token"}` and `Set-Cookie` |
+| `POST /api/auth/logout` | session optional | none | 200 `{"status":"ok"}`, cookie cleared, session row deleted; a live session needs `X-CSRF-Token` |
+| `GET /api/auth/me` | any session | none | 200 `{"user":{...},"csrf_token"}` |
+| `GET /api/courses/{course_id}` | any role, course member | none | 200 `{id, title, created_at}` |
+
+Every `/api/auth/*` response has `Cache-Control: no-store`. State-changing requests (POST, PUT, PATCH, DELETE) that use a session must send `X-CSRF-Token` equal to the session's token, and a present `Origin` must be in `ALLOWED_ORIGINS` or the server's own origin. Existing `/api/practice-sets/*`, `/api/attempts/*` and `POST /api/companion/messages` now require a `student` session; `X-Student-Id` is ignored.
+
+| Status | `detail.code` | Condition |
+|---|---|---|
+| 401 | `unauthenticated` | no, unknown or expired session cookie, or user gone (replaces the student routes' `missing_student`) |
+| 401 | `invalid_credentials` | login failed for any reason |
+| 403 | `forbidden` | signed in but role not permitted |
+| 403 | `csrf_failed` | missing or wrong `X-CSRF-Token`, or a disallowed `Origin` |
+| 404 | `not_found` | course missing or caller not a member (same reply) |
+| 422 | `validation_error` | invalid body or path; `fields` lists names only |
+| 429 | `rate_limited` | login or signup limits; includes `retry_after_seconds` and `Retry-After` |
+| 503 | `service_unavailable` | database or auth configuration unavailable or invalid |
+
+Check order for a protected route: 401, then 403 `csrf_failed` (unsafe methods), then 403 `forbidden`. Role is re-read from the database on every request.
+
+Shared handoff (`src/backend/auth/dependencies.py`): `current_user(role=None | "teacher" | ("teacher","admin")) -> Callable[..., AuthUser]` is a FastAPI dependency factory returning `AuthUser(id, email, display_name, role)`; `require_course_member(db, user, course_id) -> Course` raises 404 `not_found` unless a `course_membership` row exists (no admin bypass). Never read identity from a header, query or body. Seed login credentials with `uv run python -m auth.seed` after the teacher seed, using the `SEED_*` environment variables; nothing real is committed.

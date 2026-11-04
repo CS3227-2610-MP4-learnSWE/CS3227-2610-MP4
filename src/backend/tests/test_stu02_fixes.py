@@ -1,31 +1,16 @@
-"""STU-02 fixes after the workflow comparison: save/submit race and student id trimming."""
-import asyncio
+"""STU-02 fixes after the workflow comparison: save/submit race and student identity.
+
+SHR-01: sessions replace X-Student-Id. The old padded-header trimming test is replaced by an
+equivalent identity test (the header is ignored); the race test is unchanged.
+"""
 import threading
 import time
-import uuid
 
-import httpx
 import practice_logic
-from main import app
+from auth_helpers import call, new_student  # session login replaces X-Student-Id (SHR-01)
 
 SET_ID = "intro-se-1"
 CORRECT = {"q1": "a", "q2": "b", "q3": "c"}
-
-
-def call(method, path, student=None, body=None):
-    headers = {"X-Student-Id": student} if student is not None else {}
-
-    async def send():
-        async with httpx.AsyncClient(
-            transport=httpx.ASGITransport(app=app, raise_app_exceptions=False), base_url="http://test"
-        ) as client:
-            return await client.request(method, path, headers=headers, json=body)
-
-    return asyncio.run(send())
-
-
-def sid():
-    return "student-" + uuid.uuid4().hex
 
 
 def start(student):
@@ -36,7 +21,7 @@ def start(student):
 
 def test_stu02_save_racing_submit_cannot_change_a_submitted_attempt(monkeypatch):
     """A save that passed its 'still in progress' check must not land after a submit (AC6)."""
-    student = sid()
+    student = new_student()
     attempt = start(student)
     call("PUT", f"/api/attempts/{attempt}/answers", student, {"answers": {"q1": "b", "q2": "b", "q3": "c"}})
 
@@ -70,10 +55,15 @@ def test_stu02_save_racing_submit_cannot_change_a_submitted_attempt(monkeypatch)
         assert submitted_score == {"correct": 3, "total": 3}
 
 
-def test_stu02_padded_and_plain_student_id_are_the_same_student():
-    name = sid()
-    attempt = start(f"  {name} ")
-    response = call("GET", f"/api/attempts/{attempt}", name)
+def test_stu02_x_student_id_header_never_changes_the_session_student():
+    """Replaces the placeholder-era trimming test: the session user is the only identity."""
+    me = new_student()
+    other = new_student()
+    attempt = start(me)
+    # A header naming another student (padded or plain) neither switches user nor grants access.
+    spoof = {"X-Student-Id": f"  {other} "}
+    assert call("GET", f"/api/attempts/{attempt}", other, headers=spoof).status_code == 404
+    response = call("GET", f"/api/attempts/{attempt}", me, headers={"X-Student-Id": str(other)})
     assert response.status_code == 200
-    call("PUT", f"/api/attempts/{attempt}/answers", name, {"answers": CORRECT})
-    assert call("POST", f"/api/attempts/{attempt}/submit", f"{name}  ").json()["score"]["correct"] == 3
+    call("PUT", f"/api/attempts/{attempt}/answers", me, {"answers": CORRECT}, headers=spoof)
+    assert call("POST", f"/api/attempts/{attempt}/submit", me, headers=spoof).json()["score"]["correct"] == 3

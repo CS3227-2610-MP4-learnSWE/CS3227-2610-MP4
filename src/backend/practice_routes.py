@@ -50,7 +50,7 @@ def _attempt_out(a: Attempt) -> AttemptOut:
 
 
 @router.get("/practice-sets/{set_id}", response_model=PracticeSetOut)
-def read_set(set_id: str) -> PracticeSetOut:
+def read_set(set_id: str, _: str = Depends(require_student)) -> PracticeSetOut:
     s = _set_or_404(set_id)
     return PracticeSetOut.model_validate(
         {
