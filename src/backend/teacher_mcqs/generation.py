@@ -51,24 +51,27 @@ def generate_mcqs(llm: LlmClient, text: str, teacher_id: str) -> list[dict]:
         payload = json.loads(reply.text, object_pairs_hook=_unique_object, parse_constant=_reject)
         if not isinstance(payload, dict) or set(payload) != {"questions"}:
             _reject()
-        items = payload["questions"]
-        if not isinstance(items, list) or len(items) != 3:
-            _reject()
-        questions = []
-        seen = set()
-        for item in items:
-            if not isinstance(item, dict) or set(item) != {"question", "choices", "correct_choice_index", "explanation"}:
-                _reject()
-            question = _text(item["question"], 200)
-            explanation = _text(item["explanation"], 200)
-            if not isinstance(item["choices"], list) or len(item["choices"]) != 4:
-                _reject()
-            choices = [_text(choice, 80) for choice in item["choices"]]
-            answer = item["correct_choice_index"]
-            if type(answer) is not int or not 0 <= answer <= 3 or len({v.casefold() for v in choices}) != 4 or question.casefold() in seen:
-                _reject()
-            seen.add(question.casefold())
-            questions.append(dict(question=question, choices=choices, correct_choice_index=answer, explanation=explanation))
-        return questions
+        return validate_questions(payload["questions"])
     except (ValueError, TypeError, RecursionError):
         raise generation_error(LlmBadResponse("Unusable MCQ response")) from None
+
+
+def validate_questions(items) -> list[dict]:
+    if not isinstance(items, list) or len(items) != 3:
+        _reject()
+    questions = []
+    seen = set()
+    for item in items:
+        if not isinstance(item, dict) or set(item) != {"question", "choices", "correct_choice_index", "explanation"}:
+            _reject()
+        question = _text(item["question"], 200)
+        explanation = _text(item["explanation"], 200)
+        if not isinstance(item["choices"], list) or len(item["choices"]) != 4:
+            _reject()
+        choices = [_text(choice, 80) for choice in item["choices"]]
+        answer = item["correct_choice_index"]
+        if type(answer) is not int or not 0 <= answer <= 3 or len({v.casefold() for v in choices}) != 4 or question.casefold() in seen:
+            _reject()
+        seen.add(question.casefold())
+        questions.append(dict(question=question, choices=choices, correct_choice_index=answer, explanation=explanation))
+    return questions

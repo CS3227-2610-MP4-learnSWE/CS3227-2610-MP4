@@ -61,3 +61,6 @@ export const downloadTeacherMaterial = (materialId: string) =>
     true,
   ) as Promise<Blob>;
 export { ApiError };
+
+export const deleteTeacherMaterial = (id: string) =>
+  requestTeacher("DELETE", `/api/teacher/materials/${id}`);

@@ -1,3 +1,6 @@
+import McqDraftEditor from "./McqDraftEditor";
+import DeleteTeacherItem from "../components/DeleteTeacherItem";
+import { useAuth } from "../auth/AuthContext";
 import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router";
 import { Button, MenuItem, TextField } from "@mui/material";
@@ -14,6 +17,7 @@ import { useTeacherStudioSources } from "../hooks/useTeacherStudioSources";
 import { useStudioGeneration } from "../hooks/useStudioGeneration";
 import {
   generateMcqDraft,
+  deleteMcqDraft,
   getMcqDraft,
   listMcqDrafts,
   type McqDraft,
@@ -28,6 +32,8 @@ export default function TeacherMcqs() {
   const [draftLoading, setDraftLoading] = useState(false);
   const [draftError, setDraftError] = useState("");
   const [draftReload, setDraftReload] = useState(0);
+  const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const { busy, start } = useStudioGeneration(
@@ -72,7 +78,7 @@ export default function TeacherMcqs() {
     setParams(id ? { tab: "questions", course: id } : { tab: "questions" });
   };
   const generate = async () => {
-    if (!studio.courseId || !studio.sourceId) return;
+    if (editing || saving || !studio.courseId || !studio.sourceId) return;
     const request = start();
     if (!request) return;
     setError("");
@@ -98,9 +104,7 @@ export default function TeacherMcqs() {
       request.finish();
     }
   };
-  const demoEnabled =
-    import.meta.env.VITE_APP_ENV === "development" &&
-    import.meta.env.VITE_ALLOW_DEMO_IDENTITY === "true";
+  const { user } = useAuth();
   return (
     <>
       <PageHeading
@@ -108,13 +112,7 @@ export default function TeacherMcqs() {
         title="AI content studio"
         description="Turn a private source material into three concise, unpublished draft MCQs."
       />
-      <PreviewNote>
-        Development identity:{" "}
-        {demoEnabled
-          ? import.meta.env.VITE_DEMO_USER_ID || "demo-teacher"
-          : "disabled (configure local .env)"}
-        . Local testing only; this is not a real login.
-      </PreviewNote>
+      <PreviewNote>Signed in as {user?.display_name}</PreviewNote>
       {studio.coursesError && (
         <div className="library-status" role="alert">
           {studio.coursesError}
@@ -146,7 +144,7 @@ export default function TeacherMcqs() {
               label="Course"
               value={studio.courseId}
               onChange={(event) => changeCourse(event.target.value)}
-              disabled={!studio.coursesReady || busy}
+              disabled={!studio.coursesReady || busy || saving}
             >
               {studio.courses.map((course) => (
                 <MenuItem key={course.id} value={course.id}>
@@ -168,7 +166,10 @@ export default function TeacherMcqs() {
                 setSuccess("");
               }}
               disabled={
-                busy || studio.resourcesLoading || !studio.materials.length
+                busy ||
+                saving ||
+                studio.resourcesLoading ||
+                !studio.materials.length
               }
             >
               {studio.materials.map((material) => (
@@ -201,6 +202,8 @@ export default function TeacherMcqs() {
               startIcon={<Sparkles size={17} />}
               disabled={
                 busy ||
+                editing ||
+                saving ||
                 !studio.sourceId ||
                 !studio.courseId ||
                 studio.resourcesLoading
@@ -237,7 +240,7 @@ export default function TeacherMcqs() {
                 <li key={item.id}>
                   <Button
                     startIcon={<FileText size={16} />}
-                    disabled={busy}
+                    disabled={busy || saving}
                     onClick={() =>
                       setParams({
                         tab: "questions",
@@ -276,33 +279,43 @@ export default function TeacherMcqs() {
           {shownDraft ? (
             <>
               <Tag tone="purple">Unpublished draft · Review required</Tag>
-              <h2>{shownDraft.source_title}</h2>
-              <p>Source: {shownDraft.source_title}</p>
-              <p>Created by: {shownDraft.created_by}</p>
-              <p>Created: {new Date(shownDraft.created_at).toLocaleString()}</p>
-              <ol className="mcq-questions">
-                {shownDraft.questions.map((question) => (
-                  <li key={question.id}>
-                    <h3>{question.question}</h3>
-                    <ol
-                      type="A"
-                      aria-label={`Choices for question ${question.position}`}
-                    >
-                      {question.choices.map((choice, index) => (
-                        <li key={index}>{choice}</li>
-                      ))}
-                    </ol>
-                    <p>
-                      <strong>Correct answer:</strong>{" "}
-                      {String.fromCharCode(65 + question.correct_choice_index)}.{" "}
-                      {question.choices[question.correct_choice_index]}
-                    </p>
-                    <p>
-                      <strong>Explanation:</strong> {question.explanation}
-                    </p>
-                  </li>
-                ))}
-              </ol>
+              <McqDraftEditor
+                key={shownDraft.id}
+                draft={shownDraft}
+                onSaved={(saved) => {
+                  setDraft(saved);
+                  studio.updateDraft(saved);
+                }}
+                onEditingChange={setEditing}
+                onSavingChange={setSaving}
+                deleteControl={
+                  <DeleteTeacherItem
+                    kind="batch"
+                    name={shownDraft.source_title}
+                    remove={() =>
+                      deleteMcqDraft(shownDraft.id, shownDraft.version)
+                    }
+                    onDeleted={() => {
+                      setSuccess("MCQ batch deleted.");
+                      setParams({ tab: "questions", course: studio.courseId });
+                      studio.reloadResources();
+                    }}
+                    onLatest={async () => {
+                      const request = start();
+                      if (!request) return;
+                      try {
+                        const latest = await getMcqDraft(shownDraft.id);
+                        if (request.isCurrent()) {
+                          setDraft(latest);
+                          studio.updateDraft(latest);
+                        }
+                      } finally {
+                        request.finish();
+                      }
+                    }}
+                  />
+                }
+              />
             </>
           ) : (
             !draftLoading &&

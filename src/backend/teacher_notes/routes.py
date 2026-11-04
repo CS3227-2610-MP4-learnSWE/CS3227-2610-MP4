@@ -2,18 +2,19 @@
 from datetime import datetime, timezone
 from uuid import uuid4
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Request, Response
 from sqlalchemy import select
 from pydantic import BaseModel, ConfigDict, Field, StrictInt, StrictStr, ValidationError
 
 from errors import ApiError
 from text_validation import is_postgres_text, normalise_newlines_and_trim
 from llm_client import LlmClient, get_llm_client
-from teacher_materials.demo_identity import require_managed_course
+from teacher_access import require_managed_course
 from teacher_materials.models import CourseMembership, Material, StudyNoteDraft, User
 from teacher_materials.routes import _material_content
 from teacher_access import owned_material, parse_uuid, teacher_session
 from timestamps import utc_timestamp
+from teacher_access import check_version, commit_deletion, delete_version
 from teacher_notes.generation import extract_source, generate_notes
 
 router = APIRouter(prefix="/api/teacher", tags=["teacher note drafts"])
@@ -94,6 +95,7 @@ async def edit_note_draft(request: Request, draft_id: str):
             row = session.scalar(select(StudyNoteDraft).join(CourseMembership, CourseMembership.course_id == StudyNoteDraft.course_id).where(StudyNoteDraft.id == identifier, CourseMembership.user_id == teacher.id))
             if row is None:
                 raise ApiError(404, "not_found", "Draft not found.")
+            require_managed_course(session, teacher, row.course_id)
             try:
                 body = DraftEdit.model_validate(await request.json())
             except (ValueError, ValidationError):
@@ -127,3 +129,20 @@ async def edit_note_draft(request: Request, draft_id: str):
         if exc.status == 503:
             raise ApiError(503, "service_unavailable", "Teacher notes service is unavailable. Please try again.") from None
         raise
+
+
+@router.delete("/note-drafts/{draft_id}", status_code=204)
+def delete_note_draft(request: Request, draft_id: str):
+    with teacher_session(request) as (session, teacher):
+        row = session.scalar(select(StudyNoteDraft).join(CourseMembership, CourseMembership.course_id == StudyNoteDraft.course_id).where(StudyNoteDraft.id == parse_uuid(draft_id), CourseMembership.user_id == teacher.id))
+        if row is None:
+            raise ApiError(404, "not_found", "Draft not found.")
+        require_managed_course(session, teacher, row.course_id)
+        version = delete_version(request)
+        row = session.scalar(select(StudyNoteDraft).where(StudyNoteDraft.id == row.id).with_for_update().execution_options(populate_existing=True))
+        if row is None:
+            raise ApiError(404, "not_found", "Draft not found.")
+        check_version(row.version, version)
+        with commit_deletion(session):
+            session.delete(row)
+        return Response(status_code=204)

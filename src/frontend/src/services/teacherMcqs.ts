@@ -8,6 +8,9 @@ export type McqDraftMetadata = {
   created_by: string;
   created_at: string;
   question_count: number;
+  version: number;
+  updated_at: string;
+  updated_by: string;
 };
 export type McqDraftQuestion = {
   id: string;
@@ -41,7 +44,12 @@ function metadata(value: unknown): McqDraftMetadata {
     !text(item.source_title, 200) ||
     !text(item.created_at) ||
     Number.isNaN(Date.parse(item.created_at)) ||
-    item.question_count !== 3
+    item.question_count !== 3 ||
+    !Number.isInteger(item.version) ||
+    item.version < 1 ||
+    !text(item.updated_by) ||
+    !text(item.updated_at) ||
+    Number.isNaN(Date.parse(item.updated_at))
   )
     throw invalid();
   return item;
@@ -86,3 +94,12 @@ export const generateMcqDraft = (materialId: string) =>
     false,
     45_000,
   ).then(detail);
+
+export type McqEdit = {
+  version: number;
+  questions: Omit<McqDraftQuestion, "position">[];
+};
+export const saveMcqDraft = (id: string, input: McqEdit) =>
+  requestTeacher("PATCH", `/api/teacher/mcq-drafts/${id}`, input).then(detail);
+export const deleteMcqDraft = (id: string, version: number) =>
+  requestTeacher("DELETE", `/api/teacher/mcq-drafts/${id}?version=${version}`);
