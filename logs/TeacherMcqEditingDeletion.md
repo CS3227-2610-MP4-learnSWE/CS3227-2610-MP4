@@ -1,31 +1,32 @@
 # Teacher MCQ editing and unpublished-work deletion
 
-## 2026-11-04 — Approved implementation started
+## Approved start — 2026-11-04
 
-- User approved authenticated teacher APIs, versioned whole-batch MCQ editing and confirmed deletion of unpublished notes/MCQ batches plus unreferenced source materials. Any managing teacher may act; publication/unpublishing and student history changes are excluded.
-- Clean master `da57eab` (PR16 authentication, after PR15 PostgreSQL storage) recorded before creating `feat/tea03-edit-mcqs-delete-drafts`.
-- Variant B: spec-writer first; developer and independent test designer will use the same approved specification commit and separate folders, then a strongest read-only verifier. No redundant document approval requested: user supplied the complete approved plan.
-- Test infrastructure: Docker application could not launch (missing executable). Initial sandboxed initdb failed on shared memory; approved elevated initdb/pg_ctl started an isolated temporary PostgreSQL cluster at loopback port55439, database learnswe_test. This is not the developer database. Existing development data, files and .env remain untouched.
-- Baseline backend and mocked browser suites started before application changes. Results and subsequent commits recorded below when available.
-- No live LLM, deployment, push, PR publication or merge into master authorised by this session.
+The user approved real teacher authentication, versioned editing of three-question MCQ batches, confirmed permanent deletion of unpublished notes/batches, and deletion of unreferenced source materials. Any managing teacher may act. Publication, unpublishing, individual-question deletion and student-history changes are excluded.
 
-- Approved contract/stories committed0038b47; independent developer/designer launched from that exact commit. Baseline backend692passed (101.81s), before application changes.
+Created `feat/tea03-edit-mcqs-delete-drafts` from clean master `da57eab` (PR16 authentication, after PR15 PostgreSQL storage). Approved specifications and user stories were committed as `0038b47` before application changes. Developer and independent test designer started from that identical commit in separate folders under Variant B.
 
-## Baseline and independent tests
+Docker could not launch because its installed executable is missing. A sandboxed initdb attempt failed on shared-memory access; approved elevated commands created a separate temporary PostgreSQL cluster on loopback port 55439, database learnswe_test. Tests use isolated schemas. The developer database, original files and actual .env were untouched. No live LLM requests, deployment, push, PR publication or merge into master occurred.
 
-- Baseline completed before implementation:692backendPASS (101.81s),224mockedbrowserPASS (2.0m). Existing note Back/Forward test passed; no speculative navigation fix required.
-- Independent designer committed backend tests `b56bc12` before implementation visibility; UI tests still in progress. Same approved contract0038b47.
-- Token tracker attempted branch filter; returned0 matching requests. This means unavailable attribution, not zero actual usage/cost. Summary retained; final resources will state limitation.
+## Independent evidence
 
-- Independent designer captured RED for cookie-auth regression atb56bc12 onapprovedstart0038b47: old teacher API ignores valid cookie and returns401 demanding demoheader. No implementation visibility before this testcommit.
+- Baseline before source changes: 692 backend tests passed (101.81s), 224 browser tests passed (2.0m). The existing note Back/Forward test passed; no speculative navigation fix was made.
+- Independent backend tests `b56bc12` and browser tests `3d80b0c` were committed before source visibility. Legacy authentication expectations were adapted in `260035e`, preserving stronger cookie/CSRF and access assertions.
+- RED on old source: cookie-auth upload returned401 demanding the old demo header; anonymous teacher-data screen lacked the required sign-in guidance and fetched records.
+- Developer source and product guides: `d19bdf4`. Types, lint, build, source formatting, compilation and 62 existing health/text/LLM tests passed before independent integration. Shared llm_client.py remained unchanged.
+- Designer merged implementation only after committing tests (`5771e15`). Initial backend: 726 passed, one test-wire failure. httpx cannot directly encode a lone surrogate; `334367f` sends escaped JSON and retains the rejection assertion.
 
-## Integration correction round1
+## Integration correction round 1 (cap: 2 total)
 
-- Independent tests committedb56bc12/3d80b0c/260035e before sourcevisibility; developerd19bdf4 then merged by designer5771e15. Frontendtypes/lint/build/sourceformat pass.
-- Initial integratedbackend726PASS/1harnessfailure (httpx cannot serialize lone surrogate without JSONescaping); designer correctedwireencoding334367f, retainingadversarialassertion. Fullrerunpending.
-- Browser found two product issues: overlimitMCQfields hidecounter; expired401dirtyeditor clearsprivatebuffers but routerblocker intercepts/login redirect. Parent ruling requires shared/login redirect (anonymousbootstrapstillguidance), preserving ordinarydirtywarnings/logoutfailurebuffers. Developer addressingboth ascorrectionround1; cap2 total.
-- Exacttext locator encompassinganonymousAlertlink correctedto rolealert containment, preserving visibleguidance+zeroteachercallassertions. No weakening producttests.
+| Finding | Resolution |
+|---|---|
+| Over-limit MCQ fields hide their counters | `66ccbd8` keeps counters alongside validation/duplicate messages. |
+| A dirty editor intercepts the session-expiry redirect, although private content clears | `66ccbd8` schedules expiry/logout navigation after protected views and blockers unmount. Normal unsaved-work protection and failed-logout behaviour remain. |
+| Anonymous guidance locator includes its child link; initial-focus test assumes an unspecified button | Test fixtures target the alert container and verify focus lies inside the dialog, matching the approved contract. |
+| Intermittent mobile Cancel failure after full-page screenshot | Event trace proves pointer-down on Cancel at scroll2558 but pointer-up/click on other fields after scroll1351. The app never receives Cancel. Visual capture is now the last action in separate tests; all functional Cancel/discard/delete/focus assertions remain. No application workaround. Fifteen focused mobile repetitions passed (`26b5874`). |
 
-- Correction66ccbd8 retains invalid/duplicate MCQ counters and schedules expiry/logout navigation after protected views unmount; types/lint/build/diffcheckPASS.
-- Final integratedbackend727PASS (81.33s), followingescaped-surrogatewirefixturecorrection. Browserrerunpending.
-- MobileCancelinvestigation: screenshotjourney eventtrace provedpointerdown onCancel atscroll2558, pointerup/click ondifferentfields afterscroll1351. No Cancelclick reachesapp; no-screenshotjourney consistentlypasses. Designer separates visualfullpagecapture aslastaction fromfunctionalCancel/delete assertions; retains allassertions plusnormalmobileCancelregression. No speculativeappCSSfix. Parentinspected390light/1440dark editorimages: readable/focusvisible/nooverflow; otherwidth/themeconfirmationimagespending.
+## Verification in progress
+
+Final integrated backend: 727 passed (81.33s). Integrated types, lint, format and build passed. Final browser run has 245 cases (224 baseline plus 21 new, including separate visual checks). Parent inspected mobile light and desktop dark editor captures: readable, visible focus, no horizontal overflow. Independent verifier and remaining visual inspection are pending.
+
+The token tracker was run with the feature-branch filter but found no attributable requests. Its zero-row summary means unavailable measurement, not zero actual usage or cost. Final resource and handoff records will preserve this limitation.
