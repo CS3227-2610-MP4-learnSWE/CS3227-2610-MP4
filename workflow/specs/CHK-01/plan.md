@@ -107,7 +107,7 @@ Stdout, one line each: per-spec lines sorted by spec id (FAIL lines sorted by fi
 | Pass | `OK <spec-id>` |
 | Warning | `WARN <spec-id>: waiver for a spec folder that does not exist [WAIVER_UNKNOWN_ID]` |
 | Summary | `speccheck: <n> checked, <f> failed, <w> waived` |
-| Rule listing (`--list-rules`) | `RULE <id> tier=<1 or 2> file=<file> where="<where>" skip_no_screen=<yes or no> skip_added_items=<yes or no> source="<source>"`, one per registry row, registry order |
+| Rule listing (`--list-rules`) | `RULE <id> tier=<1 or 2> file=<file> where="<where>" skip_no_screen=<yes or no> skip_added_items=<yes or no> source="<source>"`, one per registry row, registry order; `<file>` is `spec.md or plan.md` for the nine UI item rules (clarified after the first test run) |
 | Usage error (stderr, exit 2) | `speccheck: error: <text>` |
 | Waiver error (stderr, exit 2) | `speccheck: error: <waiver file>: line <n>: <text> [WAIVER_BAD_LINE]` |
 
