@@ -26,9 +26,9 @@ All role features below are MVP requirements. Optional extensions are listed sep
 
 ## Teacher
 
-- **TEA-01 — Manage learning materials:** Upload source materials and organise them by course and topic. Supported file types and size limits will be specified before implementation.
+- **TEA-01 — Manage learning materials:** Upload source materials, organise them by course and topic, and permanently delete unused sources only when no note drafts or MCQ batches reference them. Supported file types and size limits will be specified before implementation.
 - **TEA-02 — AI content generation:** Generate draft study notes and single-answer MCQs from uploaded materials. Each question has answer choices, exactly one correct choice and an explanation; no free-text answer questions.
-- **TEA-03 — Review and publish:** Preview, edit, approve and publish generated study notes, MCQs, answer keys and explanations. Students can access published notes and questions; answer keys and solution explanations are released only after successful whole-set submission. AI generation never publishes automatically.
+- **TEA-03 — Review and publish:** Preview, edit, approve and publish generated study notes, MCQs, answer keys and explanations. Students can access published notes and questions; answer keys and solution explanations are released only after successful whole-set submission. AI generation never publishes automatically. Any teacher managing the course can permanently delete its unpublished note drafts or whole MCQ draft batches after confirmation; published or otherwise referenced content must remain protected.
 - **TEA-04 — Manage practice sets:** Select MCQs, assign practice sets to course topics and maintain answer keys and explanations.
 - **TEA-05 — Learning overview:** View student completion rates, practice results and commonly missed questions for courses the teacher manages.
 - **TEA-06 — Feedback and teacher inbox:** Complete targeted feedback forms and receive admin survey requests, responses and announcements in an in-app inbox. Survey requests link to the relevant form; messages have read/unread status and an unread count. Email and push notifications are outside the MVP.
