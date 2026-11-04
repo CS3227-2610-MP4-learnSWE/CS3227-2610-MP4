@@ -30,3 +30,14 @@ Docker could not launch because its installed executable is missing. A sandboxed
 Final integrated backend: 727 passed (81.33s). Integrated types, lint, format and build passed. Final browser run: 245 passed (2.1m; 224 baseline plus 21 new, including separate visual checks). Tests merged into the run branch as `0ca14b1`. Parent inspected mobile light/desktop dark editors and mobile dark/desktop light confirmations: readable, visible controls, no horizontal overflow. Full-page modal captures paint fixed elements relative to the current viewport; functional focus assertions passed. Strongest read-only verifier is running against the frozen application/test tree.
 
 The token tracker was run with the feature-branch filter but found no attributable requests. Its zero-row summary means unavailable measurement, not zero actual usage or cost. Final resource and handoff records will preserve this limitation.
+
+
+## Independent review and correction round 2
+
+The strongest read-only verifier reran the frozen tree: 727 backend passed (121.66s), 245 browser passed (2.2m), types/lint/format/build passed. Additional probes confirmed dirty successful logout clears/redirects and failed logout retains the editor. Review identified two blockers and stale guide wording:
+
+1. Concurrent unsafe requests sharing an expired cookie both hold session FOR SHARE locks, then expired-session cleanup attempts DELETE lock upgrades. Probe returned503 and401 instead of two401 responses.
+2. Successful note, MCQ and material deletion removes the original trigger, leaving keyboard focus on BODY instead of a surviving list heading.
+3. UserGuide and DeveloperGuide still contained old demo-authorization statements.
+
+Final correction round starts at `83d34c3` (application/test tree unchanged from0ca14b1). Independent regressions `94901d4`, with formatting-only `78622a5`, were committed before fixes. Backend RED reproduced503 instead of401 (1.51s); all three browser deletion-focus checks were RED. The developer was released to change application code only after these results. The fix must retain concurrent live-session writes, revocation protection and normal dirty navigation. A scoped verifier recheck is required after integration; no additional correction round remains beyond this one.

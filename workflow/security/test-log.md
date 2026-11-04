@@ -182,3 +182,8 @@ Independent tests were committed before implementation visibility. Integrated tr
 | SEC-TEA-CLEANUP-08 confirmation and recovery | All deletes require confirmation;204 parsing, duplicate prevention, conflicts, navigation and both-theme mobile layout covered in teacher-mcqs-cleanup.spec.ts | Pass |
 
 All existing drafts are unpublished. Future publication/practice-set integrations must add restrictive references or equivalent guards before exposing teacher drafts to students. Existing SHR-01 deployment limitations above are unchanged; this feature does not deploy or broaden administration privileges.
+
+
+### Independent review supplement — correction round 2 pending
+
+Fresh strongest-verifier suites passed727backend/245browser, but extra probes found gaps outside those original assertions: concurrent expired-cookie mutations returned503/401 due shared-lock upgrade deadlock; successful deletions left focus on BODY. Independent regressions94901d4 were RED before application fixes (backend and all three deletion types). Both findings must be resolved and rechecked before acceptance; earlier integrated Pass rows do not supersede them. No unauthorized successful mutation was found.
