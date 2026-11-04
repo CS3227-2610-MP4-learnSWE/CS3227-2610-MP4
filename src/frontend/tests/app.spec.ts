@@ -3,7 +3,7 @@ import { mockTeacherNotesApi } from "./teacherNotesApi";
 import { test, expect } from "@playwright/test";
 import { mockPracticeApi } from "./practiceApi";
 import { mockTeacherMaterialsApi, OLD } from "./teacherMaterialsApi";
-import { mockAuthApi } from "./authApi";
+import { mockAuthApi, TEACHER } from "./authApi";
 
 test.beforeEach(async ({ page }) => {
   await page.route("**/api/health", (route) =>
@@ -11,7 +11,7 @@ test.beforeEach(async ({ page }) => {
   );
   // Tests that open /student/practice get the default practice API mock.
   await mockPracticeApi(page);
-  await mockTeacherMaterialsApi(page);
+  await mockTeacherMaterialsApi(page, false);
 });
 
 test("login page explore buttons open the demo without authentication requests", async ({
@@ -112,6 +112,7 @@ for (const [role, routes] of Object.entries(routesByRole)) {
   test(`${role} routes render on direct navigation and reload`, async ({
     page,
   }) => {
+    if (role === "teacher") await mockAuthApi(page, { user: TEACHER });
     for (const route of routes) {
       await page.goto(route);
       await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
@@ -166,6 +167,7 @@ test("teacher generation is real while admin messages remain explicit previews",
     page.getByText("Draft notes generated and saved."),
   ).toBeVisible();
   expect(teacherApi.generationCalls).toBe(1);
+  await mockAuthApi(page, { user: null });
   await page.goto("/admin/announcements");
   await page.getByLabel("Subject").fill("Course update");
   await page.getByLabel("Message").fill("Some useful information.");
@@ -205,6 +207,9 @@ test("desktop and mobile layouts render without overflow in both themes", async 
         "/admin/users",
         "/admin/usage",
       ]) {
+        await mockAuthApi(page, {
+          user: route.startsWith("/teacher/") ? TEACHER : null,
+        });
         await page.goto(route);
         await expect(page.locator("#root")).not.toBeEmpty();
         const overflow = await page.evaluate(() => ({
@@ -265,6 +270,7 @@ test("keyboard focus is visible and navigation supports back and forward", async
 });
 
 test("teacher material search filters the loaded library", async ({ page }) => {
+  await mockAuthApi(page, { user: TEACHER });
   await page.goto("/teacher/materials");
   await expect(page.getByText(OLD.title, { exact: true })).toBeVisible();
   await page.getByLabel("Search your materials").fill("architecture.txt");
@@ -277,6 +283,7 @@ test("teacher material search filters the loaded library", async ({ page }) => {
 test("teacher upload picker can be opened with the keyboard", async ({
   page,
 }) => {
+  await mockAuthApi(page, { user: TEACHER });
   await page.goto("/teacher/materials");
   await page.getByRole("button", { name: "Upload material" }).click();
   const dialog = page.getByRole("dialog");
