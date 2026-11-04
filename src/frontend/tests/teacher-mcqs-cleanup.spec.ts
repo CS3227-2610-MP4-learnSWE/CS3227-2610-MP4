@@ -293,10 +293,17 @@ for (const [kind, label, title, keep, success] of [
     release();
     await expect(page.getByText(success, { exact: true })).toBeVisible();
     await expect(page.getByRole("dialog")).toHaveCount(0);
-    await expect(page.getByRole("heading", {
-      name: kind === "notes" ? "Saved drafts" : kind === "mcqs" ? "Saved MCQ batches" : "Course materials",
-      exact: true,
-    })).toBeFocused();
+    await expect(
+      page.getByRole("heading", {
+        name:
+          kind === "notes"
+            ? "Saved drafts"
+            : kind === "mcqs"
+              ? "Saved MCQ batches"
+              : "Course materials",
+        exact: true,
+      }),
+    ).toBeFocused();
     if (kind !== "material")
       await expect(page).not.toHaveURL(kind === "notes" ? /draft=/ : /batch=/);
     const request = api.requests.find((r) => r.method === "DELETE")!;
