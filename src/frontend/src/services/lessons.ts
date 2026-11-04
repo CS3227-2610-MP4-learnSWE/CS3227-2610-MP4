@@ -45,11 +45,22 @@ const isCourseRef = (v: unknown) =>
   isObject(v) && isString(v.id) && isString(v.title);
 const seg = (id: string) => encodeURIComponent(id);
 
+// Identical GETs already in flight share one request (React StrictMode runs
+// effects twice in development); a finished request is never reused.
+const inFlight = new Map<string, Promise<unknown>>();
+function readOnce(path: string): Promise<unknown> {
+  const pending = inFlight.get(path);
+  if (pending) return pending;
+  const started = request("GET", path).finally(() => inFlight.delete(path));
+  inFlight.set(path, started);
+  return started;
+}
+
 export async function listCourses(): Promise<{
   courses: CourseSummary[];
   totals: { lesson_count: number; completed_count: number };
 }> {
-  const data = await request("GET", "/api/study/courses");
+  const data = await readOnce("/api/study/courses");
   if (
     !isObject(data) ||
     !Array.isArray(data.courses) ||
@@ -74,10 +85,7 @@ export async function listCourseLessons(courseId: string): Promise<{
   course: { id: string; title: string };
   topics: TopicGroup[];
 }> {
-  const data = await request(
-    "GET",
-    `/api/study/courses/${seg(courseId)}/lessons`,
-  );
+  const data = await readOnce(`/api/study/courses/${seg(courseId)}/lessons`);
   if (
     !isObject(data) ||
     !isCourseRef(data.course) ||
@@ -106,7 +114,7 @@ export async function listCourseLessons(courseId: string): Promise<{
 }
 
 export async function getLesson(lessonId: string): Promise<LessonDetail> {
-  const data = await request("GET", `/api/study/lessons/${seg(lessonId)}`);
+  const data = await readOnce(`/api/study/lessons/${seg(lessonId)}`);
   if (
     !isObject(data) ||
     !isString(data.id) ||

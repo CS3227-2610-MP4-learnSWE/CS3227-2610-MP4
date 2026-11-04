@@ -66,7 +66,7 @@ Spec and contract: `workflow/specs/STU-01/`. Package `src/backend/study_lessons/
 - TEA-03 publication calls `publish_lesson(db, draft, teacher)` after checking the teacher owns the draft's course; it flushes a new `published_lesson` row (topic copied from the source material) and the caller commits. No publish route exists yet. `withdrawn_at` is honoured on read; no code sets it.
 - Completion is one row per (user, lesson) written by a single `INSERT ... ON CONFLICT DO UPDATE`; the request carries the wanted state, so repeats and races are safe. The user always comes from the session.
 - Dev data: after `teacher_materials.seed`, run `uv run python -m study_lessons.seed` (two sample lessons for `demo-student`'s Software Engineering course). Not for production.
-- Frontend: `services/lessons.ts` (shape-checked calls), `services/lessonMessages.ts` (exact error text), `pages/Materials.tsx`, `pages/Lesson.tsx`; the Overview stat is `LessonsCompletedStat` in `pages/Student.tsx`. Lessons are rendered as text with `white-space: pre-wrap`. Nothing is stored in the browser. The old sample lessons and `completed` demo state were removed.
+- Frontend: `services/lessons.ts` (shape-checked calls), `services/lessonMessages.ts` (exact error text), `pages/Materials.tsx`, `pages/Lesson.tsx`; the Overview stat is `LessonsCompletedStat` in `pages/Student.tsx`. Lessons are rendered as text with `white-space: pre-wrap`. Nothing is stored in the browser. Identical in-flight GETs in `services/lessons.ts` share one request (StrictMode runs effects twice in development). The old sample lessons and `completed` demo state were removed.
 
 ## State and preview actions
 

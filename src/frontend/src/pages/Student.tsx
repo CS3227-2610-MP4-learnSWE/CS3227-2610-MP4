@@ -27,7 +27,7 @@ type Totals = { lesson_count: number; completed_count: number };
 function LessonsCompletedStat() {
   const demoMode = useAuth().status === "anonymous";
   const [totals, setTotals] = useState<
-    Totals | "loading" | "signin" | "failed"
+    Totals | "loading" | "unauthenticated" | "failed"
   >("loading");
   useEffect(() => {
     let current = true;
@@ -35,18 +35,19 @@ function LessonsCompletedStat() {
       (result) => current && setTotals(result.totals),
       (error) =>
         current &&
-        setTotals(isSignInNeeded(error) && demoMode ? "signin" : "failed"),
+        setTotals(isSignInNeeded(error) ? "unauthenticated" : "failed"),
     );
     return () => {
       current = false;
     };
-  }, [demoMode]);
+  }, []);
+  // Decided at render so a change of session state never repeats the request.
   const text =
     totals === "loading"
       ? { value: "…", detail: "Loading…" }
-      : totals === "signin"
+      : totals === "unauthenticated" && demoMode
         ? { value: "–", detail: "Sign in to see your progress" }
-        : totals === "failed"
+        : totals === "failed" || totals === "unauthenticated"
           ? {
               value: "–",
               detail: "Unavailable. Open Study materials to try again.",
