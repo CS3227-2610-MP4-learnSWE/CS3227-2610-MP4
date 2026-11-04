@@ -32,6 +32,7 @@ Edit `.env`: point `DATABASE_URL` at the fresh `learnswe_db_files` database on l
 uv run --env-file .env alembic upgrade head
 uv run --env-file .env python -m teacher_materials.seed
 uv run --env-file .env python -m auth.seed
+uv run --env-file .env python -m study_lessons.seed
 uv run --env-file .env uvicorn main:app --host 127.0.0.1 --port 8000 --reload
 ```
 

@@ -6,7 +6,7 @@ Stages: not started, spec, build, verified (local), merged.
 
 | ID | Stage | Branch | PR | Open items |
 |---|---|---|---|---|
-| STU-01 | not started | | | |
+| STU-01 | build (developer done, tests and verifier pending) | `feat/stu01-spec` | | Lessons come from `study_lessons.seed` until TEA-03 publication calls `publish_lesson`. |
 | STU-02 | merged | `feat/stu02-practice-api-workflow-b`, `feat/stu02-frontend-run-b` | 1–5 (numbers per `checklist.md`) | Placeholder identity and server-memory storage; no persistence or real login. |
 | STU-03 | merged | `feat/stu03-run-b` | 8 | Live provider quality unchecked; no authenticated persistence of chat history. |
 | STU-04 | not started | | | |

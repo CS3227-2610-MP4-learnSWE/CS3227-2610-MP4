@@ -1,35 +1,64 @@
 import { useEffect, useState } from "react";
 import { Link, Navigate, useLocation } from "react-router";
-import { Button, TextField } from "@mui/material";
+import { Button } from "@mui/material";
+import { ArrowRight, Check, Flame, Sparkles } from "lucide-react";
 import {
-  ArrowLeft,
-  ArrowRight,
-  Check,
-  CheckCircle2,
-  Clock3,
-  Flame,
-  Lightbulb,
-  Sparkles,
-} from "lucide-react";
-import {
-  ArrowBadge,
   CourseArt,
   EmptyState,
   PageHeading,
   Panel,
-  PreviewNote,
   PrimaryLink,
   SectionHeading,
   Stat,
   Tag,
 } from "../components/ui";
-import { lessons, weeklyActivity } from "../data";
-import { useDemo } from "../state";
+import { weeklyActivity } from "../data";
+import { useAuth } from "../auth/AuthContext";
+import { isSignInNeeded } from "../auth/SignInNotice";
 import { useCompanion } from "../components/StudyCompanion";
+import { listCourses } from "../services/lessons";
+import Lesson from "./Lesson";
+import Materials from "./Materials";
 import Practice from "./Practice";
 
+type Totals = { lesson_count: number; completed_count: number };
+
+/** The "Lessons completed" stat, read from the server totals. */
+function LessonsCompletedStat() {
+  const demoMode = useAuth().status === "anonymous";
+  const [totals, setTotals] = useState<
+    Totals | "loading" | "signin" | "failed"
+  >("loading");
+  useEffect(() => {
+    let current = true;
+    listCourses().then(
+      (result) => current && setTotals(result.totals),
+      (error) =>
+        current &&
+        setTotals(isSignInNeeded(error) && demoMode ? "signin" : "failed"),
+    );
+    return () => {
+      current = false;
+    };
+  }, [demoMode]);
+  const text =
+    totals === "loading"
+      ? { value: "…", detail: "Loading…" }
+      : totals === "signin"
+        ? { value: "–", detail: "Sign in to see your progress" }
+        : totals === "failed"
+          ? {
+              value: "–",
+              detail: "Unavailable. Open Study materials to try again.",
+            }
+          : {
+              value: `${totals.completed_count} / ${totals.lesson_count}`,
+              detail: `${totals.completed_count} of ${totals.lesson_count} lessons`,
+            };
+  return <Stat label="Lessons completed" icon="book" {...text} />;
+}
+
 function Overview() {
-  const { completed } = useDemo();
   const { setOpen } = useCompanion();
   return (
     <>
@@ -58,13 +87,7 @@ function Overview() {
             <br className="desktop-break" /> minutes today can make all the
             difference.
           </p>
-          <PrimaryLink to="/student/materials/clean-code">
-            Continue learning
-          </PrimaryLink>
-          <span className="hero-meta">
-            <Clock3 size={14} />
-            12 min lesson<span>•</span>Clean code
-          </span>
+          <PrimaryLink to="/student/materials">Continue learning</PrimaryLink>
         </div>
         <div className="hero-art">
           <CourseArt large />
@@ -77,12 +100,7 @@ function Overview() {
         </div>
       </div>
       <div className="stats-grid">
-        <Stat
-          label="Lessons completed"
-          value={`${2 + completed.length} / 8`}
-          detail={`${2 + completed.length} of 8 lessons`}
-          icon="book"
-        />
+        <LessonsCompletedStat />
         <Stat
           label="Practice average"
           value="82%"
@@ -99,18 +117,6 @@ function Overview() {
         />
       </div>
       <div className="dashboard-columns">
-        <div>
-          <SectionHeading
-            title="Keep your curiosity going"
-            link="All materials"
-            to="/student/materials"
-          />
-          <div className="lesson-cards">
-            {lessons.slice(0, 2).map((lesson) => (
-              <LessonCard key={lesson.id} lesson={lesson} />
-            ))}
-          </div>
-        </div>
         <div>
           <SectionHeading title="Your learning rhythm" />
           <Panel className="rhythm-panel">
@@ -159,206 +165,6 @@ function Overview() {
     </>
   );
 }
-function LessonCard({ lesson }: { lesson: (typeof lessons)[number] }) {
-  const { completed } = useDemo();
-  const done = completed.includes(lesson.id);
-  return (
-    <Link to={`/student/materials/${lesson.id}`} className="lesson-card">
-      <CourseArt tone={lesson.tone} />
-      <div className="lesson-card-body">
-        <div className="lesson-meta">
-          <span>{lesson.topic}</span>
-          <span>
-            <Clock3 size={12} />
-            {lesson.duration}
-          </span>
-        </div>
-        <h3>{lesson.title}</h3>
-        <p>{lesson.description}</p>
-        <div className="lesson-card-bottom">
-          <span>
-            {done ? (
-              <>
-                <CheckCircle2 size={14} /> Complete
-              </>
-            ) : lesson.progress ? (
-              "Continue lesson"
-            ) : (
-              "Start learning"
-            )}
-          </span>
-          <ArrowBadge />
-        </div>
-      </div>
-    </Link>
-  );
-}
-function Materials() {
-  const [filter, setFilter] = useState("All topics");
-  const [search, setSearch] = useState("");
-  const visible = lessons.filter(
-    (lesson) =>
-      (filter === "All topics" || filter === lesson.topic) &&
-      `${lesson.title} ${lesson.topic}`
-        .toLowerCase()
-        .includes(search.toLowerCase()),
-  );
-  return (
-    <>
-      <PageHeading
-        eyebrow="A LIBRARY FOR YOUR CURIOSITY"
-        title="Small lessons. Lasting understanding."
-        description="Explore the ideas behind better software, one topic at a time."
-      />
-      <div className="toolbar">
-        <div className="filter-buttons">
-          {[
-            "All topics",
-            "Clean code",
-            "Software testing",
-            "Version control",
-          ].map((topic) => (
-            <Button
-              key={topic}
-              onClick={() => setFilter(topic)}
-              variant={topic === filter ? "contained" : "text"}
-              size="small"
-            >
-              {topic}
-            </Button>
-          ))}
-        </div>
-        <TextField
-          label="Search materials"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          sx={{ maxWidth: 240 }}
-        />
-      </div>
-      <div className="material-grid">
-        {visible.map((lesson) => (
-          <LessonCard lesson={lesson} key={lesson.id} />
-        ))}
-      </div>
-      {visible.length === 0 && (
-        <EmptyState title="Nothing here just yet">
-          Try another topic or a different search.
-        </EmptyState>
-      )}
-      <PreviewNote>
-        Published sample materials · Completion changes last until refresh.
-      </PreviewNote>
-    </>
-  );
-}
-function Lesson({ id }: { id: string }) {
-  const lesson = lessons.find((item) => item.id === id);
-  const { setOpen } = useCompanion();
-  const { completed, toggleCompleted } = useDemo();
-  if (!lesson)
-    return (
-      <EmptyState title="Lesson not found">
-        <Link to="/student/materials">Return to materials</Link>
-      </EmptyState>
-    );
-  return (
-    <>
-      <Link className="back-link" to="/student/materials">
-        <ArrowLeft size={16} /> All study materials
-      </Link>
-      <PageHeading
-        eyebrow={`${lesson.topic.toUpperCase()} · LESSON ${lesson.chapter}`}
-        title={lesson.title}
-        description={`${lesson.duration} read · Software engineering essentials`}
-        action={
-          <Button
-            variant={completed.includes(id) ? "outlined" : "contained"}
-            startIcon={<Check size={17} />}
-            onClick={() => toggleCompleted(id)}
-          >
-            {completed.includes(id) ? "Mark as incomplete" : "Mark as complete"}
-          </Button>
-        }
-      />
-      <div className="reader-layout">
-        <Panel className="lesson-reader">
-          <Tag>STUDY NOTES · SAMPLE</Tag>
-          <h2>
-            {id === "clean-code"
-              ? "Let your code tell a clear story."
-              : id === "testing"
-                ? "Confidence comes from a useful safety net."
-                : "Build together, thoughtfully."}
-          </h2>
-          <p>
-            Software is read more often than it is written. A thoughtful
-            approach makes it easier for you and your teammates to understand
-            what happens, why it happens, and what can safely change.
-          </p>
-          <h3 id="one-clear-idea">01 / Start with one clear idea</h3>
-          <p>
-            {id === "clean-code"
-              ? "A function should have a single, focused responsibility. Choose a name that describes its intention rather than its implementation. If you need “and” to explain what a function does, consider splitting it."
-              : id === "testing"
-                ? "A useful test captures an important behaviour. Start with a concrete example, exercise the real behaviour, and check an independently determined outcome."
-                : "Keep commits focused on a single meaningful change. Write a clear message so a teammate can understand the intention without reconstructing your entire workflow."}
-          </p>
-          <pre className="code-block">
-            <code>
-              {id === "clean-code"
-                ? "def calculate_total(prices):\n    return sum(prices)\n\n# One name. One clear intention."
-                : id === "testing"
-                  ? "def test_total_of_two_prices():\n    assert calculate_total([4, 6]) == 10"
-                  : 'git switch -c improve-lesson\ngit add lesson.md\ngit commit -m "Clarify lesson example"'}
-            </code>
-          </pre>
-          <h3 id="easy-to-change">02 / Make it easy to change</h3>
-          <p>
-            Small, focused changes are easier to review and reason about. Look
-            for clear boundaries and avoid adding flexibility before you need
-            it. A simpler design usually gives you fewer things to keep in your
-            head.
-          </p>
-          <div className="callout">
-            <Lightbulb size={22} />
-            <div>
-              <strong>A moment to reflect</strong>
-              <p>
-                Think about a piece of code you found hard to understand. What
-                is one small change that could make its intention clearer?
-              </p>
-            </div>
-          </div>
-          <h3 id="put-it-into-practice">
-            03 / Put understanding into practice
-          </h3>
-          <p>
-            Reading is a starting point. Try a practice set, explain your
-            reasoning, and use hints to bridge the gaps. Getting stuck is part
-            of learning.
-          </p>
-          <PrimaryLink to="/student/practice">Try the practice set</PrimaryLink>
-        </Panel>
-        <aside>
-          <Panel className="reader-outline">
-            <span className="eyebrow">IN THIS LESSON</span>
-            <a href="#one-clear-idea">One clear idea</a>
-            <a href="#easy-to-change">Easy to change</a>
-            <a href="#put-it-into-practice">Put it into practice</a>
-            <hr />
-            <p>Need another perspective?</p>
-            <Button
-              onClick={() => setOpen(true)}
-              startIcon={<Sparkles size={16} />}
-            >
-              Ask your companion
-            </Button>
-          </Panel>
-        </aside>
-      </div>
-    </>
-  );
-}
 function LegacyAssistant() {
   const { setOpen } = useCompanion();
   useEffect(() => {
@@ -372,7 +178,7 @@ export default function Student() {
     case "overview":
       return <Overview />;
     case "materials":
-      return path[3] ? <Lesson id={path[3]} /> : <Materials />;
+      return path[3] ? <Lesson key={path[3]} id={path[3]} /> : <Materials />;
     case "practice":
       return <Practice />;
     case "assistant":

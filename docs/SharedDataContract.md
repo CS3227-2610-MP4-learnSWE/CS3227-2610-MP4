@@ -169,3 +169,19 @@ Every `/api/auth/*` response has `Cache-Control: no-store`. State-changing reque
 Check order for a protected route: 401, then 403 `csrf_failed` (unsafe methods), then 403 `forbidden`. Role is re-read from the database on every request.
 
 Shared handoff (`src/backend/auth/dependencies.py`): `current_user(role=None | "teacher" | ("teacher","admin")) -> Callable[..., AuthUser]` is a FastAPI dependency factory returning `AuthUser(id, email, display_name, role)`; `require_course_member(db, user, course_id) -> Course` raises 404 `not_found` unless a `course_membership` row exists (no admin bypass). Never read identity from a header, query or body. Seed login credentials with `uv run python -m auth.seed` after the teacher seed, using the `SEED_*` environment variables; nothing real is committed.
+
+## STU-01 study lessons contract
+
+Exact rules: [STU-01 plan](../workflow/specs/STU-01/plan.md). Migration `20261104_stu01_lessons` (after `20261103_shr01_auth`) adds two tables.
+
+- `published_lesson`: `id` UUID PK; `course_id` FK `course`; `topic_id` nullable, composite FK (`topic_id`, `course_id`) to `topic`; `title` 1 to 200 characters; `content` 1 to 2000 characters, plain text; `source_draft_id` nullable FK `study_note_draft` ON DELETE SET NULL; `published_by` FK `user`; `published_at`; `withdrawn_at` (NULL = visible). Unique (`id`, `course_id`).
+- `lesson_completion`: PK (`user_id`, `lesson_id`); `course_id` (composite FK with `lesson_id` to `published_lesson`); `completed`; `completed_at` (CHECK `completed = (completed_at is not null)`); `updated_at`. Rows are never deleted; incomplete is `completed = false`.
+
+| Method and path | Success |
+|---|---|
+| `GET /api/study/courses` | 200 `{courses:[{id,title,lesson_count,completed_count}], totals:{lesson_count,completed_count}}` for the student's member courses |
+| `GET /api/study/courses/{course_id}/lessons` | 200 `{course:{id,title}, topics:[{id|null,name,lessons:[{id,title,excerpt,completed}]}]}`, non-withdrawn lessons, at most 500 |
+| `GET /api/study/lessons/{lesson_id}` | 200 `{id,course,topic,title,content,published_at,completed,completed_at}` |
+| `PUT /api/study/lessons/{lesson_id}/completion` | body exactly `{"completed": bool}` (strict); 200 `{lesson_id,completed,completed_at,course:{id,lesson_count,completed_count}}` |
+
+All require a `student` session (401 `unauthenticated`, 403 `csrf_failed` for PUT, 403 `forbidden`); a missing, withdrawn, draft or non-member lesson is 404 `not_found` "Lesson not found."; an invalid path id is 422; a bad body is 422 `validation_error` with `fields`. No endpoint takes a user id.

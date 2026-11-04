@@ -57,6 +57,17 @@ Frontend: `services/client.ts` `request` sends the cookie (`credentials: same-or
 
 Handoff, not done here: teacher owners replace `require_teacher` with `current_user(role="teacher")` plus `require_managed_course`, update `requestTeacher` and the `teacher-*.spec.ts` specs (sign in first), then retire `ALLOW_DEMO_IDENTITY` and later the demo buttons and switcher; admin owners build admin routes with `current_user(role="admin")`. Known limits: rate limits and the session cache are per process; per-email login limiting lets an attacker briefly lock a known victim's login attempts.
 
+## Study lessons (STU-01)
+
+Spec and contract: `workflow/specs/STU-01/`. Package `src/backend/study_lessons/`: `models.py` (`PublishedLesson`, `LessonCompletion`, migration `20261104_stu01_lessons`), `access.py` (`visible_lessons`, `get_visible_lesson`), `progress.py` (`completion_counts`, `completed_lessons`, `set_completion`), `schemas.py`, `routes.py` (`/api/study/*`, student role only, `Cache-Control: no-store`), `publish.py`, `seed.py`.
+
+- STU-03 must call `get_visible_lesson(db, user, lesson_id)` to fetch lesson text as context; it is the only place that decides who may read a lesson (published, not withdrawn, member of the course; every other case is the same 404).
+- STU-04 must read progress through `completion_counts(db, user_id, course_ids=None)` and `completed_lessons(db, user_id)`, not the tables. They count only non-withdrawn lessons in courses the user belongs to.
+- TEA-03 publication calls `publish_lesson(db, draft, teacher)` after checking the teacher owns the draft's course; it flushes a new `published_lesson` row (topic copied from the source material) and the caller commits. No publish route exists yet. `withdrawn_at` is honoured on read; no code sets it.
+- Completion is one row per (user, lesson) written by a single `INSERT ... ON CONFLICT DO UPDATE`; the request carries the wanted state, so repeats and races are safe. The user always comes from the session.
+- Dev data: after `teacher_materials.seed`, run `uv run python -m study_lessons.seed` (two sample lessons for `demo-student`'s Software Engineering course). Not for production.
+- Frontend: `services/lessons.ts` (shape-checked calls), `services/lessonMessages.ts` (exact error text), `pages/Materials.tsx`, `pages/Lesson.tsx`; the Overview stat is `LessonsCompletedStat` in `pages/Student.tsx`. Lessons are rendered as text with `white-space: pre-wrap`. Nothing is stored in the browser. The old sample lessons and `completed` demo state were removed.
+
 ## State and preview actions
 
 The app stores no tokens, credentials or user data in browser storage. Login fields are uncontrolled and never read by application code. Sign-in/registration display a notice. Role switching is a demonstration control, not authorisation. Form drafts and selections use local React state. Teacher Materials uploads are validated and transmitted to the private backend store; teacher note generation transmits authorised source text to the SoC LLM through the backend and persists successful drafts. Other upload/generation previews do not transmit files. Preview messages explicitly state that no save, generation, publication, access change or delivery occurs.
