@@ -29,7 +29,7 @@ def body(batch):
 
 
 def patch(app, batch, payload=None, **kw):
-    return call(app, "PATCH", f"{BASE}/mcq-drafts/{batch['id']}", json=body(batch) if payload is None else payload, **kw)
+    return call(app, "PATCH", f"{BASE}/mcq-drafts/{batch['id']}", content=json.dumps(body(batch) if payload is None else payload), headers={"Content-Type": "application/json"}, **kw)
 
 
 def get(app, batch):
