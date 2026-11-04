@@ -818,5 +818,76 @@ class RobustnessTests(SpecCase):
         self.assertFalse(marker.exists())
 
 
+class Round1Tests(SpecCase):
+    def plan_with(self, body):
+        return plan_text(bodies={CONTRACT_HEADING: body})
+
+    def test_chk01_ac23_heading_like_line_with_200000_spaces_is_fast(self):
+        for tail in ("", "\f"):
+            with self.subTest(tail=repr(tail)):
+                line = "#" + " " * 200_000 + tail
+                start = time.monotonic()
+                findings = self.check(spec=spec_text(bodies={"Goal": "Show the page.\n" + line}))
+                self.assertIsInstance(findings, list)
+                self.assertLess(time.monotonic() - start, 5)
+
+    def test_chk01_ac23_heading_like_line_with_spaces_in_every_file_is_fast(self):
+        line = "#" + " " * 200_000 + "\f"
+        start = time.monotonic()
+        findings = self.check(spec=line + "\n", plan=line + "\n", tasks=line + "\n")
+        self.assertIsInstance(findings, list)
+        self.assertLess(time.monotonic() - start, 5)
+
+    def test_chk01_ac23_300000_repeated_empty_labels_finish_in_30_seconds(self):
+        body = ui_body(others("REFRESH")) + "\n\n" + "- Refresh:\n" * 300_000
+        start = time.monotonic()
+        findings = self.check(plan=self.plan_with(body))
+        self.assertIsInstance(findings, list)
+        self.assertLess(time.monotonic() - start, 30)
+
+    def test_chk01_ac7_heading_label_then_blank_line_then_paragraph_has_content(self):
+        body = ui_body(others("REFRESH")) + "\n\n### Refresh\n\nReloads the view and keeps state."
+        self.assertEqual(self.check(plan=self.plan_with(body)), [])
+
+    def test_chk01_ac7_bold_label_then_blank_line_then_paragraph_has_content(self):
+        body = ui_body(others("REFRESH")) + "\n\n**Refresh**\n\nReloads the view and keeps state."
+        self.assertEqual(self.check(plan=self.plan_with(body)), [])
+
+    def test_chk01_ac7_list_label_without_colon_and_content_is_item_empty(self):
+        body = ui_body(others("REFRESH")) + "\n\n- Refresh"
+        self.assertEqual(codes(self.check(plan=self.plan_with(body))), ["ITEM_EMPTY"])
+
+    def test_chk01_ac7_list_label_with_colon_then_blank_line_is_still_item_empty(self):
+        body = ui_body(others("REFRESH")) + "\n\n- Refresh:\n\nUnrelated paragraph."
+        self.assertEqual(codes(self.check(plan=self.plan_with(body))), ["ITEM_EMPTY"])
+
+    def test_chk01_ac5_normalisation_matches_both_spellings(self):
+        for label in ("Normalisation", "Normalization", "NORMALIZATION"):
+            with self.subTest(label=label):
+                body = "- Read-only tool.\n" + item_line("CONCURRENT_REQUESTS", "not applicable: no records")
+                body += f"\n- {label}: not applicable: no input"
+                self.assertEqual(self.check(spec=spec_text(bodies={SECURITY_HEADING: body})), [])
+
+    def test_chk01_ac7_label_of_exactly_80_characters_matches(self):
+        label = "Refresh" + "x" * 73
+        self.assertEqual(len(label), 80)
+        body = ui_body(others("REFRESH")) + f"\n- {label}: reloads"
+        self.assertEqual(self.check(plan=self.plan_with(body)), [])
+
+    def test_chk01_ac7_label_of_81_characters_does_not_match(self):
+        label = "Refresh" + "x" * 74
+        self.assertEqual(len(label), 81)
+        body = ui_body(others("REFRESH")) + f"\n- {label}: reloads"
+        self.assertEqual(codes(self.check(plan=self.plan_with(body))), ["ITEM_MISSING"])
+
+    def test_chk01_ac23_utf8_bom_at_start_of_spec_md_is_handled(self):
+        text = spec_text().split("\n", 2)[2]
+        self.assertTrue(text.startswith("## Goal"))
+        self.assertEqual(self.check(spec=b"\xef\xbb\xbf" + text.encode("utf-8")), [])
+
+    def test_chk01_ac23_utf8_bom_in_front_of_a_title_heading_is_handled(self):
+        self.assertEqual(self.check(spec=b"\xef\xbb\xbf" + spec_text().encode("utf-8")), [])
+
+
 if __name__ == "__main__":
     unittest.main()
