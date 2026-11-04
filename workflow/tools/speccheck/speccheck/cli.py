@@ -1,6 +1,7 @@
 """Command line: argument parsing, folder discovery, output and exit code."""
 
 import argparse
+import os
 import sys
 from pathlib import Path
 
@@ -62,7 +63,7 @@ def _folders(args, specs_dir: Path) -> list[Path]:
         folder = Path(name)
         if not folder.is_dir():
             raise _UsageError(f"not a folder: {name}")
-        folders[folder.resolve()] = None
+        folders[Path(os.path.normpath(os.path.abspath(name)))] = None
     return sorted(folders, key=lambda p: p.name)
 
 

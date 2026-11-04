@@ -35,7 +35,7 @@ Rule: a waiver is only for a spec that existed before the rule. Never add a new 
 
 ## Item labels
 
-Each item needs a labelled entry (a list item, a table first cell, bold text or a heading). The label is the text before the first `:` (or the first table cell); matching ignores case and a label of more than 80 characters never matches. Content is the rest of the line, or the following lines up to a blank line or heading. Write `Label: not applicable: reason` when an item does not apply. The first nine are searched in the spec's "UI states and copy" section or the plan's "UI contract" section (screen specs only; a `No screen: reason` line in `spec.md` skips them); the last two in the spec's "Security and AI safeguards" section (every spec).
+Each item needs a labelled entry (a list item, a table first cell, bold text or a heading). The label is the text before the first `:` (or the first table cell); matching ignores case and a label of more than 80 characters never matches. Content is the rest of the line, or the following lines up to a blank line or heading (at most 20 lines per label and 100,000 per section). Write `Label: not applicable: reason` when an item does not apply. The first nine are searched in the spec's "UI states and copy" section or the plan's "UI contract" section (screen specs only; a `No screen: reason` line in `spec.md` skips them); the last two in the spec's "Security and AI safeguards" section (every spec).
 
 | Item code | Example label to write | Label must contain |
 |---|---|---|

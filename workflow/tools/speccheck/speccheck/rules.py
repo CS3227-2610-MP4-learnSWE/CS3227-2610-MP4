@@ -226,8 +226,17 @@ def _label_matches(rule: Rule, label: str) -> bool:
     )
 
 
+def _alternatives(pattern: str) -> list[str]:
+    """Expand one `[ab]` character class into its alternatives (for readable messages)."""
+    match = re.search(r"\[([a-z]+)\]", pattern)
+    if not match:
+        return [pattern]
+    return [pattern[: match.start()] + c + pattern[match.end() :] for c in match[1]]
+
+
 def _words(pattern: str) -> str:
-    return " or ".join(f'"{w}"' for w in pattern.lstrip("^").replace("[ -]", " ").split("|"))
+    plain = pattern.lstrip("^").replace("[ -]", " ")
+    return " or ".join(f'"{w}"' for part in plain.split("|") for w in _alternatives(part))
 
 
 def _group_text(group: tuple) -> str:
