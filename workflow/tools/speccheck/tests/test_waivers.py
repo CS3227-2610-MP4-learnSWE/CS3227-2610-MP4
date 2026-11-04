@@ -104,5 +104,21 @@ class BadWaiverTests(WaiverFileCase):
         self.assertEqual(error.line, 1)
 
 
+class BomTests(WaiverFileCase):
+    def load_bytes(self, data):
+        path = self.dir / "waivers.txt"
+        path.write_bytes(data)
+        return load_waivers(path)
+
+    def test_chk01_ac15_bom_before_a_waiver_on_line_1_is_handled(self):
+        loaded = self.load_bytes(b"\xef\xbb\xbfSTU-01 | all | old spec\n")
+        self.assertEqual(set(loaded), {"STU-01"})
+        self.assertEqual(loaded["STU-01"].scope, "all")
+
+    def test_chk01_ac15_bom_before_a_comment_on_line_1_is_handled(self):
+        loaded = self.load_bytes(b"\xef\xbb\xbf# comment\nSTU-01 | all | old spec\n")
+        self.assertEqual(set(loaded), {"STU-01"})
+
+
 if __name__ == "__main__":
     unittest.main()

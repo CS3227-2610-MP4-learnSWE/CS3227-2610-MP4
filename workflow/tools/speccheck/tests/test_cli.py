@@ -447,5 +447,54 @@ class RepoLevelTests(unittest.TestCase):
         self.assertTrue(all(line.startswith("RULE ") for line in lines_of(result.stdout)))
 
 
+class ResolvedPathTests(CliCase):
+    def chdir(self, path):
+        import os
+
+        old = os.getcwd()
+        os.chdir(path)
+        self.addCleanup(os.chdir, old)
+
+    def test_chk01_ac16_path_ending_in_dotdot_uses_the_resolved_folder_name(self):
+        folder = self.write()
+        (folder / "sub").mkdir()
+        (self.specs / WAIVER_NAME).write_text(f"{SPEC_ID} | all | predates the rule\n", encoding="utf-8")
+        code, out, _ = self.run_cli(folder / "sub" / "..")
+        self.assertEqual(code, 0)
+        self.assertEqual(
+            lines_of(out), [f"WAIVED {SPEC_ID} (all): predates the rule", "speccheck: 0 checked, 0 failed, 1 waived"]
+        )
+
+    def test_chk01_ac16_same_folder_given_twice_by_different_paths_is_counted_once(self):
+        folder = self.write()
+        (self.specs / "other").mkdir()
+        again = self.specs / "other" / ".." / SPEC_ID
+        code, out, _ = self.run_cli(folder, again)
+        self.assertEqual(code, 0)
+        self.assertEqual(lines_of(out), [f"OK {SPEC_ID}", "speccheck: 1 checked, 0 failed, 0 waived"])
+
+    def test_chk01_ac16_relative_paths_to_the_same_folder_are_counted_once(self):
+        self.write()
+        self.chdir(self.specs)
+        code, out, _ = run_main(["--specs-dir", ".", SPEC_ID, f"./{SPEC_ID}"])
+        self.assertEqual(code, 0)
+        self.assertEqual(lines_of(out), [f"OK {SPEC_ID}", "speccheck: 1 checked, 0 failed, 0 waived"])
+
+    def test_chk01_ac16_waiver_applies_to_a_relative_path_with_the_real_folder_name(self):
+        self.write(spec=broken_spec())
+        (self.specs / WAIVER_NAME).write_text(f"{SPEC_ID} | all | predates the rule\n", encoding="utf-8")
+        self.chdir(self.specs)
+        code, out, _ = run_main(["--specs-dir", ".", f"./{SPEC_ID}"])
+        self.assertEqual(code, 0)
+        self.assertIn(f"WAIVED {SPEC_ID} (all): predates the rule", lines_of(out))
+
+    def test_chk01_ac16_dot_inside_a_spec_folder_uses_the_folder_name(self):
+        folder = self.write()
+        self.chdir(folder)
+        code, out, _ = run_main(["--specs-dir", self.specs, "."])
+        self.assertEqual(code, 0)
+        self.assertIn(f"OK {SPEC_ID}", lines_of(out))
+
+
 if __name__ == "__main__":
     unittest.main()
