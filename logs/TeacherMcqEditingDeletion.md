@@ -27,6 +27,6 @@ Docker could not launch because its installed executable is missing. A sandboxed
 
 ## Verification in progress
 
-Final integrated backend: 727 passed (81.33s). Integrated types, lint, format and build passed. Final browser run has 245 cases (224 baseline plus 21 new, including separate visual checks). Parent inspected mobile light and desktop dark editor captures: readable, visible focus, no horizontal overflow. Independent verifier and remaining visual inspection are pending.
+Final integrated backend: 727 passed (81.33s). Integrated types, lint, format and build passed. Final browser run: 245 passed (2.1m; 224 baseline plus 21 new, including separate visual checks). Tests merged into the run branch as `0ca14b1`. Parent inspected mobile light/desktop dark editors and mobile dark/desktop light confirmations: readable, visible controls, no horizontal overflow. Full-page modal captures paint fixed elements relative to the current viewport; functional focus assertions passed. Strongest read-only verifier is running against the frozen application/test tree.
 
 The token tracker was run with the feature-branch filter but found no attributable requests. Its zero-row summary means unavailable measurement, not zero actual usage or cost. Final resource and handoff records will preserve this limitation.
