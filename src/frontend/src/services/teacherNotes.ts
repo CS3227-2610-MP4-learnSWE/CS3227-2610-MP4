@@ -71,3 +71,6 @@ function decodeDraft(value: unknown): NoteDraft {
   }
   return draft;
 }
+
+export const deleteNoteDraft = (id: string, version: number) =>
+  requestTeacher("DELETE", `/api/teacher/note-drafts/${id}?version=${version}`);

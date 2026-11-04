@@ -3516,3 +3516,19 @@ td .MuiButton-root {
 .mcq-questions p {
   overflow-wrap: anywhere;
 }
+
+.mcq-editor-question {
+  display: grid;
+  gap: 16px;
+  padding: 20px 0;
+  border-bottom: 1px solid var(--border);
+  min-width: 0;
+}
+.mcq-editor-question .MuiFormGroup-root {
+  flex-direction: row;
+  flex-wrap: wrap;
+}
+.mcq-questions,
+.mcq-editor-question {
+  overflow-wrap: anywhere;
+}

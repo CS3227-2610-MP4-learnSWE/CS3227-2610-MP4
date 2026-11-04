@@ -1,3 +1,8 @@
+import DeleteTeacherItem from "../components/DeleteTeacherItem";
+import { useLayoutEffect } from "react";
+import { useAuth } from "../auth/AuthContext";
+import { Alert } from "@mui/material";
+import type { ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router";
 import {
@@ -44,6 +49,7 @@ import {
   uploadTeacherMaterial,
   setTeacherMaterialTopic,
   downloadTeacherMaterial,
+  deleteTeacherMaterial,
   type Course,
   type Topic,
   type Material,
@@ -175,10 +181,17 @@ function Materials({ notify }: Props) {
   const [file, setFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
   const [uploadError, setUploadError] = useState("");
+  const [success, setSuccess] = useState("");
+  const operation = useRef(0);
+  const uploadPending = useRef(false);
+  useLayoutEffect(() => {
+    operation.current += 1;
+    return () => {
+      operation.current += 1;
+    };
+  }, [courseId, topicFilter]);
   const fileInput = useRef<HTMLInputElement>(null);
-  const demoEnabled =
-    import.meta.env.VITE_APP_ENV === "development" &&
-    import.meta.env.VITE_ALLOW_DEMO_IDENTITY === "true";
+  const { user } = useAuth();
 
   const [courseReload, setCourseReload] = useState(0);
   const [dataReload, setDataReload] = useState(0);
@@ -247,6 +260,8 @@ function Materials({ notify }: Props) {
     if (fileInput.current) fileInput.current.value = "";
   };
   const submit = async () => {
+    if (uploadPending.current) return;
+    const token = operation.current;
     if (!file || !title.trim()) {
       setUploadError(
         "Add a title and choose a PDF or UTF-8 text file (maximum 10 MiB).",
@@ -257,6 +272,7 @@ function Materials({ notify }: Props) {
       setUploadError("Choose a PDF or UTF-8 text file no larger than 10 MiB.");
       return;
     }
+    uploadPending.current = true;
     setBusy(true);
     setUploadError("");
     try {
@@ -265,30 +281,37 @@ function Materials({ notify }: Props) {
         title,
         topicId: uploadTopic || undefined,
       });
+      if (token !== operation.current) return;
       closeUpload();
       notify("Material uploaded. It has not been published to students.");
       refresh();
     } catch (reason) {
+      if (token !== operation.current) return;
       setUploadError(
         reason instanceof ApiError && reason.code === "storage_quota_exceeded"
           ? "Upload would exceed the 100 MiB total storage limit."
           : "Upload failed. Check that the file is a readable PDF or UTF-8 text file within 10 MiB, then retry.",
       );
     } finally {
-      setBusy(false);
+      uploadPending.current = false;
+      if (token === operation.current) setBusy(false);
     }
   };
   const changeTopic = async (item: Material, value: string) => {
+    const token = operation.current;
     try {
       await setTeacherMaterialTopic(item.id, value || null);
-      refresh();
+      if (token === operation.current) refresh();
     } catch {
-      setError("Could not change the topic. Please retry.");
+      if (token === operation.current)
+        setError("Could not change the topic. Please retry.");
     }
   };
   const download = async (item: Material) => {
+    const token = operation.current;
     try {
       const blob = await downloadTeacherMaterial(item.id);
+      if (token !== operation.current) return;
       const url = URL.createObjectURL(blob);
       const anchor = document.createElement("a");
       anchor.href = url;
@@ -298,7 +321,8 @@ function Materials({ notify }: Props) {
       anchor.remove();
       URL.revokeObjectURL(url);
     } catch {
-      setError("Could not download this material. Please retry.");
+      if (token === operation.current)
+        setError("Could not download this material. Please retry.");
     }
   };
   return (
@@ -318,13 +342,8 @@ function Materials({ notify }: Props) {
           </Button>
         }
       />
-      <PreviewNote>
-        Development identity:{" "}
-        {demoEnabled
-          ? import.meta.env.VITE_DEMO_USER_ID || "demo-teacher"
-          : "disabled (configure local .env)"}
-        . Local testing only; this is not a real login.
-      </PreviewNote>
+      <PreviewNote>Signed in as {user?.display_name}</PreviewNote>
+      {success && <p role="status">{success}</p>}
       <Panel className="library-panel">
         <div className="library-toolbar">
           <h2>
@@ -437,6 +456,15 @@ function Materials({ notify }: Props) {
                       <Button size="small" onClick={() => download(item)}>
                         Download
                       </Button>
+                      <DeleteTeacherItem
+                        kind="material"
+                        name={item.title}
+                        remove={() => deleteTeacherMaterial(item.id)}
+                        onDeleted={() => {
+                          setSuccess("Material deleted.");
+                          refresh();
+                        }}
+                      />
                     </td>
                   </tr>
                 ))}
@@ -709,9 +737,17 @@ export default function Teacher({ notify }: Props) {
     case "overview":
       return <Overview />;
     case "materials":
-      return <Materials notify={notify} />;
+      return (
+        <TeacherData>
+          <Materials notify={notify} />
+        </TeacherData>
+      );
     case "generate":
-      return <TeacherContentStudio />;
+      return (
+        <TeacherData>
+          <TeacherContentStudio />
+        </TeacherData>
+      );
     case "review":
       return <Review notify={notify} />;
     case "practice":
@@ -723,4 +759,17 @@ export default function Teacher({ notify }: Props) {
         </EmptyState>
       );
   }
+}
+
+function TeacherData({ children }: { children: ReactNode }) {
+  const { status, user } = useAuth();
+  if (status === "loading") return <p role="status">Loading your session…</p>;
+  if (status !== "authenticated" || user?.role !== "teacher")
+    return (
+      <Alert severity="info">
+        Sign in to manage teacher materials and drafts.{" "}
+        <Link to="/login">Sign in</Link>
+      </Alert>
+    );
+  return <div key={user.id}>{children}</div>;
 }
