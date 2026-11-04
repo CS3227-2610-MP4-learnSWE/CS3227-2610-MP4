@@ -226,28 +226,30 @@ test("shr01 AC25 demo mode: the sample screens still work without any session", 
   await expect(page.getByText(NOTICE)).toHaveCount(0);
 });
 
-// ---------------------------------------------------------------- requestTeacher is unchanged
+// Teacher transport now participates in shared authentication (TEA-03).
 for (const [label, user] of [
   ["a signed-in teacher", TEACHER],
   ["a demo visitor", null],
 ] as const) {
-  test(`shr01 AC22 a 401 on the teacher transport never redirects (${label})`, async ({
-    page,
-  }) => {
+  test(`tea03 teacher transport handles session expiry (${label})`, async ({ page }) => {
     await mockAuthApi(page, { user });
     const teacherCalls: Record<string, string>[] = [];
     await page.route("**/api/teacher/**", async (route) => {
       teacherCalls.push(route.request().headers());
-      await route.fulfill({
-        status: 401,
-        json: { detail: { code: "unauthenticated", message: "no" } },
-      });
+      await route.fulfill({ status: 401, json: { detail: { code: "unauthenticated", message: "no" } } });
     });
     await page.goto("/teacher/materials");
-    await expect.poll(() => teacherCalls.length).toBeGreaterThan(0);
-    await page.waitForTimeout(300);
-    await expect(page).toHaveURL(/\/teacher\/materials$/);
-    for (const headers of teacherCalls)
+    if (user) {
+      await expect(page).toHaveURL(/\/login$/);
+      expect(teacherCalls.length).toBeGreaterThan(0);
+    } else {
+      await expect(page.getByText("Sign in to manage teacher materials and drafts.", { exact:true })).toBeVisible();
+      await expect(page).toHaveURL(/\/teacher\/materials$/);
+      expect(teacherCalls).toHaveLength(0);
+    }
+    for (const headers of teacherCalls) {
       expect(headers["x-student-id"]).toBeUndefined();
+      expect(headers["x-demo-user-id"]).toBeUndefined();
+    }
   });
 }
