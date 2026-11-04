@@ -47,7 +47,7 @@ Shared failure messages (used by every screen below that loads data):
 | Backend unreachable, timeout (10 s per request) | Could not reach the server. Check your connection and try again. | button "Try again" |
 | 503 `service_unavailable` or any other 5xx | Study materials are unavailable right now. Please try again. | button "Try again" |
 | 200 with a body of the wrong shape (bad response) | Study materials could not be read. Please try again. | button "Try again" |
-| 403 `forbidden` (signed in as teacher or admin) | You do not have access to study materials. | none |
+| 403 `forbidden` (the role changed after the page loaded; a teacher or admin who opens `/student/...` is redirected by the SHR-01 role guard to their own area before any request is sent) | You do not have access to study materials. | none |
 | 401 `unauthenticated`, signed in | none shown; the app goes to `/login` | not applicable |
 | 401 `unauthenticated`, demo mode | Sign in to read study materials and track your progress. with link "Go to sign in" to `/login` | not applicable |
 
@@ -63,7 +63,7 @@ Shared failure messages (used by every screen below that loads data):
 
 Also:
 - Refresh: both pages reload from the server; the selected course is kept through `?course=`; topic filter and search text reset. The lesson page shows the stored completion state.
-- Back and Forward: Back from a lesson returns to `/student/materials?course=<course id>` and the list is reloaded, so a status changed on the lesson page is shown. The Back link on the lesson page goes to the same URL.
+- Back and Forward: Back from a lesson returns to `/student/materials?course=<course id>` and the list is reloaded, so a status changed on the lesson page is shown. The Back link on the lesson page goes to the same URL as an ordinary link: it adds a history entry and does not replace the lesson entry, so browser Back from the list returns to the lesson.
 - After logout or an expired session: protected data is not shown; signed-in users go to `/login`; demo mode shows the sign-in notice. Browser Back after logout shows no lesson data.
 - Backend down: the "Could not reach the server" message with "Try again". Recovery needs no reload.
 - Longest wait: 10 s per request (`REQUEST_TIMEOUT_MS`). The courses and lessons requests are sequential, so the list can wait up to 20 s in total before both are reported. The lesson page makes one request (10 s). After a timeout the error appears at once; there is no hidden longer wait.
