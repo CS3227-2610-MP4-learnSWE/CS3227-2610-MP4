@@ -615,14 +615,19 @@ test("stu02fe AC8 teacher pages still show their demo answers (loaded on demand)
   // redirected home (AC22). A later route registration overrides the beforeEach sign-in.
   await mockAuthApi(page, { user: null });
   await mockPracticeApi(page);
+  // Assembly was removed: its legacy URL now opens the protected questions studio.
   await page.goto("/teacher/practice");
-  await expect(page.getByText(EXPLANATIONS[0]).first()).toBeVisible();
-  await expect(
-    page.getByText(FIXTURE_KEY.q2.explanation).first(),
-  ).toBeVisible();
+  await expect(page).toHaveURL(/\/teacher\/generate\?tab=questions$/);
+  await expect(page.getByRole("alert")).toContainText(
+    "Sign in to manage teacher materials and drafts.",
+  );
+  // The sample review remains the on-demand location of these teacher demo answers.
   await page.goto("/teacher/review");
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
   await page.getByRole("tab", { name: "Practice questions & answers" }).click();
+  await expect(page.getByLabel("Explanation 2", { exact: true })).toHaveValue(
+    FIXTURE_KEY.q2.explanation,
+  );
   await expect
     .poll(async () =>
       page
