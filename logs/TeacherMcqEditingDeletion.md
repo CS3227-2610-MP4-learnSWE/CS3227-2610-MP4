@@ -10,3 +10,11 @@
 - No live LLM, deployment, push, PR publication or merge into master authorised by this session.
 
 - Approved contract/stories committed0038b47; independent developer/designer launched from that exact commit. Baseline backend692passed (101.81s), before application changes.
+
+## Baseline and independent tests
+
+- Baseline completed before implementation:692backendPASS (101.81s),224mockedbrowserPASS (2.0m). Existing note Back/Forward test passed; no speculative navigation fix required.
+- Independent designer committed backend tests `b56bc12` before implementation visibility; UI tests still in progress. Same approved contract0038b47.
+- Token tracker attempted branch filter; returned0 matching requests. This means unavailable attribution, not zero actual usage/cost. Summary retained; final resources will state limitation.
+
+- Independent designer captured RED for cookie-auth regression atb56bc12 onapprovedstart0038b47: old teacher API ignores valid cookie and returns401 demanding demoheader. No implementation visibility before this testcommit.
