@@ -4,15 +4,13 @@ import { useAuth } from "../auth/AuthContext";
 import { Alert } from "@mui/material";
 import type { ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
-import { Link, useLocation } from "react-router";
+import { Link, Navigate, useLocation } from "react-router";
 import {
   Button,
-  Checkbox,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
-  FormControlLabel,
   MenuItem,
   Tab,
   Tabs,
@@ -23,7 +21,6 @@ import {
   Check,
   Clock3,
   FileText,
-  Plus,
   Sparkles,
   Upload,
 } from "lucide-react";
@@ -677,69 +674,6 @@ function Review({ notify }: Props) {
     </>
   );
 }
-function PracticeSets({ notify }: Props) {
-  const [selected, setSelected] = useState<string[]>([
-    "responsibility",
-    "regression",
-  ]);
-  const [title, setTitle] = useState("Clear code, confident changes");
-  return (
-    <>
-      <PageHeading
-        eyebrow="A BRIDGE FROM KNOWING TO DOING"
-        title="Practice with a purpose."
-        description="Bring the right questions together for a focused learning moment."
-      />
-      <div className="studio-layout">
-        <Panel className="studio-controls">
-          <h2>Build a practice set</h2>
-          <TextField
-            label="Set title"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-          />
-          <TextField label="Topic" defaultValue="Clean code" />
-          <p>{selected.length} questions selected</p>
-          <Button
-            variant="contained"
-            startIcon={<Plus size={16} />}
-            onClick={() =>
-              notify(
-                "Practice-set preview only. No set was saved or published.",
-              )
-            }
-          >
-            Preview practice set
-          </Button>
-          <PreviewNote>Selection and text changes are local.</PreviewNote>
-        </Panel>
-        <div>
-          {questions.map((q) => (
-            <Panel key={q.id} className="question-panel">
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    checked={selected.includes(q.id)}
-                    onChange={() =>
-                      setSelected((items) =>
-                        items.includes(q.id)
-                          ? items.filter((id) => id !== q.id)
-                          : [...items, q.id],
-                      )
-                    }
-                  />
-                }
-                label={<strong>{q.text}</strong>}
-              />
-              <p className="muted">Answer: {q.answer}</p>
-              <p className="muted">{q.explanation}</p>
-            </Panel>
-          ))}
-        </div>
-      </div>
-    </>
-  );
-}
 export default function Teacher({ notify }: Props) {
   const section = useLocation().pathname.split("/")[2];
   switch (section) {
@@ -760,7 +694,7 @@ export default function Teacher({ notify }: Props) {
     case "review":
       return <Review notify={notify} />;
     case "practice":
-      return <PracticeSets notify={notify} />;
+      return <Navigate to="/teacher/generate?tab=questions" replace />;
     default:
       return (
         <EmptyState title="This page isn’t here">

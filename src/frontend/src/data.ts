@@ -20,7 +20,6 @@ export const navigation: Record<
     { path: "materials", label: "Materials library", icon: "book" },
     { path: "generate", label: "AI content studio", icon: "sparkles" },
     { path: "review", label: "Review & publish", icon: "review" },
-    { path: "practice", label: "Practice sets", icon: "code" },
     { path: "inbox", label: "Inbox", icon: "inbox" },
   ],
   admin: [

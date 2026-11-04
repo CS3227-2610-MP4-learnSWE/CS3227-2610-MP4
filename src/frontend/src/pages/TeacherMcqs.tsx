@@ -192,6 +192,10 @@ export default function TeacherMcqs() {
               AI-generated questions may be inaccurate. Review every question
               before use.
             </p>
+            <p>
+              One batch of three questions will be published as one practice
+              set. Publishing is not available yet.
+            </p>
             {!studio.resourcesLoading &&
               studio.courseId &&
               studio.resourcesReady &&
