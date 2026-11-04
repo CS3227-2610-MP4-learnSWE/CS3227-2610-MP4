@@ -215,15 +215,34 @@ def test_stu01_ac15_deleting_a_user_removes_their_completion_rows_only(migrated)
     assert migrated.sql("SELECT user_id FROM lesson_completion WHERE lesson_id = %s", (lid,)) == [("demo-student",)]
 
 
-def test_stu01_ac15_deleting_the_source_draft_sets_source_draft_id_null(migrated):
+def seed_draft(iso):
     mid, did = str(uuid.uuid4()), str(uuid.uuid4())
-    migrated.sql("INSERT INTO material(id, course_id, uploaded_by, title, original_filename, media_type, size_bytes) "
-                 "VALUES (%s, %s, 'demo-teacher', 'Src', 's.txt', 'text/plain', 1)", (mid, COURSE_A))
-    migrated.sql("INSERT INTO study_note_draft(id, course_id, source_material_id, created_by, title, content, "
-                 "source_title, updated_by) VALUES (%s, %s, %s, 'demo-teacher', 'D', 'C', 'Src', 'demo-teacher')",
-                 (did, COURSE_A, mid))
+    iso.sql("INSERT INTO material(id, course_id, uploaded_by, title, original_filename, media_type, size_bytes) "
+            "VALUES (%s, %s, 'demo-teacher', 'Src', 's.txt', 'text/plain', 1)", (mid, COURSE_A))
+    iso.sql("INSERT INTO study_note_draft(id, course_id, source_material_id, created_by, title, content, "
+            "source_title, updated_by) VALUES (%s, %s, %s, 'demo-teacher', 'D', 'C', 'Src', 'demo-teacher')",
+            (did, COURSE_A, mid))
+    return did
+
+
+def test_stu01_ac15_deleting_a_draft_with_a_published_lesson_is_restricted(migrated):
+    did = seed_draft(migrated)
     lid = str(uuid.uuid4())
     migrated.sql("INSERT INTO published_lesson(id, course_id, title, content, published_by, source_draft_id) "
                  "VALUES (%s, %s, 'T', 'C', 'demo-teacher', %s)", (lid, COURSE_A, did))
-    migrated.sql("DELETE FROM study_note_draft WHERE id = %s", (did,))
-    assert migrated.sql("SELECT source_draft_id FROM published_lesson WHERE id = %s", (lid,)) == [(None,)]
+    with pytest.raises(psycopg.errors.ForeignKeyViolation) as exc:
+        migrated.sql("DELETE FROM study_note_draft WHERE id = %s", (did,))
+    assert exc.value.sqlstate == "23503"
+    assert migrated.sql("SELECT source_draft_id::text FROM published_lesson WHERE id = %s", (lid,)) == [(did,)]
+    assert migrated.sql("SELECT count(*) FROM study_note_draft WHERE id = %s", (did,)) == [(1,)]
+
+
+def test_stu01_ac15_deleting_an_unreferenced_draft_works_and_null_source_is_allowed(migrated):
+    lone = seed_draft(migrated)
+    referenced = seed_draft(migrated)
+    lid, orphan = str(uuid.uuid4()), insert_lesson(migrated)  # NULL source_draft_id is allowed
+    migrated.sql("INSERT INTO published_lesson(id, course_id, title, content, published_by, source_draft_id) "
+                 "VALUES (%s, %s, 'T', 'C', 'demo-teacher', %s)", (lid, COURSE_A, referenced))
+    migrated.sql("DELETE FROM study_note_draft WHERE id = %s", (lone,))
+    assert migrated.sql("SELECT count(*) FROM study_note_draft WHERE id = %s", (lone,)) == [(0,)]
+    assert migrated.sql("SELECT source_draft_id FROM published_lesson WHERE id = %s", (orphan,)) == [(None,)]
