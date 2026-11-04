@@ -2,7 +2,7 @@
 
 A calmer space to learn, teach and grow in software engineering.
 
-This release includes server-backed student practice, the student study companion, private teacher source materials and persisted AI-generated draft notes and MCQ batches. Teacher notes use the shared SoC LLM client for generation; teachers can explicitly edit/save drafts without AI calls. Publication remains deferred. Other teacher and admin screens remain demonstrations.
+This release includes server-backed student practice, the student study companion, private teacher source materials and persisted AI-generated draft notes and MCQ batches. Teacher notes and MCQ batches use the shared SoC LLM client for generation; teachers can explicitly edit/save their drafts without AI calls. Publication remains deferred. Other teacher and admin screens remain demonstrations.
 
 ## Run locally
 
