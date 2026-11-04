@@ -2,7 +2,7 @@
 import re
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Request, Response
+from fastapi import APIRouter, Depends, Request
 from pydantic import ValidationError
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
@@ -13,7 +13,7 @@ from errors import ApiError
 from study_lessons import schemas
 from study_lessons.access import get_visible_lesson, visible_lessons
 from study_lessons.models import LessonCompletion, PublishedLesson
-from study_lessons.progress import completion_counts, set_completion
+from study_lessons.progress import CourseCounts, completion_counts, set_completion
 from teacher_materials.models import Course, CourseMembership, Topic
 from timestamps import utc_timestamp
 
@@ -22,11 +22,7 @@ EXCERPT_LENGTH = 160
 GENERAL = "General"
 
 
-def _no_store(response: Response) -> None:
-    response.headers["Cache-Control"] = "no-store"
-
-
-router = APIRouter(prefix="/api/study", dependencies=[Depends(_no_store)])
+router = APIRouter(prefix="/api/study")  # Cache-Control: no-store is set by the add_no_store middleware
 student = Depends(current_user(role="student"))
 
 
@@ -52,10 +48,10 @@ def list_courses(user: AuthUser = student, db: Session = Depends(get_session)) -
         .where(CourseMembership.user_id == user.id)
         .order_by(func.lower(Course.title), Course.id)
     )
-    items = [
-        schemas.CourseSummary(id=str(cid), title=title, lesson_count=counts[cid].lesson_count, completed_count=counts[cid].completed_count)
-        for cid, title in courses
-    ]
+    items = []
+    for cid, title in courses:
+        c = counts.get(cid, CourseCounts(0, 0))
+        items.append(schemas.CourseSummary(id=str(cid), title=title, lesson_count=c.lesson_count, completed_count=c.completed_count))
     totals = schemas.CourseCountsOut(
         lesson_count=sum(c.lesson_count for c in items), completed_count=sum(c.completed_count for c in items)
     )
@@ -121,7 +117,7 @@ def put_completion(
     get_visible_lesson(db, user, lesson_id)  # 404 before body validation
     body = _parse_completion(raw)
     row = set_completion(db, user, lesson_id, body.completed)
-    counts = completion_counts(db, user.id, [row.course_id])[row.course_id]
+    counts = completion_counts(db, user.id, [row.course_id]).get(row.course_id, CourseCounts(0, 0))
     return schemas.CompletionOut(
         lesson_id=str(row.lesson_id),
         completed=row.completed,

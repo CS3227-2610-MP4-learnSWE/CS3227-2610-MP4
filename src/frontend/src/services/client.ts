@@ -2,8 +2,14 @@ export const REQUEST_TIMEOUT_MS = 10_000;
 
 // The CSRF token lives in memory only; AuthContext sets it after sign-in or /api/auth/me.
 let csrfToken: string | null = null;
+// Changes on every sign-in, sign-out and session clear, so callers can tell requests of different sessions apart.
+let sessionGeneration = 0;
+export function getSessionGeneration() {
+  return sessionGeneration;
+}
 export function setCsrfToken(token: string | null) {
   csrfToken = token;
+  sessionGeneration += 1;
 }
 // Called on 401 "unauthenticated" from `request`; the callback decides by auth state what to do.
 let onUnauthenticated: (() => void) | null = null;

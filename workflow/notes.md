@@ -2,6 +2,10 @@
 
 Newest entry first. Use `templates/handoff.md`. Older entries describe the state at the time; the newest entry supersedes their open/merged status. Keep the newest 10 entries here; older ones are in `notes-archive.md`. Feature state is in `STATUS.md`.
 
+## 2026-11-04: developer on STU-01, revision round 2 (shared in-flight GET)
+- Done: `services/lessons.ts` in-flight key now includes `getSessionGeneration()` (new, in `services/client.ts`, bumped by `setCsrfToken`, so login, logout and the 401 clear all invalidate) and a `writes` counter bumped before and after `setCompletion`. Backend: `.get(cid, CourseCounts(0, 0))` in both routes; `add_no_store` now covers `/api/study/` and the router-level dependency was removed. DeveloperGuide updated (cache rule, known limits list).
+- Not fixed (by instruction, listed as known limits): cap order past 500 lessons, PUT body size cap, case-sensitive `?course=`, no backend formatter, withdraw/PUT race. No tests written or edited.
+
 ## 2026-11-04: developer on STU-01, revision round 1 (frontend Playwright failures)
 - First mocked run: 321 tests, 36 failed. 33 had one cause (class c, logic bug): React StrictMode runs effects twice in development, so each page sent its GET twice; scripted failure replies were consumed by the first (ignored) request and the second got the default success. Fix: `readOnce` in `services/lessons.ts` shares an identical GET that is still in flight (a finished request is never reused). One more (Overview 401 saw 2-3 courses requests) was a second cause: `LessonsCompletedStat` re-ran its effect when the 401 flipped the session to anonymous; the effect now has no dependencies and the demo/failed wording is chosen at render (`pages/Student.tsx`).
 - Rerun: stu01 specs 94 passed, 3 failed; whole suite 321 tests, 318 passed, 3 failed. Typecheck and lint clean.
