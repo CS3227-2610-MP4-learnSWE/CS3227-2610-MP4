@@ -7,7 +7,7 @@ Checks that a feature's `spec.md`, `plan.md` and `tasks.md` contain what the spe
 ```powershell
 Set-Location (git rev-parse --show-toplevel)
 Set-Location workflow\tools\speccheck
-python -m speccheck ..\..\specs\STU-01
+python -m speccheck ..\..\specs\CHK-01
 python -m speccheck --all
 python -m speccheck --list-rules
 ```
@@ -49,7 +49,7 @@ Each item needs a labelled entry (a list item, a table first cell, bold text or 
 | LONGEST_WAIT | Longest wait before an error | "longest wait" or "timeout" |
 | NO_GENERIC_FAILURE | No generic failure message | "generic" |
 | CONCURRENT_REQUESTS | Concurrent requests (same time) | "concurrent" or "same time" |
-| NORMALISATION | Normalisation | "normalis" |
+| NORMALISATION | Normalisation | "normalise" or "normalize" |
 
 ## Verifier only
 
@@ -60,6 +60,12 @@ The checker cannot judge these; the verifier still reads every spec:
 - Completeness of the contract (every path, schema, signature and error code is present and consistent).
 - That the `notes.md` handoff entry exists.
 - That the content of each label is correct (the checker sees that "Refresh" has text, not that the text is right).
+- A required section that holds only a sub-heading or an empty code fence still passes.
+- Template guidance sentences and an HTML-comment item count as content.
+- One label can satisfy several items (for example "Back and Forward, refresh").
+- A `No screen:` line anywhere in `spec.md` disables the screen rules.
+- Code fences are a simple toggle (three backticks or `~~~`), not full CommonMark.
+- Comparisons such as `a < b and c > d` and `<https://...>` look like placeholders; put them in backticks.
 
 ## Measurement
 

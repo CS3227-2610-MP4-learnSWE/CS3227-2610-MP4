@@ -1,7 +1,7 @@
 """Walk the rule registry over one spec folder and return findings."""
 
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 from .parse import (
@@ -55,9 +55,16 @@ class _Context:
     secs: dict
     no_screen: tuple | None  # (line, reason) of the first "No screen" line
     screen: bool  # screen rules apply
+    entries: dict = field(default_factory=dict)  # labelled entries per (file, section)
 
     def section(self, file: str, name: str) -> Section | None:
         return find_section(self.secs[file], name) if self.texts[file] is not None else None
+
+    def labelled(self, file: str, name: str) -> list:
+        if (file, name) not in self.entries:
+            section = self.section(file, name)
+            self.entries[file, name] = labelled_entries(section) if section else []
+        return self.entries[file, name]
 
     def finding(self, file, heading, code, message, line=0) -> Finding:
         return Finding(self.spec_id, file, heading, code, message, line)
@@ -65,7 +72,7 @@ class _Context:
 
 def _read(path: Path) -> str | None:
     try:
-        return path.read_bytes().decode("utf-8", errors="replace") if path.is_file() else None
+        return path.read_bytes().decode("utf-8-sig", errors="replace") if path.is_file() else None
     except OSError:
         return None
 
@@ -238,7 +245,7 @@ def _item(ctx, rule):
     if any(ctx.texts[file] is None for file, _ in places):
         return []
     found = [ctx.section(file, name) for file, name in places]
-    entries = [e for section in found if section for e in labelled_entries(section)]
+    entries = [e for file, name in places for e in ctx.labelled(file, name)]
     matching = [e for e in entries if _label_matches(rule, e.label)]
     if any(e.content for e in matching):
         return []

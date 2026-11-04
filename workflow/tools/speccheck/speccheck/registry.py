@@ -74,5 +74,5 @@ RULES: tuple[Rule, ...] = (
     _item("LONGEST_WAIT", UI_WHERE, (("longest wait",), ("timeout",)), "Longest wait before an error", "the longest time any screen waits before showing an error", True),
     _item("NO_GENERIC_FAILURE", UI_WHERE, (("generic",),), "No generic failure message", "no failure hides behind a generic message", True),
     _item("CONCURRENT_REQUESTS", SECURITY_SECTION, (("concurrent",), ("same time",)), "Concurrent requests (same time)", "two requests for the same record at the same time", False),
-    _item("NORMALISATION", SECURITY_SECTION, (("normalis",),), "Normalisation", "how identifiers and inputs are normalised", False),
+    _item("NORMALISATION", SECURITY_SECTION, (("normali[sz]",),), "Normalisation", "how identifiers and inputs are normalised", False),
 )
