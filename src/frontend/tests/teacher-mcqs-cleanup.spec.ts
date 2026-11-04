@@ -430,11 +430,10 @@ for (const width of [390, 1440])
           () => document.documentElement.scrollWidth <= innerWidth,
         ),
       ).toBe(true);
-      await page.screenshot({
-        path: info.outputPath(`mcq-editor-${width}-${theme}.png`),
-        fullPage: true,
-      });
       await page.getByRole("button", { name: "Cancel", exact: true }).click();
+      await expect(
+        page.getByRole("dialog", { name: "Unsaved changes", exact: true }),
+      ).toBeVisible();
       await discard(page);
       await page
         .getByRole("button", { name: "Delete MCQ batch", exact: true })
@@ -461,27 +460,7 @@ test("tea03 mobile dirty MCQ Cancel opens confirmation without screenshot", asyn
   await mockTeacherMcqsApi(page);
   await edit(page);
   await change(page);
-  await page.evaluate(() => {
-    const trace: string[] = [];
-    (window as unknown as { cancelTrace: string[] }).cancelTrace = trace;
-    for (const type of ["pointerdown", "pointerup", "click"])
-      document.addEventListener(
-        type,
-        (e) => {
-          trace.push(
-            `${type}: ${(e.target as HTMLElement).tagName} ${(e.target as HTMLElement).textContent?.slice(0, 100)} scroll=${scrollY}`,
-          );
-        },
-        true,
-      );
-  });
   await page.getByRole("button", { name: "Cancel", exact: true }).click();
-  console.log(
-    "CANCEL TRACE",
-    await page.evaluate(
-      () => (window as unknown as { cancelTrace: string[] }).cancelTrace,
-    ),
-  );
   await expect(
     page.getByRole("dialog", { name: "Unsaved changes", exact: true }),
   ).toBeVisible();
@@ -490,3 +469,29 @@ test("tea03 mobile dirty MCQ Cancel opens confirmation without screenshot", asyn
     page.getByRole("button", { name: "Edit questions", exact: true }),
   ).toBeVisible();
 });
+
+// Keep full-page capture last: Chromium can restore a focused field's scroll during the next pointer gesture.
+for (const width of [390, 1440])
+  for (const theme of ["light", "dark"] as const) {
+    test(`tea03 MCQ editor visual ${width}px ${theme}`, async ({
+      page,
+    }, info) => {
+      await page.setViewportSize({ width, height: 900 });
+      await page.emulateMedia({ colorScheme: theme, reducedMotion: "reduce" });
+      await mockTeacherMcqsApi(page);
+      await edit(page);
+      await change(page);
+      expect(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth <= innerWidth,
+        ),
+      ).toBe(true);
+      await expect(
+        page.getByRole("button", { name: "Save changes", exact: true }),
+      ).toBeEnabled();
+      await page.screenshot({
+        path: info.outputPath(`mcq-editor-${width}-${theme}.png`),
+        fullPage: true,
+      });
+    });
+  }
