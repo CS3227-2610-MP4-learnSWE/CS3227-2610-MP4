@@ -42,3 +42,13 @@ Draft; refine per feature. The Test and Check columns hold the name of an existi
 | Demo identity headers accepted on migrated routes | Server never reads `X-Demo-User-Id` or `X-Student-Id` on routes using `current_user` | SEC-AUTH-14 |
 | Cross-student or cross-course access after login | Attempts owned by the session user; course checks return the same 404 for missing and non-member courses | SEC-AUTH-05, 13 |
 | Failed logout leaves a live server session behind | Client stays signed in and shows an error when the logout call fails, so the user can retry | Playwright logout tests |
+
+
+## Teacher draft maintenance (TEA-03)
+| Threat | Control | Test |
+|---|---|---|
+| Spoofed teacher identity or cross-course mutation | Cookie-only shared auth, CSRF/Origin checks, current membership and locked access during writes | `test_tea03_all_teacher_routes_cookie_role_csrf_and_demo_forgery` |
+| Revocation during generation | Release transactions during inference, then reauthenticate the same cookie and lock current session/access/source before saving | `test_tea03_session_and_access_revoked_during_generation_prevents_save` |
+| Lost updates or deletion of newer edits | Locked batch/draft plus caller-supplied version; atomic changes | `test_tea03_mcqs_concurrent_saves_and_edit_delete` |
+| Destruction of referenced work or partial batch deletion | Restrictive FKs, unreferenced-source check and transactional whole-batch deletion | `test_tea03_mcq_question_reference_blocks_whole_batch_delete_atomically` |
+| Previous-account content retained after expiry | Protected teacher subtree unmounts; obsolete responses ignored; auth redirect bypasses dirty blockers | `teacher-mcqs-cleanup.spec.ts` expiry and anonymous journeys |

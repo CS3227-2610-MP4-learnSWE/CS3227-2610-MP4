@@ -1,8 +1,4 @@
-"""Health, authentication (session cookie), student practice/companion and teacher materials.
-
-Student and auth routes require a real session (auth.dependencies.current_user). The teacher routes
-still use the gated development demo identity until their owners migrate them.
-"""
+"""Health, session-authenticated student and teacher APIs, and shared authentication."""
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.exc import SQLAlchemyError

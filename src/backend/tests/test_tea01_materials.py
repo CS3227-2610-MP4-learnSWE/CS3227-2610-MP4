@@ -14,6 +14,8 @@ import httpx
 import pytest
 
 
+from teacher_auth import teacher_headers
+
 BASE = "/api/teacher"
 COURSE_A = "11111111-1111-4111-8111-111111111111"
 COURSE_B = "22222222-2222-4222-8222-222222222222"
@@ -36,7 +38,7 @@ def app(tea01_database):
 
 
 def call(app, method, path, *, user="demo-teacher", files=None, data=None, json_body=None):
-    headers = {"X-Demo-User-Id": user} if user is not None else {}
+    headers = teacher_headers(user)
 
     async def send():
         async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:
@@ -120,9 +122,9 @@ def _fresh_download(material_id):
 from main import app
 async def main():
  async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url='http://test') as c:
-  r=await c.get('/api/teacher/materials/%s/file', headers={'X-Demo-User-Id':'demo-teacher'})
+  r=await c.get('/api/teacher/materials/%s/file', headers=%r)
   print(json.dumps({'status':r.status_code,'hex':r.content.hex()}))
-asyncio.run(main())""" % material_id
+asyncio.run(main())""" % (material_id, teacher_headers())
     result = subprocess.run([sys.executable, "-c", script], cwd=Path(__file__).resolve().parents[1], env=os.environ.copy(), capture_output=True, text=True, check=True)
     body = json.loads(result.stdout.strip().splitlines()[-1])
     assert body["status"] == 200, body
@@ -210,8 +212,8 @@ def test_tea01_demo_gate_and_roles(app):
     assert_error(call(app, "PATCH", f"{BASE}/materials/{uuid.uuid4()}", json_body={"topic_id": None}), 404, "not_found")
     assert_error(call(app, "GET", f"{BASE}/materials/{uuid.uuid4()}/file"), 404, "not_found")
     assert_error(call(app, "GET", f"{MATERIALS_B}?topic_id=bad"), 404, "not_found")
-    for env in ({"ALLOW_DEMO_IDENTITY": "false"}, {"APP_ENV": "production"}):
-        assert _fresh_status("GET", COURSES, env) == (403, "demo_identity_disabled")
+    for env in ({"ALLOW_DEMO_IDENTITY": "false"}, {"APP_ENV": "production", "SESSION_COOKIE_SECURE": "true"}):
+        assert _fresh_status("GET", COURSES, env) == (200, "")
 
 
 def _fresh_status(method, path, overrides):
@@ -219,9 +221,9 @@ def _fresh_status(method, path, overrides):
 from main import app
 async def main():
  async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url='http://test') as c:
-  r=await c.request(%r, %r, headers={'X-Demo-User-Id':'demo-teacher'})
-  print(json.dumps({'status':r.status_code,'code':r.json()['detail']['code']}))
-asyncio.run(main())""" % (method, path)
+  r=await c.request(%r, %r, headers=%r)
+  print(json.dumps({'status':r.status_code,'code':r.json().get('detail',{}).get('code','') if isinstance(r.json(),dict) else ''}))
+asyncio.run(main())""" % (method, path, teacher_headers())
     env = {**os.environ, **overrides}
     result = subprocess.run([sys.executable, "-c", script], cwd=Path(__file__).resolve().parents[1], env=env, capture_output=True, text=True, check=True)
     body = json.loads(result.stdout.strip().splitlines()[-1])
@@ -353,7 +355,7 @@ def test_tea01_delayed_clear_is_last_committed_topic_update(app, tea01_database)
             yield b'{"topic_id":null}'
 
         async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:
-            headers = {"X-Demo-User-Id": "demo-teacher", "Content-Type": "application/json"}
+            headers = {**teacher_headers(), "Content-Type": "application/json"}
             clear = asyncio.create_task(client.patch(f"{BASE}/materials/{mid}", headers=headers, content=delayed_body()))
             await asyncio.wait_for(entered.wait(), 5)
             assigned = await client.patch(f"{BASE}/materials/{mid}", headers=headers, json={"topic_id": TOPIC_A})
@@ -386,7 +388,7 @@ def test_tea01_chunked_oversize_stops_reading_at_file_limit(app, tea01_database)
 
     async def send():
         async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:
-            return await client.post(MATERIALS_A, headers={"X-Demo-User-Id": "demo-teacher", "Content-Type": f"multipart/form-data; boundary={boundary}"}, content=body())
+            return await client.post(MATERIALS_A, headers={**teacher_headers(), "Content-Type": f"multipart/form-data; boundary={boundary}"}, content=body())
 
     response = asyncio.run(send())
     assert_error(response, 413, "file_too_large")

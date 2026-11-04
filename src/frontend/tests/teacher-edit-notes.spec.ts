@@ -82,7 +82,10 @@ test("tea03 edit saves explicit versioned changes and preserves source attributi
     content: '<img src=x onerror="alert(1)">\nEdited explanation',
     version: 1,
   });
-  expect(patches(api)[0].headers["x-demo-user-id"]).toBe("demo-teacher");
+  expect(patches(api)[0].headers["x-demo-user-id"]).toBeUndefined();
+  expect(patches(api)[0].headers["x-csrf-token"]).toBe(
+    "csrf-token-fixture-0001",
+  );
   expect(patches(api)[0].headers["x-student-id"]).toBeUndefined();
   expect(api.generationCalls).toBe(0);
   await page.reload();
@@ -279,7 +282,7 @@ test("tea03 course and draft changes keep dirty buffers until navigation is conf
   await expect(page).toHaveURL(/course=22222222/);
 });
 
-test("tea03 sidebar role and login navigations honour keep and discard", async ({
+test("tea03 sidebar navigation honours keep and discard; authenticated users have no demo switcher", async ({
   page,
 }) => {
   await mockTeacherNotesApi(page);
@@ -290,11 +293,12 @@ test("tea03 sidebar role and login navigations honour keep and discard", async (
   await expect(page.getByLabel("Note title", { exact: true })).toHaveValue(
     "Local edited title",
   );
-  await choose(page, "Demo role", "Student");
-  await keep(page);
-  await expect(page).toHaveURL(url);
-  await page.getByRole("link", { name: "Login preview", exact: true }).click();
-  await keep(page);
+  await expect(page.getByRole("combobox", { name: "Demo role" })).toHaveCount(
+    0,
+  );
+  await expect(
+    page.getByRole("button", { name: /log out/i }).first(),
+  ).toBeVisible();
   await page.getByRole("link", { name: "Overview", exact: true }).click();
   await discard(page);
   await expect(page).toHaveURL(/\/teacher\/overview$/);

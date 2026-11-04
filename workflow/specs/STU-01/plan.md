@@ -4,7 +4,7 @@ Status: Approved (2026-11-04). Contract below is binding for developer and test-
 
 ## Data model
 
-One additive Alembic revision `20261104_stu01_lessons`, `down_revision = "20261103_shr01_auth"`. Historical migrations are not edited. Models live in `src/backend/study_lessons/models.py` and import `Base` from `teacher_materials.models` (same pattern as `auth/models.py`).
+One additive Alembic revision `20261104_stu01_lessons`, `down_revision = "20261104_tea03_mcq_edit"` (was `20261103_shr01_auth` until TEA-03 MCQ editing merged into master). Historical migrations are not edited. Models live in `src/backend/study_lessons/models.py` and import `Base` from `teacher_materials.models` (same pattern as `auth/models.py`).
 
 ### Table `published_lesson` (immutable snapshot; written by TEA-03 publication, read here)
 

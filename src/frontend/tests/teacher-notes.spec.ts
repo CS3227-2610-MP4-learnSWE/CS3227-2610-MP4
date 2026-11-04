@@ -52,7 +52,8 @@ test("tea02 studio generates, saves and reopens a draft with explicit real-call 
   expect(api.generationCalls).toBe(1);
   const post = api.requests.find((request) => request.method === "POST")!;
   expect(post.path).toBe(`/api/teacher/materials/${NEW.id}/note-drafts`);
-  expect(post.headers["x-demo-user-id"]).toBe("demo-teacher");
+  expect(post.headers["x-demo-user-id"]).toBeUndefined();
+  expect(post.headers["x-csrf-token"]).toBe("csrf-token-fixture-0001");
   expect(post.headers["x-student-id"]).toBeUndefined();
   expect(post.body).toBeNull();
   await expect(

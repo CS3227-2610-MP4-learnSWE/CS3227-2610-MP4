@@ -11,7 +11,9 @@ import pytest
 
 from test_tea02_notes import BASE, COURSE, OTHER, NotesLlm, call, upload, error, pdf_bytes, replace_bytes
 
-META = {'id', 'course_id', 'source_material_id', 'source_title', 'created_by', 'created_at', 'question_count'}
+from teacher_auth import teacher_headers
+
+META = {'id', 'course_id', 'source_material_id', 'source_title', 'created_by', 'created_at', 'question_count', 'version', 'updated_at', 'updated_by'}
 QKEYS = {'id', 'position', 'question', 'choices', 'correct_choice_index', 'explanation'}
 
 
@@ -71,7 +73,7 @@ def test_tea02_mcqs_text_persistence_metadata_order_and_new_process(mcqs):
     script = f'''import json
 from fastapi.testclient import TestClient
 from main import app
-r=TestClient(app).get("{BASE}/mcq-drafts/{batch['id']}",headers={{"X-Demo-User-Id":"demo-teacher"}})
+r=TestClient(app).get("{BASE}/mcq-drafts/{batch['id']}",headers={teacher_headers()!r})
 print(json.dumps({{"status":r.status_code,"body":r.json()}}))'''
     proc = subprocess.run([sys.executable, '-c', script], capture_output=True, text=True, check=True)
     assert json.loads(proc.stdout) == {'status': 200, 'body': batch}
@@ -219,7 +221,7 @@ def test_tea02_mcqs_gate_uuid_unknown_and_configuration(mcqs, monkeypatch, tmp_p
         error(call(app, method, path.replace(identifier,'bad'),user=None),401,'unauthenticated')
         with monkeypatch.context() as patch:
             patch.setenv('ALLOW_DEMO_IDENTITY','false')
-            error(call(app, method, path),403,'demo_identity_disabled')
+            error(call(app, method, path),404,'not_found')
     source = upload(app)
     with monkeypatch.context() as patch:
         patch.delenv('DATABASE_URL', raising=False)

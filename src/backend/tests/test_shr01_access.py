@@ -380,13 +380,13 @@ def test_shr01_sec_auth_14_session_plus_demo_header_still_resolves_to_session_us
     assert r.status_code == 403 and code_of(r) == "forbidden"
 
 
-def test_shr01_sec_auth_14_teacher_demo_gate_is_unchanged():
-    ok = call("GET", "/api/teacher/courses", None, headers={"X-Demo-User-Id": "demo-teacher"})
+def test_tea03_sec_auth_14_teacher_requires_cookie_and_ignores_demo_header():
+    forged = call("GET", "/api/teacher/courses", None, headers={"X-Demo-User-Id": "demo-teacher"})
+    assert forged.status_code == 401 and code_of(forged) == "unauthenticated"
+    t = seeded("teacher")
+    ok = call("GET", "/api/teacher/courses", t, headers={"X-Demo-User-Id": "demo-teacher-other"})
     assert ok.status_code == 200, ok.text
     assert any(c["id"] == COURSE_A for c in ok.json())
-    # A real session cookie is not what the unchanged teacher routes read.
-    t = seeded("teacher")
-    assert call("GET", "/api/teacher/courses", t).status_code in (401, 403)
 
 
 def test_shr01_sec_auth_14_demo_mode_creates_no_session_or_cookie():

@@ -66,7 +66,7 @@ test("tea01 course, topic, newest-first rows and search use the HTTP boundary", 
   ).toBe(true);
   expect(api.requests.length).toBeGreaterThan(0);
   for (const request of api.requests) {
-    expect(request.headers["x-demo-user-id"]).toBe("demo-teacher");
+    expect(request.headers["x-demo-user-id"]).toBeUndefined();
     expect(request.headers["x-student-id"]).toBeUndefined();
   }
 });

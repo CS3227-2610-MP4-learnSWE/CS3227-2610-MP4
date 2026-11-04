@@ -12,6 +12,8 @@ from pathlib import Path
 import httpx
 import pytest
 
+from teacher_auth import teacher_headers
+
 BASE = "/api/teacher"
 COURSE = "11111111-1111-4111-8111-111111111111"
 OTHER = "22222222-2222-4222-8222-222222222222"
@@ -49,7 +51,7 @@ def notes(tea01_database):
 def call(app, method, path, *, user="demo-teacher", **kwargs):
     async def send():
         async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:
-            headers = {"X-Demo-User-Id": user} if user else {}
+            headers = teacher_headers(user)
             headers.update(kwargs.pop("headers", {}))
             return await client.request(method, path, headers=headers, **kwargs)
     return asyncio.run(send())
@@ -127,7 +129,7 @@ def test_tea02_text_draft_persists_lists_and_reopens_in_new_process(notes):
 from main import app
 async def main():
  async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app),base_url="http://test") as c:
-  r=await c.get("{BASE}/note-drafts/{draft['id']}",headers={{"X-Demo-User-Id":"demo-teacher"}})
+  r=await c.get("{BASE}/note-drafts/{draft['id']}",headers={teacher_headers()!r})
   print(json.dumps({{"status":r.status_code,"body":r.json()}}))
 asyncio.run(main())'''
     proc = subprocess.run([sys.executable, "-c", script], capture_output=True, text=True, check=True)
@@ -261,7 +263,7 @@ def test_tea02_gate_malformed_and_unknown_records(notes, monkeypatch):
         error(call(app, method, path.replace(unknown, "bad-id")), 422, "validation_error")
         error(call(app, method, path.replace(unknown, "bad-id"), user=None), 401, "unauthenticated")
     monkeypatch.setenv("ALLOW_DEMO_IDENTITY", "false")
-    error(call(app, "GET", f"{BASE}/courses/{COURSE}/note-drafts"), 403, "demo_identity_disabled")
+    assert call(app, "GET", f"{BASE}/courses/{COURSE}/note-drafts").status_code == 200
     assert not fake.calls
 
 

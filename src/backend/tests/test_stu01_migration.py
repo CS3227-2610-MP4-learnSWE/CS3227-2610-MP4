@@ -8,7 +8,7 @@ from auth_helpers import psycopg_url
 from test_shr01_seed_migration import Isolated
 
 NEW_REVISION = "20261104_stu01_lessons"
-PREVIOUS_REVISION = "20261103_shr01_auth"
+PREVIOUS_REVISION = "20261104_tea03_mcq_edit"
 NEW_TABLES = {"published_lesson", "lesson_completion"}
 COURSE_A = "11111111-1111-4111-8111-111111111111"
 TOPIC_A = "33333333-3333-4333-8333-333333333333"

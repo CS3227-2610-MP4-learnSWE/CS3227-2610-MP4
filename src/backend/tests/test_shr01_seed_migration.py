@@ -75,7 +75,7 @@ def iso():
 
 @pytest.fixture
 def seeded_schema(iso):
-    iso.migrate("upgrade", "head")
+    iso.migrate("upgrade", NEW_REVISION)
     iso.seed_teacher()
     return iso
 
@@ -293,7 +293,7 @@ def test_shr01_ac24_migration_on_a_populated_schema_keeps_rows_and_downgrades_cl
     assert iso.sql('SELECT count(*) FROM "user"')[0][0] == 2
 
 
-def test_shr01_ac24_existing_demo_users_still_work_for_the_teacher_dev_gate(seeded_schema):
+def test_shr01_ac24_existing_teacher_users_and_memberships_are_preserved(seeded_schema):
     seeded_schema.seed_auth(check=True, **SEED_ENV)
     assert row(seeded_schema, "demo-teacher-other")[2] == "teacher"
     assert seeded_schema.sql("SELECT count(*) FROM course_membership WHERE user_id = 'demo-teacher' "
