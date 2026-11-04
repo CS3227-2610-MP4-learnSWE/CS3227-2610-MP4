@@ -496,5 +496,62 @@ class ResolvedPathTests(CliCase):
         self.assertIn(f"OK {SPEC_ID}", lines_of(out))
 
 
+class LinkedFolderTests(CliCase):
+    def make_link(self, link, target):
+        import os
+        import subprocess as sp
+
+        try:
+            os.symlink(target, link, target_is_directory=True)
+            return
+        except (OSError, NotImplementedError, AttributeError):
+            pass
+        if sys.platform == "win32":
+            result = sp.run(["cmd", "/c", "mklink", "/J", str(link), str(target)], capture_output=True)
+            if result.returncode == 0 and Path(link).exists():
+                return
+        self.skipTest("cannot create a symlink or junction here")
+
+    def linked(self, passing):
+        target = self.write("TEA-01") if passing else self.write("TEA-01", spec=broken_spec())
+        links = self.root / "links"
+        links.mkdir()
+        link = links / "NEW-01"
+        self.make_link(link, target)
+        return link
+
+    def test_chk01_ac16_link_named_new_01_to_tea_01_reports_new_01_not_the_waived_target(self):
+        link = self.linked(passing=False)
+        waivers = self.waiver_file("TEA-01 | all | predates the rule\n")
+        code, out, _ = self.run_cli(link, "--waivers", waivers)
+        self.assertNotIn("WAIVED TEA-01", out)
+        self.assertNotIn("TEA-01", out)
+        self.assertEqual(code, 1)
+        self.assertTrue(any(line.startswith("FAIL NEW-01 ") for line in lines_of(out)), out)
+        self.assertEqual(lines_of(out)[-1], "speccheck: 1 checked, 1 failed, 0 waived")
+
+    def test_chk01_ac16_link_named_new_01_to_a_passing_folder_reports_ok_new_01(self):
+        link = self.linked(passing=True)
+        waivers = self.waiver_file("TEA-01 | all | predates the rule\n")
+        code, out, _ = self.run_cli(link, "--waivers", waivers)
+        self.assertEqual(code, 0)
+        self.assertEqual(lines_of(out), ["OK NEW-01", "speccheck: 1 checked, 0 failed, 0 waived"])
+
+    def test_chk01_ac16_dot_and_dotdot_paths_still_give_the_real_folder_name(self):
+        import os
+
+        folder = self.write(spec=broken_spec())
+        (folder / "sub").mkdir()
+        waivers = self.waiver_file(f"{SPEC_ID} | all | predates the rule\n")
+        old = os.getcwd()
+        self.addCleanup(os.chdir, old)
+        for cwd, arg in ((folder, "."), (folder / "sub", ".."), (folder, "./sub/.."), (self.specs, f"{SPEC_ID}/.")):
+            with self.subTest(cwd=str(cwd), arg=arg):
+                os.chdir(cwd)
+                code, out, _ = run_main(["--specs-dir", self.specs, "--waivers", waivers, arg])
+                self.assertEqual(code, 0, out)
+                self.assertIn(f"WAIVED {SPEC_ID} (all): predates the rule", lines_of(out))
+
+
 if __name__ == "__main__":
     unittest.main()
