@@ -248,11 +248,9 @@ for (const [label, user] of [
       await expect(page).toHaveURL(/\/login$/);
       expect(teacherCalls.length).toBeGreaterThan(0);
     } else {
-      await expect(
-        page.getByText("Sign in to manage teacher materials and drafts.", {
-          exact: true,
-        }),
-      ).toBeVisible();
+      await expect(page.getByRole("alert")).toContainText(
+        "Sign in to manage teacher materials and drafts.",
+      );
       await expect(page).toHaveURL(/\/teacher\/materials$/);
       expect(teacherCalls).toHaveLength(0);
     }

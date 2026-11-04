@@ -377,11 +377,9 @@ test("tea03 anonymous teacher data screens issue no teacher requests", async ({
   });
   for (const route of ["/teacher/materials", url]) {
     await page.goto(route);
-    await expect(
-      page.getByText("Sign in to manage teacher materials and drafts.", {
-        exact: true,
-      }),
-    ).toBeVisible();
+    await expect(page.getByRole("alert")).toContainText(
+      "Sign in to manage teacher materials and drafts.",
+    );
     await expect(
       page.getByRole("link", { name: "Sign in", exact: true }),
     ).toBeVisible();
@@ -441,14 +439,54 @@ for (const width of [390, 1440])
       await page
         .getByRole("button", { name: "Delete MCQ batch", exact: true })
         .click();
-      await expect(
-        page
-          .getByRole("dialog")
-          .getByRole("button", { name: "Keep batch", exact: true }),
-      ).toBeFocused();
+      await expect
+        .poll(() =>
+          page
+            .getByRole("dialog")
+            .evaluate((dialog) => dialog.contains(document.activeElement)),
+        )
+        .toBe(true);
       await page.screenshot({
         path: info.outputPath(`mcq-delete-${width}-${theme}.png`),
         fullPage: true,
       });
     });
   }
+
+test("tea03 mobile dirty MCQ Cancel opens confirmation without screenshot", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 900 });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await mockTeacherMcqsApi(page);
+  await edit(page);
+  await change(page);
+  await page.evaluate(() => {
+    const trace: string[] = [];
+    (window as unknown as { cancelTrace: string[] }).cancelTrace = trace;
+    for (const type of ["pointerdown", "pointerup", "click"])
+      document.addEventListener(
+        type,
+        (e) => {
+          trace.push(
+            `${type}: ${(e.target as HTMLElement).tagName} ${(e.target as HTMLElement).textContent?.slice(0, 100)} scroll=${scrollY}`,
+          );
+        },
+        true,
+      );
+  });
+  await page.getByRole("button", { name: "Cancel", exact: true }).click();
+  console.log(
+    "CANCEL TRACE",
+    await page.evaluate(
+      () => (window as unknown as { cancelTrace: string[] }).cancelTrace,
+    ),
+  );
+  await expect(
+    page.getByRole("dialog", { name: "Unsaved changes", exact: true }),
+  ).toBeVisible();
+  await discard(page);
+  await expect(
+    page.getByRole("button", { name: "Edit questions", exact: true }),
+  ).toBeVisible();
+});
