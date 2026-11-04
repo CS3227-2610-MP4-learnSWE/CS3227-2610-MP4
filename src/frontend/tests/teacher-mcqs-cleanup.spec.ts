@@ -300,7 +300,7 @@ for (const [kind, label, title, keep, success] of [
             ? "Saved drafts"
             : kind === "mcqs"
               ? "Saved MCQ batches"
-              : "Course materials",
+              : /^Course materials(?: \d+)?$/,
         exact: true,
       }),
     ).toBeFocused();
