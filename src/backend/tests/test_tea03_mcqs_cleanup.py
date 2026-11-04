@@ -343,3 +343,28 @@ def test_tea03_mcq_question_reference_blocks_whole_batch_delete_atomically(mcqs,
         assert get(app,batch).json()==batch
     finally:
         tea01_database.rollback();tea01_database.execute(f'DROP TABLE {ref}');tea01_database.commit()
+
+
+def test_tea03_concurrent_expired_cookie_deletes_both_return_401_without_mutation(mcqs,tea01_database,monkeypatch):
+    import threading
+    import auth.dependencies as dependencies
+    app,_=mcqs
+    source=upload(app,b'Expired requests must not delete this file')
+    headers=teacher_headers()
+    token=headers['Cookie'].split('=',1)[1]
+    tea01_database.execute("UPDATE auth_session SET expires_at=now()-interval '1 second' WHERE token_hash=%s",(hashlib.sha256(token.encode()).hexdigest(),))
+    tea01_database.commit()
+    rendezvous=threading.Barrier(2)
+    original=dependencies.load_session
+    def load_together(db,raw_token):
+        # Allow fixes which serialize authentication before this call to make progress too.
+        try:rendezvous.wait(timeout=5)
+        except threading.BrokenBarrierError:pass
+        return original(db,raw_token)
+    monkeypatch.setattr(dependencies,'load_session',load_together)
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        futures=[pool.submit(call,app,'DELETE',f"{BASE}/materials/{source['id']}",user=None,headers=headers) for _ in range(2)]
+        responses=[future.result(timeout=15) for future in futures]
+    for response in responses:error(response,401,'unauthenticated')
+    monkeypatch.setattr(dependencies,'load_session',original)
+    assert call(app,'GET',f"{BASE}/materials/{source['id']}/file").content==b'Expired requests must not delete this file'
