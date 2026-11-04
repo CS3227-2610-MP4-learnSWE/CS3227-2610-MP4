@@ -2,6 +2,19 @@
 
 Newest entry first. Use `templates/handoff.md`. Older entries describe the state at the time; the newest entry supersedes their open/merged status. Keep the newest 10 entries here; older ones are in `notes-archive.md`. Feature state is in `STATUS.md`.
 
+## 2026-11-04: spec-writer on STU-01 (Study materials)
+- Done: `workflow/specs/STU-01/spec.md`, `plan.md`, `tasks.md` drafted (status Draft, not approved). Spec has 17 acceptance criteria (AC1 to AC4 copied from US-STU-01-01/02, the rest derived and marked), the "UI states and copy" table with exact messages, and the plan has the fixed contract: migration `20261104_stu01_lessons` (down_revision `20261103_shr01_auth`) creating `published_lesson` (immutable snapshot, `withdrawn_at`) and `lesson_completion` (PK user_id + lesson_id, `completed`, `completed_at`, composite FK with course_id), four student-only endpoints under `/api/study`, module `study_lessons/` with `get_visible_lesson`, `completion_counts`, `completed_lessons`, `set_completion` (STU-04 and STU-03 reuse these), UI contract (roles and names), test plan mapped to ACs.
+- Next: human answers the open questions, then test-designer (tasks 1, 2, 9, 10) and developer (3 to 7) start in parallel (Variant B).
+- Files touched: `workflow/specs/STU-01/spec.md`, `plan.md`, `tasks.md`, `workflow/notes.md`. No code, nothing committed.
+- Decisions / open questions: (1) BLOCKING: no published-lesson record, publish endpoint or student-visible state exists (TEA-03 only has drafts); the plan proposes STU-01 creates `published_lesson` and TEA-03 publication writes into it, with a dev seed `study_lessons.seed` for now; the TEA-03 owner must agree. (2) keep `withdrawn_at` with no endpoint. (3) topic copied from the source material at publication, null shown as "General". (4) republish = new lesson id, completion not carried over. (5) demo-mode student loses the built-in sample lessons, Overview sample cards and hero meta line (sign-in notice instead). (6) companion label on a lesson page becomes "Study materials". (7) decision-list item "how users join courses" affects it: new students see "No courses yet" until a membership exists. (8) other listed decisions do not affect it. (9) 500-lesson cap, no pagination. Also: existing app.spec tests on sample lessons must be rewritten (AC16); the plan adds the no-store header itself because the existing middleware covers `/api/auth/` only.
+- Blocking findings: none in code; Open question 1 blocks approval of the plan.
+- Resource use (all required; write "n/a" only with a reason):
+  - Tracker run: no
+  - Model: Sonnet 5.5 (spec-writer subagent)
+  - Total tokens: n/a (not measured; no tracker run)
+  - Cost (USD): n/a (not measured)
+  - Retries and revision rounds: 0
+
 ## 2026-11-03: Fix Alembic repeatable-read migration race (single session + verifier)
 - Done: online Alembic engine explicitly uses READ COMMITTED before its first query, preventing stale version-table snapshots from bypassing locked empty-material guard. One-line source change; no new schema revision/API change.
 - Evidence: independent reviewer confirmed prior defect; persistent regression6d8951e committed after RED and before source fix. Same regression GREEN, full505backendPASS. Strongest reviewer5migration casesPASS/no remaining findings. Docs/contract/plan updated; STATUS unblocked. Report logs/MigrationIsolationFix20261103.md.
