@@ -18,3 +18,10 @@
 - Token tracker attempted branch filter; returned0 matching requests. This means unavailable attribution, not zero actual usage/cost. Summary retained; final resources will state limitation.
 
 - Independent designer captured RED for cookie-auth regression atb56bc12 onapprovedstart0038b47: old teacher API ignores valid cookie and returns401 demanding demoheader. No implementation visibility before this testcommit.
+
+## Integration correction round1
+
+- Independent tests committedb56bc12/3d80b0c/260035e before sourcevisibility; developerd19bdf4 then merged by designer5771e15. Frontendtypes/lint/build/sourceformat pass.
+- Initial integratedbackend726PASS/1harnessfailure (httpx cannot serialize lone surrogate without JSONescaping); designer correctedwireencoding334367f, retainingadversarialassertion. Fullrerunpending.
+- Browser found two product issues: overlimitMCQfields hidecounter; expired401dirtyeditor clearsprivatebuffers but routerblocker intercepts/login redirect. Parent ruling requires shared/login redirect (anonymousbootstrapstillguidance), preserving ordinarydirtywarnings/logoutfailurebuffers. Developer addressingboth ascorrectionround1; cap2 total.
+- Exacttext locator encompassinganonymousAlertlink correctedto rolealert containment, preserving visibleguidance+zeroteachercallassertions. No weakening producttests.

@@ -214,10 +214,23 @@ export default function McqDraftEditor({
     setQuestions((items) =>
       items.map((q, i) => (i === index ? { ...q, ...values } : q)),
     );
-  const fieldHelp = (value: string, maximum: number) =>
-    textValid(value, maximum)
-      ? `${count(normalise(value))} / ${maximum} characters`
-      : `Enter 1–${maximum} characters.`;
+  const fieldHelp = (value: string, maximum: number, duplicate = "") => {
+    const message =
+      duplicate ||
+      (!textValid(value, maximum) ? `Enter 1–${maximum} characters.` : "");
+    return (
+      <>
+        {message && (
+          <>
+            <span>{message}</span>{" "}
+          </>
+        )}
+        <span>
+          {count(normalise(value))} / {maximum} characters
+        </span>
+      </>
+    );
+  };
   return (
     <>
       <h2>{draft.source_title}</h2>
@@ -244,11 +257,11 @@ export default function McqDraftEditor({
                 }
                 disabled={saving || loading}
                 error={!textValid(q.question, 200) || stemDuplicate}
-                helperText={
-                  stemDuplicate
-                    ? "Questions must be distinct."
-                    : fieldHelp(q.question, 200)
-                }
+                helperText={fieldHelp(
+                  q.question,
+                  200,
+                  stemDuplicate ? "Questions must be distinct." : "",
+                )}
                 multiline
               />
               {q.choices.map((choice, c) => (
@@ -265,11 +278,11 @@ export default function McqDraftEditor({
                   }
                   disabled={saving || loading}
                   error={!textValid(choice, 80) || duplicates(q.choices)}
-                  helperText={
-                    duplicates(q.choices)
-                      ? "Choices must be distinct."
-                      : fieldHelp(choice, 80)
-                  }
+                  helperText={fieldHelp(
+                    choice,
+                    80,
+                    duplicates(q.choices) ? "Choices must be distinct." : "",
+                  )}
                 />
               ))}
               <FormControl disabled={saving || loading}>
