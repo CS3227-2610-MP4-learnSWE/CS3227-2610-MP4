@@ -21,3 +21,14 @@ The test numbers above are from runs I did myself this session; developer and ve
 ## Open
 
 PR not opened; the branch was pushed at `d4a7c59` and later commits are local. TEA-03 publish route and ADM-05 course access are teammate tasks. Proposed spec-template additions (requests per load, wrong-role behaviour, history push versus replace) await the user's decision.
+
+## After the first PR (same day)
+
+8. Opened PR 18. GitHub reported a conflict: master had gained TEA-03 MCQ editing and draft deletion (PR 17). Merged master into the branch (52fa4db): kept both sides' notes and contract text, chained the STU-01 migration after the TEA-03 one (two Alembic heads), pinned the TEA-03 migration test to its own revision.
+9. Found that TEA-03's draft deletion relies on restrictive foreign keys, while `published_lesson.source_draft_id` was set-null, so a published note's draft could be deleted. With the user's agreement changed it to restrict deletion; the independent test-designer updated and added tests; the verifier re-check passed. My first targeted run missed one test still asserting the old behaviour, so the first CI run failed one backend test; fixed in 49e6bfa and CI went green (five checks).
+10. The user approved adding the three template rows (requests per load, wrong role, history push versus replace). A separate session built a spec checker (CHK-01, PR 19, own branch); running it on the approved STU-01 spec gave 11 findings, so the spec, the plan and the templates were reworded to use the checker's eleven labels, and the checker now passes on STU-01. No behaviour changed.
+11. The first backend run of the day failed almost everything because I started a temporary Postgres with a URL missing the `+psycopg` scheme; diagnosed from the first failing test.
+
+## Verification and what is not verified (update)
+
+Backend 850 passed before the foreign-key change; targeted runs after it passed except a TEA-03 concurrency test that is flaky in master code (3 of 4 runs pass alone). CI for PR 18 passed all five checks at e7d9139; it has not run on the later spec and template wording commit. The spec checker (PR 19) is not on master, so no CI step enforces the labels yet. Not verified: the teammates' parts (TEA-03 publish route, ADM-05 course access), a real publish flow.

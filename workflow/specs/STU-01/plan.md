@@ -143,6 +143,12 @@ Lesson page `/student/materials/<lesson id>`:
 
 Overview stat: the existing `Stat` with label "Lessons completed"; value "N / M" and detail "N of M lessons"; loading value "…" and detail "Loading…"; failure value "–" and detail "Unavailable. Open Study materials to try again."; demo 401 detail "Sign in to see your progress".
 
+Also fixed per screen (labelled entries):
+- Requests per load and per retry: the Materials page sends one courses request on load and then one lessons request for the selected course; the lesson page sends one lesson request; "Try again" repeats only the failed request; the Overview stat sends one courses request. Development builds run effects twice, so identical in-flight GET requests are shared (never across a session change or a completion save).
+- Wrong role: a teacher or admin who opens `/student/...` is redirected by the SHR-01 role guard to their own area before any request is sent; a 403 alert appears only if the role changes after load; demo mode shows the sign-in notice.
+- Link history: push or replace: lesson cards, the "All study materials" back link and the course select all push a new history entry (nothing replaces); topic buttons and search are client side and do not change the URL.
+- No generic failure message: every failure uses the exact message in the spec's tables; there is no catch-all text.
+
 Timeouts: every request uses `REQUEST_TIMEOUT_MS` (10 s) from `client.ts`. No custom timeout, no automatic retry.
 
 Responsive and theme: no fixed-width elements; lesson cards in the existing `material-grid`; the same CSS classes as today (`lesson-card`, `lesson-reader`, `back-link`, `toolbar`, `filter-buttons`).
