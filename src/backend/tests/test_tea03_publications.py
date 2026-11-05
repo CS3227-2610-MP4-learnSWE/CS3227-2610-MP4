@@ -193,19 +193,24 @@ def test_tea03_publications_concurrent_requests_create_one_snapshot(mcqs,tea01_d
     tea01_database.commit();assert tea01_database.execute(f'SELECT count(*) FROM {table} WHERE source_draft_id=%s',(draft['id'],)).fetchone()[0]==1
 
 
-def test_tea03_publications_publish_races_edit_and_delete(mcqs):
+@pytest.mark.parametrize('kind',['note','practice_set'])
+def test_tea03_publications_publish_races_edit_and_delete(mcqs,kind):
     for action in ['edit','delete']:
-        app,_,_,draft=prepared(mcqs)
-        body={'version':1,'questions':[{k:v for k,v in q.items() if k!='position'} for q in copy.deepcopy(draft['questions'])]}
-        body['questions'][0]['question']='Private corrected wording'
-        target=f"{BASE}/mcq-drafts/{draft['id']}"
+        app,_,_,draft=prepared(mcqs,kind)
+        if kind=='note':
+            body={'version':1,'title':'Private title','content':'Private corrected notes'}
+        else:
+            body={'version':1,'questions':[{k:v for k,v in q.items() if k!='position'} for q in copy.deepcopy(draft['questions'])]}
+            body['questions'][0]['question']='Private corrected wording'
+        target=f"{BASE}/{'note-drafts' if kind=='note' else 'mcq-drafts'}/{draft['id']}"
         with ThreadPoolExecutor(max_workers=2) as pool:
-            published=pool.submit(post,app,draft)
+            published=pool.submit(post,app,draft,kind)
             other=pool.submit(call,app,'PATCH' if action=='edit' else 'DELETE',target if action=='edit' else target+'?version=1',**({'json':body} if action=='edit' else {}))
             pub,mutation=published.result(),other.result()
         assert pub.status_code in {201,404,409} and mutation.status_code in {200,204,409},(pub.text,mutation.text)
         if pub.status_code==201:
-            assert pub.json()['questions'][0]['question']==draft['questions'][0]['question']
+            if kind=='note':assert pub.json()['content']==draft['content']
+            else:assert pub.json()['questions'][0]['question']==draft['questions'][0]['question']
             assert detail(app,pub.json()).json()==pub.json()
             if action=='delete':assert mutation.status_code==409 and mutation.json()['detail']['code']=='draft_in_use'
 
@@ -347,3 +352,15 @@ def test_tea03_publications_migration_preserves_legacy_and_guards_downgrade(tea0
             assert db.execute("SELECT to_regclass('published_practice_question') IS NOT NULL").fetchone()[0]
         finally:
             db.execute('SET search_path TO public');db.execute(f'DROP SCHEMA "{schema}" CASCADE')
+
+
+def test_tea03_publications_migration_refuses_populated_practice_sets(mcqs,tea01_database):
+    app,_,_,draft=prepared(mcqs)
+    saved=post(app,draft).json()
+    before=tea01_database.execute('SELECT version_num FROM alembic_version').fetchone()[0]
+    result=subprocess.run([sys.executable,'-m','alembic','downgrade','20261104_stu01_lessons'],env=os.environ.copy(),capture_output=True,text=True)
+    assert result.returncode!=0 and 'Cannot downgrade publication storage' in result.stderr
+    assert tea01_database.execute('SELECT version_num FROM alembic_version').fetchone()[0]==before
+    assert tea01_database.execute("SELECT to_regclass('published_practice_set'),to_regclass('published_practice_question')").fetchone()==('published_practice_set','published_practice_question')
+    assert tea01_database.execute('SELECT count(*) FROM published_practice_question WHERE set_id=%s',(saved['id'],)).fetchone()[0]==3
+    assert detail(app,saved).json()==saved
