@@ -6,7 +6,7 @@ Stages: not started, spec, build, verified (local), merged.
 
 | ID | Stage | Branch | PR | Open items |
 |---|---|---|---|---|
-| STU-01 | merged | `feat/stu01-spec` | 18 | Lessons come from `study_lessons.seed` until TEA-03 publication calls `publish_lesson` (teammate task). Real students see lessons only after ADM-05 course access exists. Known limits in `docs/DeveloperGuide.md`. |
+| STU-01 | merged | `feat/stu01-spec` | 18 | Seeded and teacher-published lessons use the same student workflow. Course membership remains required; ADM-05 access management is future. Known limits in `docs/DeveloperGuide.md`. |
 | STU-02 | merged | `feat/stu02-practice-api-workflow-b`, `feat/stu02-frontend-run-b` | 1–5 (numbers per `checklist.md`) | Session authentication merged in PR16; practice records still use server memory. |
 | STU-03 | merged | `feat/stu03-run-b` | 8 | Live provider quality unchecked; no authenticated persistence of chat history. |
 | STU-04 | not started | | | |
@@ -14,8 +14,8 @@ Stages: not started, spec, build, verified (local), merged.
 | STU-06 | not started | | | |
 | TEA-01 | merged | `feat/tea01-materials`, `fix/teacher-postgres-file-storage`, `feat/tea03-edit-mcqs-delete-drafts` | 10, 15, 17 | Upload/organisation/deletion and session auth merged. |
 | TEA-02 | merged (notes and MCQs) | `feat/tea02-generate-notes`, `feat/tea02-generate-mcqs` | 11, 13 | Live provider quality checked only by user report. |
-| TEA-03 | partly merged; publication build | `feat/tea03-publish-content` | 12, 17 | Notes/MCQ editing and deletion merged. Approved publishing contract084534a; developer/designer build in progress. |
-| TEA-04 | build (whole-batch publication) | `feat/tea03-publish-content` | | One batch of three questions = one practice set; no assembly. Publishing implementation in progress; student practice integration remains future. |
+| TEA-03 | partly merged; publication verified (local) | `feat/tea03-publish-content` | 12, 17 | Notes/MCQ editing/deletion merged; immutable publication verified at380749e, strongest review PASS. Human push/PR/merge gate retained. |
+| TEA-04 | verified (local; whole-batch publication) | `feat/tea03-publish-content` | | One batch of three questions = one immutable practice set; no assembly. Publishing verified at380749e; student attempt integration remains future. |
 | TEA-05 | not started | | | |
 | TEA-06 | not started | | | |
 | ADM-01 | not started | | | |

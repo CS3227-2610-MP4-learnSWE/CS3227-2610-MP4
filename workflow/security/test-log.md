@@ -224,3 +224,16 @@ Additional parent verification: the full728backend suite passed against the sepa
 Teacher assembly preview/sidebar removed; old route redirects through unchanged role/data guards. No publication endpoint, database change or student runtime change. Whole-batch immutable publication, version/reference protection, course access and no early answers are future implementation requirements, not new capabilities.
 
 Strongest read-only scope review PASS at91a4bfa;38focused browser cases passed, including student bundle answer exclusion, whole-set submission, result-release, CSRF and duplicate submission. Parent final full247browser PASS with types/lint/format/build. Original removed-preview assertion was moved to the remaining sample Review screen with both explanation checks retained. No live LLM, .env or developer data accessed.
+
+
+## 2026-11-05 — Teacher immutable publication (review in progress)
+
+Approved contract084534a; source4fdbb26/1513a87 and independent tests integratedc83995c. New backend24cases and full879backend pass on isolated PostgreSQL16. Source review checks session/role/membership and CSRF before body validation, locked origin/version/idempotency, atomic snapshots, restrictive origin references, safe answer-free student MCQ reads, legacy lesson/helper/completion compatibility and guarded downgrade. No LLM call occurs during publication; fake responses only for automated generation.
+
+Initial strongest read-only review identified five blocking UI/robustness issues, pending correction round1: obsolete pendingGET reuse on A→B→A, lostPOST cancellation bypassing required status refresh, catalogue filter retaining detail, identical200 retry copy, and private-edit warning absent inside editors. No observed data leak/duplicate snapshot. Full first browser365pass/2fail: obsolete preview assertion plus real pending-read regression. This is not an acceptance PASS. Final evidence will supersede this pending state. No developer data, secrets or live service modified.
+
+### Final publication review — PASS at380749e
+
+Strongest read-only verifier confirms all five initial UI/request-lifetime blockers resolved; second round resolves actual label overlap with scoped form spacing. Source security review: cookie/role/course checks and CSRF/Origin before body validation, strict types/duplicate keys/Unicode, locked publish-edit-delete/version races, exact retries after later private edits, atomic rollback, restrictive origins, immutable snapshots, legacy/withdrawn lessons, safe student answer/provenance exclusion, no-store errors, unchanged old attempt/companion paths and guarded downgrade. No AI call during publication; new AI/deployment controls not applicable.
+
+Final881backend/377browser PASS, zero browser retries, types/lint/format/build/checker PASS; verifier independently reran879backend before coverage expansion. Final CSS-only380749e has14focused tests PASS and eight inspected desktop/mobile light/dark images. No remaining blockers, two correction rounds used. Tests use isolated PostgreSQL16 schemas/fakeAI; no developer data/secrets/live provider/remote Git. Human publishing/merge gate retained.
