@@ -1,6 +1,6 @@
 {
-  "phase": "3-H3-done-awaiting-G3-H1",
-  "next_step": "G3 for H1: not before 23:18 SGT (65 min after H3 last request 22:13:07 SGT). USER runs /usage, says 'start now', launches H1 in adm01-wt\\H1 with arm-template.md. Cap for H1 = 2.536 USD. First DECIDE confound: see confounds.",
+  "phase": "3-H1-done-awaiting-G3-H2",
+  "next_step": "G3 for H2: not before 01:38 SGT 2026-11-06 (65 min after H1 last request 00:33:05). USER runs /usage, says 'start now', launches H2 in adm01-wt\\H2 with arm-template.md. Cap 2.536 USD.",
   "arm_order": [
     "A",
     "H3",
@@ -10,11 +10,13 @@
   ],
   "arms_done": [
     "A",
-    "H3"
+    "H3",
+    "H1"
   ],
   "arm_costs_usd": {
     "A": 1.690737,
-    "H3": 3.016179
+    "H3": 3.016179,
+    "H1": 2.598754
   },
   "caps_usd": {
     "A": 15
@@ -117,6 +119,19 @@
       "branch_head": "31deb32",
       "arm_self_report": "1002 passed 0 failed vs real Postgres incl 122 ADM-01 tests; arm ran its own postgres container; 2 blocking defects fixed in round 1; edited 2 lines of test_tea03_publications.py",
       "note": "self-report not graded"
+    },
+    "H1": {
+      "source": "workflow/usage/runs/2026-11-05-ADM01-H1/report-v2.md (session 8700f4e3-0f55-49b9-951b-ff55b343bb65)",
+      "cost_usd": 2.598754,
+      "cap_status": "capped (2.599 vs 2.536, marginal)",
+      "requests": 100,
+      "started_sgt": "2026-11-05 23:20:32",
+      "last_request_sgt": "2026-11-06 00:33:05",
+      "revision_rounds": 1,
+      "human_messages": 2,
+      "branch_head": "9ade267",
+      "arm_self_report": "982 passed 0 failed 7 errors (PermissionError tmp_path, env) vs own postgres container; 1 blocking defect (no-store header) fixed; edited 2 lines test_tea03_publications.py",
+      "note": "self-report not graded; arm ran own Postgres like H3"
     }
   },
   "confounds": [
