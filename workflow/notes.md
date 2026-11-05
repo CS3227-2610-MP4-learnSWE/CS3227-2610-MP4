@@ -2,6 +2,20 @@
 
 Newest entry first. Use `templates/handoff.md`. Older entries describe the state at the time; the newest entry supersedes their open/merged status. Keep the newest 10 entries here; older ones are in `notes-archive.md`. Feature state is in `STATUS.md`.
 
+## 2026-11-05: STU-04 built and verified locally (orchestrator, student-role owner)
+- Done: spec approved by the user (seven decisions plus default answers to the open questions), spec checker passes; developer and independent test-designer in parallel; verifier round 1 FAIL (6 developer defects, 4 test bugs, 3 stale old tests), round 2 FAIL (the logout fix remounted pages and a signed-in 401 sent a second `GET /api/progress`), then a user-authorised round 3 PASS at `6c4eaca`. Result: persistent practice attempts (`practice_attempt`, migration `20261105_stu04_practice_attempt`), `GET /api/progress`, Progress page at `/student/progress`, Overview with real figures (fake 82% and chart removed), sidebar "Progress" item.
+- Final checks (verifier, round 3): backend 149 of 149 (STU-04, STU-01 migration, TEA-01 materials; `test_shr01_sec_auth_12` skipped, it hangs on Windows), Playwright 178 of 178 on affected specs, typecheck and lint clean. The full Playwright suite was last run in round 2 (419 of 423). GitHub CI not yet run.
+- Open / known limits: (1) no cap on attempts per student; (2) question reuse after answers are seen undecided; (3) practice sets are not course-scoped; (4) in-memory attempts from before this change are lost, no backfill; (5) a mounted page whose user changes stays on its loading text (reachable by logout then an immediate Back; no data shown); (6) the Shell shows a "Demo · Sample data" pill to signed-in users (predates STU-04, user decision pending); (7) the cap of 2 revision rounds was exceeded by one user-authorised round.
+- Local databases: apply the new migration with `uv run alembic upgrade head`; it adds `practice_attempt` and a seed topic.
+- Evaluation data: `experiments/results/stu04-first-run.md`.
+- Next: user decides on the PR; PR into `master` only after the user agrees to push.
+- Resource use:
+  - Tracker run: no
+  - Model: Sonnet 5.5 (main session and subagents)
+  - Total tokens: n/a (not measured; harness-reported subagent tokens about 167k spec-writer, 157k to 175k test-designer, 162k to 191k developer, 178k to 231k verifier, cumulative per resumed agent)
+  - Cost (USD): n/a (not measured)
+  - Retries and revision rounds: 3 (2 plus one user-authorised)
+
 ## 2026-11-05: spec-writer on STU-04 (Progress dashboard)
 - Done: `workflow/specs/STU-04/spec.md`, `plan.md`, `tasks.md` drafted (status Draft, not approved). 20 acceptance criteria (AC1 to AC4 copied from US-STU-04-01/02, the rest derived and marked), the "UI states and copy" tables with exact messages (Progress page and Overview stats), and the plan contract: migration `20261105_stu04_practice_attempt` (table `practice_attempt`) behind the existing `AttemptStore` (`lock` becomes a context manager yielding a row-locked, freshly read attempt; new `submitted_summaries`), optional `Question.topic_id`, `progress_rules.py` (3 answers, 60%), one read-only `GET /api/progress`, the Progress page at `/student/progress`, and the Overview with real figures from the same call. The user's seven decisions of 2026-11-05 are recorded in the spec.
 - Next: human answers the open questions, then test-designer (tasks 1, 2, 7, 8) and developer (3 to 6, 9) start in parallel (Variant B).

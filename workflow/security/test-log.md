@@ -218,7 +218,7 @@ Both blockers are resolved by6c18dc9 and unchanged regressions94901d4/340154a pa
 
 Additional parent verification: the full728backend suite passed against the separate Docker/PostgreSQL16 test container (104.65s), using isolated schemas. Development container/data untouched; no live provider requests.
 
-### STU-04 progress dashboard (cases to run; not yet run by a test-designer)
+### STU-04 progress dashboard (run 2026-11-05 by the independent verifier, rounds 1 to 3)
 
 | Case | Expected |
 |---|---|
@@ -229,3 +229,5 @@ Additional parent verification: the full728backend suite passed against the sepa
 | In-progress attempt with saved answers | no change in the response |
 | Two simultaneous submits of one attempt | one 200, one 409 `already_submitted`, counted once |
 | Attempt id of another student on STU-02 endpoints after the store change | 404 `attempt_not_found` |
+
+Result: all cases above behaved as expected after fixes, plus: attempt ids containing NUL, longer than 64 characters, padded or upper-cased give 404 `attempt_not_found` (a NUL id gave 503 until round 1, fixed); logout then Back shows no earlier data; a signed-in 401 sends one request and redirects to `/login`. Remaining non-blocking: logout then an immediate Back (before the login page renders) leaves the page on its loading text with no sign-in notice; no data is shown.
