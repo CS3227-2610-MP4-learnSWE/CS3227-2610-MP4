@@ -95,3 +95,49 @@ for (const kind of ["note", "practice_set"] as const) {
     await expect(page.getByText(warning, { exact: true })).toBeVisible();
   });
 }
+test("lost publication remains uncertain after Cancel and reopen until explicit status refresh", async ({
+  page,
+}) => {
+  const api = await mockTeacherPublicationsApi(page);
+  api.loseResponse = true;
+  await page.goto(`/teacher/generate?course=${COURSE_A}&draft=${SAVED.id}`);
+  await page
+    .getByRole("button", { name: "Publish notes", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Confirm publication", exact: true })
+    .click();
+  await expect(
+    page.getByText(
+      "Could not confirm publication. Refresh publication status before retrying.",
+      { exact: true },
+    ),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Cancel", exact: true }).click();
+  const publish = page.getByRole("button", {
+    name: "Publish notes",
+    exact: true,
+  });
+  if (await publish.isEnabled()) await publish.click();
+  const confirm = page.getByRole("button", {
+    name: "Confirm publication",
+    exact: true,
+  });
+  if (await confirm.count()) await expect(confirm).toBeDisabled();
+  await expect(
+    page.getByRole("button", {
+      name: "Refresh publication status",
+      exact: true,
+    }),
+  ).toBeVisible();
+  expect(api.publicationCalls).toBe(1);
+  await page
+    .getByRole("button", { name: "Refresh publication status", exact: true })
+    .click();
+  await expect(
+    page.getByText("Working draft · Published snapshot exists", {
+      exact: true,
+    }),
+  ).toBeVisible();
+  expect(api.publicationCalls).toBe(1);
+});
