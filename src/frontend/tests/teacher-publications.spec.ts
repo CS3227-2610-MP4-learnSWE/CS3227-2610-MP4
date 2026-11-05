@@ -68,7 +68,7 @@ for (const kind of ["note", "practice_set"] as const) {
     ).toBeVisible();
     await expect(
       page.getByRole("button", {
-        name: kind === "note" ? "Delete draft notes" : "Delete question batch",
+        name: kind === "note" ? "Delete note draft" : "Delete MCQ batch",
         exact: true,
       }),
     ).toBeDisabled();
@@ -254,7 +254,7 @@ test("legacy catalogue preserves withdrawn and unavailable provenance", async ({
     await expect(page.getByText(text, { exact: true }).last()).toBeVisible();
   for (const name of [
     "Edit notes",
-    "Delete draft notes",
+    "Delete note draft",
     "Publish notes",
     "Withdraw",
   ])
