@@ -1,6 +1,6 @@
 {
-  "phase": "3-prepared-awaiting-G3-armA",
-  "next_step": "G3 for arm A: USER runs /usage; on 'start now', USER launches arm A per launch-card.md in ..\u0007dm01-wt\\A. Then phase 4 (TRK-03, budget.py, grade_arm.py) in a new coordinator session.",
+  "phase": "3-G3-approved-armA-launching",
+  "next_step": "USER launches arm A in ..\u0007dm01-wt\\A per launch-card.md, then starts a coordinator session and pastes 'Resume Plan 2 from state.json'. Then phase 4 (TRK-03, budget.py, grade_arm.py).",
   "arm_order": [
     "A",
     "H3",
@@ -39,7 +39,8 @@
   "gate_answers": {
     "notes_branch": "exp/adm01-coord from master approved",
     "G1": "approved 2026-11-05: spec/plan/tasks as written; retention=keep forever; generation paths = notes+MCQ create only (verified: LLM call sites are chatbot, teacher_notes, teacher_mcqs); unavailable=200; future end ok; single start/end=422",
-    "G2": "approved 2026-11-05: tools as committed (768b1b9); USER will start Docker + postgres:16 on 127.0.0.1:55432 before grading"
+    "G2": "approved 2026-11-05: tools as committed (768b1b9); USER will start Docker + postgres:16 on 127.0.0.1:55432 before grading",
+    "G3_A": "approved 2026-11-05 by USER ('start now'); usage numbers as in usage_baseline; cap 15 USD; launch is manual in a fresh session"
   },
   "spec_writer": {
     "speccheck": "OK",
