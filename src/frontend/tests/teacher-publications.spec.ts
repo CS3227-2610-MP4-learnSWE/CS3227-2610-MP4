@@ -237,7 +237,7 @@ test("legacy catalogue preserves withdrawn and unavailable provenance", async ({
     ...snapshot(),
     withdrawn: true,
     topic_id: null,
-    topic_name: null,
+    topic_name: "General",
     source_draft_id: null,
     source_version: null,
   };

@@ -322,9 +322,13 @@ def test_tea03_publications_migration_preserves_legacy_and_guards_downgrade(tea0
             migrate('upgrade','20261104_stu01_lessons')
             db.execute('INSERT INTO course(id,title) VALUES(%s,\'Migration course\')',(COURSE,))
             db.execute('INSERT INTO "user"(id,display_name,role) VALUES(\'demo-teacher\',\'Teacher\',\'teacher\')')
+            db.execute('INSERT INTO "user"(id,display_name,role) VALUES(\'demo-student\',\'Student\',\'student\')')
             old=str(uuid.uuid4())
             db.execute("INSERT INTO published_lesson(id,course_id,title,content,published_by) VALUES(%s,%s,'Legacy','Preserve me','demo-teacher')",(old,COURSE))
+            db.execute("INSERT INTO lesson_completion(user_id,lesson_id,course_id,completed,completed_at) VALUES('demo-student',%s,%s,true,now())",(old,COURSE))
+            completion=db.execute('SELECT user_id,lesson_id,course_id,completed,completed_at FROM lesson_completion').fetchall()
             migrate('upgrade','head')
+            assert db.execute('SELECT user_id,lesson_id,course_id,completed,completed_at FROM lesson_completion').fetchall()==completion
             assert db.execute('SELECT version_num FROM alembic_version').fetchone()[0]=='20261105_tea03_publications'
             assert db.execute('SELECT content,source_version FROM published_lesson WHERE id=%s',(old,)).fetchone()==('Preserve me',None)
             for bad in [0,-1]:
@@ -337,6 +341,7 @@ def test_tea03_publications_migration_preserves_legacy_and_guards_downgrade(tea0
             db.execute('UPDATE published_lesson SET source_version=NULL WHERE id=%s',(old,))
             migrate('downgrade','20261104_stu01_lessons')
             assert db.execute('SELECT content FROM published_lesson WHERE id=%s',(old,)).fetchone()==('Preserve me',)
+            assert db.execute('SELECT user_id,lesson_id,course_id,completed,completed_at FROM lesson_completion').fetchall()==completion
             migrate('upgrade','head')
             assert db.execute('SELECT source_version FROM published_lesson WHERE id=%s',(old,)).fetchone()==(None,)
             assert db.execute("SELECT to_regclass('published_practice_question') IS NOT NULL").fetchone()[0]
