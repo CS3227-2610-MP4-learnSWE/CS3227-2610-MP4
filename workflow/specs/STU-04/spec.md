@@ -1,6 +1,6 @@
 # Spec: STU-04 Progress dashboard
 
-Status: Draft (written 2026-11-05 for review; the seven decisions listed under "Decisions" were given by the user on 2026-11-05; not yet approved)
+Status: Approved by the user on 2026-11-05 (the seven decisions under "Decisions" and the default answers to the open questions were given by the user the same day)
 
 ## Goal
 From the user stories: a student views lesson completion and saved practice scores so that they can understand how their learning is progressing (US-STU-04-01), and sees the topics that need further practice, identified from their recorded results by a documented rule (US-STU-04-02).
