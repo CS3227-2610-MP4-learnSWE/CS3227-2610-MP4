@@ -12,6 +12,7 @@ import {
   signInThroughForm,
 } from "./authApi";
 import { companionOk, mockCompanionApi } from "./companionApi";
+import { signedInStudy } from "./lessonsApi";
 import { mockPracticeApi } from "./practiceApi";
 
 /**
@@ -219,10 +220,11 @@ test("shr01 AC25 demo mode: a 401 on the companion shows the sign-in notice and 
 test("shr01 AC25 demo mode: the sample screens still work without any session", async ({
   page,
 }) => {
-  await mockAuthApi(page, { user: null });
-  await page.goto("/student/materials/clean-code");
+  // STU-01: the built-in sample lessons are gone; the Overview is still a sample screen in demo mode.
+  await signedInStudy(page, { user: null });
+  await page.goto("/student/overview");
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
-  await expect(page).toHaveURL(/\/student\/materials\/clean-code$/);
+  await expect(page).toHaveURL(/\/student\/overview$/);
   await expect(page.getByText(NOTICE)).toHaveCount(0);
 });
 

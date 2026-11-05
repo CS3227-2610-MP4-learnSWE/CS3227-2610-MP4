@@ -318,7 +318,7 @@ def test_tea03_mcq_edit_migration_backfill_down_up_and_constraints(tea01_databas
             mid,bid=uuid.uuid4(),uuid.uuid4()
             db.execute("INSERT INTO material(id,course_id,uploaded_by,title,original_filename,media_type,size_bytes) VALUES(%s,%s,'demo-teacher','Source','s.txt','text/plain',1)",(mid,COURSE))
             db.execute("INSERT INTO mcq_draft_batch(id,course_id,source_material_id,created_by,source_title,created_at) VALUES(%s,%s,%s,'demo-teacher','Original','2026-11-01T00:00:00Z')",(bid,COURSE,mid))
-            migrate('upgrade','head')
+            migrate('upgrade','20261104_tea03_mcq_edit')
             row=db.execute('SELECT version,created_at,updated_at,created_by,updated_by FROM mcq_draft_batch WHERE id=%s',(bid,)).fetchone()
             assert row[0]==1 and row[1]==row[2] and row[3]==row[4]=='demo-teacher'
             assert db.execute('SELECT version_num FROM alembic_version').fetchone()[0]=='20261104_tea03_mcq_edit'

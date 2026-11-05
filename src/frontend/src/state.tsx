@@ -2,27 +2,17 @@ import { createContext, useContext, useState, type ReactNode } from "react";
 import { initialMessages, type Role, type DemoMessage } from "./data";
 
 type DemoState = {
-  completed: string[];
-  toggleCompleted: (id: string) => void;
   messages: Record<Role, DemoMessage[]>;
   read: (role: Role, id: string) => void;
 };
 const Context = createContext<DemoState | null>(null);
 export function DemoProvider({ children }: { children: ReactNode }) {
-  const [completed, setCompleted] = useState<string[]>([]);
   const [messages, setMessages] = useState<Record<Role, DemoMessage[]>>({
     student: initialMessages.map((m) => ({ ...m })),
     teacher: initialMessages.map((m) => ({ ...m })),
     admin: [],
   });
   const value: DemoState = {
-    completed,
-    toggleCompleted: (id) =>
-      setCompleted((items) =>
-        items.includes(id)
-          ? items.filter((item) => item !== id)
-          : [...items, id],
-      ),
     messages,
     read: (role, id) =>
       setMessages((items) => ({

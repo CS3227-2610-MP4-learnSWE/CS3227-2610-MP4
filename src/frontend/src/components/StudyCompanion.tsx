@@ -18,7 +18,7 @@ import {
   Tooltip,
 } from "@mui/material";
 import { MessageCircle, RotateCcw, Send, Sparkles, X } from "lucide-react";
-import { lessons, navigation } from "../data";
+import { navigation } from "../data";
 import { usePractice } from "../practice/PracticeContext";
 import { ApiError } from "../services/client";
 import { sendCompanionMessage } from "../services/companion";
@@ -112,12 +112,7 @@ export default function StudyCompanion() {
   const { submitted, submittedAttemptId, setId } = usePractice();
   const location = useLocation();
   const path = location.pathname.split("/");
-  const lesson =
-    path[2] === "materials" && path[3]
-      ? lessons.find((item) => item.id === path[3])
-      : undefined;
   const page =
-    lesson?.title ||
     navigation.student.find((item) => item.path === path[2])?.label ||
     (path[2] === "feedback" ? "Feedback form" : "Student overview");
   const launcher = useRef<HTMLButtonElement>(null);
