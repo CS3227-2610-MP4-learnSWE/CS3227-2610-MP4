@@ -1,6 +1,6 @@
 {
   "phase": "3-H3-done-awaiting-G3-H1",
-  "next_step": "G3 for H1: not before 23:18 SGT (65 min after H3 last request 22:13:07 SGT). USER runs /usage, says 'start now', launches H1 in adm01-wt\\H1 with arm-template.md. Cap for H1 = 2.536 USD. First DECIDE confound: see confounds. REQUIRES: Docker postgres:16 up on 127.0.0.1:55432 and TEA01_TEST_DATABASE_URL set (see gate_answers.confound_db) before launching H1.",
+  "next_step": "G3 for H1: not before 23:18 SGT (65 min after H3 last request 22:13:07 SGT). USER runs /usage, says 'start now', launches H1 in adm01-wt\\H1 with arm-template.md. Cap for H1 = 2.536 USD. First DECIDE confound: see confounds.",
   "arm_order": [
     "A",
     "H3",
@@ -48,7 +48,7 @@
     "G2": "approved 2026-11-05: tools as committed (768b1b9); USER will start Docker + postgres:16 on 127.0.0.1:55432 before grading",
     "G3_A": "approved 2026-11-05 by USER ('start now'); usage numbers as in usage_baseline; cap 15 USD; launch is manual in a fresh session",
     "G3_H3": "USER 'start now' 2026-11-05; cap 2.536 USD; gap to be checked against A last request 19:15:25 SGT",
-    "confound_db": "USER chose option 1 (2026-11-05): before H1, H2, C the USER starts postgres:16 on 127.0.0.1:55432 and sets TEA01_TEST_DATABASE_URL in the environment the arm VS Code is launched from. Prompts unchanged. A (no DB) and H3 (own container) are caveated in the results; A is the odd arm out."
+    "confound_db": "USER changed to option 2 (2026-11-05): no DB provided to arms; arms run as-is. Whether each arm ran tests against Postgres (A: no, H3: own container) is a per-arm outcome to report as a confound. Docker/postgres:16 on 127.0.0.1:55432 still needed by USER for phase 4 grading only."
   },
   "spec_writer": {
     "speccheck": "OK",
