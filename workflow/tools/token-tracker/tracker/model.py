@@ -45,6 +45,11 @@ class UsageRow:
     reasoning_tokens: int
     cost_usd: float | None = None
 
+    @property
+    def prompt_tokens(self) -> int:
+        """Request size used to pick a price tier: input plus cache reads and both cache-write types."""
+        return self.input_tokens + self.cache_read_tokens + self.cache_write_5m_tokens + self.cache_write_1h_tokens
+
     def as_csv_dict(self) -> dict:
         data = asdict(self)
         data["is_subagent"] = "true" if self.is_subagent else "false"

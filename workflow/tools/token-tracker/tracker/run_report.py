@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
+from .mdtable import escape_cell
 from .model import UsageRow
 
 MANIFEST_COLUMNS = [
@@ -270,4 +271,4 @@ def _cell(value) -> str:
         return ""
     if isinstance(value, float):
         value = f"{value:.6f}"
-    return str(value).replace("\\", "\\\\").replace("|", "\\|").replace("\r\n", "\n").replace("\n", "<br>")
+    return escape_cell(str(value))
