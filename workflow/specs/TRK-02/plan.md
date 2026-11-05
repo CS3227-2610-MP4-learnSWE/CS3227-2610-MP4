@@ -5,7 +5,7 @@
 - `invocation_id` is unique across manifests; `feature_run_id` is the grouping key and directory name.
 - One invocation can use multiple models; report `model(s)` as a sorted, semicolon-separated list and aggregate the per-model costs already computed on each `UsageRow`.
 - Keep existing `UsageRow` and aggregate summary schemas unchanged.
-- Report columns: `record, feature_run_id, invocation_id, role, model(s), effort, elapsed, requests, input, cache_read, cache_write_5m, cache_write_1h, output, reasoning, cost_usd`. Invocation rows use `record=invocation`; the final row uses `record=feature_run_total` and blank `invocation_id`.
+- Report columns: `record, feature_run_id, invocation_id, role, model(s), effort, elapsed, requests, input, cache_read, cache_write_5m, cache_write_1h, output, reasoning, cost_usd`. Invocation rows use `record=invocation`; the final row uses `record=feature_run_total` and blank `invocation_id`. Total elapsed is latest finish minus earliest start, not the sum of potentially overlapping agent times.
 
 ## API endpoints
 Not applicable: local CLI tool.
