@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { Link, useLocation } from "react-router";
+import { useNavigate, useLocation } from "react-router";
 import {
   Button,
   Dialog,
@@ -40,6 +40,7 @@ export default function PublishDraft({
   onReload,
 }: Props) {
   const location = useLocation();
+  const navigate = useNavigate();
   const epoch = useRef(0);
   const pending = useRef(false);
   const [open, setOpen] = useState(false);
@@ -55,7 +56,7 @@ export default function PublishDraft({
   const [reload, setReload] = useState(false);
   const [uncertain, setUncertain] = useState(false);
   const refreshedFrom = useRef<number | null>(null);
-  const view = useRef<HTMLAnchorElement>(null);
+  const view = useRef<HTMLButtonElement>(null);
   useLayoutEffect(() => {
     const invalidate = () => {
       epoch.current++;
@@ -185,7 +186,10 @@ export default function PublishDraft({
             This draft was published once. Changes here remain private and
             cannot update or republish the published version.
           </p>
-          <Button component={Link} ref={view} to={publicationPath(published)}>
+          <Button
+            ref={view}
+            onClick={() => navigate(publicationPath(published))}
+          >
             View published version
           </Button>
         </>
@@ -291,7 +295,7 @@ export default function PublishDraft({
             </Button>
           )}
           {published && (
-            <Button component={Link} to={publicationPath(published)}>
+            <Button onClick={() => navigate(publicationPath(published))}>
               View published version
             </Button>
           )}
