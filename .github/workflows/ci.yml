@@ -66,12 +66,12 @@ jobs:
       - run: npm run build
       - name: Student bundles hold no answer key
         run: |
-          # Explanation texts may appear only in the lazy Teacher chunk.
+          # Answer explanations live on the backend, never in built frontend chunks.
           pattern="Tests protect expected behaviour|len returns the number of items|One focused responsibility makes"
-          chunks=$(ls dist/assets/*.js | grep -v '/Teacher-')
+          chunks=$(ls dist/assets/*.js)
           [ -n "$chunks" ] || { echo "No bundles found to scan"; exit 1; }
-          # Positive control: the scan must find the text where it is expected.
-          grep -Eq "$pattern" dist/assets/Teacher-*.js || { echo "Control failed: Teacher chunk has no explanation text"; exit 1; }
+          # Positive control: match the real server-side answer fixture.
+          grep -Eq "$pattern" ../backend/practice_data.py || { echo "Control failed: backend fixture has no explanation text"; exit 1; }
           if grep -El "$pattern" $chunks; then
             echo "Answer key text found in a student-reachable bundle"
             exit 1
