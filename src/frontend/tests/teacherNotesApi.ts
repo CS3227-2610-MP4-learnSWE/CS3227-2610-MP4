@@ -59,6 +59,18 @@ export class TeacherNotesApi extends TeacherMaterialsApi {
           message: "Upstream private sentinel must not be shown",
         },
       });
+    if (
+      method === "GET" &&
+      /^\/api\/teacher\/courses\/[^/]+\/publications$/.test(path)
+    ) {
+      this.requests.push({
+        method,
+        path,
+        body: request.postData(),
+        headers: request.headers(),
+      });
+      return json(200, []);
+    }
     const create = path.match(
       /^\/api\/teacher\/materials\/([^/]+)\/note-drafts$/,
     );

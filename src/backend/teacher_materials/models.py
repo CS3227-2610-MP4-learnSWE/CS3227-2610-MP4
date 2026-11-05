@@ -101,7 +101,7 @@ class McqDraftBatch(Base):
     updated_by: Mapped[str] = mapped_column(String(64), ForeignKey("user.id"))
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
-    __table_args__ = (ForeignKeyConstraint(["source_material_id", "course_id"], ["material.id", "material.course_id"]), CheckConstraint("version >= 1", name="ck_mcq_version_positive"))
+    __table_args__ = (UniqueConstraint("id", "course_id", name="uq_mcq_batch_id_course"), ForeignKeyConstraint(["source_material_id", "course_id"], ["material.id", "material.course_id"]), CheckConstraint("version >= 1", name="ck_mcq_version_positive"))
 
 
 class McqDraftQuestion(Base):

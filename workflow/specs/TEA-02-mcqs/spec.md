@@ -13,7 +13,7 @@ Implement US-TEA-02-02: “As a teacher, I want to generate practice questions f
 - Unusable output is identified clearly and failed requests preserve existing work.
 - Generated questions remain unpublished until reviewed and explicitly published.
 
-This increment also supplies the MCQ preview portion of US-TEA-03-01. Correction, approval, publication, practice-set assembly and student access are deferred. TEA-03 note editing was merged through PR 12 at master3069053; existing notes generation/editing remains operational.
+This increment also supplies the MCQ preview portion of US-TEA-03-01. Correction, approval, publication and student access were outside this historical increment. Future practice-set scope has since been simplified: publish all three questions from one reviewed batch as one set; there is no assembly requirement (see TEA-03-publishing). TEA-03 note editing was merged through PR 12 at master3069053; existing notes generation/editing remains operational.
 
 ## Acceptance criteria
 
