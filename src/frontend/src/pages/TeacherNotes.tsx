@@ -282,7 +282,7 @@ export default function TeacherNotes() {
                   ? "Working draft · Published snapshot exists"
                   : "Unpublished draft · Review required"}
               </Tag>
-              {!editing && (
+              <div hidden={editing}>
                 <PublishDraft
                   kind="note"
                   draft={shownDraft}
@@ -295,6 +295,12 @@ export default function TeacherNotes() {
                   disabled={busy || saving}
                   onReload={() => setDraftReload((value) => value + 1)}
                 />
+              </div>
+              {published && (
+                <p>
+                  This draft was published once. Changes here remain private and
+                  cannot update or republish the published version.
+                </p>
               )}
               {published && (
                 <p>

@@ -133,9 +133,12 @@ export default function PublishedContent() {
             value={filter}
             onChange={(event) => {
               const next = new URLSearchParams(params);
+              next.delete("kind");
+              next.delete("publication");
               if (event.target.value) next.set("type", event.target.value);
               else next.delete("type");
               setParams(next);
+              heading.current?.focus();
             }}
           >
             <MenuItem value="">All content</MenuItem>

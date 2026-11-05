@@ -1,3 +1,4 @@
+import { useTeacherReadLifetime } from "../hooks/useTeacherReadLifetime";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useNavigate, useLocation } from "react-router";
 import {
@@ -56,6 +57,7 @@ export default function PublishDraft({
   const [reload, setReload] = useState(false);
   const [uncertain, setUncertain] = useState(false);
   const refreshedFrom = useRef<number | null>(null);
+  useTeacherReadLifetime(`${open}/${draft.id}/${topicsRetry}`);
   const view = useRef<HTMLButtonElement>(null);
   useLayoutEffect(() => {
     const invalidate = () => {
@@ -124,7 +126,6 @@ export default function PublishDraft({
     setTitle("");
     setTopic("");
     setError("");
-    setUncertain(false);
     setReload(false);
   };
   const submit = async () => {
@@ -134,20 +135,22 @@ export default function PublishDraft({
     setError("");
     const owner = epoch.current;
     try {
-      const item = await publishDraft(kind, draft.id, {
+      const result = await publishDraft(kind, draft.id, {
         version: draft.version,
         title: strip(title),
         topic_id: topic,
       });
       if (owner !== epoch.current) return;
-      status.update(item);
+      status.update(result.publication);
       setOpen(false);
       setTitle("");
       setTopic("");
       setNotice(
-        kind === "note"
-          ? "Notes published. Enrolled students can read them in Study materials."
-          : "Practice set published. Student practice integration is pending.",
+        result.existing
+          ? "Already published. Showing the existing version."
+          : kind === "note"
+            ? "Notes published. Enrolled students can read them in Study materials."
+            : "Practice set published. Student practice integration is pending.",
       );
     } catch (reason) {
       if (owner !== epoch.current) return;
@@ -182,10 +185,6 @@ export default function PublishDraft({
       )}
       {published ? (
         <>
-          <p>
-            This draft was published once. Changes here remain private and
-            cannot update or republish the published version.
-          </p>
           <Button
             ref={view}
             onClick={() => navigate(publicationPath(published))}
@@ -199,8 +198,11 @@ export default function PublishDraft({
           disabled={disabled || !status.ready}
           onClick={() => {
             setTitle("title" in draft ? draft.title : draft.source_title);
-            setError("");
-            setUncertain(false);
+            setError(
+              uncertain
+                ? "Could not confirm publication. Refresh publication status before retrying."
+                : "",
+            );
             setOpen(true);
           }}
         >
@@ -322,30 +324,32 @@ export default function PublishDraft({
           </Button>
         </DialogActions>
       </Dialog>
-      <Dialog
-        open={reload}
-        onClose={() => setReload(false)}
-        aria-labelledby="reload-publication-title"
-      >
-        <DialogTitle id="reload-publication-title">
-          Reload latest draft?
-        </DialogTitle>
-        <DialogContent>
-          Reloading will discard the publication form entries. Review the latest
-          draft before publishing.
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setReload(false)}>Keep form</Button>
-          <Button
-            onClick={() => {
-              close();
-              onReload();
-            }}
-          >
-            Reload draft
-          </Button>
-        </DialogActions>
-      </Dialog>
+      {reload && (
+        <Dialog
+          open
+          onClose={() => setReload(false)}
+          aria-labelledby="reload-publication-title"
+        >
+          <DialogTitle id="reload-publication-title">
+            Reload latest draft?
+          </DialogTitle>
+          <DialogContent>
+            Reloading will discard the publication form entries. Review the
+            latest draft before publishing.
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setReload(false)}>Keep form</Button>
+            <Button
+              onClick={() => {
+                close();
+                onReload();
+              }}
+            >
+              Reload draft
+            </Button>
+          </DialogActions>
+        </Dialog>
+      )}
     </div>
   );
 }

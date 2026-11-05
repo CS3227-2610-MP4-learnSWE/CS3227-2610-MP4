@@ -130,6 +130,9 @@ export async function request(
 
 const teacherReads = new Map<string, Promise<unknown>>();
 let teacherMutationEpoch = 0;
+export function invalidateTeacherReads() {
+  teacherReads.clear();
+}
 
 /** Identical pending reads share one request, never data from a previous write/session. */
 export function requestTeacher(
@@ -138,24 +141,32 @@ export function requestTeacher(
   body?: FormData | object,
   blob = false,
   timeoutMs = REQUEST_TIMEOUT_MS,
+  includeStatus = false,
 ): Promise<unknown> {
   const verb = method.toUpperCase();
   if (verb === "GET") {
-    const key = `${getSessionGeneration()}:${teacherMutationEpoch}:${path}:${blob}:${timeoutMs}`;
+    const key = `${getSessionGeneration()}:${teacherMutationEpoch}:${path}:${blob}:${timeoutMs}:${includeStatus}`;
     const existing = teacherReads.get(key);
     if (existing) return existing;
-    const pending = sendTeacher(verb, path, body, blob, timeoutMs).finally(
-      () => {
-        if (teacherReads.get(key) === pending) teacherReads.delete(key);
-      },
-    );
+    const pending = sendTeacher(
+      verb,
+      path,
+      body,
+      blob,
+      timeoutMs,
+      includeStatus,
+    ).finally(() => {
+      if (teacherReads.get(key) === pending) teacherReads.delete(key);
+    });
     teacherReads.set(key, pending);
     return pending;
   }
   if (!SAFE_METHODS.includes(verb)) teacherMutationEpoch += 1;
-  return sendTeacher(verb, path, body, blob, timeoutMs).finally(() => {
-    if (!SAFE_METHODS.includes(verb)) teacherMutationEpoch += 1;
-  });
+  return sendTeacher(verb, path, body, blob, timeoutMs, includeStatus).finally(
+    () => {
+      if (!SAFE_METHODS.includes(verb)) teacherMutationEpoch += 1;
+    },
+  );
 }
 
 /** Teacher transport shares cookie/CSRF identity and handles empty DELETE responses. */
@@ -165,6 +176,7 @@ async function sendTeacher(
   body?: FormData | object,
   blob = false,
   timeoutMs = REQUEST_TIMEOUT_MS,
+  includeStatus = false,
 ): Promise<unknown> {
   const token = csrfToken;
   const headers: Record<string, string> = {};
@@ -187,12 +199,15 @@ async function sendTeacher(
               : JSON.stringify(body),
       },
       timeoutMs,
-      async (response) =>
-        response.status === 204
-          ? undefined
-          : blob
-            ? response.blob()
-            : response.json(),
+      async (response) => {
+        const data =
+          response.status === 204
+            ? undefined
+            : blob
+              ? await response.blob()
+              : await response.json();
+        return includeStatus ? { data, status: response.status } : data;
+      },
     );
   } catch (error) {
     if (

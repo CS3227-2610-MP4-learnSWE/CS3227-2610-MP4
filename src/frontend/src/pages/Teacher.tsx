@@ -1,3 +1,4 @@
+import { useTeacherReadLifetime } from "../hooks/useTeacherReadLifetime";
 import DeleteTeacherItem from "../components/DeleteTeacherItem";
 import { useLayoutEffect } from "react";
 import { useAuth } from "../auth/AuthContext";
@@ -190,6 +191,9 @@ function Materials({ notify }: Props) {
   const [dataReload, setDataReload] = useState(0);
   const loadCourses = () => setCourseReload((value) => value + 1);
   const refresh = () => setDataReload((value) => value + 1);
+  useTeacherReadLifetime(
+    `${courseId}/${topicFilter}/${dataReload}/${courseReload}`,
+  );
   useEffect(() => {
     let active = true;
     setLoading(true);
@@ -575,6 +579,7 @@ export default function Teacher({ notify }: Props) {
 }
 
 function TeacherData({ children }: { children: ReactNode }) {
+  useTeacherReadLifetime(useLocation().key);
   const { status, user } = useAuth();
   if (status === "loading") return <p role="status">Loading your session…</p>;
   if (status !== "authenticated" || user?.role !== "teacher")

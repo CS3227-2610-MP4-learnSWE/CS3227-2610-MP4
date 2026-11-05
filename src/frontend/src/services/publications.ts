@@ -100,13 +100,18 @@ export async function publishDraft(
   id: string,
   input: PublishInput,
 ) {
-  return detail(
-    await requestTeacher(
-      "POST",
-      `/api/teacher/${kind === "note" ? "note-drafts" : "mcq-drafts"}/${encodeURIComponent(id)}/publish`,
-      input,
-    ),
-  );
+  const response = (await requestTeacher(
+    "POST",
+    `/api/teacher/${kind === "note" ? "note-drafts" : "mcq-drafts"}/${encodeURIComponent(id)}/publish`,
+    input,
+    false,
+    undefined,
+    true,
+  )) as { data: unknown; status: number };
+  return {
+    publication: detail(response.data),
+    existing: response.status === 200,
+  };
 }
 export function publicationError(error: unknown, fallback: string) {
   if (!(error instanceof ApiError) || error.status === 0) return fallback;
