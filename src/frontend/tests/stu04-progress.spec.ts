@@ -469,8 +469,11 @@ test("stu04 AC15 a failed load keeps the heading and shows no data from an earli
   const { api } = await signedInProgress(page, { body: sampleProgress() });
   await page.goto("/student/progress");
   await expect(region(page, "Lesson progress")).toBeVisible();
-  api.script({ abort: true });
   await page.getByRole("link", { name: "Overview", exact: true }).click();
+  await expect(
+    page.getByRole("group", { name: "Lessons completed", exact: true }),
+  ).toContainText("1 / 3");
+  api.script({ abort: true });
   await page.getByRole("link", { name: "Progress", exact: true }).click();
   await expect(alertWith(page, MSG.offline)).toBeVisible();
   await expect(page.getByText("Software Engineering")).toHaveCount(0);
@@ -713,7 +716,7 @@ test("stu04 AC15 the page shows no chart and none of the removed sample figures"
   page,
 }) => {
   await openProgress(page);
-  const text = await page.locator("body").innerText();
+  const text = await page.locator("main").innerText();
   for (const t of [
     "82%",
     "2.4 hrs",
