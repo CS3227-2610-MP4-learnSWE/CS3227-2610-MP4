@@ -608,32 +608,30 @@ test("stu02fe AC8 scripts downloaded for /student/practice contain no answer key
   );
 });
 
-test("stu02fe AC8 teacher pages still show their demo answers (loaded on demand)", async ({
+test("stu02fe AC8 teacher answer snapshots remain teacher-only and loaded on demand", async ({
   page,
 }) => {
-  // Teacher pages are demo-mode screens (AC25): visit anonymously; a student session would be
-  // redirected home (AC22). A later route registration overrides the beforeEach sign-in.
-  await mockAuthApi(page, { user: null });
-  await mockPracticeApi(page);
-  await page.goto("/teacher/practice");
-  await expect(page.getByText(EXPLANATIONS[0]).first()).toBeVisible();
+  const { mockTeacherPublicationsApi, snapshot, COURSE_A } =
+    await import("./teacherPublicationsApi");
+  const api = await mockTeacherPublicationsApi(page);
+  const published = snapshot("practice_set");
+  published.questions![0].explanation = EXPLANATIONS[0];
+  published.questions![1].explanation = FIXTURE_KEY.q2.explanation;
+  api.publications = [published];
+  await page.goto(
+    `/teacher/review?course=${COURSE_A}&kind=practice_set&publication=${published.id}`,
+  );
   await expect(
-    page.getByText(FIXTURE_KEY.q2.explanation).first(),
+    page.getByRole("heading", { name: "Published content", exact: true }),
   ).toBeVisible();
-  await page.goto("/teacher/review");
-  await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
-  await page.getByRole("tab", { name: "Practice questions & answers" }).click();
-  await expect
-    .poll(async () =>
-      page
-        .locator("textarea, input")
-        .evaluateAll((els) =>
-          els.map((el) => (el as HTMLInputElement).value).join("\n"),
-        ),
-    )
-    .toContain(EXPLANATIONS[0]);
-  await page.goto("/admin/overview");
-  await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+  await expect(
+    page.getByText(`Explanation: ${FIXTURE_KEY.q2.explanation}`, {
+      exact: true,
+    }),
+  ).toBeVisible();
+  await expect(
+    page.getByText(`Explanation: ${EXPLANATIONS[0]}`, { exact: true }),
+  ).toBeVisible();
 });
 
 test("stu02fe AC9 study companion reflects submitted or not submitted on the Practice page", async ({

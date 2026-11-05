@@ -3532,3 +3532,13 @@ td .MuiButton-root {
 .mcq-editor-question {
   overflow-wrap: anywhere;
 }
+
+.publication-dialog-content > .MuiFormControl-root + .MuiFormControl-root {
+  margin-top: 16px;
+}
+.publication-viewer {
+  padding: 24px;
+}
+.publication-viewer > h2 {
+  margin-top: 0;
+}

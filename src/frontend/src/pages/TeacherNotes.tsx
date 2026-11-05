@@ -1,3 +1,5 @@
+import PublishDraft from "../components/PublishDraft";
+import { usePublications } from "../hooks/usePublications";
 import DeleteTeacherItem from "../components/DeleteTeacherItem";
 import { useAuth } from "../auth/AuthContext";
 import { useEffect, useRef, useState } from "react";
@@ -28,6 +30,7 @@ export default function TeacherNotes() {
   const queryCourse = params.get("course") || "";
   const draftId = params.get("draft") || "";
   const studio = useTeacherStudioSources(queryCourse, listNoteDrafts);
+  const publications = usePublications(studio.courseId);
   const [draft, setDraft] = useState<NoteDraft | null>(null);
   const [draftLoading, setDraftLoading] = useState(false);
   const [draftError, setDraftError] = useState("");
@@ -79,6 +82,9 @@ export default function TeacherNotes() {
   }, [studio.courseId, draftId, draftReload]);
   const shownDraft =
     draft?.course_id === studio.courseId && draft.id === draftId ? draft : null;
+  const published = publications.items.some(
+    (item) => item.kind === "note" && item.source_draft_id === shownDraft?.id,
+  );
   const changeCourse = (id: string) => {
     setParams(id ? { course: id } : {});
   };
@@ -253,7 +259,11 @@ export default function TeacherNotes() {
           </Panel>
         </div>
         <Panel className="draft-preview notes-viewer">
-          {draftLoading && <p role="status">Loading draft…</p>}
+          {draftLoading && (
+            <p role="status">
+              {draftReload ? "Loading latest draft…" : "Loading draft…"}
+            </p>
+          )}
           {draftError && (
             <div role="alert">
               {draftError}
@@ -267,7 +277,37 @@ export default function TeacherNotes() {
           )}
           {shownDraft ? (
             <>
-              <Tag tone="purple">Unpublished draft · Review required</Tag>
+              <Tag tone="purple">
+                {published
+                  ? "Working draft · Published snapshot exists"
+                  : "Unpublished draft · Review required"}
+              </Tag>
+              <div hidden={editing}>
+                <PublishDraft
+                  kind="note"
+                  draft={shownDraft}
+                  sourceTopic={
+                    studio.materials.find(
+                      (item) => item.id === shownDraft.source_material_id,
+                    )?.topic_id
+                  }
+                  status={publications}
+                  disabled={busy || saving}
+                  onReload={() => setDraftReload((value) => value + 1)}
+                />
+              </div>
+              {published && (
+                <p>
+                  This draft was published once. Changes here remain private and
+                  cannot update or republish the published version.
+                </p>
+              )}
+              {published && (
+                <p>
+                  A published snapshot references this draft and prevents
+                  deletion.
+                </p>
+              )}
               <NoteDraftEditor
                 key={`${studio.courseId}/${shownDraft.id}`}
                 draft={shownDraft}
@@ -278,35 +318,38 @@ export default function TeacherNotes() {
                   studio.updateDraft(saved);
                 }}
               />
-              {!editing && (
-                <DeleteTeacherItem
-                  key={shownDraft.id}
-                  kind="note"
-                  name={shownDraft.title}
-                  remove={() =>
-                    deleteNoteDraft(shownDraft.id, shownDraft.version)
-                  }
-                  onDeleted={() => {
-                    setSuccess("Note draft deleted.");
-                    setDeletions((value) => value + 1);
-                    setParams({ course: studio.courseId });
-                    studio.reloadResources();
-                  }}
-                  onLatest={async () => {
-                    const request = start();
-                    if (!request) return;
-                    try {
-                      const latest = await getNoteDraft(shownDraft.id);
-                      if (request.isCurrent()) {
-                        setDraft(latest);
-                        studio.updateDraft(latest);
-                      }
-                    } finally {
-                      request.finish();
+              {!editing &&
+                (!publications.ready || published ? (
+                  <Button disabled>Delete note draft</Button>
+                ) : (
+                  <DeleteTeacherItem
+                    key={shownDraft.id}
+                    kind="note"
+                    name={shownDraft.title}
+                    remove={() =>
+                      deleteNoteDraft(shownDraft.id, shownDraft.version)
                     }
-                  }}
-                />
-              )}
+                    onDeleted={() => {
+                      setSuccess("Note draft deleted.");
+                      setDeletions((value) => value + 1);
+                      setParams({ course: studio.courseId });
+                      studio.reloadResources();
+                    }}
+                    onLatest={async () => {
+                      const request = start();
+                      if (!request) return;
+                      try {
+                        const latest = await getNoteDraft(shownDraft.id);
+                        if (request.isCurrent()) {
+                          setDraft(latest);
+                          studio.updateDraft(latest);
+                        }
+                      } finally {
+                        request.finish();
+                      }
+                    }}
+                  />
+                ))}
             </>
           ) : (
             !draftLoading &&
