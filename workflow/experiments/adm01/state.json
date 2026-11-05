@@ -1,0 +1,28 @@
+{
+  "phase": "0-complete",
+  "next_step": "Phase 1: shared ADM-01 spec on exp/adm01-setup (own session)",
+  "arm_order": ["A", "H3", "H1", "H2", "C"],
+  "arms_done": [],
+  "arm_costs_usd": {},
+  "caps_usd": {"A": 15},
+  "branches": {"coord": "exp/adm01-coord", "setup": null, "frozen": null},
+  "tags": {"adm01-start": null},
+  "master_commit_at_preflight": "e5e617c",
+  "preflight": {
+    "date": "2026-11-05",
+    "master_clean": true,
+    "trk03_in_master": true,
+    "haiku_price_present": true,
+    "tracker_tests": "167 passed"
+  },
+  "usage_baseline": {
+    "plan": "30 SGD plan",
+    "session_used_pct": 40,
+    "session_resets": "8:20pm SGT",
+    "weekly_used_pct": 6,
+    "note": "reported by USER on 2026-11-05; USD-equivalent headroom not converted"
+  },
+  "gate_answers": {
+    "notes_branch": "exp/adm01-coord from master approved"
+  }
+}
