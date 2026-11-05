@@ -13,6 +13,8 @@ feature ID -> spec-writer -> [human approves spec + plan/contract]
 
 The orchestrator is the session that runs the workflow: it starts the agents, passes messages between them, does the merges and writes `notes.md`.
 
+For every feature run, the orchestrator creates `workflow/usage/runs/<feature-run-id>/invocations.csv`. When it starts an agent, it adds one unique invocation ID, role, effort setting, provider tool/session/agent IDs and start time; when the agent returns, it fills the finish time. At run completion, the orchestrator generates and commits `report.md` beside the manifest and links it from `experiments/resource-log.md`. This records each start separately, including repeated developer or verifier starts.
+
 ## Triggers
 - spec-writer: a feature is chosen from `docs/FeatureList.md`.
 - developer and test-designer: spec and plan marked Approved. Before starting them, the orchestrator records the start commit (`git rev-parse HEAD` on the run branch). They start together; the test-designer is started with worktree isolation and given the start commit, which it resets its worktree to first, because a new worktree may be cut from a different branch.

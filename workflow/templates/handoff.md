@@ -2,6 +2,10 @@
 - Done:
 - Next (agent + task):
 - Files touched:
+- Invocation ID(s) for this handoff:
+- Model(s) and effort setting:
+- Elapsed wall-clock time:
+- Feature-run report path (added by orchestrator at run completion):
 - Decisions / open questions:
 - Blocking findings:
 - Resource use (all required; write "n/a" only with a reason):

@@ -1,6 +1,6 @@
 # Feature status
 
-One row per feature in `docs/FeatureList.md` (plus workflow tooling). The orchestrator updates the row when a feature changes stage. State as of 2026-11-04 on `feat/tea03-edit-mcqs-delete-drafts`, from `master` at `da57eab` (PR16, after PR15). Details and history: `notes.md`, `notes-archive.md`.
+One row per feature in `docs/FeatureList.md` (plus workflow tooling). The orchestrator updates the row when a feature changes stage. State as of 2026-11-05 on `feat/token-tracker-invocation-report`, based on `origin/master` at `5d2b23d`. Details and history: `notes.md`, `notes-archive.md`.
 
 Stages: not started, spec, build, verified (local), merged.
 
@@ -29,4 +29,5 @@ Stages: not started, spec, build, verified (local), merged.
 | OPT-01 to OPT-03 | not started | | | Outside the MVP. |
 | CI-01 | merged | `chore/ci` | 4 | Deployment jobs blocked on hosting; see `deployment.md`. |
 | TRK-01 | merged | `feat/token-tracker` | 2 | Prices must be checked against provider pricing. |
+| TRK-02 | verified (local) | `feat/token-tracker-invocation-report` | | Invocation-level Markdown reports; team adoption requires each teammate to add local log IDs to the run manifest. |
 | CHK-01 | verified (local), CI green, awaiting review | `claude/spec-check-455c55` | 19 | Spec checker for the spec-writer rules; 289 tests pass; verifier NOT PASS in rounds 1 and 2, then a narrow round 3 passed after a user-approved final fix; CI job not yet run on GitHub; STU-01 specs enforced after merge. |
