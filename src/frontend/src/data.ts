@@ -19,7 +19,7 @@ export const navigation: Record<
     { path: "overview", label: "Overview", icon: "overview" },
     { path: "materials", label: "Materials library", icon: "book" },
     { path: "generate", label: "AI content studio", icon: "sparkles" },
-    { path: "review", label: "Review & publish", icon: "review" },
+    { path: "review", label: "Published content", icon: "review" },
     { path: "inbox", label: "Inbox", icon: "inbox" },
   ],
   admin: [

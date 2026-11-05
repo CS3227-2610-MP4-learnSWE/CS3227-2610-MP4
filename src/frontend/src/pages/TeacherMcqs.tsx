@@ -1,3 +1,5 @@
+import PublishDraft from "../components/PublishDraft";
+import { usePublications } from "../hooks/usePublications";
 import McqDraftEditor from "./McqDraftEditor";
 import DeleteTeacherItem from "../components/DeleteTeacherItem";
 import { useAuth } from "../auth/AuthContext";
@@ -28,6 +30,7 @@ export default function TeacherMcqs() {
   const queryCourse = params.get("course") || "";
   const draftId = params.get("batch") || "";
   const studio = useTeacherStudioSources(queryCourse, listMcqDrafts);
+  const publications = usePublications(studio.courseId);
   const [draft, setDraft] = useState<McqDraft | null>(null);
   const [draftLoading, setDraftLoading] = useState(false);
   const [draftError, setDraftError] = useState("");
@@ -79,6 +82,10 @@ export default function TeacherMcqs() {
   }, [studio.courseId, draftId, draftReload]);
   const shownDraft =
     draft?.course_id === studio.courseId && draft.id === draftId ? draft : null;
+  const published = publications.items.some(
+    (item) =>
+      item.kind === "practice_set" && item.source_draft_id === shownDraft?.id,
+  );
   const changeCourse = (id: string) => {
     setParams(id ? { tab: "questions", course: id } : { tab: "questions" });
   };
@@ -194,7 +201,7 @@ export default function TeacherMcqs() {
             </p>
             <p>
               One batch of three questions will be published as one practice
-              set. Publishing is not available yet.
+              set. Review the saved batch before publishing.
             </p>
             {!studio.resourcesLoading &&
               studio.courseId &&
@@ -271,7 +278,11 @@ export default function TeacherMcqs() {
           </Panel>
         </div>
         <Panel className="draft-preview notes-viewer">
-          {draftLoading && <p role="status">Loading draft…</p>}
+          {draftLoading && (
+            <p role="status">
+              {draftReload ? "Loading latest draft…" : "Loading draft…"}
+            </p>
+          )}
           {draftError && (
             <div role="alert">
               {draftError}
@@ -289,7 +300,31 @@ export default function TeacherMcqs() {
           )}
           {shownDraft ? (
             <>
-              <Tag tone="purple">Unpublished draft · Review required</Tag>
+              <Tag tone="purple">
+                {published
+                  ? "Working draft · Published snapshot exists"
+                  : "Unpublished draft · Review required"}
+              </Tag>
+              {!editing && (
+                <PublishDraft
+                  kind="practice_set"
+                  draft={shownDraft}
+                  sourceTopic={
+                    studio.materials.find(
+                      (item) => item.id === shownDraft.source_material_id,
+                    )?.topic_id
+                  }
+                  status={publications}
+                  disabled={busy || saving}
+                  onReload={() => setDraftReload((value) => value + 1)}
+                />
+              )}
+              {published && (
+                <p>
+                  A published snapshot references this draft and prevents
+                  deletion.
+                </p>
+              )}
               <McqDraftEditor
                 key={shownDraft.id}
                 draft={shownDraft}
@@ -300,32 +335,39 @@ export default function TeacherMcqs() {
                 onEditingChange={setEditing}
                 onSavingChange={setSaving}
                 deleteControl={
-                  <DeleteTeacherItem
-                    kind="batch"
-                    name={shownDraft.source_title}
-                    remove={() =>
-                      deleteMcqDraft(shownDraft.id, shownDraft.version)
-                    }
-                    onDeleted={() => {
-                      setSuccess("MCQ batch deleted.");
-                      setDeletions((value) => value + 1);
-                      setParams({ tab: "questions", course: studio.courseId });
-                      studio.reloadResources();
-                    }}
-                    onLatest={async () => {
-                      const request = start();
-                      if (!request) return;
-                      try {
-                        const latest = await getMcqDraft(shownDraft.id);
-                        if (request.isCurrent()) {
-                          setDraft(latest);
-                          studio.updateDraft(latest);
-                        }
-                      } finally {
-                        request.finish();
+                  !publications.ready || published ? (
+                    <Button disabled>Delete MCQ batch</Button>
+                  ) : (
+                    <DeleteTeacherItem
+                      kind="batch"
+                      name={shownDraft.source_title}
+                      remove={() =>
+                        deleteMcqDraft(shownDraft.id, shownDraft.version)
                       }
-                    }}
-                  />
+                      onDeleted={() => {
+                        setSuccess("MCQ batch deleted.");
+                        setDeletions((value) => value + 1);
+                        setParams({
+                          tab: "questions",
+                          course: studio.courseId,
+                        });
+                        studio.reloadResources();
+                      }}
+                      onLatest={async () => {
+                        const request = start();
+                        if (!request) return;
+                        try {
+                          const latest = await getMcqDraft(shownDraft.id);
+                          if (request.isCurrent()) {
+                            setDraft(latest);
+                            studio.updateDraft(latest);
+                          }
+                        } finally {
+                          request.finish();
+                        }
+                      }}
+                    />
+                  )
                 }
               />
             </>

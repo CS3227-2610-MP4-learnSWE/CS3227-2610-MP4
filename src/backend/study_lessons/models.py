@@ -2,7 +2,7 @@
 from datetime import datetime
 from uuid import UUID, uuid4
 
-from sqlalchemy import Boolean, CheckConstraint, DateTime, ForeignKey, ForeignKeyConstraint, Index, String, Text, UniqueConstraint, Uuid, func
+from sqlalchemy import Boolean, CheckConstraint, DateTime, ForeignKey, ForeignKeyConstraint, Index, Integer, String, Text, UniqueConstraint, Uuid, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from teacher_materials.models import Base
@@ -16,10 +16,12 @@ class PublishedLesson(Base):
     title: Mapped[str] = mapped_column(String(200))
     content: Mapped[str] = mapped_column(Text)
     source_draft_id: Mapped[UUID | None] = mapped_column(Uuid, ForeignKey("study_note_draft.id", ondelete="RESTRICT"), nullable=True)
+    source_version: Mapped[int | None] = mapped_column(Integer, nullable=True)
     published_by: Mapped[str] = mapped_column(String(64), ForeignKey("user.id"))
     published_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     withdrawn_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     __table_args__ = (
+        CheckConstraint("source_version IS NULL OR source_version >= 1", name="ck_lesson_source_version"),
         ForeignKeyConstraint(["topic_id", "course_id"], ["topic.id", "topic.course_id"]),
         CheckConstraint("char_length(title) between 1 and 200", name="ck_published_lesson_title_length"),
         CheckConstraint("char_length(content) between 1 and 2000", name="ck_published_lesson_content_length"),
