@@ -4,6 +4,12 @@ Newest entry first. Use `templates/handoff.md`. Older entries describe the state
 
 
 
+## 2026-11-06: ADM-01 experiment finished (coordinator)
+- Done: Q1 frozen suite v2 on A/H1/H2/H3 (A 152/153; H arms 153/153), blind Q2 on all four (H2 NOT PASS, others PASS), comparison. All H arms capped and costlier than A (+54% to +78%): reject; C not run.
+- Files: `workflow/experiments/adm01/results/` (review-pack.md, try-it.md, reflection-draft.md, comparison.html), `grading/key.json`, `state.json`. Branch `exp/adm01-coord`; nothing pushed, no PR.
+- Open for the human team (G5): add the reflection to docs/Reflections.md; adopt no hypotheses (recommended); no PR (no winner); push. Acknowledge the H arms' edits to test_tea03_publications.py. Worktrees ..\adm01-wt\x1 to x4 and the adm01-pg container can be removed.
+- Resource use: tracker run yes (TRK-03 from session logs); arm sum about 9.92 USD list price.
+
 ## 2026-11-05: Fix obsolete CI teacher-answer positive control (orchestrator)
 - Done: user-reported CI failure reproduced exactly after fresh build. Publishing removed teacherDemo answers; CI still required them inside Teacher chunk. Positive control now uses backend fixture; scan includes ALL JS, no teacher exemption. README/DeveloperGuide aligned. No app/runtime changes.
 - Evidence: original exact YAML step RED; corrected clean build GREEN; injected index and Teacher explanation controls both rejected; cleanup/final scan/build/typecheck/diffcheck PASS. Full app suites unchanged/not rerun; remote GitHub CI not rerun. See logs/TeacherPublicationCiCheckFix.md and security log.
