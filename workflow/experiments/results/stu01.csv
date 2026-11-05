@@ -1,0 +1,7 @@
+agent_type,model,requests,input_tokens,cache_read_tokens,cache_write_5m_tokens,cache_write_1h_tokens,output_tokens,reasoning_tokens,cost_usd
+developer,claude-sonnet-5-5,113,226,9898775,278696,0,73472,13265,2.421790
+main,claude-sonnet-5-5,116,312,17057446,0,368099,67162,14304,3.850385
+spec-writer,claude-sonnet-5-5,19,38,1296336,119129,0,39621,13619,0.823742
+test-designer,claude-sonnet-5-5,145,310,18540482,761203,0,136713,28715,5.124806
+verifier,claude-opus-5-5,58,116,3492767,161180,0,39030,17934,2.285517
+TOTAL,,451,1002,50285806,1320208,368099,355998,87837,14.506239

@@ -139,6 +139,7 @@ jobs:
           uv run alembic upgrade head
           uv run python -m teacher_materials.seed
           uv run python -m auth.seed
+          uv run python -m study_lessons.seed
       - name: Start backend
         working-directory: src/backend
         run: |

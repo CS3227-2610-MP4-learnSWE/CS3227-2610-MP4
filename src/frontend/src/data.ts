@@ -32,44 +32,6 @@ export const navigation: Record<
     { path: "usage", label: "AI usage", icon: "usage" },
   ],
 };
-export const lessons = [
-  {
-    id: "clean-code",
-    title: "Small functions, clear intentions",
-    topic: "Clean code",
-    description: "Write code your future self will thank you for.",
-    duration: "12 min",
-    chapter: "03",
-    tone: "blue",
-    progress: 65,
-    sourceStatus: "Published",
-    updated: "Today",
-  },
-  {
-    id: "testing",
-    title: "Tests that give you confidence",
-    topic: "Software testing",
-    description: "Build a safety net, one useful test at a time.",
-    duration: "18 min",
-    chapter: "04",
-    tone: "purple",
-    progress: 0,
-    sourceStatus: "Draft",
-    updated: "Yesterday",
-  },
-  {
-    id: "git",
-    title: "A better way to work together",
-    topic: "Version control",
-    description: "Branches, commits and thoughtful collaboration.",
-    duration: "15 min",
-    chapter: "05",
-    tone: "green",
-    progress: 0,
-    sourceStatus: "Draft",
-    updated: "Yesterday",
-  },
-];
 export const initialMessages = [
   {
     id: "survey",
