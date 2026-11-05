@@ -269,8 +269,8 @@ export default function NoteDraftEditor({
             Edit notes
           </Button>
           <p className="muted">
-            Draft notes remain private. Publishing will be added in a later
-            increment.
+            Draft edits remain private. Publish a reviewed saved draft from the
+            read-only viewer.
           </p>
         </>
       )}

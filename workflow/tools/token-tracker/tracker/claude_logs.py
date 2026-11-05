@@ -18,30 +18,44 @@ def read_claude_rows(claude_dir: Path) -> list[UsageRow]:
         return []
     best: dict[tuple, UsageRow] = {}
     for path in sorted(projects.rglob("*.jsonl")):
-        agent_type = _agent_type(path)
+        file_agent_type = agent_type(path)
         for obj in read_objects(path):
-            parsed = _row_from_line(obj, path, agent_type)
+            parsed = row_from_line(obj, path, file_agent_type)
             if parsed is None:
                 continue
             key, row = parsed
-            kept = best.get(key)
-            if kept is None or row.output_tokens >= kept.output_tokens:
-                best[key] = row
+            keep_largest(best, key, row)
     return list(best.values())
 
 
-def _agent_type(path: Path) -> str:
+def keep_largest(best: dict, key: tuple, row: UsageRow) -> None:
+    """A message logged several times is kept once, as the line with the largest `output_tokens`."""
+    kept = best.get(key)
+    if kept is None or row.output_tokens >= kept.output_tokens:
+        best[key] = row
+
+
+def agent_meta(path: Path) -> dict | None:
+    """The parsed `.meta.json` object of a subagent file, or None if missing, unreadable or not an object."""
+    if path.parent.name != "subagents":
+        return None
+    try:
+        meta = json.loads(path.with_suffix(".meta.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+    return meta if isinstance(meta, dict) else None
+
+
+def agent_type(path: Path) -> str:
     """Subagent type from the sibling `.meta.json`, else `unknown`; `main` outside `subagents/`."""
     if path.parent.name != "subagents":
         return "main"
-    try:
-        meta = json.loads(path.with_suffix(".meta.json").read_text(encoding="utf-8"))
-        return str(meta.get("agentType") or "unknown")
-    except (OSError, ValueError):
-        return "unknown"
+    meta = agent_meta(path)
+    return str(meta.get("agentType") or "unknown") if meta else "unknown"
 
 
-def _row_from_line(obj: dict, path: Path, agent_type: str):
+def row_from_line(obj: dict, path: Path, agent_type: str):
+    """`((session, agent, message id), UsageRow)` for an assistant line with usage, else None."""
     message = obj.get("message")
     if not isinstance(message, dict):
         return None
@@ -83,5 +97,3 @@ def _cache_writes(usage: dict) -> tuple[int, int]:
             as_int(breakdown.get("ephemeral_1h_input_tokens")),
         )
     return as_int(usage.get("cache_creation_input_tokens")), 0
-
-

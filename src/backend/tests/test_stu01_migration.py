@@ -31,7 +31,7 @@ def iso():
 
 @pytest.fixture
 def migrated(iso):
-    iso.migrate("upgrade", "head")
+    iso.migrate("upgrade", NEW_REVISION)
     iso.seed_teacher()
     return iso
 

@@ -4,7 +4,7 @@ Status: Draft (2026-11-05). The contract below is binding for developer and test
 
 ## Data model
 
-One additive Alembic revision `20261105_stu04_practice_attempt`, `down_revision = "20261104_stu01_lessons"` (the current single head). Historical migrations are not edited. The model lives in `src/backend/attempt_models.py` (new) and imports `Base` from `teacher_materials.models`. `alembic/env.py` lists no model modules, so nothing is added there.
+One additive Alembic revision `20261105_stu04_practice_attempt`, `down_revision = "20261105_tea03_publications"` (the current single head after merging master; it was `20261104_stu01_lessons` before TEA-03 publication landed). Historical migrations are not edited. The model lives in `src/backend/attempt_models.py` (new) and imports `Base` from `teacher_materials.models`. `alembic/env.py` lists no model modules, so nothing is added there.
 
 ### Table `practice_attempt` (one row per attempt; replaces the in-memory store)
 

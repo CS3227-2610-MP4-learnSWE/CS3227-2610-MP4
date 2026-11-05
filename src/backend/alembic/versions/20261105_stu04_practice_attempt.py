@@ -4,7 +4,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 revision = "20261105_stu04_practice_attempt"
-down_revision = "20261104_stu01_lessons"
+down_revision = "20261105_tea03_publications"
 branch_labels = None
 depends_on = None
 

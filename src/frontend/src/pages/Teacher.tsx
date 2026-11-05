@@ -1,32 +1,21 @@
+import { useTeacherReadLifetime } from "../hooks/useTeacherReadLifetime";
 import DeleteTeacherItem from "../components/DeleteTeacherItem";
 import { useLayoutEffect } from "react";
 import { useAuth } from "../auth/AuthContext";
 import { Alert } from "@mui/material";
 import type { ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
-import { Link, useLocation } from "react-router";
+import { Link, Navigate, useLocation } from "react-router";
 import {
   Button,
-  Checkbox,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
-  FormControlLabel,
   MenuItem,
-  Tab,
-  Tabs,
   TextField,
 } from "@mui/material";
-import {
-  ArrowRight,
-  Check,
-  Clock3,
-  FileText,
-  Plus,
-  Sparkles,
-  Upload,
-} from "lucide-react";
+import { ArrowRight, FileText, Sparkles, Upload } from "lucide-react";
 import {
   CourseArt,
   EmptyState,
@@ -39,7 +28,7 @@ import {
   Stat,
   Tag,
 } from "../components/ui";
-import { questions } from "../teacherDemo";
+import PublishedContent from "./PublishedContent";
 import { ApiError } from "../services/client";
 import TeacherContentStudio from "./TeacherContentStudio";
 import {
@@ -202,6 +191,9 @@ function Materials({ notify }: Props) {
   const [dataReload, setDataReload] = useState(0);
   const loadCourses = () => setCourseReload((value) => value + 1);
   const refresh = () => setDataReload((value) => value + 1);
+  useTeacherReadLifetime(
+    `${courseId}/${topicFilter}/${dataReload}/${courseReload}`,
+  );
   useEffect(() => {
     let active = true;
     setLoading(true);
@@ -552,194 +544,6 @@ function Materials({ notify }: Props) {
   );
 }
 
-function Review({ notify }: Props) {
-  const [tab, setTab] = useState(0);
-  const [notes, setNotes] = useState(
-    "A focused function has one clear responsibility. Give it a name that communicates intention, keep its inputs explicit, and make the result easy to test.",
-  );
-  const [drafts, setDrafts] = useState(
-    questions.map((q) => ({
-      text: q.text,
-      answer: q.answer,
-      explanation: q.explanation,
-    })),
-  );
-  const update = (
-    i: number,
-    key: "text" | "answer" | "explanation",
-    value: string,
-  ) =>
-    setDrafts((items) =>
-      items.map((item, index) =>
-        index === i ? { ...item, [key]: value } : item,
-      ),
-    );
-  return (
-    <>
-      <PageHeading
-        eyebrow="YOUR EXPERTISE MAKES THE DIFFERENCE"
-        title="A thoughtful final look."
-        description="Review every note, question and explanation before sharing it."
-        action={
-          <Button
-            variant="contained"
-            startIcon={<Check size={17} />}
-            onClick={() =>
-              notify(
-                "Publication preview only. Nothing was published or saved.",
-              )
-            }
-          >
-            Preview publication
-          </Button>
-        }
-      />
-      <Panel className="review-panel">
-        <div className="review-title">
-          <div>
-            <Tag tone="amber">DRAFT · SAMPLE CONTENT</Tag>
-            <h2>Clean code essentials</h2>
-            <p className="muted">
-              Software engineering essentials · Prepared for your review
-            </p>
-          </div>
-          <span className="icon-box blue">
-            <FileText size={26} />
-          </span>
-        </div>
-        <Tabs
-          value={tab}
-          onChange={(_, value: number) => setTab(value)}
-          aria-label="Review content type"
-        >
-          <Tab label="Study notes" />
-          <Tab label="Practice questions & answers" />
-        </Tabs>
-        <div className="review-editor">
-          {tab === 0 ? (
-            <TextField
-              label="Study notes draft"
-              multiline
-              minRows={10}
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-            />
-          ) : (
-            drafts.map((q, i) => (
-              <div className="editable-question" key={i}>
-                <span className="eyebrow">QUESTION {i + 1}</span>
-                <TextField
-                  label={`Question ${i + 1}`}
-                  value={q.text}
-                  onChange={(e) => update(i, "text", e.target.value)}
-                />
-                <ul aria-label={`Choices for question ${i + 1}`}>
-                  {questions[i].options.map((option) => (
-                    <li key={option}>{option}</li>
-                  ))}
-                </ul>
-                <TextField
-                  select
-                  label={`Answer key ${i + 1}`}
-                  value={q.answer}
-                  onChange={(e) => update(i, "answer", e.target.value)}
-                >
-                  {questions[i].options.map((option) => (
-                    <MenuItem key={option} value={option}>
-                      {option}
-                    </MenuItem>
-                  ))}
-                </TextField>
-                <TextField
-                  label={`Explanation ${i + 1}`}
-                  multiline
-                  minRows={2}
-                  value={q.explanation}
-                  onChange={(e) => update(i, "explanation", e.target.value)}
-                />
-              </div>
-            ))
-          )}
-        </div>
-        <PreviewNote>
-          Edits stay in this screen only. Preview publication does not save or
-          share them.
-        </PreviewNote>
-      </Panel>
-      <div className="callout small">
-        <Clock3 size={20} />
-        <p>
-          In the planned app, students see published questions first. Answer
-          keys and solution explanations are released only after whole-set
-          submission.
-        </p>
-      </div>
-    </>
-  );
-}
-function PracticeSets({ notify }: Props) {
-  const [selected, setSelected] = useState<string[]>([
-    "responsibility",
-    "regression",
-  ]);
-  const [title, setTitle] = useState("Clear code, confident changes");
-  return (
-    <>
-      <PageHeading
-        eyebrow="A BRIDGE FROM KNOWING TO DOING"
-        title="Practice with a purpose."
-        description="Bring the right questions together for a focused learning moment."
-      />
-      <div className="studio-layout">
-        <Panel className="studio-controls">
-          <h2>Build a practice set</h2>
-          <TextField
-            label="Set title"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-          />
-          <TextField label="Topic" defaultValue="Clean code" />
-          <p>{selected.length} questions selected</p>
-          <Button
-            variant="contained"
-            startIcon={<Plus size={16} />}
-            onClick={() =>
-              notify(
-                "Practice-set preview only. No set was saved or published.",
-              )
-            }
-          >
-            Preview practice set
-          </Button>
-          <PreviewNote>Selection and text changes are local.</PreviewNote>
-        </Panel>
-        <div>
-          {questions.map((q) => (
-            <Panel key={q.id} className="question-panel">
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    checked={selected.includes(q.id)}
-                    onChange={() =>
-                      setSelected((items) =>
-                        items.includes(q.id)
-                          ? items.filter((id) => id !== q.id)
-                          : [...items, q.id],
-                      )
-                    }
-                  />
-                }
-                label={<strong>{q.text}</strong>}
-              />
-              <p className="muted">Answer: {q.answer}</p>
-              <p className="muted">{q.explanation}</p>
-            </Panel>
-          ))}
-        </div>
-      </div>
-    </>
-  );
-}
 export default function Teacher({ notify }: Props) {
   const section = useLocation().pathname.split("/")[2];
   switch (section) {
@@ -758,9 +562,13 @@ export default function Teacher({ notify }: Props) {
         </TeacherData>
       );
     case "review":
-      return <Review notify={notify} />;
+      return (
+        <TeacherData>
+          <PublishedContent />
+        </TeacherData>
+      );
     case "practice":
-      return <PracticeSets notify={notify} />;
+      return <Navigate to="/teacher/generate?tab=questions" replace />;
     default:
       return (
         <EmptyState title="This page isn’t here">
@@ -771,6 +579,7 @@ export default function Teacher({ notify }: Props) {
 }
 
 function TeacherData({ children }: { children: ReactNode }) {
+  useTeacherReadLifetime(useLocation().key);
   const { status, user } = useAuth();
   if (status === "loading") return <p role="status">Loading your session…</p>;
   if (status !== "authenticated" || user?.role !== "teacher")
