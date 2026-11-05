@@ -15,3 +15,5 @@ test-results/
 workflow/tools/token-tracker/usage*.csv
 # Legacy private uploads: keep old local files out of Git
 private-files/
+# Personal Codex skills; keep local to this checkout.
+.agents/skills/log-conversation/

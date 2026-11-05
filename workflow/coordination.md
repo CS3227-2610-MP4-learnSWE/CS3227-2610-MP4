@@ -13,6 +13,17 @@ feature ID -> spec-writer -> [human approves spec + plan/contract]
 
 The orchestrator is the session that runs the workflow: it starts the agents, passes messages between them, does the merges and writes `notes.md`.
 
+## Token tracking lifecycle
+
+Tracking is an orchestrator responsibility; the human starting a feature does not create the manifest or run the report command.
+
+1. **Start trigger:** as soon as a feature ID is selected for a multi-agent run, and before the spec-writer starts, the orchestrator creates a unique feature-run ID and `workflow/usage/runs/<feature-run-id>/invocations.csv` from `usage/templates/invocations.csv`.
+2. **Agent-start trigger:** immediately before every agent launch, the orchestrator adds a row with a unique invocation ID (`<feature-run-id>-<role>-<sequence>`), role, requested effort, provider tool and start time. This applies to the spec-writer, developer, test-designer, verifier, and every retry or revision round. Repeated starts of the same role get a new sequence number.
+3. **Agent-return trigger:** when the agent returns, the orchestrator fills the finish time, provider tool and session ID, plus the agent ID when the provider exposes one. The session ID is required by the report tool; timestamps separate repeated invocations in the same session. Model names and token counts come from the provider usage logs. If a required source ID is unavailable, the orchestrator marks attribution unavailable in the resource log instead of inventing an ID or claiming measured totals.
+4. **Run-close trigger:** when the feature run ends, whether completed or stopped early, the orchestrator runs `run-report`, commits the manifest and `report.md`, and links the report from `experiments/resource-log.md`. If a teammate ran an agent on a different machine, that teammate supplies the relevant local usage data or runs the report contribution step; raw provider logs are never committed. A stopped run is marked as incomplete in its resource-log entry.
+
+The tracker does not currently install a provider hook or watch agent launches in the background. “Automatic” here means these steps are part of the orchestrator's required workflow at the triggers above; users should not be asked to run the report command for a normal feature run. The command remains available for testing or recovery if a run was interrupted.
+
 ## Triggers
 - spec-writer: a feature is chosen from `docs/FeatureList.md`.
 - developer and test-designer: spec and plan marked Approved. Before starting them, the orchestrator records the start commit (`git rev-parse HEAD` on the run branch). They start together; the test-designer is started with worktree isolation and given the start commit, which it resets its worktree to first, because a new worktree may be cut from a different branch.

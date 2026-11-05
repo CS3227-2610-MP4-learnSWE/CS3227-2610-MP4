@@ -2,6 +2,12 @@
 
 Newest entry first. Use `templates/handoff.md`. Older entries describe the state at the time; the newest entry supersedes their open/merged status. Keep the newest 10 entries here; older ones are in `notes-archive.md`. Feature state is in `STATUS.md`.
 
+
+## 2026-11-05: Merge master PR20 into teacher publishing (orchestrator)
+- Done: merged local master0aa7932 into feat/tea03-publish-content. Master adds TRK-02 invocation-report tooling/docs/tests and ADM-01/TRK-03 planning logs; no src application changes. Status/notes conflicts preserve both histories; older notes archived under the ten-entry rule. TRK-02 records PR20 merged, CHK-01 remains merged.
+- Publishing remains verified at380749e (881backend/377browser plus final14focused and visual checks); these prior application suites are not rerun for this tooling/docs-only merge. Current tracker/checker and merge integrity verification recorded in logs/TeacherPublishingMasterMerge20261105.md.
+- Next: human push/PR/merge gate remains. No .env/developer database/secrets/liveAI/deployment/remote Git touched. No new feature agents launched; no invocation manifest invented for this maintenance merge. Resource tracker outcome in session log.
+
 ## 2026-11-05: Teacher publishing verified locally (orchestrator)
 - Done: on `feat/tea03-publish-content`, immutable once-per-draft note/whole-three-MCQ publication, title/topic confirmation, real Published content catalogue, safe student set reads, status/retry/navigation/access/reference protections. Notes reuse PublishedLesson/publish_lesson and existing student Materials/completion. Legacy helper append semantics and nullable provenance preserved.
 - Source `4fdbb26`, correction1 `9ce2b33`, final presentation correction `380749e`. Strongest read-only verifier PASS at380749e, no blockers; two correction rounds used (cap). Approved spec084534a and PR19 gate preceded independent developer/designer work from identical SHA. Tests committed before source visibility and merged; RED regressions preceded fixes.
@@ -16,7 +22,6 @@ Newest entry first. Use `templates/handoff.md`. Older entries describe the state
 - Important next-plan change: reuse existing published_lesson/student lesson APIs and study_lessons.publish_lesson; do not add a competing published-note system. The helper permits multiple publications/withdrawal structurally, but the chosen teacher workflow remains one publication per draft and no withdrawal UI. Exact publishing contract must be revised against this merge before code.
 - Verification:855backend PASS on isolated PostgreSQL16 schemas,352browser PASS, types/lint/format/build PASS, speccheck --all PASS (no new waiver), checker289unit tests PASS. No .env/developer data/migrations/liveLLM touched. Local merge commit only; no push/PR. Resource tracker attempted, no branch-attributed requests; actual tokens/cost unavailable.
 
-
 ## 2026-11-04: Whole-batch publication scope preparation (orchestrator, single session)
 - Clean masterdb82a18 confirms PR17 merged. Branchfeat/tea03-publish-content. User-approved change: all three questions in one reviewed batch become one practice set; no selection/mixing/assembly workflow. Actual publishing is not implemented by preparation.
 - Docs/stories/shared contract aligned with implemented teacher auth/generation/editing/deletion and future publishing. UI builder/sidebar removed; /teacher/practice redirects to /teacher/generate?tab=questions. Studio states publishing unavailable. Current student runtime/backend unchanged; future set discovery/course checks/immutable version adapter explicitly required.
@@ -24,6 +29,15 @@ Newest entry first. Use `templates/handoff.md`. Older entries describe the state
 - Next: preparation verified and committed locally; plan publishing API/schema/UI with student integration before application publishing code. No .env/devDB/liveLLM/push/PR/deployment. Log logs/BatchPublicationPreparation.md.
 - Resource tracker attempted: no matching branch-attributed requests, actual tokens/cost unavailable. Existing PR17 completion handoff below is historical and its former publishing gate is superseded by the merge.
 
+## 2026-11-05: TRK-02 invocation usage reports verified locally (orchestrator/developer)
+- Done: added per-feature-run manifests and Markdown reports with one row per invocation, including repeated roles, actual model(s), recorded effort, per-invocation wall time, token categories, cost and a run total. Added CLI `run-report`; existing aggregate `report` and raw `export` remain unchanged. Updated usage archive, workflow instructions, handoff template, status, resource log and DeveloperGuide.
+- Commits: spec/plan/tasks `62d3db9`; tests-first commits `af6adb6` and `7c987b0`; implementation `c14d0c5`. Branch is `feat/token-tracker-invocation-report`, based on `origin/master`.
+- Verification: TRK-02 spec check passed; token tracker suite 37 passed; `git diff --check` passed; existing aggregate tracker report worked on this branch (50 requests). Cost unavailable because local `prices.json` has no model prices.
+- Follow-up: the orchestrator now owns this end to end. Trigger tracking when a feature is selected, record every agent launch/return, and generate/link the report when the run ends or stops. Users do not run the report command in normal use. The repo has no background launch hook; see `workflow/coordination.md` for that distinction. Added macOS/Linux tracker test and run-report commands.
+- Commits: follow-up documentation commit recorded in git history.
+- Process note: test files were committed before implementation. This was a single-session build; there was no independent test-designer worktree or verifier pass.
+- Files: `workflow/specs/TRK-02/`, token-tracker implementation/tests/README, `workflow/usage/`, workflow documentation, `workflow/STATUS.md`, `workflow/experiments/resource-log.md`, `logs/Trk02AgentUsageTracking.md`, `logs/Trk02WorkflowAutomation.md`.
+- Resource use: tracker run yes; model `gpt-6-luna`; 50 requests; input 81,316, cache read 9,427,712, cache writes 0, output 49,522 (reasoning 23,203 subset); cost not available (empty price table); revision rounds 0.
 
 ## 2026-11-04: STU-01 PR 18 after merging master (orchestrator, student-role owner)
 - Master moved (TEA-03 MCQ editing and draft deletion, PR 17) after the first push, so PR 18 conflicted. `master` was merged into `feat/stu01-spec` (52fa4db): text conflicts kept both sides; the two Alembic heads were resolved by chaining `20261104_stu01_lessons` after `20261104_tea03_mcq_edit` (one head); `test_tea03_mcqs_cleanup.py` migration test now upgrades to its own revision instead of `head` (one line, same pinning as before).
@@ -34,8 +48,6 @@ Newest entry first. Use `templates/handoff.md`. Older entries describe the state
 - Teammate handoff. TEA-03: publish route with cookie login, CSRF and a course-management check, then `study_lessons.publish_lesson(db, draft, teacher)` (flushes, caller commits); map 23503 or a missing draft if it is deleted mid-publish; take a lesson down by setting `withdrawn_at` (a withdrawn lesson still blocks deleting its draft); republish creates a new lesson; title 1 to 200 and content 1 to 2000 characters; add to the UserGuide that published drafts cannot be deleted once publishing ships; chain any new migration after `20261104_stu01_lessons`. ADM-05: write `course_membership` rows (`course_id`, `user_id`) from an admin route with `current_user(role="admin")` and CSRF; otherwise a new student sees "No courses yet".
 - Tracker figures in the resource log were taken before the merge and the FK change and do not include them.
 
-
-
 ## 2026-11-04: STU-01 verified locally, ready for PR (orchestrator, student-role owner)
 - Done: `feat/stu01-spec` adds study materials (browse by course and topic, read a lesson, mark complete or incomplete, persisted per student), tables `published_lesson` and `lesson_completion` (migration `20261104_stu01_lessons`), `/api/study` endpoints, the `study_lessons/` package (`access`, `progress` for STU-04, `publish_lesson` for TEA-03, `seed`), the student pages and live Overview stat. Sample lessons are gone from demo mode.
 - Verification (head fc84290 plus doc/record commits): backend 816 passed, 0 failed (temporary pgserver Postgres, URL scheme `postgresql+psycopg://`); mocked Playwright 329 tests, 328 passed, 1 load-related failure (layout sweep, passes alone in 1.9 min); typecheck and lint clean, prettier clean ignoring Windows line endings. Verifier: round 1 NOT PASS (blocking: shared in-flight GET leaked one user's data to the next and showed stale state after a save), round 2 PASS. Revision rounds used: 2 of 2. The TEA-03 back/forward test (`teacher-edit-notes.spec.ts:303`) is a known flake.
@@ -45,21 +57,15 @@ Newest entry first. Use `templates/handoff.md`. Older entries describe the state
 - Known limits (DeveloperGuide): list keeps the oldest-published 500 lessons past the cap; no PUT body size cap; `?course=` is case-sensitive; no backend formatter; withdraw/PUT race; a page opened while a save is pending can show the earlier state until reload. Not done: optional real-backend Playwright test (task 13); no automated test of `no-store` on error responses.
 - Resource use: tracker run yes; 448 requests, about $14.37 at list prices (worktree branches not included); details in the resource log. Nothing pushed since the branch push at d4a7c59; no PR opened.
 
-
-
 ## 2026-11-04: developer on STU-01, revision round 2 (shared in-flight GET)
 - Done: `services/lessons.ts` in-flight key now includes `getSessionGeneration()` (new, in `services/client.ts`, bumped by `setCsrfToken`, so login, logout and the 401 clear all invalidate) and a `writes` counter bumped before and after `setCompletion`. Backend: `.get(cid, CourseCounts(0, 0))` in both routes; `add_no_store` now covers `/api/study/` and the router-level dependency was removed. DeveloperGuide updated (cache rule, known limits list).
 - Not fixed (by instruction, listed as known limits): cap order past 500 lessons, PUT body size cap, case-sensitive `?course=`, no backend formatter, withdraw/PUT race. No tests written or edited.
-
-
 
 ## 2026-11-04: developer on STU-01, revision round 1 (frontend Playwright failures)
 - First mocked run: 321 tests, 36 failed. 33 had one cause (class c, logic bug): React StrictMode runs effects twice in development, so each page sent its GET twice; scripted failure replies were consumed by the first (ignored) request and the second got the default success. Fix: `readOnce` in `services/lessons.ts` shares an identical GET that is still in flight (a finished request is never reused). One more (Overview 401 saw 2-3 courses requests) was a second cause: `LessonsCompletedStat` re-ran its effect when the 401 flipped the session to anonymous; the effect now has no dependencies and the demo/failed wording is chosen at render (`pages/Student.tsx`).
 - Rerun: stu01 specs 94 passed, 3 failed; whole suite 321 tests, 318 passed, 3 failed. Typecheck and lint clean.
 - Remaining 3, not changed (test bug or spec ambiguity, for the orchestrator): (1) `stu01-lesson.spec.ts:374` and (2) `stu01-materials.spec.ts:395` sign in as a teacher and open `/student/...` expecting the 403 alert; the shared SHR-01 `RequireRole` guard redirects a teacher to `/teacher/overview` first, so the page never calls the API. spec.md line 50 (403 forbidden row) is only reachable if the role changes mid-session; the guard (SHR-01) is the authority. (3) `stu01-materials.spec.ts:610` ends with goBack, goBack, goForward and expects the Course select; with a pushed history the final entry is the lesson page (no select). It passes only if the lesson's "All study materials" link replaces the history entry; spec.md line 66 does not say push or replace. Decide, then either fix the test or tell me to use replace.
 - Resource use: Tracker run: no. Model: Sonnet 5.5 (developer subagent). Tokens: n/a. Revision rounds: 1.
-
-
 
 ## 2026-11-04: developer on STU-01 (tasks 3 to 7)
 - Done: migration `20261104_stu01_lessons` (upgrade, downgrade, re-upgrade checked on a scratch schema); `src/backend/study_lessons/` (`models`, `access`, `progress`, `schemas`, `routes`, `publish`, `seed`); router included in `main.py`; frontend `services/lessons.ts`, `services/lessonMessages.ts`, `pages/Materials.tsx`, `pages/Lesson.tsx`; `Student.tsx` Overview stat reads `listCourses().totals` and the sample cards, hero meta line, `LessonCard`, old `Materials` and `Lesson` are gone; `SignInNotice` takes `message`; `state.tsx` `completed` and `data.ts` `lessons` removed; companion label for lesson pages is "Study materials"; docs (UserGuide, DeveloperGuide, SharedDataContract), README and CI seed step, STATUS.
@@ -69,28 +75,3 @@ Newest entry first. Use `templates/handoff.md`. Older entries describe the state
 - Expected app.spec failures until the test-designer rewrite is merged: the sample-lesson tests (lesson completion reversible and reflected in dashboard; lesson outline) and any test using `/student/materials/clean-code`, "Continue lesson" or the removed sample cards.
 - Files touched: see the commit.
 - Resource use: Tracker run: no. Model: Sonnet 5.5 (developer subagent). Total tokens: n/a (not measured). Cost: n/a. Retries and revision rounds: 0.
-
-
-
-## 2026-11-04: spec-writer on STU-01 (Study materials)
-- Done: `workflow/specs/STU-01/spec.md`, `plan.md`, `tasks.md` drafted (status Draft, not approved). Spec has 17 acceptance criteria (AC1 to AC4 copied from US-STU-01-01/02, the rest derived and marked), the "UI states and copy" table with exact messages, and the plan has the fixed contract: migration `20261104_stu01_lessons` (down_revision `20261103_shr01_auth`) creating `published_lesson` (immutable snapshot, `withdrawn_at`) and `lesson_completion` (PK user_id + lesson_id, `completed`, `completed_at`, composite FK with course_id), four student-only endpoints under `/api/study`, module `study_lessons/` with `get_visible_lesson`, `completion_counts`, `completed_lessons`, `set_completion` (STU-04 and STU-03 reuse these), UI contract (roles and names), test plan mapped to ACs.
-- Next: human answers the open questions, then test-designer (tasks 1, 2, 9, 10) and developer (3 to 7) start in parallel (Variant B).
-- Files touched: `workflow/specs/STU-01/spec.md`, `plan.md`, `tasks.md`, `workflow/notes.md`. No code, nothing committed.
-- Decisions / open questions: (1) BLOCKING: no published-lesson record, publish endpoint or student-visible state exists (TEA-03 only has drafts); the plan proposes STU-01 creates `published_lesson` and TEA-03 publication writes into it, with a dev seed `study_lessons.seed` for now; the TEA-03 owner must agree. (2) keep `withdrawn_at` with no endpoint. (3) topic copied from the source material at publication, null shown as "General". (4) republish = new lesson id, completion not carried over. (5) demo-mode student loses the built-in sample lessons, Overview sample cards and hero meta line (sign-in notice instead). (6) companion label on a lesson page becomes "Study materials". (7) decision-list item "how users join courses" affects it: new students see "No courses yet" until a membership exists. (8) other listed decisions do not affect it. (9) 500-lesson cap, no pagination. Also: existing app.spec tests on sample lessons must be rewritten (AC16); the plan adds the no-store header itself because the existing middleware covers `/api/auth/` only.
-- Blocking findings: none in code; Open question 1 blocks approval of the plan.
-- Resource use (all required; write "n/a" only with a reason):
-  - Tracker run: no
-  - Model: Sonnet 5.5 (spec-writer subagent)
-  - Total tokens: n/a (not measured; no tracker run)
-  - Cost (USD): n/a (not measured)
-  - Retries and revision rounds: 0
-
-
-
-## 2026-11-04: Authenticated MCQ editing and unpublished deletion verified locally (orchestrator)
-- Done on `feat/tea03-edit-mcqs-delete-drafts`: all teacher APIs use shared cookie/CSRF authentication and current course access; versioned three-question MCQ editing; confirmed permanent note/batch deletion; original-file deletion only without draft references. Source metadata and bytes delete atomically; quota/reference/version protections remain. Guides, stories, app help and shared contract updated. No publication/unpublishing or student-history changes.
-- Workflow: clean master `da57eab` (PR16 after PR15); approved specification `0038b47`. Independent tests committed before source visibility; developer `d19bdf4`. Integration fixes `66ccbd8`; final regressions `94901d4` were RED before source `6c18dc9` and GREEN unchanged. Final integrated application/test tree `5df6934`.
-- Verification: strongest read-only reviewer PASS at `5df6934`; fresh 728 backend / 245 browser tests, types/lint/format/build and extra expired-cookie/focus/logout probes passed. Two correction rounds used (cap2), no remaining findings. Isolated PostgreSQL14.24 checks passed; additional full Docker/PostgreSQL16 run also passed728backend (104.65s) after the user started Docker. Temporary native test cluster stopped; Docker development database untouched. No developer data, .env or live LLM touched.
-- Try: from src/backend run `uv run --env-file .env alembic upgrade head`, restart the backend, refresh and sign in as a seeded teacher. Run auth.seed with existing SEED_* configuration if credentials have not been seeded. Existing data is preserved; no fresh database is needed for this additive migration.
-- Next: human review/push/PR/merge gate. Implementation is committed locally; nothing pushed, published or deployed. See logs/TeacherMcqEditingDeletion.md and workflow/specs/TEA-03-mcqs-cleanup/retro.md.
-- Resources: tracker attempted, no matching branch-attributed requests; actual tokens/cost unavailable (not zero). Inherited Codex roles plus gpt-6-astra high read-only verifier. Two application correction rounds; test-harness and sandbox retries documented in the session log.
