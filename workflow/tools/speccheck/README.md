@@ -12,6 +12,8 @@ python -m speccheck --all
 python -m speccheck --list-rules
 ```
 
+Give the spec folder as an explicit path, not `.`: from inside a folder link the operating system reports the link target's name, so `.` can be checked (or waived) under the wrong id. Folder links named on the command line are not followed.
+
 Options: `--specs-dir PATH` (default: `workflow/specs` of the repo that holds this tool), `--waivers FILE` (default: `<specs-dir>/speccheck-waivers.txt`; a missing default file means no waivers, a missing explicit file is an error). `--all` checks every subfolder of the specs dir. `--list-rules` prints one `RULE` line per row of the rule table in `speccheck/registry.py` and cannot be combined with folders or `--all`.
 
 Output is plain text: one `FAIL <spec-id> <file>: section "<heading>": <message> [<CODE>]` line per finding (or `OK <spec-id>`, or `WAIVED <spec-id> (<scope>): <reason>`), then `WARN` lines, then `speccheck: <n> checked, <f> failed, <w> waived`.
