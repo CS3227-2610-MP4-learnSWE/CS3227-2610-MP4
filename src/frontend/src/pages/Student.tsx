@@ -164,16 +164,18 @@ function LegacyAssistant() {
   return <Navigate to="/student/overview" replace />;
 }
 export default function Student() {
+  const { status, user } = useAuth();
+  const sessionKey = `${status}:${user?.id ?? ""}`;
   const path = useLocation().pathname.split("/");
   switch (path[2]) {
     case "overview":
-      return <Overview />;
+      return <Overview key={sessionKey} />;
     case "materials":
       return path[3] ? <Lesson key={path[3]} id={path[3]} /> : <Materials />;
     case "practice":
       return <Practice />;
     case "progress":
-      return <Progress />;
+      return <Progress key={sessionKey} />;
     case "assistant":
       return <LegacyAssistant />;
     default:

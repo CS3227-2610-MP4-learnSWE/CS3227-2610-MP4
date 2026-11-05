@@ -1,4 +1,5 @@
 """Attempt store: the interface and its PostgreSQL implementation (table `practice_attempt`)."""
+import re
 import secrets
 from collections.abc import Iterator
 from contextlib import AbstractContextManager, contextmanager
@@ -73,6 +74,14 @@ def _to_attempt(row: PracticeAttempt) -> Attempt:
     )
 
 
+_ID_PATTERN = re.compile(r"[A-Za-z0-9_-]{1,64}")
+
+
+def _valid_id(attempt_id: str) -> bool:
+    """Ids we issue are urlsafe tokens; anything else cannot exist, so no query is made."""
+    return _ID_PATTERN.fullmatch(attempt_id) is not None
+
+
 def _session() -> Session:
     return Session(engine_for(load_settings().database_url), expire_on_commit=False)
 
@@ -89,6 +98,8 @@ class DbAttemptStore:
             return _to_attempt(row)
 
     def get_owned(self, attempt_id: str, student_id: str) -> Attempt | None:
+        if not _valid_id(attempt_id):
+            return None
         with _session() as db:
             row = db.scalars(
                 select(PracticeAttempt).where(PracticeAttempt.id == attempt_id, PracticeAttempt.student_id == student_id)
@@ -106,6 +117,8 @@ class DbAttemptStore:
 
     @contextmanager
     def lock(self, attempt_id: str) -> Iterator[Attempt]:
+        if not _valid_id(attempt_id):
+            raise ApiError(404, "attempt_not_found", "Attempt not found.")
         with _session() as db:
             row = db.scalars(
                 select(PracticeAttempt).where(PracticeAttempt.id == attempt_id).with_for_update()

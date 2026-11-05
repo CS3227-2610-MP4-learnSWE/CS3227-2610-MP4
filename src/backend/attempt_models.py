@@ -28,8 +28,10 @@ class PracticeAttempt(Base):
         CheckConstraint("jsonb_typeof(answers) = 'object'", name="ck_practice_attempt_answers"),
         CheckConstraint("jsonb_typeof(correct_question_ids) = 'array'", name="ck_practice_attempt_correct_ids"),
         CheckConstraint(
-            "(status = 'submitted') = (score_correct is not null and score_total is not null "
-            "and key_version is not null and submitted_at is not null)",
+            "(status = 'submitted' and score_correct is not null and score_total is not null "
+            "and key_version is not null and submitted_at is not null) "
+            "or (status = 'in_progress' and score_correct is null and score_total is null "
+            "and key_version is null and submitted_at is null and correct_question_ids = '[]'::jsonb)",
             name="ck_practice_attempt_state",
         ),
         CheckConstraint("score_correct is null or (score_correct between 0 and score_total)", name="ck_practice_attempt_score"),

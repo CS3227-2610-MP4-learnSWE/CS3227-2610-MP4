@@ -51,10 +51,10 @@ function LessonSection({ lessons }: { lessons: ProgressData["lessons"] }) {
             ))}
           </ul>
           {lessons.recent.length === 0 ? (
-            <p>
-              No lessons completed yet.{" "}
+            <>
+              <p>No lessons completed yet.</p>
               <Link to="/student/materials">Open study materials</Link>
-            </p>
+            </>
           ) : (
             <ul className="progress-list" aria-label="Recently completed">
               {lessons.recent.map((lesson) => (
@@ -78,7 +78,8 @@ function PracticeSection({ practice }: { practice: ProgressData["practice"] }) {
       <h2 id="progress-practice">Practice scores</h2>
       {practice.sets.length === 0 ? (
         <EmptyState title="No practice results yet">
-          Submit a practice set to see your scores here.{" "}
+          <span>Submit a practice set to see your scores here.</span>
+          <br />
           <Link to="/student/practice">Go to practice</Link>
         </EmptyState>
       ) : (
@@ -165,7 +166,7 @@ function TopicSection({
         </EmptyState>
       ) : (
         <>
-          {items.length > 0 && weak.length === 0 && (
+          {items.length > 0 && weak.length === 0 && !allInsufficient && (
             <p>No topics need extra practice right now.</p>
           )}
           <TopicList
