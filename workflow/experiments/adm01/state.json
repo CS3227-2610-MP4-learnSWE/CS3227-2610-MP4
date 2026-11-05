@@ -1,6 +1,6 @@
 {
-  "phase": "2b-done-G2-approved",
-  "next_step": "Phase 3: arm worktrees ..\u0007dm01-wt\\<arm>, prompts/, launch-card.md -> G3 (USER /usage) before arm A. Confirm Docker/Postgres is up before first grading.",
+  "phase": "3-prepared-awaiting-G3-armA",
+  "next_step": "G3 for arm A: USER runs /usage; on 'start now', USER launches arm A per launch-card.md in ..\u0007dm01-wt\\A. Then phase 4 (TRK-03, budget.py, grade_arm.py) in a new coordinator session.",
   "arm_order": [
     "A",
     "H3",
@@ -72,5 +72,13 @@
     "tests": "32 passed (python -m pytest -q tests; use --basetemp outside the sandboxed temp if PermissionError)",
     "db_available": false
   },
-  "frozen_worktree": "../adm01-frozen-wt"
+  "frozen_worktree": "../adm01-frozen-wt",
+  "arm_worktrees": {
+    "A": "../adm01-wt/A",
+    "H3": "../adm01-wt/H3",
+    "H1": "../adm01-wt/H1",
+    "H2": "../adm01-wt/H2",
+    "C": "../adm01-wt/C"
+  },
+  "arm_commits": "H3,H1,H2 each have one agent-change commit on their branch; A and C are at adm01-start"
 }
