@@ -15,11 +15,12 @@ Record token usage for every multi-agent feature run, with a distinct row for ea
 - It writes one Markdown report at `workflow/usage/runs/<feature_run_id>/report.md`, with one row per invocation and a feature-run total. Invocation rows show role, model(s) observed in usage logs, configured effort, elapsed wall time, request count, token categories and cost.
 - The report identifies its format as `invocation-v1`. Existing `export` and `report` commands and their output remain unchanged.
 - Unmatched or multiply matched usage rows for a manifest source are reported as attribution errors; the command exits non-zero instead of silently assigning or double-counting them.
+- An invocation with no matching usage rows is retained with zero requests and a note asking the reader to verify its source IDs or confirm it made no model calls.
 - The manifest and Markdown report contain usage metadata only, never prompt/reply text. Local raw usage exports remain gitignored.
 
 ## Acceptance criteria
 - [ ] AC1: Two invocations with the same feature run and role receive separate rows when their invocation IDs differ.
-- [ ] AC2: Each manifest row requires a unique invocation ID prefixed by its feature run ID, a non-empty role/effort/source session ID, tool `claude` or `codex`, and timezone-aware ISO timestamps where `finished_at` is not earlier than `started_at`.
+- [ ] AC2: Each manifest row requires a unique `<feature_run_id>-<role>-<numeric-sequence>` invocation ID, a non-empty role/effort/source session ID, tool `claude` or `codex`, and timezone-aware ISO timestamps where `finished_at` is not earlier than `started_at`.
 - [ ] AC3: Usage rows are assigned to the invocation with matching tool, session ID and agent ID, and timestamp within its start/end interval.
 - [ ] AC4: A usage row matching zero or multiple invocations for a referenced source is reported as an attribution error and does not produce a successful report.
 - [ ] AC5: The report includes model(s) observed in usage rows, configured effort, elapsed wall-clock duration, request count, input/cache-read/cache-write/output/reasoning token sums and cost per invocation.
@@ -28,6 +29,7 @@ Record token usage for every multi-agent feature run, with a distinct row for ea
 - [ ] AC8: Re-running the command with identical manifest/logs produces byte-identical output.
 - [ ] AC9: Existing `export` and aggregate `report` behavior remains unchanged.
 - [ ] AC10: A report is written only under the manifest's matching run folder, unless the caller explicitly supplies another output path.
+- [ ] AC11: An invocation with no matched usage rows remains visible with zero requests and a note to verify its source IDs or confirm it made no model calls.
 
 ## UI states and copy
 No screen: this is a local command-line tool.

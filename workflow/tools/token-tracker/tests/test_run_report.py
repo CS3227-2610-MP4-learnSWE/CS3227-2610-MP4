@@ -1,9 +1,12 @@
+import io
 import tempfile
 import unittest
+from contextlib import redirect_stderr
 from pathlib import Path
 
 from tracker.model import UsageRow
 from tracker.run_report import AttributionError, ManifestError, read_manifest, render_report
+from tracker.cli import main
 
 
 RUN_ID = "2026-11-05-STU04-01"
@@ -43,7 +46,9 @@ class RunReportTest(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
-        self.path = Path(self.tmp.name) / "invocations.csv"
+        self.run_dir = Path(self.tmp.name) / RUN_ID
+        self.run_dir.mkdir()
+        self.path = self.run_dir / "invocations.csv"
 
     def write_manifest(self, rows):
         self.path.write_text(FIELDS + "\n" + "\n".join(rows) + "\n", encoding="utf-8")
@@ -66,6 +71,17 @@ class RunReportTest(unittest.TestCase):
         with self.assertRaisesRegex(ManifestError, "finished_at"):
             read_manifest(self.path)
 
+        no_timezone = manifest_row("dev-03", "developer", "s3", "a3", "2026-11-05T12:00:00", "2026-11-05T12:01:00+00:00")
+        self.write_manifest([no_timezone])
+        with self.assertRaisesRegex(ManifestError, "include a timezone"):
+            read_manifest(self.path)
+
+    def test_manifest_requires_role_and_sequence_in_primary_id(self):
+        row = f"{RUN_ID},an-id,developer,light,codex,s1,a1,2026-11-05T12:00:00+00:00,2026-11-05T12:01:00+00:00"
+        self.write_manifest([row])
+        with self.assertRaisesRegex(ManifestError, "numeric-sequence"):
+            read_manifest(self.path)
+
     def test_repeated_roles_are_separate_and_total_is_correct(self):
         self.write_manifest(
             [
@@ -83,16 +99,19 @@ class RunReportTest(unittest.TestCase):
 
         report = render_report(run_id, invocations, rows)
         self.assertEqual(report.count("| invocation |"), 3)
-        self.assertIn("dev-01", report)
-        self.assertIn("verify-01", report)
-        self.assertIn("dev-02", report)
+        self.assertIn(f"{RUN_ID}-developer-01", report)
+        self.assertIn(f"{RUN_ID}-verifier-01", report)
+        self.assertIn(f"{RUN_ID}-developer-02", report)
         self.assertIn("claude-opus", report)
         self.assertIn("high", report)
         self.assertIn("0:02:00", report)
         self.assertIn("0:05:00", report)
         self.assertIn("0:09:00", report)  # Run wall time, not summed parallel agent time.
         self.assertIn("feature_run_total", report)
-        self.assertIn("60", report)  # Total output tokens: 10 + 20 + 30.
+        total_line = next(line for line in report.splitlines() if "| feature_run_total |" in line)
+        total_cells = [cell.strip() for cell in total_line.strip("|").split("|")]
+        self.assertEqual(total_cells[7:14], ["3", "60", "15", "6", "3", "60", "9"])
+        self.assertEqual(total_cells[14], "0.750000")
 
     def test_reused_source_ids_are_separated_by_time(self):
         self.write_manifest(
@@ -110,8 +129,8 @@ class RunReportTest(unittest.TestCase):
                 usage_row("same", "agent", "2026-11-05T12:02:30+00:00", output=22),
             ],
         )
-        self.assertIn("dev-01", report)
-        self.assertIn("dev-02", report)
+        self.assertIn(f"{RUN_ID}-developer-01", report)
+        self.assertIn(f"{RUN_ID}-developer-02", report)
         self.assertIn("33", report)
 
     def test_ambiguous_and_out_of_window_source_records_fail(self):
@@ -133,19 +152,89 @@ class RunReportTest(unittest.TestCase):
         self.write_manifest([manifest_row("dev-01", "developer", "s1", "a1", "2026-11-05T12:00:00+00:00", "2026-11-05T12:01:00+00:00")])
         run_id, invocations = read_manifest(self.path)
         report = render_report(run_id, invocations, [usage_row("other-session", "other-agent", "2026-11-05T12:00:30+00:00")])
-        self.assertIn("dev-01", report)
+        self.assertIn(f"{RUN_ID}-developer-01", report)
         self.assertIn("0:01:00", report)  # Duration is recorded even when no model usage was logged.
+        self.assertIn("No usage records matched", report)
+
+    def test_unknown_price_is_blank_in_invocation_and_run_total(self):
+        self.write_manifest([manifest_row("dev-01", "developer", "s1", "a1", "2026-11-05T12:00:00+00:00", "2026-11-05T12:01:00+00:00")])
+        run_id, invocations = read_manifest(self.path)
+        report = render_report(run_id, invocations, [usage_row("s1", "a1", "2026-11-05T12:00:30+00:00", cost=None)])
+        invocation_line = next(line for line in report.splitlines() if "| invocation |" in line)
+        total_line = next(line for line in report.splitlines() if "| feature_run_total |" in line)
+        self.assertTrue(invocation_line.endswith("|  |"))
+        self.assertTrue(total_line.endswith("|  |"))
 
     def test_report_is_deterministic_and_escapes_markdown_cells(self):
-        self.write_manifest([manifest_row("dev-01", "developer|role", "s1", "a1", "2026-11-05T12:00:00+00:00", "2026-11-05T12:00:01+00:00")])
+        self.write_manifest([manifest_row("dev-01", "developer", "s1", "a1", "2026-11-05T12:00:00+00:00", "2026-11-05T12:00:01+00:00", effort="light|fast")])
         run_id, invocations = read_manifest(self.path)
         first = render_report(run_id, invocations, [usage_row("s1", "a1", "2026-11-05T12:00:00+00:00")])
         second = render_report(run_id, invocations, [usage_row("s1", "a1", "2026-11-05T12:00:00+00:00")])
         self.assertEqual(first, second)
         self.assertIn("2026-11-05-STU04-01-developer-01", first)
-        self.assertIn("developer\\|role", first)
+        self.assertIn("light\\|fast", first)
         self.assertIn("invocation-v1", first)
         self.assertNotIn("SECRET_PROMPT_TEXT", first)
+
+    def test_cli_writes_report_next_to_manifest_by_default(self):
+        self.write_manifest([manifest_row("dev-01", "developer", "s1", "a1", "2026-11-05T12:00:00+00:00", "2026-11-05T12:01:00+00:00")])
+        code = main(
+            [
+                "run-report",
+                "--manifest",
+                str(self.path),
+                "--claude-dir",
+                str(Path(self.tmp.name) / "empty-claude"),
+                "--codex-dir",
+                str(Path(self.tmp.name) / "empty-codex"),
+            ]
+        )
+        self.assertEqual(code, 0)
+        report = self.run_dir / "report.md"
+        self.assertTrue(report.is_file())
+        self.assertIn("invocation-v1", report.read_text(encoding="utf-8"))
+
+    def test_cli_accepts_an_explicit_report_path(self):
+        self.write_manifest([manifest_row("dev-01", "developer", "s1", "a1", "2026-11-05T12:00:00+00:00", "2026-11-05T12:01:00+00:00")])
+        output = Path(self.tmp.name) / "custom-report.md"
+        code = main(
+            [
+                "run-report",
+                "--manifest",
+                str(self.path),
+                "--claude-dir",
+                str(Path(self.tmp.name) / "empty-claude"),
+                "--codex-dir",
+                str(Path(self.tmp.name) / "empty-codex"),
+                "--out",
+                str(output),
+            ]
+        )
+        self.assertEqual(code, 0)
+        self.assertIn("Feature-run report", output.read_text(encoding="utf-8"))
+
+    def test_cli_does_not_overwrite_report_when_attribution_fails(self):
+        self.write_manifest([manifest_row("dev-01", "developer", "s1", "", "2026-11-05T12:00:00+00:00", "2026-11-05T12:01:00+00:00")])
+        report = self.run_dir / "report.md"
+        report.write_text("previous report", encoding="utf-8")
+        claude_dir = Path(self.tmp.name) / "claude"
+        codex_dir = Path(self.tmp.name) / "codex"
+        from helpers import codex_meta, codex_session, codex_tokens, codex_turn
+
+        codex_session(
+            codex_dir / "sessions" / "2026" / "11" / "05" / "rollout-a.jsonl",
+            [
+                codex_meta(session_id="s1", cwd="C:\\repo", branch="feat/trk02"),
+                codex_turn("gpt-test"),
+                codex_tokens(20, 5, 10, 3, total=30, ts="2026-11-05T12:05:00+00:00"),
+            ],
+        )
+        error = io.StringIO()
+        with redirect_stderr(error):
+            code = main(["run-report", "--manifest", str(self.path), "--claude-dir", str(claude_dir), "--codex-dir", str(codex_dir)])
+        self.assertEqual(code, 2)
+        self.assertIn("outside its time range", error.getvalue())
+        self.assertEqual(report.read_text(encoding="utf-8"), "previous report")
 
 
 if __name__ == "__main__":
