@@ -7,6 +7,7 @@ import companion_routes
 import practice_routes
 from auth.routes import add_no_store, router as auth_router
 from auth.settings import AuthSettings
+from study_lessons.routes import router as study_router
 from teacher_materials.routes import router as teacher_router
 from teacher_notes.routes import router as teacher_notes_router
 from teacher_mcqs.routes import router as teacher_mcqs_router
@@ -19,6 +20,7 @@ app.include_router(teacher_router)
 app.include_router(teacher_notes_router)
 app.include_router(teacher_mcqs_router)
 app.include_router(companion_routes.router)
+app.include_router(study_router)
 app.add_exception_handler(ApiError, practice_routes.error_response)
 app.middleware("http")(add_no_store)
 

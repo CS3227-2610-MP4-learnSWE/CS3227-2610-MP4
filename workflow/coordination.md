@@ -23,6 +23,9 @@ The orchestrator is the session that runs the workflow: it starts the agents, pa
 ## Isolation
 Enforced by separate folders, not only by instruction. The developer works in the run's folder on the run branch. The test-designer works in its own git worktree on its own branch, from the spec, plan contract and threat model only, so neither can see the other's files. At verification the test-designer merges the run branch into its worktree and runs its tests; only then does the orchestrator merge the test branch into the run branch. The plan's contract (paths, schemas, signatures, error codes) is the only shared interface; a mismatch is reported as a contract defect, not patched by editing a test.
 
+## Spec check gate
+The build phase (starting the developer and the test-designer) does not begin until `python -m speccheck ../../specs/<id>` passes, run from `workflow/tools/speccheck` (give an explicit path, not `.`). The orchestrator runs it after the human approves the spec and plan; a failing finding goes back to the spec-writer. CI re-runs `python -m speccheck --all` for pull requests that touch `workflow/specs` or the tool. Only specs that existed before the rule may be waived in `workflow/specs/speccheck-waivers.txt`. Details: `tools/speccheck/README.md`.
+
 ## Context management
 Each agent reads only the files named in its definition plus the feature's folder under `specs/`. Claude Code loads agent definitions from the main project folder, not from a worktree: before starting a feature session, check out a branch with the current `.claude/agents/` in the main folder, keep it there until the session ends, and confirm the registered agent types. State passes through files, never assumed memory: `spec.md`, `plan.md`, `tasks.md`, and a handoff entry in `notes.md`.
 

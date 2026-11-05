@@ -221,6 +221,7 @@ def test_shr01_ac24_user_guide_describes_sign_in_without_overclaiming():
 
 # ------------------------------------------------------------------ AC24 migration
 def test_shr01_ac24_migration_on_a_fresh_schema_adds_only_the_planned_objects(iso):
+    # STU-01 adds a later revision, so this test upgrades to the SHR-01 revision explicitly, not 'head'.
     iso.migrate("upgrade", NEW_REVISION)
     assert iso.sql("SELECT version_num FROM alembic_version")[0][0] == NEW_REVISION
     cols = {r[0]: (r[1], r[2]) for r in iso.sql(

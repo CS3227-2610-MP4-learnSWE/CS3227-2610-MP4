@@ -279,3 +279,90 @@ Entries moved unchanged from `notes.md` on 2026-11-03, newest first. They descri
 - Spec-writer change (2026-11-04, user-approved): from the UI failures at integration, `workflow/templates/spec.md` has a "UI states and copy" table, `workflow/templates/plan.md` a "UI contract" (role and name of every control tests use), and `.claude/agents/spec-writer.md` and `AGENTS.md` require both for any feature with a screen. Effect to check on the next feature: count UI-detail failures at first integration (SHR-01: 19 to 26 browser tests). Usage was measured with the token tracker (`workflow/experiments/results/shr01.csv`, about $30.24 at list prices) and the numbers are in the resource log and `docs/Reflections.md`. Presentation deck: `SHR01-Auth-Learnings.pptx` in the user's `MP4 presentation` folder (outside the repo).
 - Next: a teammate reviews and merges. Not verified: Docker Postgres in CI, any deployment, load behaviour.
 - Resource use: see `workflow/experiments/resource-log.md` and `docs/Reflections.md`. Session notes: `logs/Shr01SpecSession.md`, `logs/Shr01BuildSession.md`.
+
+## 2026-11-03: Fix Alembic repeatable-read migration race (single session + verifier)
+- Done: online Alembic engine explicitly uses READ COMMITTED before its first query, preventing stale version-table snapshots from bypassing locked empty-material guard. One-line source change; no new schema revision/API change.
+- Evidence: independent reviewer confirmed prior defect; persistent regression6d8951e committed after RED and before source fix. Same regression GREEN, full505backendPASS. Strongest reviewer5migration casesPASS/no remaining findings. Docs/contract/plan updated; STATUS unblocked. Report logs/MigrationIsolationFix20261103.md.
+- Next: human review/publishing gate; no current-database migration rerun needed solely for this engine setting. No developer DB/files/.env/live provider touched, nothing pushed. Frontend unchanged; prior160browser and frontendchecks not repeated.
+- Resource use: tracker no (not measured), inherited Codex +gpt-6-astra high reviewer; tokens/cost unavailable; initial path/sandbox test launches corrected, verifier correction rounds0.
+
+
+
+
+
+## 2026-11-03: Ponytail full PostgreSQL storage review (orchestrator)
+- Review at63b02bf: one confirmed blocker, no other concrete correctness/conciseness findings. Under REPEATABLE READ database default, Alembic establishes a snapshot before material lock; a concurrent pre-lock legacy upload is missed and migration loses its old key.
+- Next: set Alembic create_engine isolation_level="READ COMMITTED" and add pre-lock concurrent-writer regression with repeatable-read default. Temporary runtime fix probe preserved row/key/revision; no repository code fix applied.
+- Evidence: fresh504backend/160browser/types/lint/format/build passed, but default-isolation tests miss this sequence. Isolated probe schemas cleaned; no developer data/.env/liveLLM/deployment. Report logs/PonytailDatabaseReview20261103.md.
+- Resource use: tracker no (not measured), inherited Codex +gpt-6-astra high verifier, tokens/cost unavailable, application revision rounds0. Review only; no publishing.
+
+
+
+
+
+## 2026-11-03: Fix Vite undefined backend port (single session)
+- Done: proxy supports existing API_PROXY_TARGET, current API_PORT and default8000, in that precedence. Existing frontend env used old URL setting; master expected onlyport. README and four-case regression updated.
+- Verification: pre-fix actual config assertion RED; focused regression GREEN; types/lint/format/build passed. Live backend health/proxied health/teacher courses all200. No actual.env edits or backend/data writes; full suites not repeated for config-only fix.
+- Next: refresh frontend; restart npm run dev if old proxy persists. No publishing. Files: vite.config.ts, tests/vite-proxy.spec.ts, README, logs/ViteProxyFix20261103.md.
+- Resource use: tracker no (unmeasured), inherited Codex, tokens/cost unavailable; wrong-workdir formatter cancelled then correct-dir checks passed; revision rounds0.
+
+
+
+
+
+## 2026-11-03: Clean obsolete filesystem test scaffolding (single session)
+- Done: removed unused session-wide upload-folder fixture, dead fixture/helper arguments and unused imports. Filename traversal assertions now use isolated tmp_path. Runtime storage.py still validates uploads; no unused runtime file was found for deletion.
+- Verification:504backend passed; all213 assertions in four touched suites retained. No frontend/runtime/API changes; prior frontend checks not repeated. No user data/.env/old uploads/dependencies or migration/history files removed; legacy private-files ignore rule retained.
+- Next: human publishing gate unchanged. Files: backend tests/conftest and four test suites, .gitignore comment, logs/DatabaseStorageCleanup20261103.md.
+- Resource use: tracker no (not measured), inherited Codex model, tokens/cost unavailable, retries/revision rounds0. Small mechanical cleanup uses single-session workflow.
+
+
+
+
+
+## 2026-11-03: Merge master into PostgreSQL storage branch (single session)
+- Done: merged local master da389a5 (PR14 workflow/shared-helper refactors) into fix/teacher-postgres-file-storage. Retained PostgreSQL BYTEA/atomic uploads/quota/migration guards and master's teacher_access, timestamps, text normalisation, llm_errors and shared frontend transport.
+- Conflict resolution: materials/notes/MCQ routers use shared teacher access; teacher_access drops obsolete storage_root requirement and retains READ COMMITTED for quota correctness. README/shared contract describe current BYTEA storage and shared helpers. Handoff history retained with older entries archived; STATUS updated.
+- Verification:504backend tests passed in an isolated PostgreSQL schema;159mocked browser tests, types/lint/format/build and diff checks passed. Docker Desktop/test container restarted because stopped. No developer database/files/.env, live LLM, push or deployment.
+- Next: human review/publishing gate; feature branch remains local. No open merge findings.
+- Resource use: tracker run no (not measured); model inherited Codex; tokens/cost n/a (unavailable); one backend test launch retried after unavailable Docker, zero code-fix revision rounds.
+
+
+
+
+
+## 2026-11-03: R4 and R5 duplication checks closed with no code change (single session)
+- R4 (LLM error mapping): not duplicated across the teacher routers. `teacher_notes/generation._llm_error` is the one teacher mapping and `teacher_mcqs/generation.py` imports it. `companion_routes._map_error` is a second mapping with different codes (`rate_limited`, `companion_internal`) and student wording that tests assert, so merging would change error codes, which is out of scope. Optional follow-up: `teacher_mcqs` imports the private name `_llm_error` from `teacher_notes`; making it public or moving it to a small `llm_errors.py` would remove that.
+- R5 (frontend requests): no service builds its own fetch, timeout or error handling. `companion.ts` and `practice.ts` call `request`; `teacherMaterials.ts`, `teacherMcqs.ts` and `teacherNotes.ts` call `requestTeacher`; `teacherGeneration.ts` only maps error codes to messages. The overlap is inside `client.ts`: `request` and `requestTeacher` each repeat the AbortController timeout and ApiError construction (they differ in headers and body parsing). `components/Shell.tsx` has one health-check `fetch`. Not changed; merging the two transports is a separate refactor that needs a decision.
+- Follow-ups done on 2026-11-03 at the user's request, each on its own branch: `_llm_error` moved to `llm_errors.generation_error` (`refactor/r4-llm-errors`); `request` and `requestTeacher` share one private `send()` (`refactor/r5-client-transport`).
+- Resource use: tracker run no; model Sonnet 5.5; total tokens and cost not measured yet; retries 0.
+
+
+
+
+
+## 2026-11-02: Teacher PostgreSQL original-file storage complete locally (orchestrator)
+- Done on fix/teacher-postgres-file-storage: originals in material_file BYTEA, metadata/content atomic, authorised original download and byte-based notes/MCQ extraction.10MiB/file and100MiB total raw-byte quota serialised with transaction advisory lock32272610 and READ COMMITTED. Missing content503; quota413 storage_quota_exceeded; UI limits/error/recovery and same endpoint/metadata contracts. No runtime FILE_STORAGE_DIR or permanent private-file writes.
+- Migration:20261102_tea01_db_storage requires no material rows; ACCESS EXCLUSIVE table lock protects empty guard/DDL in both directions. Populated upgrade/downgrade refuses with data/schema/revision unchanged; no importer/delete/reset. Existing developer DB/files/.env untouched. Fresh setup documented: create learnswe_db_files, point DATABASE_URL there, migrate/seed; old uploads/drafts stay only in old DB/files. PostgreSQL backups include originals; monitor DB usage beyond100MiB file budget.
+- Workflow: clean master6d65273/PR13; approved specstarta088945; sourcef80b086; independent tests6dff0a3 before app visibility, integratedabfd930. Historical storage spec banners and current guides/shared contract/env/CI/deployment/help updated. No new dependencies/shared LLM-client changes.
+- Verification: strongest independent verifier PASS at1c7483370a02ccc6ae31c08e8416b81c5a7ba254, no blocking findings, one correction round. Fresh final499backend passed; verifier earlier159browser/types/lint/format/build remain applicable (only migration changed). Parent inspected390/1440 light/dark quota dialogs, readable/no overflow. Existing483backend test intent preserved plus16new cases;155browser plus4newquota/layout cases.
+- Correction: verifier found concurrent legacy insert between empty guard and DDL could lose mapping. Independent8df7f8 regression RED before sourceccd808b lock fix, GREEN unchanged; full499backend passed. Contract clarificationd1b8de3 recorded. No other findings.
+- Evidence: logs/TeacherDatabaseStorage.md and security/resource logs. Tests used isolated PostgreSQL schemas/tempfiles and fake LLM; no live provider, deployment, production auth or optional real-backend browser project checked.
+- Next: human review/publishing gate. Local commits only; nothing pushed, no PR/master merge. Follow fresh-database README before starting this version; do not migrate the old populated database.
+
+
+
+
+## 2026-11-04: CHK-01 spec checker built (orchestrator, side session; branch claude/spec-check-455c55, not pushed)
+- Done: `workflow/tools/speccheck/` (from `workflow/tools/speccheck`: `python -m speccheck ../../specs/<id>` or `--all`; Python 3.12+, standard library only, own README). One rule table (`registry.py`, `--list-rules`): Tier 1 (spec/plan sections, AC item, tasks role, no placeholders) for every spec; Tier 2 (UI states table, UI contract, nine labelled UI items) unless the spec says `No screen: reason`; two security items (concurrent requests, normalisation) for every spec. Presence only, never quality; the README lists what stays "Verifier only". Older specs are grandfathered in `workflow/specs/speccheck-waivers.txt` (12 specs, scope `all`, each with a reason; never add a new spec). CI job `spec-check` (one block before `dependency-audit`) runs the unit tests and `--all`; `workflow/coordination.md` has a "Spec check gate" subsection.
+- Process: approved spec (user), independent test-designer worktree, developer in the run folder, tests merged, verifier. Round 1 NOT PASS (heading regex took quadratic time, so one crafted line could hang the checker); round 2 NOT PASS (my round 1 path fix used `resolve()`, which follows links, so a folder link could pass as a waived spec). Cap reached; the user approved a one-line fix (lexical absolute path) plus a link test without a third verifier review. Orchestrator rulings, accepted by the user on 2026-11-05: heading/bold labels skip blank lines after the label; `normali[sz]` accepts US spelling; the 20-line and 100,000-line content caps are documented.
+- Results: 289 unit tests pass (Python 3.13 locally; CI uses 3.12, not run); `--all` exits 0 with the waivers file; CHK-01 passes its own check; with an empty waivers file 12 of 13 specs fail (201 findings: 117 missing items, 57 missing sections, 11 missing UI contract, 10 missing UI section). A narrow verifier round 3 (2026-11-05, user-approved) re-checked the final fix: pass, no regressions; open non-blocking items are listed below.
+- Not verified: the CI job on GitHub (YAML read by eye by me and the verifier); making it a required check needs branch-protection settings; no real STU-01 spec was checked.
+- For the other branch (STU-01) to merge later: templates and spec-writer text must use these labels or its specs fail, and STU-01 cannot be waived: Requests per load and per retry; Wrong role; Link history: push or replace; Refresh; Back and Forward; Expired session or logout; Backend down; Longest wait before an error; No generic failure message; (spec Security section) Concurrent requests (same time); Normalisation. Verifier line for AGENTS.md (not added, to avoid the spec-writer paragraph): "Run `python -m speccheck ../../specs/<id>` from `workflow/tools/speccheck`; any finding is blocking."
+- Known non-blocking gaps (README, verifier report): empty-section and HTML-comment content counts, simple fence toggle, `<` comparisons flagged as placeholders, an empty heading/bold label can take the next item's text, content caps can cause a false failure on a huge section.
+- Deck: `CHK01-Spec-Check-Learnings.pptx` in the user's `MP4 presentation` folder (outside the repo). Session notes: `logs/Chk01SpecCheckerSession.md`.
+
+
+## 2026-11-05: CHK-01 merged with master after PR 18 (orchestrator; branch claude/spec-check-455c55)
+- Done: PR 18 (STU-01) was merged into `master`, then `origin/master` was merged into this branch without conflicts. `python -m speccheck --all` now checks CHK-01 and STU-01 (both OK, STU-01 with no waiver), 12 waived; all 289 unit tests pass after the merge. Added the CHK-01 subsection to `docs/Reflections.md`. PR 19 CI on GitHub passed all six checks, including `Spec check`, before this merge.
+- Not verified: CI on this merge commit; the effect of the check on first-run failures (no data yet).
