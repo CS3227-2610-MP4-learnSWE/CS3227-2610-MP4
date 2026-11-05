@@ -1,6 +1,6 @@
 {
-  "phase": "3-all-arms-done-awaiting-phase4-grading",
-  "next_step": "Phase 4/5 per shortened_plan: USER starts Docker postgres:16 on 127.0.0.1:55432 (and tells coordinator), then coordinator runs frozen suite (Q1) on A,H3,H1,H2 via grade_arm.py, blind-grades eligible arms, compare, G4.",
+  "phase": "4-q1-graded-awaiting-triage",
+  "next_step": "USER decides triage of AC11 false positive (fix frozen test -> suite v2 -> re-grade all, vs keep as is). Then blind-grade Q2 for Q1-passing, uncapped arms (note H3 capped), compare, G4.",
   "arm_order": [
     "A",
     "H3",
@@ -155,5 +155,12 @@
   "dropped_arms": {
     "C": "dropped by USER 2026-11-06 (scope ladder a); secondary question C vs A gets no verdict (not run)"
   },
-  "shortened_plan": "USER 2026-11-06: arm C dropped. After H2 finishes, ONE grading session: USER starts Docker postgres:16 on 127.0.0.1:55432; run frozen suite (Q1) for A, H3, H1, H2; blind-grade (Q2) only arms that pass Q1 and are not capped (ladder b). compare + short results; G4 then G5."
+  "shortened_plan": "USER 2026-11-06: arm C dropped. After H2 finishes, ONE grading session: USER starts Docker postgres:16 on 127.0.0.1:55432; run frozen suite (Q1) for A, H3, H1, H2; blind-grade (Q2) only arms that pass Q1 and are not capped (ladder b). compare + short results; G4 then G5.",
+  "q1_results": {
+    "A": "151/153 (AC6 no-store header missing; AC11 regex false positive)",
+    "H3": "153/153 PASS",
+    "H1": "152/153 (AC11 regex false positive)",
+    "H2": "152/153 (AC11 regex false positive)",
+    "note": "run 2026-11-06 vs postgres:16 adm01-pg, URL scheme postgresql+psycopg:// required; AC11 pattern flags dict.update() in analytics/service.py (not a DB write)"
+  }
 }
