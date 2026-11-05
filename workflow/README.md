@@ -15,6 +15,7 @@ Everything about how this project is built. The default agent definitions live i
 | `experiments/context-engineering.md` | Context-engineering experiments and results. |
 | `experiments/resource-log.md` | Per-task model, token, revision-round and retry records. |
 | `experiments/results/` | Committed per-run usage summaries produced by the token tracker. |
+| `usage/runs/` | Per-feature-run invocation manifests and Markdown token reports; distinct from workflow comparison experiments. |
 | `tools/token-tracker/` | Token usage tracker for Claude Code and Codex logs; see its README. |
 | `tools/speccheck/` | Spec checker: required sections and labelled items in `spec.md`, `plan.md`, `tasks.md`; run before the build phase; see its README. |
 | `security/threat-model.md` | AI and development-process threats and controls. |
@@ -41,7 +42,7 @@ The human team members approve each spec/plan and each PR. Nothing is committed 
 
 ## Measuring token usage
 
-After any notable task or experiment run, run the token tracker on your own machine for the branch the work was done on, save the summary under `experiments/results/`, and add one row to `experiments/resource-log.md`.
-Only summaries are committed; the row-level `usage.csv` stays local.
-A feature is not closed until its row exists in `experiments/resource-log.md`; every handoff states whether the tracker was run, total tokens, cost and retries (`templates/handoff.md`).
+The orchestrator starts tracking when a feature is selected for a multi-agent run, records each agent start and return (including retries), and generates/links the report when the run closes. The human user does not do this manually. Keep A/B/C workflow comparisons and other experiments under `experiments/results/`.
+Each teammate runs the tracker on their own machine because it reads local tool logs. Commit only the manifest and aggregate Markdown report; the row-level `usage.csv` stays local.
+A feature is not closed until its usage report is linked from `experiments/resource-log.md`; every handoff states the invocation ID, model, effort, elapsed time and report path (`templates/handoff.md`).
 Full steps, options and limits: [`tools/token-tracker/README.md`](tools/token-tracker/README.md#use-in-the-workflow).

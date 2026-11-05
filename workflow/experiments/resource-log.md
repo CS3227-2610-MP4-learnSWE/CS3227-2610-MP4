@@ -1,9 +1,11 @@
 ﻿# Resource log
 
-One hand-written row per notable task. Take the numbers from a token-tracker summary (see "Measuring token usage" in `../README.md`) and link the summary file; do not paste raw logs. Mark estimates as estimates. A feature is not closed until its row exists here; the handoff's resource fields (tracker run, total tokens, cost, retries) feed it.
+One hand-written row per notable task and every multi-agent feature run. For a multi-agent run, link its invocation-level Markdown report under `workflow/usage/runs/`; for a workflow experiment, link the summary under `workflow/experiments/results/`. Do not paste raw logs. Mark estimates as estimates. A feature is not closed until its row exists here; the handoff's resource fields (tracker run, total tokens, cost, retries) feed it.
 
 | Date | Task / feature | Branch | Agent / workflow | Model | Input tok | Cache read tok | Output tok | Reasoning tok | Cost USD | Revision rounds | Notes / summary file |
 |---|---|---|---|---|---|---|---|---|---|---|---|
+| 2026-11-05 | TRK-02 invocation usage reports | feat/token-tracker-invocation-report | single-session, spec and tests first | gpt-6-luna | 81,316 | 9,427,712 | 49,522 | 23,203 | n/a | 0 | 50 requests; no cache writes recorded; cost unavailable because `prices.json` has no model prices; tracker suite 37 passed; see `logs/Trk02AgentUsageTracking.md` |
+| 2026-11-05 | TRK-02 lifecycle and macOS/Linux instructions | feat/token-tracker-invocation-report | single-session documentation update | gpt-6-luna | n/a | n/a | n/a | n/a | n/a | 0 | Tracker not run for this docs-only follow-up; invocation usage not available. Clarified orchestrator triggers and added POSIX commands; see `logs/Trk02WorkflowAutomation.md`. |
 | 2026-10-28 | Workflow scaffolding (PR 1) | chore/sdd-scaffolding | single session | sonnet | 178 | 8,781,224 | 54,240 | 6,717 | 2.14 | n/a | Measured 2026-10-29 by the tracker; also 180,170 cache-write tokens |
 | 2026-10-29 | TRK-01 token tracker (PR 2) | feat/token-tracker | single session | sonnet | 50 | 4,339,434 | 38,432 | 9,491 | 1.01 | n/a | Spec and tests first; 48,577 cache-write tokens |
 | 2026-10-29 | STU-02 experiment setup (spec, plan, docs) | exp/stu02-setup | single session | sonnet, then opus | 58 | 5,408,839 | 25,466 | 7,850 | 0.96 | n/a | Partial: session still running when measured |
