@@ -2,6 +2,19 @@
 
 Newest entry first. Use `templates/handoff.md`. Older entries describe the state at the time; the newest entry supersedes their open/merged status. Keep the newest 10 entries here; older ones are in `notes-archive.md`. Feature state is in `STATUS.md`.
 
+## 2026-11-05: spec-writer on STU-04 (Progress dashboard)
+- Done: `workflow/specs/STU-04/spec.md`, `plan.md`, `tasks.md` drafted (status Draft, not approved). 20 acceptance criteria (AC1 to AC4 copied from US-STU-04-01/02, the rest derived and marked), the "UI states and copy" tables with exact messages (Progress page and Overview stats), and the plan contract: migration `20261105_stu04_practice_attempt` (table `practice_attempt`) behind the existing `AttemptStore` (`lock` becomes a context manager yielding a row-locked, freshly read attempt; new `submitted_summaries`), optional `Question.topic_id`, `progress_rules.py` (3 answers, 60%), one read-only `GET /api/progress`, the Progress page at `/student/progress`, and the Overview with real figures from the same call. The user's seven decisions of 2026-11-05 are recorded in the spec.
+- Next: human answers the open questions, then test-designer (tasks 1, 2, 7, 8) and developer (3 to 6, 9) start in parallel (Variant B).
+- Open questions (details in spec.md): (1) fixture topic mapping: all three questions go to one new seed topic "Software engineering basics" (`66666666-6666-4666-8666-666666666661`, added to `teacher_materials/seed.py`) because the rule needs 3 answers per topic; the alternative is the existing "Testing" topic; one fixture set can show only one topic. (2) practice sets are not course-scoped, so practice figures ignore membership. (3) wording for a course with no lessons. (4) Overview stats "Practice average" (mean of latest score per set, rounded down) and "Topics to revise" replace the fake stats, and the sidebar gets a "Progress" item. (5) listed decision "question reuse after answers have been seen" stays undecided. (6) no cap on attempts per student (STU-02 gap). (7) in-memory attempts are lost on deploy.
+- Checks: the spec checker was NOT run (this session had no shell tool); the three files were checked by hand against `registry.py` and `rules.py` (sections, filled UI table rows with 7 cells, the eleven labels, no placeholder text outside backticks). Run `python -m speccheck ..\..\specs\STU-04` from `workflow\tools\speccheck` before approval.
+- Files touched: `workflow/specs/STU-04/spec.md`, `plan.md`, `tasks.md`, `workflow/notes.md`. No code, nothing committed.
+- Resource use (all required; write "n/a" only with a reason):
+  - Tracker run: no
+  - Model: Sonnet 5.5 (spec-writer subagent)
+  - Total tokens: n/a (not measured; no tracker run)
+  - Cost (USD): n/a (not measured)
+  - Retries and revision rounds: 0
+
 ## 2026-11-04: STU-01 PR 18 after merging master (orchestrator, student-role owner)
 - Master moved (TEA-03 MCQ editing and draft deletion, PR 17) after the first push, so PR 18 conflicted. `master` was merged into `feat/stu01-spec` (52fa4db): text conflicts kept both sides; the two Alembic heads were resolved by chaining `20261104_stu01_lessons` after `20261104_tea03_mcq_edit` (one head); `test_tea03_mcqs_cleanup.py` migration test now upgrades to its own revision instead of `head` (one line, same pinning as before).
 - Changed after the merge: `published_lesson.source_draft_id` is now ON DELETE RESTRICT (was SET NULL), so TEA-03's existing guard returns 409 `draft_in_use` when a published note's draft is deleted. Tests updated by the independent test-designer (`test_stu01_migration.py`, new `test_stu01_draft_restrict.py`, `test_stu01_progress_unit.py`). Verifier re-check: pass, no blocking defects. First CI run failed one backend test that still asserted SET NULL (missed by my targeted run); fixed in 49e6bfa.
