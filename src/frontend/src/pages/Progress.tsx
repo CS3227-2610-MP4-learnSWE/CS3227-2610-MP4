@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router";
 import { Alert, Button } from "@mui/material";
 import { EmptyState, PageHeading, Panel } from "../components/ui";
@@ -14,7 +14,7 @@ import { progressErrorMessage } from "../services/progressMessages";
 
 type Load =
   | { state: "loading" }
-  | { state: "ready"; data: ProgressData }
+  | { state: "ready"; data: ProgressData; key: string }
   | { state: "error"; error: ApiError };
 
 const asError = (error: unknown) =>
@@ -229,14 +229,19 @@ function Failure({
 }
 
 export default function Progress() {
-  const demoMode = useAuth().status === "anonymous";
+  const { status, user } = useAuth();
+  const demoMode = status === "anonymous";
+  const userKey = user?.id ?? "";
+  const keyRef = useRef(userKey);
+  keyRef.current = userKey;
   const [load, setLoad] = useState<Load>({ state: "loading" });
   const [attempt, setAttempt] = useState(0);
   useEffect(() => {
     let current = true;
     setLoad({ state: "loading" });
+    const key = keyRef.current;
     getProgress().then(
-      (data) => current && setLoad({ state: "ready", data }),
+      (data) => current && setLoad({ state: "ready", data, key }),
       (error) => current && setLoad({ state: "error", error: asError(error) }),
     );
     return () => {
@@ -250,7 +255,8 @@ export default function Progress() {
         title="Your progress"
         description="Your completed lessons, practice scores and the topics worth another look."
       />
-      {load.state === "loading" && (
+      {(load.state === "loading" ||
+        (load.state === "ready" && load.key !== userKey)) && (
         <div role="status">Loading your progress…</div>
       )}
       {load.state === "error" && (
@@ -260,7 +266,7 @@ export default function Progress() {
           onRetry={() => setAttempt((n) => n + 1)}
         />
       )}
-      {load.state === "ready" && (
+      {load.state === "ready" && load.key === userKey && (
         <div className="progress-sections">
           <Panel>
             <LessonSection lessons={load.data.lessons} />

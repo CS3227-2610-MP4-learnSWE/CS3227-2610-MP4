@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, Navigate, useLocation } from "react-router";
 import { Button } from "@mui/material";
 import { ArrowRight, Check, Sparkles } from "lucide-react";
@@ -24,17 +24,22 @@ import Progress from "./Progress";
 
 type StatsLoad =
   | { state: "loading" }
-  | { state: "ready"; data: ProgressData }
+  | { state: "ready"; data: ProgressData; key: string }
   | { state: "error"; error: ApiError };
 
 /** The three Overview stats, all read from the one progress response. */
 function OverviewStats() {
-  const demoMode = useAuth().status === "anonymous";
+  const { status, user } = useAuth();
+  const demoMode = status === "anonymous";
+  const userKey = user?.id ?? "";
+  const keyRef = useRef(userKey);
+  keyRef.current = userKey;
   const [load, setLoad] = useState<StatsLoad>({ state: "loading" });
   useEffect(() => {
     let current = true;
+    const key = keyRef.current;
     getProgress().then(
-      (data) => current && setLoad({ state: "ready", data }),
+      (data) => current && setLoad({ state: "ready", data, key }),
       (error) =>
         current &&
         setLoad({
@@ -53,7 +58,7 @@ function OverviewStats() {
   if (load.state === "error") {
     const detail = progressStatDetail(load.error, demoMode);
     lessons = practice = topics = { ...none, detail };
-  } else if (load.state === "ready") {
+  } else if (load.state === "ready" && load.key === userKey) {
     const { totals } = load.data.lessons;
     const { sets, average_latest_percent: average } = load.data.practice;
     const items = load.data.topics.items;
@@ -164,18 +169,16 @@ function LegacyAssistant() {
   return <Navigate to="/student/overview" replace />;
 }
 export default function Student() {
-  const { status, user } = useAuth();
-  const sessionKey = `${status}:${user?.id ?? ""}`;
   const path = useLocation().pathname.split("/");
   switch (path[2]) {
     case "overview":
-      return <Overview key={sessionKey} />;
+      return <Overview />;
     case "materials":
       return path[3] ? <Lesson key={path[3]} id={path[3]} /> : <Materials />;
     case "practice":
       return <Practice />;
     case "progress":
-      return <Progress key={sessionKey} />;
+      return <Progress />;
     case "assistant":
       return <LegacyAssistant />;
     default:
