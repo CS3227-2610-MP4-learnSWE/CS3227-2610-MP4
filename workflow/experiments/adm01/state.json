@@ -1,6 +1,6 @@
 {
-  "phase": "4-q1-v2-graded-awaiting-q2",
-  "next_step": "Decide Q2 scope: all H arms are 'capped' (=not qualified per README) and A failed Q1, so ladder (b) leaves no arm to blind-grade. Ask USER: run Q2 anyway (informational) or go to compare/G4.",
+  "phase": "5-q2-done-awaiting-compare",
+  "next_step": "compare + results write-up, then G4 (ask USER how to treat capped arms).",
   "arm_order": [
     "A",
     "H3",
@@ -170,5 +170,11 @@
     "H1": "153/153 PASS (capped marginally 2.599 vs 2.536)",
     "H2": "153/153 PASS (capped marginally 2.618 vs 2.536)",
     "note": "v1 AC11 false positive (case-insensitive \bUPDATE\b matched dict.update) fixed per USER triage 2026-11-06; v1 results kept in q1_results"
-  }
+  },
+  "q2_informational": {
+    "H3": "PASS, 0 blocking, 5 non-blocking",
+    "H2": "NOT PASS, 1 blocking (generation 'requested' recorded before try; no outcome event if content read fails), 3 non-blocking",
+    "H1": "PASS, 0 blocking, 5 non-blocking"
+  },
+  "q2_note": "Informational only: all graded arms capped. Verifiers did not run the suite. Key: grading/key.json"
 }
