@@ -314,3 +314,45 @@ for (const theme of ["light", "dark"] as const) {
     ).toBe(true);
   });
 }
+
+test("pending publication allows departure and obsolete completion cannot update reopened draft", async ({
+  page,
+}) => {
+  const api = await mockTeacherPublicationsApi(page);
+  await page.goto(`/teacher/generate?course=${COURSE_A}&draft=${SAVED.id}`);
+  await page
+    .getByRole("button", { name: "Publish notes", exact: true })
+    .click();
+  let release!: () => void;
+  api.holdPublish = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page
+    .getByRole("button", { name: "Confirm publication", exact: true })
+    .click();
+  await expect.poll(() => api.publicationCalls).toBe(1);
+  await page
+    .getByRole("link", { name: "Published content", exact: true })
+    .click();
+  await expect(page).toHaveURL(/\/teacher\/review/);
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await page.goBack();
+  await expect(
+    page.getByRole("button", { name: "Publish notes", exact: true }),
+  ).toBeEnabled();
+  const completed = page.waitForResponse((response) =>
+    response.url().endsWith("/publish"),
+  );
+  release();
+  await completed;
+  // A new selection lifetime cannot inherit the old mutation's success banner or status.
+  await expect(
+    page.getByText(
+      "Notes published. Enrolled students can read them in Study materials.",
+      { exact: true },
+    ),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: "Publish notes", exact: true }),
+  ).toBeEnabled();
+});
