@@ -1,12 +1,26 @@
 {
-  "phase": "0-complete",
-  "next_step": "Phase 1: shared ADM-01 spec on exp/adm01-setup (own session)",
-  "arm_order": ["A", "H3", "H1", "H2", "C"],
+  "phase": "1-complete",
+  "next_step": "Phase 2: frozen suite via test-designer on exp/adm01-frozen (from tag adm01-start), then tools in workflow/experiments/adm01/tools/ (tests first) -> Gate G2",
+  "arm_order": [
+    "A",
+    "H3",
+    "H1",
+    "H2",
+    "C"
+  ],
   "arms_done": [],
   "arm_costs_usd": {},
-  "caps_usd": {"A": 15},
-  "branches": {"coord": "exp/adm01-coord", "setup": null, "frozen": null},
-  "tags": {"adm01-start": null},
+  "caps_usd": {
+    "A": 15
+  },
+  "branches": {
+    "coord": "exp/adm01-coord",
+    "setup": "exp/adm01-setup",
+    "frozen": null
+  },
+  "tags": {
+    "adm01-start": "ed3d3ab"
+  },
   "master_commit_at_preflight": "e5e617c",
   "preflight": {
     "date": "2026-11-05",
@@ -23,6 +37,14 @@
     "note": "reported by USER on 2026-11-05; USD-equivalent headroom not converted"
   },
   "gate_answers": {
-    "notes_branch": "exp/adm01-coord from master approved"
+    "notes_branch": "exp/adm01-coord from master approved",
+    "G1": "approved 2026-11-05: spec/plan/tasks as written; retention=keep forever; generation paths = notes+MCQ create only (verified: LLM call sites are chatbot, teacher_notes, teacher_mcqs); unavailable=200; future end ok; single start/end=422"
+  },
+  "spec_writer": {
+    "speccheck": "OK",
+    "tokens_reported": 64664,
+    "tool_uses": 31,
+    "duration_ms": 163842,
+    "note": "subagent-reported; cost not converted"
   }
 }
