@@ -1,0 +1,16 @@
+# Spec checker waivers: <spec-id> | <scope> | <reason>
+# Scopes: all (skip every check) or added-items (skip only the labelled items).
+# Only for specs that existed before the spec checker (CHK-01). Never add a new spec here.
+# Each spec below failed section, table or contract rules when the checker was introduced, so scope all applies.
+CI-01 | all | predates CHK-01; plan.md only, no spec.md or tasks.md and no template sections
+SHR-01 | all | predates CHK-01; no UI states table in spec.md and no UI contract in plan.md, labelled items missing
+STU-02 | all | predates CHK-01; template sections, UI states table, UI contract and owner roles missing
+STU-02-frontend | all | predates CHK-01; template sections, UI states table and UI contract missing
+STU-03 | all | predates CHK-01; template sections, UI states table and UI contract missing
+TEA-01 | all | predates CHK-01; no UI states table or UI contract, labelled items missing
+TEA-01-db-storage | all | predates CHK-01; most template sections missing
+TEA-02-mcqs | all | predates CHK-01; most template sections missing
+TEA-02-notes | all | predates CHK-01; most template sections missing
+TEA-03-mcqs-cleanup | all | predates CHK-01; template sections missing, labelled items missing
+TEA-03-notes | all | predates CHK-01; template sections, UI states table and UI contract missing
+TRK-01 | all | predates CHK-01; template sections missing, no UI states table or UI contract

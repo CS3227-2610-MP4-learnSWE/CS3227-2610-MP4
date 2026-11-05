@@ -198,6 +198,38 @@ jobs:
             echo "No experiment scripts on this branch"
           fi
 
+  spec-check:
+    name: Spec check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Find out whether specs or the checker changed
+        id: changed
+        env:
+          EVENT: ${{ github.event_name }}
+          BASE: ${{ github.base_ref }}
+        run: |
+          if [ "$EVENT" = "pull_request" ]; then
+            git fetch --no-tags origin "$BASE"
+            files=$(git diff --name-only "origin/$BASE...HEAD" -- workflow/specs workflow/tools/speccheck)
+            [ -n "$files" ] && echo "run=true" >> "$GITHUB_OUTPUT" || echo "run=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Spec checker unit tests
+        if: steps.changed.outputs.run == 'true'
+        working-directory: workflow/tools/speccheck
+        run: python -m unittest discover -s tests
+      - name: Check all specs
+        if: steps.changed.outputs.run == 'true'
+        working-directory: workflow/tools/speccheck
+        run: python -m speccheck --all
+
   dependency-audit:
     name: Dependency audit
     runs-on: ubuntu-latest

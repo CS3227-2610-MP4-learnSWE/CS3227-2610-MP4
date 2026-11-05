@@ -103,6 +103,7 @@ Spec-driven, multi-agent workflow with approved STU-02 specs and completed exper
 | `workflow/specs/` | Per-feature spec, plan and tasks. |
 | `workflow/experiments/` | Context-engineering experiments, the resource log, and per-run usage summaries under `results/`. |
 | `workflow/tools/token-tracker/` | Standard-library Python tool that reads Claude Code and Codex session logs and reports token use and cost per agent and model (spec: `workflow/specs/TRK-01/`). |
+| `workflow/tools/speccheck/` | Standard-library Python tool that checks `spec.md`, `plan.md` and `tasks.md` for required sections, the UI states table, UI contract and labelled items before the build phase; run `python -m speccheck --all` there; waivers for pre-existing specs in `workflow/specs/speccheck-waivers.txt` (spec: `workflow/specs/CHK-01/`). |
 | `workflow/security/` | Threat model and security test log. |
 | `workflow/checklist.md` | Setup and submission checklist. |
 | `.github/workflows/ci.yml` | Continuous integration on pull requests and pushes to `master` (plan: `workflow/specs/CI-01/plan.md`). |

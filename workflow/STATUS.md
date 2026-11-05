@@ -29,3 +29,4 @@ Stages: not started, spec, build, verified (local), merged.
 | OPT-01 to OPT-03 | not started | | | Outside the MVP. |
 | CI-01 | merged | `chore/ci` | 4 | Deployment jobs blocked on hosting; see `deployment.md`. |
 | TRK-01 | merged | `feat/token-tracker` | 2 | Prices must be checked against provider pricing. |
+| CHK-01 | verified (local), CI green, awaiting review | `claude/spec-check-455c55` | 19 | Spec checker for the spec-writer rules; 289 tests pass; verifier NOT PASS in rounds 1 and 2, then a narrow round 3 passed after a user-approved final fix; CI job not yet run on GitHub; STU-01 specs enforced after merge. |
