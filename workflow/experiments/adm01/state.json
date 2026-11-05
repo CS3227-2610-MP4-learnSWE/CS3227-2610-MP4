@@ -1,6 +1,6 @@
 {
-  "phase": "3-G3-approved-armA-launching",
-  "next_step": "USER launches arm A in ..\u0007dm01-wt\\A per launch-card.md, then starts a coordinator session and pastes 'Resume Plan 2 from state.json'. Then phase 4 (TRK-03, budget.py, grade_arm.py).",
+  "phase": "3-armA-done-awaiting-G3-H3",
+  "next_step": "G3 for H3: not before 20:21 SGT (65 min after A's last request 19:15:25 SGT). USER runs /usage, says 'start now', launches H3 in ..\u0007dm01-wt\\H3 with prompts/arm-template.md. Cap for H3 = 1.5 x A = 2.536 USD (budget.py).",
   "arm_order": [
     "A",
     "H3",
@@ -8,8 +8,12 @@
     "H2",
     "C"
   ],
-  "arms_done": [],
-  "arm_costs_usd": {},
+  "arms_done": [
+    "A"
+  ],
+  "arm_costs_usd": {
+    "A": 1.690737
+  },
   "caps_usd": {
     "A": 15
   },
@@ -82,5 +86,20 @@
     "C": "../adm01-wt/C"
   },
   "arm_commits": "H3,H1,H2 each have one agent-change commit on their branch; A and C are at adm01-start",
-  "phase4_trk03": "USER wants TRK-03 reports. Arm prompts unchanged (lifecycle skipped, control). In phase 4, per arm: run `python -m tracker invocations-from-logs --run-id <date>-ADM01-<arm> SESSION_IDs` in workflow/tools/token-tracker (writes report-v2.md + metrics-v2.csv to workflow/usage/runs/<run-id>/), commit them, link from resource-log.md. USER must note each arm's session ID(s) (coordinator can find them in ~/.claude/projects). DECISION (USER 2026-11-05): all arm cost/token figures used for budget.py caps and compare must be taken from the TRK-03 tracker output (report-v2.md / metrics-v2.csv totals), never typed by hand; the coordinator copies totals from tracker files into arm_costs_usd and cites the run-id."
+  "phase4_trk03": "USER wants TRK-03 reports. Arm prompts unchanged (lifecycle skipped, control). In phase 4, per arm: run `python -m tracker invocations-from-logs --run-id <date>-ADM01-<arm> SESSION_IDs` in workflow/tools/token-tracker (writes report-v2.md + metrics-v2.csv to workflow/usage/runs/<run-id>/), commit them, link from resource-log.md. USER must note each arm's session ID(s) (coordinator can find them in ~/.claude/projects). DECISION (USER 2026-11-05): all arm cost/token figures used for budget.py caps and compare must be taken from the TRK-03 tracker output (report-v2.md / metrics-v2.csv totals), never typed by hand; the coordinator copies totals from tracker files into arm_costs_usd and cites the run-id.",
+  "arm_results": {
+    "A": {
+      "source": "workflow/usage/runs/2026-11-05-ADM01-A/report-v2.md (TRK-03 invocations-from-logs, session c4975c87-0699-46f6-bcd9-5bfadb160b6d)",
+      "cost_usd": 1.690737,
+      "requests": 56,
+      "wall_s": 467.8,
+      "human_messages": 0,
+      "last_request_sgt": "2026-11-05 19:15:25",
+      "revision_rounds": 0,
+      "branch_head": "cb0c80e",
+      "developer_commit": "44e396a",
+      "arm_self_report": "suite 189 passed/19 failed/799 skipped; 126 ADM-01 tests skipped (no TEA01_TEST_DATABASE_URL); 19 failures pre-existing KeyError DATABASE_URL; 5 non-blocking verifier findings; test-designer narrowed 2 AC11 regexes",
+      "note": "self-report is not graded; grading in phase 4 with Postgres"
+    }
+  }
 }
