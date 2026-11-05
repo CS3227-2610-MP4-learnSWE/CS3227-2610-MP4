@@ -1,6 +1,6 @@
 {
-  "phase": "3-H1-done-awaiting-G3-H2",
-  "next_step": "G3 for H2: not before 01:38 SGT 2026-11-06 (65 min after H1 last request 00:33:05). USER runs /usage, says 'start now', launches H2 in adm01-wt\\H2 with arm-template.md. Cap 2.536 USD.",
+  "phase": "3-all-arms-done-awaiting-phase4-grading",
+  "next_step": "Phase 4/5 per shortened_plan: USER starts Docker postgres:16 on 127.0.0.1:55432 (and tells coordinator), then coordinator runs frozen suite (Q1) on A,H3,H1,H2 via grade_arm.py, blind-grades eligible arms, compare, G4.",
   "arm_order": [
     "A",
     "H3",
@@ -10,12 +10,14 @@
   "arms_done": [
     "A",
     "H3",
-    "H1"
+    "H1",
+    "H2"
   ],
   "arm_costs_usd": {
     "A": 1.690737,
     "H3": 3.016179,
-    "H1": 2.598754
+    "H1": 2.598754,
+    "H2": 2.618417
   },
   "caps_usd": {
     "A": 15
@@ -131,6 +133,19 @@
       "branch_head": "9ade267",
       "arm_self_report": "982 passed 0 failed 7 errors (PermissionError tmp_path, env) vs own postgres container; 1 blocking defect (no-store header) fixed; edited 2 lines test_tea03_publications.py",
       "note": "self-report not graded; arm ran own Postgres like H3"
+    },
+    "H2": {
+      "source": "workflow/usage/runs/2026-11-05-ADM01-H2/report-v2.md (session 658082de-c459-4ddc-8dcf-f835ea10dd08)",
+      "cost_usd": 2.618417,
+      "cap_status": "capped (2.618 vs 2.536, marginal)",
+      "requests": 91,
+      "started_sgt": "2026-11-06 01:41:02",
+      "last_request_sgt": "2026-11-06 02:46:24",
+      "revision_rounds": 1,
+      "human_messages": 3,
+      "branch_head": "4e95c61",
+      "arm_self_report": "1042 passed 0 failed 0 skipped, one full run after last fix, own postgres container; 1 dev defect + 2 test defects fixed round 1; loosened one assertion in test_tea03_publications.py",
+      "note": "self-report not graded"
     }
   },
   "confounds": [
