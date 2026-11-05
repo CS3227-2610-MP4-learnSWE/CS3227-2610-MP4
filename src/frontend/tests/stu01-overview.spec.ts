@@ -75,7 +75,9 @@ test("stu01 AC13 while loading the value is … and the detail is Loading…", a
     page.getByText("Lessons completed", { exact: true }),
   ).toBeVisible();
   await expect(page.getByText("…", { exact: true }).first()).toBeVisible();
-  await expect(page.getByText("Loading…", { exact: true })).toBeVisible();
+  await expect(
+    page.getByText("Loading…", { exact: true }).first(),
+  ).toBeVisible();
   api.release();
 });
 
@@ -117,7 +119,7 @@ test("stu01 AC13 Overview stat times out after 10 seconds with the offline detai
   await expect.poll(() => api.count).toBe(1);
   await page.clock.fastForward(11_000);
   await expect(
-    page.getByText("Could not reach the server.", { exact: true }),
+    page.getByText("Could not reach the server.", { exact: true }).first(),
   ).toBeVisible();
   api.release();
 });
@@ -129,7 +131,7 @@ test("stu01 AC14 Overview in demo mode: value – and the sign in detail, no red
   await page.goto("/student/overview");
   await expect(page.getByText("–", { exact: true }).first()).toBeVisible();
   await expect(
-    page.getByText("Sign in to see your progress", { exact: true }),
+    page.getByText("Sign in to see your progress", { exact: true }).first(),
   ).toBeVisible();
   await expect(page).toHaveURL(/\/student\/overview$/);
 });

@@ -166,7 +166,7 @@ for (const [label, reply, detail] of failures) {
       "Topics to revise",
     ]) {
       await expect(stat(page, name).locator("strong")).toHaveText("–");
-      await expect(stat(page, name)).toContainText(detail);
+      await expect(stat(page, name).locator("small")).toHaveText(detail);
     }
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
     const text = await page.locator("body").innerText();
@@ -223,7 +223,7 @@ test("stu04 AC14 the Overview no longer shows the sample figures, the streak or 
 }) => {
   await openOverview(page);
   await expect(stat(page, "Lessons completed")).toContainText("1 / 3");
-  const text = await page.locator("body").innerText();
+  const text = await page.locator("main").innerText();
   for (const t of [
     "82%",
     "2.4 hrs",
@@ -258,6 +258,8 @@ test("stu04 AC14 Back and Forward to the Overview load it again (one request eac
   await expect(stat(page, "Lessons completed")).toContainText("1 / 3");
   expect(api.count).toBe(1);
   await page.getByRole("link", { name: "Practice", exact: true }).click();
+  await expect(page).toHaveURL(/\/student\/practice$/);
+  await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
   await page.goBack();
   await expect(stat(page, "Lessons completed")).toContainText("1 / 3");
   await expect.poll(() => api.count).toBe(2);
