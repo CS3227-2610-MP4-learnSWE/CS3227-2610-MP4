@@ -5,6 +5,7 @@ from sqlalchemy.exc import SQLAlchemyError
 
 import companion_routes
 import practice_routes
+import progress_routes
 from auth.routes import add_no_store, router as auth_router
 from auth.settings import AuthSettings
 from study_lessons.routes import router as study_router
@@ -21,6 +22,7 @@ app.include_router(teacher_notes_router)
 app.include_router(teacher_mcqs_router)
 app.include_router(companion_routes.router)
 app.include_router(study_router)
+app.include_router(progress_routes.router)
 app.add_exception_handler(ApiError, practice_routes.error_response)
 app.middleware("http")(add_no_store)
 

@@ -217,3 +217,15 @@ Fresh strongest-verifier suites passed727backend/245browser, but extra probes fo
 Both blockers are resolved by6c18dc9 and unchanged regressions94901d4/340154a pass. Original expired-cookie probe returns401/401; all three original focus probes now find the intended H2 focused. Fresh strongest-verifier728backend/245browser and types/lint/format/build passed, as did successful/failed dirty logout. Current guide claims corrected; no remaining blockers or fix-related regressions. Two correction rounds used. Additional PostgreSQL16 Docker run is tracked separately in the session log; verifier tests used isolated PostgreSQL14.24.
 
 Additional parent verification: the full728backend suite passed against the separate Docker/PostgreSQL16 test container (104.65s), using isolated schemas. Development container/data untouched; no live provider requests.
+
+### STU-04 progress dashboard (cases to run; not yet run by a test-designer)
+
+| Case | Expected |
+|---|---|
+| `GET /api/progress` with `?user_id=`, `?student_id=`, `X-Student-Id`, `X-Demo-User-Id` | ignored; the session user's data only |
+| No cookie / teacher / admin session | 401 `unauthenticated` / 403 `forbidden` / 403 `forbidden` |
+| Two students on the same set and course | each sees only their own scores, attempt counts and topics |
+| Progress body after submit | no `correct_choice`, `explanation`, `key_version`, question text, choice map or attempt id |
+| In-progress attempt with saved answers | no change in the response |
+| Two simultaneous submits of one attempt | one 200, one 409 `already_submitted`, counted once |
+| Attempt id of another student on STU-02 endpoints after the store change | 404 `attempt_not_found` |

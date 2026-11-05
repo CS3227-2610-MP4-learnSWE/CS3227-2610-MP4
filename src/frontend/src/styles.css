@@ -3532,3 +3532,30 @@ td .MuiButton-root {
 .mcq-editor-question {
   overflow-wrap: anywhere;
 }
+
+.progress-sections {
+  display: grid;
+  gap: 16px;
+}
+.progress-list {
+  list-style: none;
+  margin: 12px 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+.progress-list li {
+  display: grid;
+  gap: 4px;
+}
+.progress-bar {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--border, rgba(128, 128, 128, 0.25));
+  overflow: hidden;
+}
+.progress-bar > div {
+  height: 100%;
+  background: currentColor;
+  opacity: 0.6;
+}

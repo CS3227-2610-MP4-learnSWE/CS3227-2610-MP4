@@ -102,12 +102,21 @@ export function PageHeading({
 export function Panel({
   children,
   className = "",
+  role,
+  ariaLabel,
 }: {
   children: ReactNode;
   className?: string;
+  role?: string;
+  ariaLabel?: string;
 }) {
   return (
-    <Paper variant="outlined" className={`panel ${className}`}>
+    <Paper
+      variant="outlined"
+      className={`panel ${className}`}
+      role={role}
+      aria-label={ariaLabel}
+    >
       {children}
     </Paper>
   );
@@ -147,7 +156,7 @@ export function Stat({
   tone?: string;
 }) {
   return (
-    <Panel className="stat">
+    <Panel className="stat" role="group" ariaLabel={label}>
       <div className="stat-top">
         <span>{label}</span>
         <span className={`icon-box ${tone}`}>
