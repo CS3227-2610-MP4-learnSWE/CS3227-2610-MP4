@@ -18,6 +18,7 @@ Programming/SE learning web app with three roles (student, teacher, admin), each
 - Keep shared logic single-purpose and not duplicated (SRP, DRY). Keep the UI simple.
 - Do not claim a feature in `docs/UserGuide.md` unless it works; inaccuracies count as bugs.
 - Record resource use (model, rough tokens, retries) for notable tasks in `workflow/experiments/resource-log.md`.
+- For every multi-agent feature run, the orchestrator owns token tracking: create the run manifest before the first agent starts, record every agent start/return including retries, and generate/link the report when the run closes. The human user does not do these steps; follow `workflow/coordination.md` and `workflow/usage/README.md`.
 - Add a summary to `logs/` after each working session. Verify it against what actually happened.
 - No build-and-host tools for deployment; use GitHub Actions in the team's repo.
 - Never commit secrets. Use `.env` files (ignored) and `.env.example`.

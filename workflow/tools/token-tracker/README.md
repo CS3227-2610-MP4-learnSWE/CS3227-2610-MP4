@@ -10,6 +10,14 @@ Set-Location workflow\tools\token-tracker
 python -m tracker report --cwd-contains CS3227-2610-MP4
 ```
 
+macOS/Linux:
+
+```sh
+cd "$(git rev-parse --show-toplevel)"
+cd workflow/tools/token-tracker
+python3 -m tracker report --cwd-contains CS3227-2610-MP4
+```
+
 Per-run summary for an experiment branch, saved for committing:
 
 ```powershell
@@ -40,12 +48,12 @@ The command writes `report.md` next to the manifest. Supply `--out PATH` to choo
 
 ## Use in the workflow
 
-For every multi-agent feature run, record every invocation in its manifest and generate the report after the agents finish. Each teammate runs the tracker on their own machine because it reads local session logs. Routine feature-run records go under `workflow/usage/runs/<feature-run-id>/`; workflow comparison experiments such as A/B/C stay under `workflow/experiments/results/`.
+For every multi-agent feature run, the orchestrator starts tracking when the feature is selected, records every agent launch/return (including retries), and generates the report when the run ends or is stopped. The human user does not do this manually. Each teammate runs the tracker on their own machine only when their local logs are needed, because the tracker reads local session logs. Routine feature-run records go under `workflow/usage/runs/<feature-run-id>/`; workflow comparison experiments such as A/B/C stay under `workflow/experiments/results/`. This is an orchestrator lifecycle requirement, not a background provider hook.
 
-1. Add the invocation row when an agent starts; fill `finished_at` when it returns.
-2. Run `run-report --manifest <path-to-invocations.csv>` and commit both the manifest and `report.md`.
-3. Link the report from the matching row in `workflow/experiments/resource-log.md`.
-4. Use `report --branch <branch-name>` for the existing aggregate view.
+1. On feature selection, the orchestrator creates the run folder and manifest before starting the spec-writer.
+2. On each launch, it adds a unique invocation row; on return, it fills `finished_at`, `tool`, the required `session_id`, and `agent_id` when available.
+3. On run close, it runs `run-report`, commits the manifest and `report.md`, and links the report in `workflow/experiments/resource-log.md`.
+4. Use `report --branch <branch-name>` for the existing aggregate view or manually run `run-report` only for testing/recovery.
 
 New per-run reports use format `invocation-v1`. Existing aggregate reports under `workflow/experiments/results/` remain unchanged and are historical/experiment records. The row-level `usage.csv` holds local usage history and is gitignored. Commit invocation manifests and Markdown run reports, not provider logs or prompts/replies. Quote numbers as measured by the tracker, not as billed (see Cost and Known limits).
 
@@ -74,6 +82,14 @@ Only numbers, IDs, model names, roles, effort settings, timestamps, branch names
 Set-Location (git rev-parse --show-toplevel)
 Set-Location workflow\tools\token-tracker
 python -m unittest discover -s tests
+```
+
+macOS/Linux:
+
+```sh
+cd "$(git rev-parse --show-toplevel)"
+cd workflow/tools/token-tracker
+python3 -m unittest discover -s tests
 ```
 
 Tests build synthetic logs in temporary folders; no real logs are in the repo. The original tracker spec is in `workflow/specs/TRK-01/`; invocation reports are specified in `workflow/specs/TRK-02/`.
