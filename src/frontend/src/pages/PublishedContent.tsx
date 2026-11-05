@@ -184,7 +184,7 @@ export default function PublishedContent() {
               ))}
           </ul>
         </Panel>
-        <Panel className="notes-viewer">
+        <Panel className="notes-viewer publication-viewer">
           {loading && <p role="status">Loading published version…</p>}
           {error && (
             <div role="alert">

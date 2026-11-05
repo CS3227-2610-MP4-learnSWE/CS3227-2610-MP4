@@ -220,7 +220,7 @@ export default function PublishDraft({
         <DialogTitle id="publish-title">
           {kind === "note" ? "Publish notes?" : "Publish practice set?"}
         </DialogTitle>
-        <DialogContent>
+        <DialogContent className="publication-dialog-content">
           <p>
             Publishing saves a permanent version once. Later draft changes will
             not update it.
