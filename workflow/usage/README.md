@@ -29,4 +29,18 @@ python3 -m tracker run-report --manifest ../../../usage/runs/2026-11-05-STU04-01
 
 The Markdown report has one row per invocation, even when a role is started more than once, and a feature-run total row. It includes model names from local usage logs, effort from the manifest, elapsed wall-clock time, token categories and cost. A blank cost means at least one needed price was unavailable. An invocation with no matching usage records is shown with zero requests; check the source IDs if you expected model calls.
 
+## Rebuilding invocations from logs (`invocation-v2`)
+
+When per-invocation detail is needed (cache behaviour, tool and file-read counts, time split, orchestrator spend) or no hand-written manifest exists, `invocations-from-logs` rebuilds the invocations from Claude Code session logs. It does not replace the orchestrator's manifest for routine runs; it is for analysis and recovery.
+
+```powershell
+Set-Location (git rev-parse --show-toplevel)
+Set-Location workflow\tools\token-tracker
+python -m tracker invocations-from-logs --run-id 2026-11-05-ADM01-01 SESSION_ID [SESSION_ID ...]
+```
+
+It writes `report-v2.md` (format `invocation-v2`) and `metrics-v2.csv` into `runs/<run-id>/`, next to any `invocations.csv` and `report.md` of the same run. It produces one `orchestrator` row per session and one row per subagent prompt, with the role from the agent type the log records, the agent type the orchestrator requested, and an optional label from a metadata sidecar (`--meta`) that can also carry arm, phase, revision round, trigger, start and end commit and an agent-definition hash. A run total and an `unattributed` line follow the invocation rows. Before writing, the tool checks that invocation rows plus unattributed rows equal what the aggregate `report` gives for the same sessions; a mismatch exits non-zero with a message that names the sessions, the quantity that differs and the likely cause, and writes nothing.
+
+Unavailable data is written `unavailable`, never estimated. Costs are tracker list-price estimates, not billed. Outputs hold numbers, IDs, model names, roles, timestamps, folder paths and the paths of files read; never prompts, replies or file contents, and raw logs are never committed. Known limits: the Claude Code log format is undocumented and may change; where a worktree-isolated subagent's log is stored is unverified; Codex sessions get no new metrics; the Haiku 5.5 price tier rule is an assumption; wall-clock gaps are not dependencies. Options, metric rules and the sidecar format are in `workflow/tools/token-tracker/README.md`.
+
 The report format is labelled `invocation-v1`. Older aggregate summaries remain unchanged in `workflow/experiments/results/`; do not infer invocation-level details for them. The tracker reads each teammate's local logs; when agents run on different machines, usage data must be collected from those machines before the shared report is complete. The tracker does not merge reports from multiple machines automatically. Never commit provider JSONL logs or prompt/reply content.
