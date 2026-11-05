@@ -18,7 +18,7 @@ Stages: not started, spec, build, verified (local), merged.
 | TEA-04 | verified (local; whole-batch publication) | `feat/tea03-publish-content` | | One batch of three questions = one immutable practice set; no assembly. Publishing verified at380749e; student attempt integration remains future. |
 | TEA-05 | not started | | | |
 | TEA-06 | not started | | | |
-| ADM-01 | not started | | | |
+| ADM-01 | build (not merged) | `exp/adm01-H1` (best candidate: passed frozen suite 153/153 and blind review) | | Backend slice only; built in the workflow experiment, not on master and no PR. Admin report page (ADM-01-frontend) not built. Open spec questions (retention, 200 `unavailable`, undercounting) need human confirmation. See `workflow/notes.md` 2026-11-06. |
 | ADM-02 | not started | | | |
 | ADM-03 | not started | | | |
 | ADM-04 | not started | | | |

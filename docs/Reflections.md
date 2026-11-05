@@ -67,6 +67,27 @@ SHR-01 was built with Variant B: a developer and an independent test-designer in
 - **Independence has a cost, and it worked as designed.** The test-designer could not see selectors, so mismatches appeared late. In return the tests were not shaped to fit the code, and the backend suite was 659 passed and 7 failed on its first merged run (six test-side problems, one docs gap), 666 passed after those fixes and 670 passed on the final code.
 - **Reviews separate "ran" from "read".** The verifier could not run the backend tests in round 1 because its test database had expired, said so, and gave findings from reading only. Round 2 added a database-free probe (200 threads) that confirmed the limiter fix.
 - **Open risks were recorded, not hidden.** After the two rounds the verifier left five non-blocking notes (a denial-of-service path from serialising logins per IP, partial limiter memory cleanup, dead code, a stale guide line, deployment notes). They are in the threat model and security log for the team.
+### ADM-01 experiment: where the tokens go, and which workflow changes cut them (Nov 2026)
+Our own question was that one multi-agent feature build takes too long and too many tokens. We built the same ADM-01 backend slice from one frozen spec four times: A (unchanged Variant B), H1 (context allowlist for the agents), H2 (verifier gets a labelled checklist and diff summary) and H3 (Haiku instead of Sonnet for developer and test-designer). A single-session control (C) was planned but dropped to save budget. Costs come from the token tracker (list prices, not billed). Quality was a frozen 153-test suite on real Postgres plus a blind verifier review per arm. Details: `workflow/experiments/adm01/results/review-pack.md`.
+
+**Reflection question 1: which types of tasks consume the most tokens in your workflow, and did you reduce them?**
+- **Test-designer work is the largest share.** In the baseline A ($1.69, 56 requests) the test-designer cost $0.68 (40%), developer $0.42 (25%), verifier $0.34 (20%) and orchestrator $0.25 (15%). The H arms show the same ordering: the test-designer is about 40% of cost in H1 and H2 and 29% in H3. The test-designer runs twice or more (the second run re-reads a context of 77-90k tokens), and in every arm its later runs had the largest contexts.
+- **Context re-reading dominates, not generation.** Cache hit ratios were 0.92-0.95 per arm, so most input is re-read context. Reasoning was 18% of tokens in A, 13% in H1, 16% in H2 and 50% in H3.
+- **We did not reduce usage.** All three changes cost more than A: H1 $2.60 (+54%), H2 $2.62 (+55%), H3 $3.02 (+78%). Each H arm also used a revision round, A used none, and the H arms started their own Postgres to run tests, which A never did. We cannot say which of these caused the extra cost, because each variant ran once and the database confound was not controlled.
+- **Cheaper model, higher bill.** H3 used Haiku for developer and test-designer; their requests carried 120-190k tokens of context and 50% of its tokens were reasoning, and its developer cost $0.94 against $0.42 in A. So a lower price per token did not give a lower total here. One run is an anecdote, so we draw only this narrow conclusion for ADM-01.
+- **Honest limits.** All three H arms went over the pre-set cost cap (1.5 x A), so under our rule none qualified. A itself failed one frozen test (it sent no `Cache-Control: no-store` header). Verifier cost for the blind review is excluded from arm totals.
+
+**Reflection question 2: did the benefits of multi-agent coordination outweigh the costs, and when should it be used?**
+- **What the extra agents bought.** The blind verifier found real issues the author's own tests missed: in H2, a generation request could record `requested` with no outcome event if a file read failed (no test covered it). The frozen suite found A's missing header, which A's own verifier passed. The two checks caught different defects, so neither replaces the other.
+- **What it cost.** Every arm needed 56-100 requests and, for the H arms, 1 revision round, for a backend slice that is small. The orchestrator, handoffs and repeated test-designer runs are overhead that a single agent would not pay.
+- **We could not settle the rest.** The single-agent control was not run, so we have no measured cost for doing the same feature in one session. We therefore cannot say that multi-agent was worth its cost for a feature this size; we can only say that it caught defects. The planned test (C vs A) remains open.
+- **Rule of thumb we would use next.** Keep independent verification for features with auth, user data or AI, where a missed defect is expensive; for small, well-specified backend slices, try a single session with the same frozen tests and a blind review at the end, and compare cost.
+
+**Process lessons from running it.**
+- A pre-set quality suite can itself be wrong. Our AC11 test flagged `dict.update` as a database write in all arms, so every arm looked like it failed until we fixed the test and re-graded. The URL scheme for the test database (`postgresql+psycopg://`) also silently caused 503s that looked like 143 failures.
+- Give every arm the same environment. The H arms ran with a real database and A did not, which makes the cost comparison unfair.
+- Do not use revision rounds as a quality proxy: H1 and H3 needed one and passed; A needed none and failed one test.
+
 ## Context Engineering and Resource-aware Use
 
 ### Measured observations so far
