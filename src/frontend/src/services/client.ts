@@ -128,8 +128,38 @@ export async function request(
   }
 }
 
-/** Teacher transport shares cookie/CSRF identity; only successful DELETE may return no JSON. */
-export async function requestTeacher(
+const teacherReads = new Map<string, Promise<unknown>>();
+let teacherMutationEpoch = 0;
+
+/** Identical pending reads share one request, never data from a previous write/session. */
+export function requestTeacher(
+  method: string,
+  path: string,
+  body?: FormData | object,
+  blob = false,
+  timeoutMs = REQUEST_TIMEOUT_MS,
+): Promise<unknown> {
+  const verb = method.toUpperCase();
+  if (verb === "GET") {
+    const key = `${getSessionGeneration()}:${teacherMutationEpoch}:${path}:${blob}:${timeoutMs}`;
+    const existing = teacherReads.get(key);
+    if (existing) return existing;
+    const pending = sendTeacher(verb, path, body, blob, timeoutMs).finally(
+      () => {
+        if (teacherReads.get(key) === pending) teacherReads.delete(key);
+      },
+    );
+    teacherReads.set(key, pending);
+    return pending;
+  }
+  if (!SAFE_METHODS.includes(verb)) teacherMutationEpoch += 1;
+  return sendTeacher(verb, path, body, blob, timeoutMs).finally(() => {
+    if (!SAFE_METHODS.includes(verb)) teacherMutationEpoch += 1;
+  });
+}
+
+/** Teacher transport shares cookie/CSRF identity and handles empty DELETE responses. */
+async function sendTeacher(
   method: string,
   path: string,
   body?: FormData | object,

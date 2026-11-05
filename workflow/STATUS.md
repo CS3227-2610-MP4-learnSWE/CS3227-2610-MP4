@@ -14,8 +14,8 @@ Stages: not started, spec, build, verified (local), merged.
 | STU-06 | not started | | | |
 | TEA-01 | merged | `feat/tea01-materials`, `fix/teacher-postgres-file-storage`, `feat/tea03-edit-mcqs-delete-drafts` | 10, 15, 17 | Upload/organisation/deletion and session auth merged. |
 | TEA-02 | merged (notes and MCQs) | `feat/tea02-generate-notes`, `feat/tea02-generate-mcqs` | 11, 13 | Live provider quality checked only by user report. |
-| TEA-03 | partly merged; publication scope preparation | `feat/tea03-publish-content` | 12, 17 | Notes/MCQ editing and deletion merged. Publication contract still needs completion before implementation. |
-| TEA-04 | spec (whole-batch publication) | `feat/tea03-publish-content` | | One batch of three questions = one practice set; no assembly. Publishing not implemented. |
+| TEA-03 | partly merged; publication build | `feat/tea03-publish-content` | 12, 17 | Notes/MCQ editing and deletion merged. Approved publishing contract084534a; developer/designer build in progress. |
+| TEA-04 | build (whole-batch publication) | `feat/tea03-publish-content` | | One batch of three questions = one practice set; no assembly. Publishing implementation in progress; student practice integration remains future. |
 | TEA-05 | not started | | | |
 | TEA-06 | not started | | | |
 | ADM-01 | not started | | | |
