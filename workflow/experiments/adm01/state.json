@@ -1,6 +1,6 @@
 {
-  "phase": "4-q1-graded-awaiting-triage",
-  "next_step": "USER decides triage of AC11 false positive (fix frozen test -> suite v2 -> re-grade all, vs keep as is). Then blind-grade Q2 for Q1-passing, uncapped arms (note H3 capped), compare, G4.",
+  "phase": "4-q1-v2-graded-awaiting-q2",
+  "next_step": "Decide Q2 scope: all H arms are 'capped' (=not qualified per README) and A failed Q1, so ladder (b) leaves no arm to blind-grade. Ask USER: run Q2 anyway (informational) or go to compare/G4.",
   "arm_order": [
     "A",
     "H3",
@@ -162,5 +162,13 @@
     "H1": "152/153 (AC11 regex false positive)",
     "H2": "152/153 (AC11 regex false positive)",
     "note": "run 2026-11-06 vs postgres:16 adm01-pg, URL scheme postgresql+psycopg:// required; AC11 pattern flags dict.update() in analytics/service.py (not a DB write)"
+  },
+  "frozen_commit_v2": "d8da50d",
+  "q1_results_v2": {
+    "A": "152/153 FAIL (AC6 no Cache-Control no-store)",
+    "H3": "153/153 PASS (but capped)",
+    "H1": "153/153 PASS (capped marginally 2.599 vs 2.536)",
+    "H2": "153/153 PASS (capped marginally 2.618 vs 2.536)",
+    "note": "v1 AC11 false positive (case-insensitive \bUPDATE\b matched dict.update) fixed per USER triage 2026-11-06; v1 results kept in q1_results"
   }
 }
