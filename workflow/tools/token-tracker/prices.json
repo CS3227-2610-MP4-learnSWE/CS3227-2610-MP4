@@ -1,6 +1,6 @@
 {
   "as_of": "2026-10-29",
-  "source": "https://platform.claude.com/docs/en/about-claude/pricing (standard API list prices, USD per million tokens; no long-context surcharge; fast mode and US-only inference are priced differently and not modelled)",
+  "source": "https://platform.claude.com/docs/en/about-claude/pricing (standard API list prices, USD per million tokens; flat entries have no long-context surcharge (tiered entries carry their own source); fast mode and US-only inference are priced differently and not modelled)",
   "models": {
     "claude-sonnet-5-5": {
       "input": 2.0,
