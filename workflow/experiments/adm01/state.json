@@ -5,8 +5,7 @@
     "A",
     "H3",
     "H1",
-    "H2",
-    "C"
+    "H2"
   ],
   "arms_done": [
     "A",
@@ -137,5 +136,9 @@
   "confounds": [
     "Arm A had no Postgres so its ADM-01 tests never ran during its own verification; H3 started its own Postgres container. Arms are not equal on in-run test feedback. Decide before H1/H2/C whether to provide the same DB to all or accept and report.",
     "H3 exceeded the 1.5xA cap (3.02 vs 2.54): cap is not enforced during runs."
-  ]
+  ],
+  "dropped_arms": {
+    "C": "dropped by USER 2026-11-06 (scope ladder a); secondary question C vs A gets no verdict (not run)"
+  },
+  "shortened_plan": "USER 2026-11-06: arm C dropped. After H2 finishes, ONE grading session: USER starts Docker postgres:16 on 127.0.0.1:55432; run frozen suite (Q1) for A, H3, H1, H2; blind-grade (Q2) only arms that pass Q1 and are not capped (ladder b). compare + short results; G4 then G5."
 }

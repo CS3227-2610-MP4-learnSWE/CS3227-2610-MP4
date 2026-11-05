@@ -12,7 +12,7 @@ Condensed from the approved plan. The coordinator reads this file and `state.jso
 ## Usage protection
 1. One unit of work per coordinator session. At the end of each phase/arm: update `state.json`, commit on `exp/adm01-coord`, tell the USER "safe to close this session; start a new one and paste: *Resume Plan 2 from state.json*".
 2. Trimmed reads: only files a phase names; Grep with line ranges.
-3. Fixed arm order: A, H3, H1, H2, C (replaces the earlier randomised order; no `random.seed(2610)`).
+3. Fixed arm order: A, H3, H1, H2 (C dropped 2026-11-06, ladder step a; not run = no verdict) (replaces the earlier randomised order; no `random.seed(2610)`).
 4. Budget: arm A hard cap 15 USD. Later arms cap = 1.5 x A's tracker cost, never above 15 USD. Over cap: stop, ask USER (record "capped" or allow a stated extra). Capped = not qualified.
 5. Gate G3 before every arm: USER runs `/usage`; answer start now / defer / stop. Recommend start only with headroom >= 1.5 x A's cost (for A: about 15 USD-equivalent). Never start an arm without headroom.
 6. Partial results are valid: every tool treats an arm with no run as "not run".
