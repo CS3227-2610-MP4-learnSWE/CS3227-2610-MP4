@@ -1,6 +1,6 @@
 {
-  "phase": "3-G3-approved-H3-launching",
-  "next_step": "G3 for H3: not before 20:21 SGT (65 min after A's last request 19:15:25 SGT). USER runs /usage, says 'start now', launches H3 in ..\u0007dm01-wt\\H3 with prompts/arm-template.md. Cap for H3 = 1.5 x A = 2.536 USD (budget.py).",
+  "phase": "3-H3-done-awaiting-G3-H1",
+  "next_step": "G3 for H1: not before 23:18 SGT (65 min after H3 last request 22:13:07 SGT). USER runs /usage, says 'start now', launches H1 in adm01-wt\\H1 with arm-template.md. Cap for H1 = 2.536 USD. First DECIDE confound: see confounds.",
   "arm_order": [
     "A",
     "H3",
@@ -9,10 +9,12 @@
     "C"
   ],
   "arms_done": [
-    "A"
+    "A",
+    "H3"
   ],
   "arm_costs_usd": {
-    "A": 1.690737
+    "A": 1.690737,
+    "H3": 3.016179
   },
   "caps_usd": {
     "A": 15
@@ -101,6 +103,23 @@
       "developer_commit": "44e396a",
       "arm_self_report": "suite 189 passed/19 failed/799 skipped; 126 ADM-01 tests skipped (no TEA01_TEST_DATABASE_URL); 19 failures pre-existing KeyError DATABASE_URL; 5 non-blocking verifier findings; test-designer narrowed 2 AC11 regexes",
       "note": "self-report is not graded; grading in phase 4 with Postgres"
+    },
+    "H3": {
+      "source": "workflow/usage/runs/2026-11-05-ADM01-H3/report-v2.md (session 875d00bd-3d04-433b-a389-0591c36c3c02)",
+      "cost_usd": 3.016179,
+      "cap_status": "capped (cap 2.536; ran over, not stopped)",
+      "requests_total": "see report",
+      "wall_s": 3843.8,
+      "started_sgt": "2026-11-05 20:25:17",
+      "last_request_sgt": "2026-11-05 22:13:07",
+      "revision_rounds": 1,
+      "branch_head": "31deb32",
+      "arm_self_report": "1002 passed 0 failed vs real Postgres incl 122 ADM-01 tests; arm ran its own postgres container; 2 blocking defects fixed in round 1; edited 2 lines of test_tea03_publications.py",
+      "note": "self-report not graded"
     }
-  }
+  },
+  "confounds": [
+    "Arm A had no Postgres so its ADM-01 tests never ran during its own verification; H3 started its own Postgres container. Arms are not equal on in-run test feedback. Decide before H1/H2/C whether to provide the same DB to all or accept and report.",
+    "H3 exceeded the 1.5xA cap (3.02 vs 2.54): cap is not enforced during runs."
+  ]
 }
