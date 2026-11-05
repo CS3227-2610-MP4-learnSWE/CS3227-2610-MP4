@@ -71,3 +71,27 @@ test("catalogue type change clears selected detail and Back Forward restores URL
     api.requests.filter((r) => r.path.endsWith("/publications")),
   ).toHaveLength(1);
 });
+for (const kind of ["note", "practice_set"] as const) {
+  test(`published ${kind} editor retains the private-change warning`, async ({
+    page,
+  }) => {
+    const api = await mockTeacherPublicationsApi(page);
+    api.publications = [snapshot(kind)];
+    await page.goto(
+      `/teacher/generate?course=${COURSE_A}&${kind === "note" ? `draft=${SAVED.id}` : `tab=questions&batch=${BATCH.id}`}`,
+    );
+    const warning =
+      "This draft was published once. Changes here remain private and cannot update or republish the published version.";
+    await expect(page.getByText(warning, { exact: true })).toBeVisible();
+    await page
+      .getByRole("button", {
+        name: kind === "note" ? "Edit notes" : "Edit questions",
+        exact: true,
+      })
+      .click();
+    await expect(
+      page.getByRole("button", { name: "Save changes", exact: true }),
+    ).toBeVisible();
+    await expect(page.getByText(warning, { exact: true })).toBeVisible();
+  });
+}
