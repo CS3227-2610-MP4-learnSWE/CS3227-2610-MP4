@@ -218,7 +218,8 @@ def test_stu04_ac18_answers_must_be_a_json_object_and_correct_ids_a_json_array(m
         new_attempt(migrated, answers='"text"')
     with pytest.raises(psycopg.errors.CheckViolation):
         new_attempt(migrated, correct_ids="{}")
-    new_attempt(migrated, answers='{"q1": "a"}', correct_ids='["q1"]')
+    new_attempt(migrated, answers='{"q1": "a"}')  # in progress: correct ids stay []
+    submitted_attempt(migrated, answers='{"q1": "a", "q2": "b"}', correct_ids='["q1"]')
 
 
 def test_stu04_ac18_student_must_be_a_user_and_deleting_a_user_removes_only_their_attempts(migrated):
