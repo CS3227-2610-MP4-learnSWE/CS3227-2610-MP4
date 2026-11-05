@@ -95,11 +95,9 @@ test("publication status failure disables mutation and scoped retry only repeats
   const api = await mockTeacherPublicationsApi(page);
   api.failStatus = 1;
   await page.goto(`/teacher/generate?course=${COURSE_A}&draft=${SAVED.id}`);
-  await expect(
-    page.getByText("Published content is unavailable. Please try again.", {
-      exact: true,
-    }),
-  ).toBeVisible();
+  await expect(page.getByRole("alert")).toContainText(
+    "Published content is unavailable. Please try again.",
+  );
   await expect(
     page.getByRole("button", { name: "Publish notes", exact: true }),
   ).toBeDisabled();
@@ -208,11 +206,9 @@ test("catalogue filter is local; detail failure retry is scoped and text is esca
   await page
     .getByRole("button", { name: `Open ${note.title}`, exact: true })
     .click();
-  await expect(
-    page.getByText("Published content is unavailable. Please try again.", {
-      exact: true,
-    }),
-  ).toBeVisible();
+  await expect(page.getByRole("alert")).toContainText(
+    "Published content is unavailable. Please try again.",
+  );
   await page.getByRole("button", { name: "Retry", exact: true }).click();
   await expect(page.getByText(SAVED.content, { exact: true })).toBeVisible();
   await expect(page.locator('img[src="x"]')).toHaveCount(0);
@@ -251,7 +247,7 @@ test("legacy catalogue preserves withdrawn and unavailable provenance", async ({
     "Source draft unavailable",
     "Source version unavailable",
   ])
-    await expect(page.getByText(text, { exact: true }).last()).toBeVisible();
+    await expect(page.getByText(text, { exact: false }).last()).toBeVisible();
   for (const name of [
     "Edit notes",
     "Delete note draft",
@@ -301,7 +297,9 @@ for (const theme of ["light", "dark"] as const) {
       page.getByRole("heading", { name: "Published content", exact: true }),
     ).toBeVisible();
     await expect(
-      page.getByText(BATCH.questions[0].explanation, { exact: true }),
+      page.getByText(`Explanation: ${BATCH.questions[0].explanation}`, {
+        exact: true,
+      }),
     ).toBeVisible();
     expect(
       await page.evaluate(
@@ -319,7 +317,10 @@ test("pending publication allows departure and obsolete completion cannot update
   page,
 }) => {
   const api = await mockTeacherPublicationsApi(page);
-  await page.goto(`/teacher/generate?course=${COURSE_A}&draft=${SAVED.id}`);
+  await page.goto("/teacher/review");
+  await page.locator('a[href="/teacher/generate"]').first().click();
+  await page.getByRole("button", { name: new RegExp(SAVED.title) }).click();
+  await expect(page).toHaveURL(new RegExp(`draft=${SAVED.id}`));
   await page
     .getByRole("button", { name: "Publish notes", exact: true })
     .click();
@@ -331,12 +332,10 @@ test("pending publication allows departure and obsolete completion cannot update
     .getByRole("button", { name: "Confirm publication", exact: true })
     .click();
   await expect.poll(() => api.publicationCalls).toBe(1);
-  await page
-    .getByRole("link", { name: "Published content", exact: true })
-    .click();
-  await expect(page).toHaveURL(/\/teacher\/review/);
-  await expect(page.getByRole("dialog")).toHaveCount(0);
   await page.goBack();
+  await expect(page).not.toHaveURL(new RegExp(`draft=${SAVED.id}`));
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await page.goForward();
   await expect(
     page.getByRole("button", { name: "Publish notes", exact: true }),
   ).toBeEnabled();

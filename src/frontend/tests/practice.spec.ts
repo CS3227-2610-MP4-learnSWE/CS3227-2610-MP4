@@ -625,9 +625,13 @@ test("stu02fe AC8 teacher answer snapshots remain teacher-only and loaded on dem
     page.getByRole("heading", { name: "Published content", exact: true }),
   ).toBeVisible();
   await expect(
-    page.getByText(FIXTURE_KEY.q2.explanation, { exact: true }),
+    page.getByText(`Explanation: ${FIXTURE_KEY.q2.explanation}`, {
+      exact: true,
+    }),
   ).toBeVisible();
-  await expect(page.getByText(EXPLANATIONS[0], { exact: true })).toBeVisible();
+  await expect(
+    page.getByText(`Explanation: ${EXPLANATIONS[0]}`, { exact: true }),
+  ).toBeVisible();
 });
 
 test("stu02fe AC9 study companion reflects submitted or not submitted on the Practice page", async ({
