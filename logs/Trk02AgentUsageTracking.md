@@ -1,6 +1,6 @@
 # TRK-02 invocation usage reports
 
-Date: 2026-11-05  
+Date: 2026-11-05
 Branch: `feat/token-tracker-invocation-report`
 
 ## Work completed

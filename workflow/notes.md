@@ -82,6 +82,3 @@ Newest entry first. Use `templates/handoff.md`. Older entries describe the state
 - Evidence: independent reviewer confirmed prior defect; persistent regression6d8951e committed after RED and before source fix. Same regression GREEN, full505backendPASS. Strongest reviewer5migration casesPASS/no remaining findings. Docs/contract/plan updated; STATUS unblocked. Report logs/MigrationIsolationFix20261103.md.
 - Next: human review/publishing gate; no current-database migration rerun needed solely for this engine setting. No developer DB/files/.env/live provider touched, nothing pushed. Frontend unchanged; prior160browser and frontendchecks not repeated.
 - Resource use: tracker no (not measured), inherited Codex +gpt-6-astra high reviewer; tokens/cost unavailable; initial path/sandbox test launches corrected, verifier correction rounds0.
-
-
-
