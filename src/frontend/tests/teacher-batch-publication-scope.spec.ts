@@ -1,8 +1,8 @@
 import { test, expect } from "@playwright/test";
-import { mockTeacherMcqsApi } from "./teacherMcqsApi";
+import { BATCH, mockTeacherMcqsApi } from "./teacherMcqsApi";
 
 const notice =
-  "One batch of three questions will be published as one practice set. Publishing is not available yet.";
+  "One batch of three questions will be published as one practice set. Review the saved batch before publishing.";
 
 test("teacher batch publication scope removes assembly and redirects its legacy route", async ({
   page,
@@ -23,7 +23,12 @@ test("teacher batch publication scope removes assembly and redirects its legacy 
   await expect(
     page.getByRole("button", { name: "Preview practice set" }),
   ).toHaveCount(0);
-  await expect(page.getByRole("button", { name: /^Publish/ })).toHaveCount(0);
+  await page
+    .getByRole("button", { name: new RegExp(BATCH.source_title) })
+    .click();
+  await expect(
+    page.getByRole("button", { name: "Publish practice set", exact: true }),
+  ).toBeEnabled();
   await page.reload();
   await expect(page.getByText(notice, { exact: true })).toBeVisible();
 });
