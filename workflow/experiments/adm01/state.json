@@ -1,6 +1,6 @@
 {
-  "phase": "5-q2-done-awaiting-compare",
-  "next_step": "compare + results write-up, then G4 (ask USER how to treat capped arms).",
+  "phase": "5-compared-awaiting-G4",
+  "next_step": "G4: USER reviews results/comparison.html and verdicts; then G5.",
   "arm_order": [
     "A",
     "H3",
@@ -174,7 +174,14 @@
   "q2_informational": {
     "H3": "PASS, 0 blocking, 5 non-blocking",
     "H2": "NOT PASS, 1 blocking (generation 'requested' recorded before try; no outcome event if content read fails), 3 non-blocking",
-    "H1": "PASS, 0 blocking, 5 non-blocking"
+    "H1": "PASS, 0 blocking, 5 non-blocking",
+    "A": "PASS, 0 blocking, 4 non-blocking"
   },
-  "q2_note": "Informational only: all graded arms capped. Verifiers did not run the suite. Key: grading/key.json"
+  "q2_note": "Informational only: all graded arms capped. Verifiers did not run the suite. Key: grading/key.json",
+  "verdicts": {
+    "H1": "reject (capped; +54% vs A)",
+    "H2": "reject (capped, Q2 fail; +55%)",
+    "H3": "reject (capped; +78%)",
+    "C": "not run"
+  }
 }
