@@ -1,5 +1,5 @@
 {
-  "phase": "3-armA-done-awaiting-G3-H3",
+  "phase": "3-G3-approved-H3-launching",
   "next_step": "G3 for H3: not before 20:21 SGT (65 min after A's last request 19:15:25 SGT). USER runs /usage, says 'start now', launches H3 in ..\u0007dm01-wt\\H3 with prompts/arm-template.md. Cap for H3 = 1.5 x A = 2.536 USD (budget.py).",
   "arm_order": [
     "A",
@@ -44,7 +44,8 @@
     "notes_branch": "exp/adm01-coord from master approved",
     "G1": "approved 2026-11-05: spec/plan/tasks as written; retention=keep forever; generation paths = notes+MCQ create only (verified: LLM call sites are chatbot, teacher_notes, teacher_mcqs); unavailable=200; future end ok; single start/end=422",
     "G2": "approved 2026-11-05: tools as committed (768b1b9); USER will start Docker + postgres:16 on 127.0.0.1:55432 before grading",
-    "G3_A": "approved 2026-11-05 by USER ('start now'); usage numbers as in usage_baseline; cap 15 USD; launch is manual in a fresh session"
+    "G3_A": "approved 2026-11-05 by USER ('start now'); usage numbers as in usage_baseline; cap 15 USD; launch is manual in a fresh session",
+    "G3_H3": "USER 'start now' 2026-11-05; cap 2.536 USD; gap to be checked against A last request 19:15:25 SGT"
   },
   "spec_writer": {
     "speccheck": "OK",
