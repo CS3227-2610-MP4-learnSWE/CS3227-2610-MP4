@@ -366,3 +366,10 @@ Entries moved unchanged from `notes.md` on 2026-11-03, newest first. They descri
 ## 2026-11-05: CHK-01 merged with master after PR 18 (orchestrator; branch claude/spec-check-455c55)
 - Done: PR 18 (STU-01) was merged into `master`, then `origin/master` was merged into this branch without conflicts. `python -m speccheck --all` now checks CHK-01 and STU-01 (both OK, STU-01 with no waiver), 12 waived; all 289 unit tests pass after the merge. Added the CHK-01 subsection to `docs/Reflections.md`. PR 19 CI on GitHub passed all six checks, including `Spec check`, before this merge.
 - Not verified: CI on this merge commit; the effect of the check on first-run failures (no data yet).
+
+## 2026-11-04: Authenticated MCQ editing/deletion build started (orchestrator)
+- Approved user plan and spec0038b47; clean masterda57eab includes PR15 PostgreSQL storage and PR16 login. Branch feat/tea03-edit-mcqs-delete-drafts. Stories expanded for MCQ editing and unpublished note/batch/unused-source deletion.
+- VariantB: spec-writer completed; developer mainfolder and independent designer work/mcq-cleanup-tests start from identical0038b47. Designer cannot see source until own tests committed. Strongest read-only verifier required after integration; max2 correction rounds; publishing human-gated.
+- Baseline backend692PASS in isolated temporary PostgreSQL cluster localhost55439 (Docker executable unavailable); browser baseline pending. No .env/developer DB/liveLLM/deployment touched.
+- Next: authenticated teacher transport/access, versioned MCQ editor and atomic confirmed deletions; integrate independent tests/review, then localcommit only. Details logs/TeacherMcqEditingDeletion.md.
+- Resources: tracker pending; inherited Codex roles, tokens/cost not yet available; correction rounds0. One sandbox initdb retry with approval; no data workaround.

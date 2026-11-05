@@ -2,11 +2,19 @@
 
 Newest entry first. Use `templates/handoff.md`. Older entries describe the state at the time; the newest entry supersedes their open/merged status. Keep the newest 10 entries here; older ones are in `notes-archive.md`. Feature state is in `STATUS.md`.
 
+## 2026-11-05: Teacher publishing implementation started (orchestrator)
+- User approved complete updated plan after STU-01/PR19 merge. Clean start1784729; approved specification084534a passes speccheck --all before code. Branchfeat/tea03-publish-content. Both notes and3-question sets, once per draft; immutable snapshots; no assembly/republish/unpublish/published deletion.
+- Reuse PublishedLesson/publish_lesson and existing student lesson APIs/UI. New MCQ set read APIs only; practice attempts/grading/companion and student screens stay unchanged. Nullable legacy source_version preserved; helper internal append remains compatible, teacher HTTP enforces one publication.
+- VariantB: developer mainfolder and independent designer work/publishing-tests from identical084534a; tests commit before implementation visibility, then integration and strongest read-only verifier; cap2 correction rounds. Parent owns records. No .env/devDB/liveLLM/deployment/push/PR touched.
+- Baseline at1784729 from prior merge:855backend/352browser/types/lint/format/build/checker PASS. PostgreSQL16 isolated test container55432 available. Implementation verification pending.
+- Next: source/tests, integrate, review, commit locally. Log logs/TeacherPublishing20261105.md. Resources tracker pending; tokens/cost unavailable; no correction rounds yet.
+
 ## 2026-11-05: Merge updated master into publication preparation (orchestrator)
 - User started the merge; resolving master5d2b23d into feat/tea03-publish-content at6cbd5ef. Two text conflicts: notes and resource log. Both histories retained; older notes archived under the ten-entry rule.
 - Master adds STU-01 live lessons and CHK-01 spec checker. Preserve these and the branch's batch-only scope, removed assembly UI and legacy redirect. Publishing implementation has not started.
 - Important next-plan change: reuse existing published_lesson/student lesson APIs and study_lessons.publish_lesson; do not add a competing published-note system. The helper permits multiple publications/withdrawal structurally, but the chosen teacher workflow remains one publication per draft and no withdrawal UI. Exact publishing contract must be revised against this merge before code.
 - Verification:855backend PASS on isolated PostgreSQL16 schemas,352browser PASS, types/lint/format/build PASS, speccheck --all PASS (no new waiver), checker289unit tests PASS. No .env/developer data/migrations/liveLLM touched. Local merge commit only; no push/PR. Resource tracker attempted, no branch-attributed requests; actual tokens/cost unavailable.
+
 
 ## 2026-11-04: Whole-batch publication scope preparation (orchestrator, single session)
 - Clean masterdb82a18 confirms PR17 merged. Branchfeat/tea03-publish-content. User-approved change: all three questions in one reviewed batch become one practice set; no selection/mixing/assembly workflow. Actual publishing is not implemented by preparation.
@@ -14,6 +22,7 @@ Newest entry first. Use `templates/handoff.md`. Older entries describe the state
 - Spec/test8350d2a RED before source614123a. Types/lint/format/build PASS; full247browser PASS (2.1m), strongest read-only review PASS plus38focusedpractice cases. One obsolete teacher-preview test adapted, retaining both explanation assertions. Small docs/preview cleanup uses AGENTS single-session exception; publishing implementation requires complete contract and VariantB.
 - Next: preparation verified and committed locally; plan publishing API/schema/UI with student integration before application publishing code. No .env/devDB/liveLLM/push/PR/deployment. Log logs/BatchPublicationPreparation.md.
 - Resource tracker attempted: no matching branch-attributed requests, actual tokens/cost unavailable. Existing PR17 completion handoff below is historical and its former publishing gate is superseded by the merge.
+
 
 ## 2026-11-04: STU-01 PR 18 after merging master (orchestrator, student-role owner)
 - Master moved (TEA-03 MCQ editing and draft deletion, PR 17) after the first push, so PR 18 conflicted. `master` was merged into `feat/stu01-spec` (52fa4db): text conflicts kept both sides; the two Alembic heads were resolved by chaining `20261104_stu01_lessons` after `20261104_tea03_mcq_edit` (one head); `test_tea03_mcqs_cleanup.py` migration test now upgrades to its own revision instead of `head` (one line, same pinning as before).
@@ -23,6 +32,7 @@ Newest entry first. Use `templates/handoff.md`. Older entries describe the state
 - Spec-writer change: the templates and rules now require, per screen, the eleven labelled entries (requests per load and per retry, wrong role, link history push or replace, refresh, back and forward, expired session or logout, backend down, longest wait before an error, no generic failure message, concurrent requests, normalisation). The CHK-01 spec checker (PR 19, separate branch) failed the approved STU-01 spec on 11 findings; the spec and plan were reworded to use those labels (no behaviour change) and `python -m speccheck workflow/specs/STU-01` now passes. Merge order: PR 18 first, then PR 19 after it merges master and reruns `speccheck --all`; the spec-check session adds its own reflection entry then.
 - Teammate handoff. TEA-03: publish route with cookie login, CSRF and a course-management check, then `study_lessons.publish_lesson(db, draft, teacher)` (flushes, caller commits); map 23503 or a missing draft if it is deleted mid-publish; take a lesson down by setting `withdrawn_at` (a withdrawn lesson still blocks deleting its draft); republish creates a new lesson; title 1 to 200 and content 1 to 2000 characters; add to the UserGuide that published drafts cannot be deleted once publishing ships; chain any new migration after `20261104_stu01_lessons`. ADM-05: write `course_membership` rows (`course_id`, `user_id`) from an admin route with `current_user(role="admin")` and CSRF; otherwise a new student sees "No courses yet".
 - Tracker figures in the resource log were taken before the merge and the FK change and do not include them.
+
 
 
 ## 2026-11-04: STU-01 verified locally, ready for PR (orchestrator, student-role owner)
@@ -35,9 +45,11 @@ Newest entry first. Use `templates/handoff.md`. Older entries describe the state
 - Resource use: tracker run yes; 448 requests, about $14.37 at list prices (worktree branches not included); details in the resource log. Nothing pushed since the branch push at d4a7c59; no PR opened.
 
 
+
 ## 2026-11-04: developer on STU-01, revision round 2 (shared in-flight GET)
 - Done: `services/lessons.ts` in-flight key now includes `getSessionGeneration()` (new, in `services/client.ts`, bumped by `setCsrfToken`, so login, logout and the 401 clear all invalidate) and a `writes` counter bumped before and after `setCompletion`. Backend: `.get(cid, CourseCounts(0, 0))` in both routes; `add_no_store` now covers `/api/study/` and the router-level dependency was removed. DeveloperGuide updated (cache rule, known limits list).
 - Not fixed (by instruction, listed as known limits): cap order past 500 lessons, PUT body size cap, case-sensitive `?course=`, no backend formatter, withdraw/PUT race. No tests written or edited.
+
 
 
 ## 2026-11-04: developer on STU-01, revision round 1 (frontend Playwright failures)
@@ -45,6 +57,7 @@ Newest entry first. Use `templates/handoff.md`. Older entries describe the state
 - Rerun: stu01 specs 94 passed, 3 failed; whole suite 321 tests, 318 passed, 3 failed. Typecheck and lint clean.
 - Remaining 3, not changed (test bug or spec ambiguity, for the orchestrator): (1) `stu01-lesson.spec.ts:374` and (2) `stu01-materials.spec.ts:395` sign in as a teacher and open `/student/...` expecting the 403 alert; the shared SHR-01 `RequireRole` guard redirects a teacher to `/teacher/overview` first, so the page never calls the API. spec.md line 50 (403 forbidden row) is only reachable if the role changes mid-session; the guard (SHR-01) is the authority. (3) `stu01-materials.spec.ts:610` ends with goBack, goBack, goForward and expects the Course select; with a pushed history the final entry is the lesson page (no select). It passes only if the lesson's "All study materials" link replaces the history entry; spec.md line 66 does not say push or replace. Decide, then either fix the test or tell me to use replace.
 - Resource use: Tracker run: no. Model: Sonnet 5.5 (developer subagent). Tokens: n/a. Revision rounds: 1.
+
 
 
 ## 2026-11-04: developer on STU-01 (tasks 3 to 7)
@@ -55,6 +68,7 @@ Newest entry first. Use `templates/handoff.md`. Older entries describe the state
 - Expected app.spec failures until the test-designer rewrite is merged: the sample-lesson tests (lesson completion reversible and reflected in dashboard; lesson outline) and any test using `/student/materials/clean-code`, "Continue lesson" or the removed sample cards.
 - Files touched: see the commit.
 - Resource use: Tracker run: no. Model: Sonnet 5.5 (developer subagent). Total tokens: n/a (not measured). Cost: n/a. Retries and revision rounds: 0.
+
 
 
 ## 2026-11-04: spec-writer on STU-01 (Study materials)
@@ -71,6 +85,7 @@ Newest entry first. Use `templates/handoff.md`. Older entries describe the state
   - Retries and revision rounds: 0
 
 
+
 ## 2026-11-04: Authenticated MCQ editing and unpublished deletion verified locally (orchestrator)
 - Done on `feat/tea03-edit-mcqs-delete-drafts`: all teacher APIs use shared cookie/CSRF authentication and current course access; versioned three-question MCQ editing; confirmed permanent note/batch deletion; original-file deletion only without draft references. Source metadata and bytes delete atomically; quota/reference/version protections remain. Guides, stories, app help and shared contract updated. No publication/unpublishing or student-history changes.
 - Workflow: clean master `da57eab` (PR16 after PR15); approved specification `0038b47`. Independent tests committed before source visibility; developer `d19bdf4`. Integration fixes `66ccbd8`; final regressions `94901d4` were RED before source `6c18dc9` and GREEN unchanged. Final integrated application/test tree `5df6934`.
@@ -78,12 +93,3 @@ Newest entry first. Use `templates/handoff.md`. Older entries describe the state
 - Try: from src/backend run `uv run --env-file .env alembic upgrade head`, restart the backend, refresh and sign in as a seeded teacher. Run auth.seed with existing SEED_* configuration if credentials have not been seeded. Existing data is preserved; no fresh database is needed for this additive migration.
 - Next: human review/push/PR/merge gate. Implementation is committed locally; nothing pushed, published or deployed. See logs/TeacherMcqEditingDeletion.md and workflow/specs/TEA-03-mcqs-cleanup/retro.md.
 - Resources: tracker attempted, no matching branch-attributed requests; actual tokens/cost unavailable (not zero). Inherited Codex roles plus gpt-6-astra high read-only verifier. Two application correction rounds; test-harness and sandbox retries documented in the session log.
-
-
-
-## 2026-11-04: Authenticated MCQ editing/deletion build started (orchestrator)
-- Approved user plan and spec0038b47; clean masterda57eab includes PR15 PostgreSQL storage and PR16 login. Branch feat/tea03-edit-mcqs-delete-drafts. Stories expanded for MCQ editing and unpublished note/batch/unused-source deletion.
-- VariantB: spec-writer completed; developer mainfolder and independent designer work/mcq-cleanup-tests start from identical0038b47. Designer cannot see source until own tests committed. Strongest read-only verifier required after integration; max2 correction rounds; publishing human-gated.
-- Baseline backend692PASS in isolated temporary PostgreSQL cluster localhost55439 (Docker executable unavailable); browser baseline pending. No .env/developer DB/liveLLM/deployment touched.
-- Next: authenticated teacher transport/access, versioned MCQ editor and atomic confirmed deletions; integrate independent tests/review, then localcommit only. Details logs/TeacherMcqEditingDeletion.md.
-- Resources: tracker pending; inherited Codex roles, tokens/cost not yet available; correction rounds0. One sandbox initdb retry with approval; no data workaround.
