@@ -1,6 +1,6 @@
 {
-  "phase": "1-complete",
-  "next_step": "Phase 2: frozen suite via test-designer on exp/adm01-frozen (from tag adm01-start), then tools in workflow/experiments/adm01/tools/ (tests first) -> Gate G2",
+  "phase": "2a-frozen-suite-done",
+  "next_step": "Phase 2b: write tools (tests first) in workflow/experiments/adm01/tools/: grade_arm.py, compare.py, html_report.py, blind.py, budget.py -> Gate G2. Also confirm TEA01_TEST_DATABASE_URL availability for grading.",
   "arm_order": [
     "A",
     "H3",
@@ -16,7 +16,7 @@
   "branches": {
     "coord": "exp/adm01-coord",
     "setup": "exp/adm01-setup",
-    "frozen": null
+    "frozen": "exp/adm01-frozen"
   },
   "tags": {
     "adm01-start": "ed3d3ab"
@@ -46,5 +46,18 @@
     "tool_uses": 31,
     "duration_ms": 163842,
     "note": "subagent-reported; cost not converted"
+  },
+  "frozen_worktree": "..\u0007dm01-frozen-wt",
+  "frozen_commit": "c63c922",
+  "frozen_suite": {
+    "tests_collected": 153,
+    "files": [
+      "adm01_helpers.py",
+      "test_adm01_report.py",
+      "test_adm01_hooks.py"
+    ],
+    "needs_env": "TEA01_TEST_DATABASE_URL (all skip without it)",
+    "run": "not yet run against any implementation",
+    "note": "subagent-reported; ~60k tokens; cost not converted"
   }
 }
