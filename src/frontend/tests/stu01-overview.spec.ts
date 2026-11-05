@@ -1,16 +1,17 @@
 import { test, expect } from "@playwright/test";
+import { L_DESIGN, L_TESTING, MSG } from "./lessonsApi";
 import {
-  L_DESIGN,
-  L_TESTING,
-  MSG,
-  signedInStudy,
-  studyError,
+  emptyProgress,
+  progressError,
+  signedInProgress,
+  signedInStudyAndProgress,
   type Reply,
-} from "./lessonsApi";
+} from "./progressApi";
 
 /**
- * STU-01 AC4, AC10, AC13, AC14 on the student Overview: the "Lessons completed" stat reads the
- * totals of GET /api/study/courses. The fixture has 4 published lessons over 2 courses.
+ * STU-01 AC4, AC10, AC13, AC14 on the student Overview. Rewritten for STU-04 (AC19): the
+ * "Lessons completed" stat now reads the totals of GET /api/progress (same STU-01 counts), and the
+ * failure details are the STU-04 ones. The fixture has 4 published lessons over 2 courses.
  */
 
 test.beforeEach(async ({ page }) => {
@@ -19,45 +20,38 @@ test.beforeEach(async ({ page }) => {
   );
 });
 
-const UNAVAILABLE = "Unavailable. Open Study materials to try again.";
-
 test("stu01 AC10 Overview shows Lessons completed N / M with the detail N of M lessons across all courses", async ({
   page,
 }) => {
-  const { api } = await signedInStudy(page, { done: [L_TESTING, L_DESIGN] });
+  const { lessons, progress } = await signedInStudyAndProgress(page, {
+    done: [L_TESTING, L_DESIGN],
+  });
   await page.goto("/student/overview");
   await expect(
     page.getByText("Lessons completed", { exact: true }),
   ).toBeVisible();
   await expect(page.getByText("2 / 4", { exact: true })).toBeVisible();
   await expect(page.getByText("2 of 4 lessons", { exact: true })).toBeVisible();
-  expect(api.count("courses")).toBe(1);
-  expect(api.count("lessons")).toBe(0);
-  expect(api.count("lesson")).toBe(0);
+  expect(progress.count).toBe(1);
+  expect(lessons.count("courses")).toBe(0);
+  expect(lessons.count("lessons")).toBe(0);
+  expect(lessons.count("lesson")).toBe(0);
 });
 
 test("stu01 AC10 the stat uses the totals field of the server, not a client sum", async ({
   page,
 }) => {
-  await signedInStudy(page, {
-    replies: {
-      courses: [
-        {
-          json: {
-            courses: [
-              {
-                id: "11111111-1111-4111-8111-111111111111",
-                title: "A",
-                lesson_count: 3,
-                completed_count: 1,
-              },
-            ],
-            totals: { lesson_count: 7, completed_count: 5 },
-          },
-        },
-      ],
+  const body = emptyProgress();
+  body.lessons.courses = [
+    {
+      id: "11111111-1111-4111-8111-111111111111",
+      title: "A",
+      lesson_count: 3,
+      completed_count: 1,
     },
-  });
+  ];
+  body.lessons.totals = { lesson_count: 7, completed_count: 5 };
+  await signedInProgress(page, { body });
   await page.goto("/student/overview");
   await expect(page.getByText("5 / 7", { exact: true })).toBeVisible();
   await expect(page.getByText("5 of 7 lessons", { exact: true })).toBeVisible();
@@ -66,7 +60,7 @@ test("stu01 AC10 the stat uses the totals field of the server, not a client sum"
 test("stu01 AC13 with no courses the stat reads 0 / 0 and 0 of 0 lessons", async ({
   page,
 }) => {
-  await signedInStudy(page, { courses: [] });
+  await signedInStudyAndProgress(page, { courses: [] });
   await page.goto("/student/overview");
   await expect(page.getByText("0 / 0", { exact: true })).toBeVisible();
   await expect(page.getByText("0 of 0 lessons", { exact: true })).toBeVisible();
@@ -75,9 +69,7 @@ test("stu01 AC13 with no courses the stat reads 0 / 0 and 0 of 0 lessons", async
 test("stu01 AC13 while loading the value is … and the detail is Loading…", async ({
   page,
 }) => {
-  const { api } = await signedInStudy(page, {
-    replies: { courses: [{ hang: true }] },
-  });
+  const { api } = await signedInProgress(page, { replies: [{ hang: true }] });
   await page.goto("/student/overview");
   await expect(
     page.getByText("Lessons completed", { exact: true }),
@@ -89,19 +81,24 @@ test("stu01 AC13 while loading the value is … and the detail is Loading…", a
 
 const failures: [string, Reply][] = [
   ["unreachable", { abort: true }],
-  ["503", studyError(503, "service_unavailable")],
-  ["500", studyError(500, "internal_error")],
-  ["wrong shape", { json: { courses: 1 } }],
-  ["403", studyError(403, "forbidden")],
+  ["503", progressError(503, "service_unavailable")],
+  ["500", progressError(500, "internal_error")],
+  ["wrong shape", { json: { lessons: 1 } }],
 ];
 for (const [label, reply] of failures) {
-  test(`stu01 AC13 Overview stat on failure (${label}): – and the Unavailable detail; the rest of the page is unaffected`, async ({
+  test(`stu01 AC13 Overview stat on failure (${label}): – and the STU-04 failure detail; the rest of the page is unaffected`, async ({
     page,
   }) => {
-    await signedInStudy(page, { replies: { courses: [reply] } });
+    await signedInProgress(page, { replies: [reply] });
     await page.goto("/student/overview");
     await expect(page.getByText("–", { exact: true }).first()).toBeVisible();
-    await expect(page.getByText(UNAVAILABLE, { exact: true })).toBeVisible();
+    await expect(
+      page
+        .getByText(
+          /^(Progress is unavailable right now\.|Could not reach the server\.)$/,
+        )
+        .first(),
+    ).toBeVisible();
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
     await expect(
       page.getByText("Lessons completed", { exact: true }),
@@ -111,24 +108,24 @@ for (const [label, reply] of failures) {
   });
 }
 
-test("stu01 AC13 Overview stat times out after 10 seconds with the Unavailable detail", async ({
+test("stu01 AC13 Overview stat times out after 10 seconds with the offline detail", async ({
   page,
 }) => {
-  const { api } = await signedInStudy(page, {
-    replies: { courses: [{ hang: true }] },
-  });
+  const { api } = await signedInProgress(page, { replies: [{ hang: true }] });
   await page.clock.install();
   await page.goto("/student/overview");
-  await expect.poll(() => api.count("courses")).toBe(1);
+  await expect.poll(() => api.count).toBe(1);
   await page.clock.fastForward(11_000);
-  await expect(page.getByText(UNAVAILABLE, { exact: true })).toBeVisible();
+  await expect(
+    page.getByText("Could not reach the server.", { exact: true }),
+  ).toBeVisible();
   api.release();
 });
 
 test("stu01 AC14 Overview in demo mode: value – and the sign in detail, no redirect", async ({
   page,
 }) => {
-  await signedInStudy(page, { user: null });
+  await signedInProgress(page, { user: null });
   await page.goto("/student/overview");
   await expect(page.getByText("–", { exact: true }).first()).toBeVisible();
   await expect(
@@ -140,19 +137,19 @@ test("stu01 AC14 Overview in demo mode: value – and the sign in detail, no red
 test("stu01 AC14 Overview while signed in: a 401 goes to /login", async ({
   page,
 }) => {
-  const { auth, api } = await signedInStudy(page);
+  const { auth, api } = await signedInProgress(page);
   auth.script("me", { json: { user: auth.user, csrf_token: auth.csrf } });
   auth.expire();
   await page.goto("/student/overview");
   await expect(page).toHaveURL(/\/login$/);
-  expect(api.count("courses")).toBeLessThanOrEqual(1);
+  expect(api.count).toBeLessThanOrEqual(1);
   await expect(page.getByText("Lessons completed")).toHaveCount(0);
 });
 
 test("stu01 AC4 completing a lesson updates the Overview total after navigation and survives a reload", async ({
   page,
 }) => {
-  await signedInStudy(page);
+  await signedInStudyAndProgress(page);
   await page.goto(`/student/materials/${L_TESTING}`);
   await page
     .getByRole("button", { name: "Mark as complete", exact: true })
@@ -178,7 +175,7 @@ test("stu01 AC4 completing a lesson updates the Overview total after navigation 
 test("stu01 AC13 Overview has no built-in sample lessons and Continue learning opens the study materials", async ({
   page,
 }) => {
-  await signedInStudy(page);
+  await signedInStudyAndProgress(page);
   await page.goto("/student/overview");
   await expect(
     page.getByText("Lessons completed", { exact: true }),
@@ -193,7 +190,7 @@ test("stu01 AC13 Overview has no built-in sample lessons and Continue learning o
 test("stu01 AC13 the study materials message strings are not shown on the Overview in the loaded state", async ({
   page,
 }) => {
-  await signedInStudy(page);
+  await signedInStudyAndProgress(page);
   await page.goto("/student/overview");
   await expect(page.getByText("0 of 4 lessons", { exact: true })).toBeVisible();
   for (const m of [MSG.offline, MSG.unavailable, MSG.badShape, MSG.signIn])
@@ -205,7 +202,7 @@ for (const width of [390, 1440]) {
     page,
   }) => {
     await page.setViewportSize({ width, height: 900 });
-    await signedInStudy(page);
+    await signedInStudyAndProgress(page);
     await page.goto("/student/overview");
     await expect(
       page.getByText("Lessons completed", { exact: true }),
