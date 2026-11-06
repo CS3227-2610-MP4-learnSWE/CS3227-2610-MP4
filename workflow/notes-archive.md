@@ -499,3 +499,8 @@ Newest entry first. Use `templates/handoff.md`. Older entries describe the state
 - Expected app.spec failures until the test-designer rewrite is merged: the sample-lesson tests (lesson completion reversible and reflected in dashboard; lesson outline) and any test using `/student/materials/clean-code`, "Continue lesson" or the removed sample cards.
 - Files touched: see the commit.
 - Resource use: Tracker run: no. Model: Sonnet 5.5 (developer subagent). Total tokens: n/a (not measured). Cost: n/a. Retries and revision rounds: 0.
+
+## 2026-11-06: developer ADM-05 correction round 1
+- Fixed: exact accessible field names now explicitly label the input elements, and select display names no longer include selected option text. Visible labels and required validation remain intact. Independent browser report identified these contract mismatches; tests were not read or changed.
+- Validation: frontend typecheck/lint/build PASS. Independent designer previously reported backend 78 PASS and browser 8 PASS/4 FAIL before this correction; focused browser rerun remains designer-owned. Opaque account IDs already reject non-PostgreSQL text in the initial source commit.
+- Files: AdminAccounts.tsx, AdminCourses.tsx, this note and implementation log. Next: designer rerun and verifier. Revision rounds used 1/2. Resource attribution remains orchestrator-owned, inherited model/effort and exact tokens/cost unavailable.

@@ -23,7 +23,7 @@ Stages: not started, spec, build, verified (local), merged.
 | ADM-03 | not started | | | |
 | ADM-04 | not started | | | |
 | ADM-05 | verified (local) | `feat/adm05-user-and-access-management` | | Fixed-role account creation/lifecycle, courses with General topic, teacher/student assignments. Source `07deb57`; strongest verifier PASS; 391 browser tests, 968 backend cases covered across full/focused runs. Local commits only; apply migration before use. Evidence: `logs/Adm05Verification.md`. |
-| ADM-06 | not started | | | |
+| ADM-06 | draft awaiting approval | `feat/adm06-ai-usage-monitoring` | | Spec/plan/tasks drafted; speccheck PASS. Human approval and source-aware compatibility mapping required before implementation. |
 | SHR-01 | merged | `feat/shr01-auth-spec`, `feat/tea03-edit-mcqs-delete-drafts` | 16, 17 | Teacher session integration merged; deployment settings remain separate. |
 | SHR-02 to SHR-05 | in progress per feature | | | Enforced and tested inside each feature so far; no cross-feature check yet. |
 | OPT-01 to OPT-03 | not started | | | Outside the MVP. |
