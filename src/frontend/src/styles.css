@@ -741,8 +741,11 @@ button:focus-visible {
   z-index: 20;
   display: flex;
   flex-direction: column;
+  height: 100dvh;
+  overflow: hidden;
 }
 .sidebar-brand {
+  flex-shrink: 0;
   padding: 31px 25px 36px;
   display: flex;
   align-items: center;
@@ -759,6 +762,7 @@ button:focus-visible {
   border-radius: 10px;
 }
 .workspace-label {
+  flex-shrink: 0;
   font-size: 8px;
   letter-spacing: 0.13em;
   font-weight: 650;
@@ -771,6 +775,9 @@ button:focus-visible {
   flex-direction: column;
   gap: 6px;
   padding: 0 15px;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
 }
 .nav-item {
   display: flex;
@@ -814,13 +821,20 @@ button:focus-visible {
 }
 .sidebar-bottom {
   margin-top: auto;
+  flex-shrink: 0;
 }
 .sidebar-tip {
+  position: relative;
   margin: 30px 20px 22px;
   border: 1px solid var(--line);
   border-radius: 12px;
   padding: 17px;
   background: linear-gradient(135deg, var(--bg), var(--paper));
+}
+.sidebar-tip .sidebar-tip-dismiss {
+  position: absolute;
+  top: 8px;
+  right: 8px;
 }
 .tip-sparkle {
   display: block;
@@ -852,19 +866,38 @@ button:focus-visible {
   align-items: center;
   gap: 10px;
   padding: 18px 19px;
+  flex-wrap: wrap;
 }
 .sidebar-user > div:nth-child(2) {
   flex: 1;
+  min-width: 0;
+}
+.sidebar-user > .MuiAvatar-root {
+  flex-shrink: 0;
+}
+.sidebar-user > .MuiButton-root {
+  flex: 0 0 100%;
+  justify-content: flex-start;
+  white-space: nowrap;
+}
+.sidebar-user > [role="alert"] {
+  flex: 0 0 100%;
 }
 .sidebar-user strong {
   display: block;
   font-size: 11px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .sidebar-user small {
   display: block;
   font-size: 9px;
   color: var(--muted);
   margin-top: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .app-main {
   margin-left: 238px;
@@ -993,6 +1026,8 @@ button:focus-visible {
   width: 260px;
   display: flex;
   flex-direction: column;
+  height: 100dvh;
+  overflow: hidden;
 }
 /* Overview */
 .student-hero {
@@ -3568,4 +3603,84 @@ td .MuiButton-root {
 }
 .publication-viewer > h2 {
   margin-top: 0;
+}
+:root .admin-access-panel {
+  padding: 24px;
+  margin-bottom: 24px;
+  min-width: 0;
+}
+.admin-access-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+  margin: 20px 0;
+}
+.admin-access-form > .MuiFormControl-root {
+  flex: 1 1 200px;
+  min-width: 0;
+}
+.admin-access-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-top: 16px;
+}
+.admin-course-list {
+  list-style: none;
+  padding: 0;
+}
+.admin-course-list li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 0;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 760px) {
+  .admin-accounts-table {
+    white-space: normal;
+  }
+  .admin-accounts-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+  .admin-accounts-table tbody,
+  .admin-accounts-table tr {
+    display: block;
+    width: 100%;
+  }
+  .admin-accounts-table tbody tr {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    border-top: 1px solid var(--line);
+    padding: 12px 0;
+  }
+  .admin-accounts-table td {
+    display: block;
+    border: 0;
+    padding: 8px 4px;
+    overflow-wrap: anywhere;
+    min-width: 0;
+  }
+  .admin-accounts-table td:first-child,
+  .admin-accounts-table td:last-child {
+    grid-column: 1 / -1;
+  }
+  .admin-accounts-table td[data-label]::before {
+    content: attr(data-label) ": ";
+    font-weight: 600;
+  }
+  .admin-accounts-table td strong {
+    font-size: 14px;
+  }
+  .admin-accounts-table td small {
+    font-size: 12px;
+  }
 }

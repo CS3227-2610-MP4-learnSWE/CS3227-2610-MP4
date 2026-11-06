@@ -1,5 +1,13 @@
 # Security test log
 
+## 2026-11-06 — ADM-05 verified locally
+
+Strongest read-only verifier PASS at application source `07deb57`; no remaining ranked defects. Independent tests were committed before implementation visibility. Security cases passed: cookie-only admin identity on every endpoint, non-admin/anonymous rejection, CSRF/Origin, immutable roles and student-only public signup, strict/normalised inputs and no password/hash/session responses, disabled/archived login and existing-session rejection, re-enable requiring fresh login, permanent archive with reserved email and retained learning/authorship, teacher/student course boundaries and revocation, idempotent/concurrent grants, duplicate-email races, archive/grant races, concurrent admin disable/archive and fresh actor checks after lock acquisition. Verifier's additional archive/archive and disable/archive probes each left exactly one enabled admin.
+
+Late AI results are discarded after account/session revocation; existing teacher generation rechecks and answer-release controls remain enforced. Static companion fixtures are not course-grounded retrieval. General-topic integration verifies teacher publication, enrolled student reading, denial after revocation and atomic rollback on topic failure. Browser RED regression reproduced an old-session 401 clearing a newer login; `07deb57` fixes it, with independent browser and original verifier reproduction GREEN. No prompt-only controls, new provider, live AI or secret changes.
+
+Final clean browser suite 391/391 PASS; all 968 final backend cases covered across full and focused runs. Verifier full backend 957 PASS plus all nine historical-migration/TEMP recoveries PASS; three General-topic cases separately PASS. Designer 87 ADM-05 backend and 14 ADM-05 browser cases PASS. Types/lint/build/spec/diff checks PASS; Windows line-ending-aware format check PASS. Earlier browser artifact/server-owner collisions were discarded/recovered, not accepted as application verification. No developer schema, `.env`, real credentials, remote push or deployment touched. Exact evidence and limitations: `logs/Adm05Verification.md`; usage: `workflow/usage/runs/2026-11-06-ADM05-01/report.md`.
+
 | Date | Feature | Case | Expected | Actual | Fix / status |
 |---|---|---|---|---|---|
 | 2026-10-29 | STU-02 | Attempt endpoint without `X-Student-Id`, or whitespace-only | 401 `missing_student` | 401 | Pass |
@@ -255,3 +263,11 @@ Removed obsolete positive-control requirement that Teacher chunk contain deleted
 | Attempt id of another student on STU-02 endpoints after the store change | 404 `attempt_not_found` |
 
 Result: all cases above behaved as expected after fixes, plus: attempt ids containing NUL, longer than 64 characters, padded or upper-cased give 404 `attempt_not_found` (a NUL id gave 503 until round 1, fixed); logout then Back shows no earlier data; a signed-in 401 sends one request and redirects to `/login`. Remaining non-blocking: logout then an immediate Back (before the login page renders) leaves the page on its loading text with no sign-in notice; no data is shown.
+
+## 2026-11-06 ? ADM-05 UI follow-up and fresh-session login
+
+227 backend checks PASS, including two new independent-cookie-jar sign-ins for saved admin-created student/teacher accounts. Two no-mock real browser tests create accounts through the admin form in an isolated schema, sign in with exact form passwords from cookie-empty contexts, verify current-user role and reload persistence; mixed case, # and spaces retained. Disposable servers/schema cleaned up. No password resets or auth bypass. Existing late-session401 regression remains passing after closing the new modal before sidebar logout; 82 auth/admin browser cases and four follow-up UI/mobile cases PASS. Local development ignored .env Secure-cookie setting corrected for HTTP; production defaults unchanged. User confirmed login working; initial reported credential rejection was not independently reproduced. Detailed evidence/limits: logs/Adm05UiFollowup.md.
+
+## 2026-11-06 ? Shared-shell logout confirmation
+
+Client-only confirmation preserves existing CSRF/session safeguards. 111 targeted browser tests PASS including zero POST on cancellation, one POST on confirm/pending protection, network/503 failure keeping session/dialog for retry,401 completion, Back/history/chat clearing and late-response isolation. Expiry never waits for confirmation; server endpoints unchanged. Spec/test commitf1c9268 preceded source, visual checks PASS. Details logs/SharedShellConfirmationFollowup.md.

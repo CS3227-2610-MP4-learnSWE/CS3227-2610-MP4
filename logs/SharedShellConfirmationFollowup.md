@@ -1,0 +1,13 @@
+# Shared sidebar/logout confirmation follow-up — 2026-11-06
+
+Developer-role scoped maintenance requested by the user: dismiss the Listen. Learn. Improve. sidebar card, confirm logout, and synchronise all earlier changes with specifications. No new API, migration or authentication policy. Single-session maintenance; no agents or new multi-agent feature run.
+
+Before source changes, approved SHR-01/ADM-05 contracts and five regression cases were committed in `f1c9268`; all five cases were RED on the original Shell. Existing logout tests were updated to explicitly confirm while retaining their CSRF/session/history/chat/failure assertions; the helper reuses the open dialog for failure retry.
+
+`Shell` now renders an accessible Dismiss sidebar tip X, keeping dismissal in memory for the current role/account across navigation and restoring after refresh/remount. Desktop/sidebar drawer share dismissal state. Explicit logout opens Confirm logout with Cancel and Log out; no request on open/cancel. Pending disables controls and ignores dismissal; success uses existing session clearing, failure keeps dialog/session for retry, logout401 still clears, and expiry remains immediate. Anonymous demo links remain unchanged.
+
+Synchronised original SHR-01 AC22 and current transport table, shared-shell spec/plan tables/copy/request/history/failure contracts, ADM-05 AC23–27 (including prior green toast/form reset/modal/sidebar fixes), and STU-01/STU-04 inherited logout semantics. Earlier teacher-demo rollout descriptions remain historical; current teacher cookie/CSRF checks documented. UserGuide and DeveloperGuide explain the actual interface and dismissal lifetime.
+
+Validation: 111 targeted browser tests PASS, covering new shell behaviour, three roles' Cancel/Escape, pending one-request protection, existing logout CSRF/failed network/503 retry/401, Back/history/chat/session isolation, ADM-05 and student progress/completion. Visual rerun five PASS with screenshots of the X and modal inspected after transition completion. Typecheck/lint/build/all-file Windows line-ending-aware formatting PASS; speccheck7checked/0failed/12existingwaivers; diff check PASS. No full application suite, backend rerun or independent verifier pass claimed for this client-only change. No tests weakened to pass.
+
+No developer env/database/credentials, user data, live AI, remote Git or unrelated worktrees changed. Test artifacts remain ignored under frontend/test-results/shell-visual. Resource use: inherited Codex session; exact per-task tokens/cost unmeasured, tracker not run for this maintenance follow-up; no agents or new application feature revision rounds.

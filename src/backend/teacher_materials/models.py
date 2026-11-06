@@ -18,11 +18,14 @@ class User(Base):
     role: Mapped[str] = mapped_column(String(16))
     email: Mapped[str | None] = mapped_column(String(254), nullable=True)
     password_hash: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    access_status: Mapped[str] = mapped_column(String(16), server_default="enabled")
+    archived_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     __table_args__ = (
         CheckConstraint("role in ('student', 'teacher', 'admin')"),
         CheckConstraint("email = lower(email)", name="ck_user_email_lower"),
         Index("ux_user_email", "email", unique=True),
+        CheckConstraint("access_status in ('enabled', 'disabled', 'archived')", name="ck_user_access_status"),
     )
 
 

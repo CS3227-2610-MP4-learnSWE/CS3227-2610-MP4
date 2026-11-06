@@ -176,7 +176,7 @@ PR17 merged authenticated teacher editing/deletion. Teacher publishing now imple
 
 ## Teacher publication implementation
 
-Run existing Alembic setup through head (`20261105_tea03_publications`). The migration preserves lessons/completion rows, adds nullable lesson `source_version`, adds batch `(id,course_id)` uniqueness, and creates immutable practice-set/question tables. Downgrade refuses while published sets or nonnull lesson publication provenance exist; it never silently deletes them. Use isolated databases for migration tests.
+The publication migration is `20261105_tea03_publications`, followed by independent ADM-05 `20261106_adm05_access` and STU-04 `20261105_stu04_practice_attempt` branches, joined by `20261106_merge_adm05_stu04`; run `alembic upgrade head` to apply both branches. No historical revisions were rewritten. The migration preserves lessons/completion rows, adds nullable lesson `source_version`, adds batch `(id,course_id)` uniqueness, and creates immutable practice-set/question tables. Downgrade refuses while published sets or nonnull lesson publication provenance exist; it never silently deletes them. Use isolated databases for migration tests.
 
 `teacher_publications.routes` exposes teacher POST publication, per-course catalogue and snapshot detail APIs plus safe student set list/detail reads. It reuses cookie sessions, CSRF, course checks, READ COMMITTED and no-store responses. Origin row locks serialize publish/edit/delete; publication checks existing snapshots before comparing the current draft version. Exactly matching version/title/topic retries return 200; first writes return 201, stale unpublished versions return 409 `draft_conflict`, and different or ambiguous/legacy prior publication returns 409 `already_published`. Both POSTs accept exactly `{version,title,topic_id}`. Titles use trimmed Unicode length 1–200, strict positive integer versions and a required same-course topic. Copies and provenance commit atomically, without inference.
 
@@ -184,7 +184,159 @@ Run existing Alembic setup through head (`20261105_tea03_publications`). The mig
 
 Teacher GETs share only identical in-flight reads keyed by session generation, mutation epoch, URL, response mode and timeout. Epochs advance before and after mutations; completed reads are not cached. Selection lifetimes invalidate pending sharing before new read effects, so an abandoned A selection cannot rejoin its old request on A→B→A; StrictMode effect replay retains its unchanged lifetime. The studio separately loads publication status and topics; successful POSTs update status locally. Default publication requests use 10 seconds, generation retains 45 seconds, and unsafe requests never retry automatically. Account-owned views, route epochs and effect cleanup ignore stale results. Existing editor blockers continue protecting unsaved work; publishing introduces no additional blocker.
 
-Notes use existing student Materials/completion APIs unchanged. Published MCQs map answer indices to choice IDs a–d and omit keys, explanations and private provenance from student DTOs. Student practice still uses fixed `intro-se-1`, in-memory attempts and existing companion lookup. New set IDs deliberately do not enter that flow until discovery/grading/companion integration. No student UI or existing attempt behavior changes in this increment. Product help text is in `companion_help.py`.
+Notes use existing student Materials/completion APIs unchanged. Published MCQs map answer indices to choice IDs a–d and omit keys, explanations and private provenance from student DTOs. Student practice still uses fixed `intro-se-1` and existing companion lookup; STU-04 now persists its attempts in PostgreSQL. New set IDs deliberately do not enter that flow until discovery/grading/companion integration. No student UI or existing attempt behavior changes in this increment. Product help text is in `companion_help.py`.
+## ADM-05 account lifecycle and course management
+
+The live admin screens are `/admin/users` and `/admin/courses`. All `/api/admin/*` routes use cookie authentication, the admin role, shared CSRF/Origin checks and `Cache-Control: no-store`. `admin_access/routes.py` owns strict input/API handling; `admin_access/service.py` owns account lifecycle and membership transactions. Creating a course also inserts exactly one General topic in the same transaction so existing teacher publication forms can select it. Existing courses are unchanged. The approved exact API/UI contract is in `workflow/specs/ADM-05/plan.md`.
+
+Account creation success uses a green, dismissible six-second toast; all text/password inputs reset while Account role retains its selection (initially Student). Details open immediately in a scrollable modal, including loading/error states, with nested destructive confirmations and Close/Escape/backdrop dismissal when no write is pending. The shared sidebar keeps its logout footer inside the viewport; navigation scrolls on short windows and long names cannot push logout out. Fresh-context login regressions exercise the saved form password rather than seed credentials.
+
+`tests/real-backend.spec.ts` also has opt-in admin-created student/teacher login checks using independent browser contexts, a real API/database and no API mocks. Run only with an isolated test database and administrator: the real-backend project additionally requires `E2E_ALLOW_ADMIN_ACCOUNT_CREATION=1`, `E2E_ADMIN_EMAIL` and `E2E_ADMIN_PASSWORD` for these cases. They create disposable accounts, verify fresh login and reload, and capture overlay screenshots. Normal mocked runs exclude this file; existing real-backend CI does not create accounts unless explicitly opted in. Never point these creation checks at production data.
+
+### Local admin setup and password reset (PowerShell)
+
+Prerequisites: Git, uv, Node/npm and Docker Desktop as in [README](../README.md). Run commands from inside this checkout. Existing env/database settings must be preserved; no default admin credentials are shipped. Public signup creates students only. No SoC credentials are needed for ADM-05 or mocked tests.
+
+**1. Prepare env files and PostgreSQL.** Start Docker Desktop, then run:
+
+```powershell
+Set-Location (git rev-parse --show-toplevel)
+docker compose up -d postgres
+docker compose exec -T postgres pg_isready -U learnswe -d learnswe
+if (-not (Test-Path src\backend\.env)) { Copy-Item src\backend\.env.example src\backend\.env }
+if (-not (Test-Path src\frontend\.env)) { Copy-Item src\frontend\.env.example src\frontend\.env }
+notepad src\backend\.env
+```
+
+The readiness command should report `accepting connections`. If PostgreSQL is still starting, repeat that check before creating a database or running migrations.
+
+**2. Update `src/backend/.env`.** Keep existing database/SoC values and replace existing assignments rather than adding duplicate keys. For a fresh setup, the template uses the database URL below. Credentials here are public **local-test examples**, never shared/production credentials:
+
+```dotenv
+DATABASE_URL=postgresql+psycopg://learnswe:learnswe-local-only@127.0.0.1:5433/learnswe_db_files
+APP_ENV=development
+SESSION_COOKIE_SECURE=false
+SESSION_COOKIE_SAMESITE=lax
+ALLOWED_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
+SEED_ADMIN_EMAIL=adm05-test@example.com
+SEED_ADMIN_PASSWORD='ExampleOnly!7Qm#42vL'
+```
+
+Save the file. Quoting keeps `#` literal; do not enter quotes in the login form. `.env` is ignored; never commit credentials. Optional `SEED_STUDENT_EMAIL`/`SEED_STUDENT_PASSWORD` and `SEED_TEACHER_EMAIL`/`SEED_TEACHER_PASSWORD` pairs configure fixed demo accounts; incomplete pairs are skipped. SOCLAAS settings are required only for actual generation/chat, not login.
+
+**Fresh database only:** when using `learnswe_db_files`, create it only if missing. Skip this block when retaining a different existing `DATABASE_URL`; ensure that database is reachable instead. This block preserves any existing database:
+
+```powershell
+Set-Location (git rev-parse --show-toplevel)
+$adm05DatabaseExists = docker compose exec -T postgres psql -U learnswe -d postgres -tAc "SELECT 1 FROM pg_database WHERE datname = 'learnswe_db_files'"
+if ($LASTEXITCODE -ne 0) { throw 'Cannot inspect PostgreSQL; check Docker Desktop and the postgres service.' }
+if (($adm05DatabaseExists -join '').Trim() -ne '1') {
+    docker compose exec -T postgres createdb -U learnswe learnswe_db_files
+}
+```
+
+**3. Apply migrations and seed, then start the backend.** Apply the additive `20261106_adm05_access` migration before starting the updated backend. Existing users default to enabled; `User.access_status` is enabled/disabled/archived and `archived_at` records irreversible archival. Downgrade refuses while any disabled/archived account exists, rather than silently granting access. Do not edit old migrations. Stop any existing backend with Ctrl+C in its terminal first:
+
+```powershell
+Set-Location (git rev-parse --show-toplevel)
+docker compose up -d postgres
+Set-Location src\backend
+uv sync --frozen
+uv run --env-file .env alembic upgrade head
+uv run --env-file .env python -m teacher_materials.seed
+uv run --env-file .env python -m auth.seed
+uv run --env-file .env uvicorn main:app --host 127.0.0.1 --port 8000 --reload
+```
+
+`demo-admin: seeded` means credentials were saved; `unchanged` keeps the previous hash/email; `skipped` identifies missing or invalid settings. Resolve wrong-role/email-conflict errors rather than ignoring them. Seed email is normalised; passwords are not trimmed or printed. Admin-created accounts are not seed targets. Roles remain fixed; no end-user password reset/change flow exists.
+
+**4. Explicitly reset an existing seed password after editing `.env`.** Run in another terminal, or before starting the backend in step 3:
+
+```powershell
+Set-Location (git rev-parse --show-toplevel)
+Set-Location src\backend
+uv run --env-file .env python -m auth.seed --reset-passwords
+```
+
+Changing `.env`, restarting the API, or rerunning the seed without this flag does not replace an existing hash. The flag applies **every configured seed role**, not just admin, and can update configured emails subject to uniqueness. It does not enable disabled accounts, restore archived accounts or revoke sessions. For a password-change test, keep the email unchanged, sign out, check the old password fails once, then check the new password succeeds. Do not infer success from an already-open authenticated session. Repeated failed attempts trigger the login limiter.
+
+After changing backend settings such as `ALLOWED_ORIGINS`, fully stop and restart the `uv run --env-file .env uvicorn ...` command. Uvicorn `--reload` does not refresh the environment loaded by its parent `uv` process. Seed commands are separate processes and read saved `.env` values each time. Vite proxies with `changeOrigin: true`; explicitly allow the frontend origin instead of disabling Origin/CSRF checks.
+
+**5. Configure/start the frontend in a second terminal.** Edit **`src/frontend/.env`**:
+
+```powershell
+Set-Location (git rev-parse --show-toplevel)
+notepad src\frontend\.env
+```
+
+```dotenv
+API_PORT=8000
+VITE_ENABLE_DEMO_ACCESS=true
+```
+
+If `API_PROXY_TARGET` is present, set it to `http://127.0.0.1:8000` or remove it to use `API_PORT`; the target overrides the port. Never put secrets in `VITE_*` variables. Save, stop any running frontend with Ctrl+C, then run:
+
+```powershell
+Set-Location (git rev-parse --show-toplevel)
+Set-Location src\frontend
+npm.cmd ci
+npm.cmd run dev
+```
+
+`npm.cmd` avoids PowerShell's `npm.ps1` execution-policy error. Restart the frontend after its `.env` changes. Open **http://127.0.0.1:5173/login**, use Sign in with the configured admin email/password without quotes, and follow the [account/course walkthrough](UserGuide.md#try-account-and-course-management-locally). Demo shortcuts and login role tabs do not grant a real admin session. Account creation sends the password once, confirms it on the client, never returns hashes/passwords/session metadata, and clears secret fields on success/unmount.
+
+**6. Diagnose failures using the Network response, not just the Uvicorn status line.**
+
+| Request/status | Interpretation and recovery |
+|---|---|
+| Initial `/api/auth/me` 401 | Expected before login. |
+| Login 200 and admin workspace | Configured account authenticated successfully. |
+| Login 401 `invalid_credentials` | Wrong credentials or inactive account; deliberately indistinguishable. Check seed output/reset flag and account status. |
+| Login 403 `csrf_failed` | Origin mismatch. Allow the exact frontend scheme/host/port and restart API. Login validates Origin; it does not need a pre-existing session CSRF token. |
+| Login 200 followed by `/api/auth/me` 401 | Inspect cookie retention. Local plain HTTP needs `SESSION_COOKIE_SECURE=false` and a full API restart; production HTTPS keeps Secure enabled. This does not explain an initial login 401. |
+| Protected request 403 `forbidden` | Wrong role; selecting the Admin demo tab does not alter the account role. |
+| Protected write 403 `csrf_failed` | Invalid session CSRF token or disallowed Origin. Sign in again and check settings. |
+| Login 429 `rate_limited` | Wait for retry time. Defaults are 5 failures/email or 20/IP in 900 seconds. The limiter is process-local, so a local restart clears it. |
+| API 503 or network error | Check configuration, PostgreSQL/migration head, proxy target and running processes; not proof of a wrong password. |
+
+The [UserGuide sign-in walkthrough](UserGuide.md#set-up-local-admin-sign-in-powershell) provides the user-facing steps. These local settings are not a production deployment configuration.
+
+### Lifecycle implementation and automated verification
+
+Admin writes and login issuance share a transaction advisory lock so concurrent lifecycle changes cannot reactivate/archive users inconsistently or issue sessions after disable commits. The acting admin is rechecked after lock acquisition. Session rows are deleted before account updates, respecting teacher writes' existing session-then-user lock order. Every subsequent protected request rejects inactive users. The same `course_membership` composite key stores student enrolment and teacher management; immutable roles give each row its meaning. Revocation deletes memberships without deleting completion or authorship. Archive retains the user/email/history and deletes sessions/memberships atomically. Repeated grants/removals are idempotent; opposite actions follow transaction lock processing order. Self-disable/archive and removal of the last enabled administrator are rejected.
+
+Teacher generation already closes its initial transaction before the model call and rechecks session/account/course access before saving results. The student companion now rechecks its session/account in a fresh transaction before releasing generated text. Its static practice fixtures do not have course mappings; ADM-05 does not introduce course-grounded retrieval. Any future course context must enforce membership on retrieval and again before output. No live model calls are needed for tests.
+
+For automated backend testing, set `TEA01_TEST_DATABASE_URL` to a disposable PostgreSQL service/database; the existing fixture creates and removes a unique schema. Never point `DATABASE_URL` directly at a developer schema for tests. On Windows use `PGCONNECT_TIMEOUT=2` so the existing unavailable-database test does not wait indefinitely. Example for the repository's documented local Docker service:
+
+```powershell
+Set-Location (git rev-parse --show-toplevel)
+Set-Location src\backend
+$env:TEA01_TEST_DATABASE_URL = 'postgresql+psycopg://learnswe:learnswe-local-only@127.0.0.1:5433/learnswe'
+$env:PGCONNECT_TIMEOUT = '2'
+uv run pytest -q --basetemp .pytest_cache/adm05-local-tests
+```
+
+Use a fresh dedicated basetemp path for each simultaneous pytest run; pytest owns and clears that directory. The ignored `.pytest_cache` location avoids inaccessible old Windows TEMP directories. To run ADM-05 only instead, replace the last command with:
+
+```powershell
+uv run pytest -q tests/test_adm05_access.py tests/test_adm05_migration.py --basetemp .pytest_cache/adm05-focused-tests
+```
+
+Frontend tests intercept APIs; no running backend or live SoC service is needed. Run **one browser-test runner at a time** and stop manually started frontend servers first so the harness owns its ports. Do not overlap full/focused runs against shared servers/output directories:
+
+```powershell
+Set-Location (git rev-parse --show-toplevel)
+Set-Location src\frontend
+npm.cmd ci
+npx.cmd playwright install chromium
+npm.cmd run typecheck
+npm.cmd run lint
+npm.cmd run build
+npm.cmd test -- --workers=2 --output=test-results/adm05-full
+```
+
+For only ADM-05 browser tests, replace the last command with `npm.cmd test -- tests/adm05-access.spec.ts --workers=2 --output=test-results/adm05-focused`. API checks include anonymous/student/teacher rejection, CSRF/Origin, fixed-role creation, disable/fresh-login re-enable, archive/email reservation, cross-course denial, repeated/concurrent assignments, last-admin races and withholding AI after revocation. Mock the SoC client; keep fixtures isolated.
 
 ## Progress dashboard (STU-04)
 
@@ -196,3 +348,16 @@ Spec and contract: `workflow/specs/STU-04/`. `GET /api/progress` (student role o
 - `progress_service.build_progress(db, student_id, attempts, sets)` reads lesson figures only through `study_lessons.progress` (`completion_counts`, `completed_lessons`, and the new `member_courses`, also used by `GET /api/study/courses`), tallies the latest submitted attempt of each set by topic, resolves topic names with one query and sorts. `progress_schemas.py` holds the response models; none carries answers, question text, choices or ids of attempts. `progress_routes.py` is the thin route.
 - Frontend: `services/readOnce.ts` (shared in-flight GET sharing, moved out of `lessons.ts`), `services/progress.ts` (shape-checked `getProgress`), `services/progressMessages.ts` (exact error texts), `pages/Progress.tsx`, `OverviewStats` in `pages/Student.tsx`, `Stat` has `role="group"` named by its label. `weeklyActivity` stays in `data.ts` because the admin sample page still uses it.
 - Known limits: practice sets are not course-scoped; all of a student's submitted attempts count regardless of course membership; there is no cap on attempts per student; attempts made before the migration are lost.
+
+### ADM-05/STU-04 migration integration
+
+The additive no-op merge revision `20261106_merge_adm05_stu04` joins both historical migration heads. Existing installations at either feature head use the same `uv run --env-file .env alembic upgrade head` command; the missing branch applies before the join. Account status and saved practice attempts are preserved. Feature migration tests pin their own revisions, while `test_adm05_stu04_merge_migration.py` verifies one final head and populated upgrades from either parent. Use the merged application after migration.
+
+## Shared shell confirmation and tip dismissal
+
+Sidebar tips remain available in short windows, including the mobile Open companion shortcut;
+the navigation list scrolls while the account/logout footer stays in the viewport. Progress loads
+depend on the router history-entry key as well as retry state, associating reads with navigation
+instead of relying only on a component unmount and remount.
+
+`Shell` owns per-role/account tip dismissal in memory (no browser storage); desktop/sidebar drawer share the same dismissed state until refresh/remount. The X control is labelled Dismiss sidebar tip. Explicit Log out opens Confirm logout, with Cancel and Log out. Opening/cancelling makes no request; confirm sends the existing cookie/CSRF request once. Pending state disables buttons and Escape/backdrop dismissal; network/5xx failure preserves the dialog/session for retry. A logout401 still clears locally, and expired sessions never wait for confirmation. Student, teacher and admin flows share this behaviour. Existing editor/chat/history safeguards run after completed logout, not when the dialog opens. Specs: SHR-01 shared-shell follow-up, ADM-05 AC23-27 and STU-01/STU-04 synchronisation notes.

@@ -263,3 +263,7 @@ Workflow: Variant B (developer and test-designer in separate worktrees from the 
 - Topic names come from the `topic` table by id; the fixture holds only the id.
 - Accuracy is floored for display and the weak test uses exact integer arithmetic, so a displayed 59% is always weak and a displayed 60% never is.
 - No new Python or npm dependency, no new environment variable.
+
+## Shared-shell synchronisation ? 2026-11-06
+
+User-initiated logout follows SHR-01 Confirm logout: Cancel/Escape/backdrop preserves session/page/unsaved state with no request; only confirmation submits. Existing logout/history/clear-data criteria refer to completed logout. Expiry/revocation still clears immediately without confirmation. Sidebar tips are dismissible until workspace reload/remount. No student API or progress/completion contract changes.

@@ -3,6 +3,7 @@ import os
 from uuid import UUID
 
 from sqlalchemy import create_engine
+from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
 
 from teacher_materials.models import Course, CourseMembership, Topic, User
@@ -10,8 +11,9 @@ from teacher_materials.models import Course, CourseMembership, Topic, User
 
 def seed_demo(session: Session) -> None:
     for user_id, name, role in (("demo-teacher", "Jamie", "teacher"), ("demo-teacher-other", "Alex", "teacher"), ("demo-student", "Student", "student")):
-        if session.get(User, user_id) is None:
-            session.add(User(id=user_id, display_name=name, role=role))
+        # Core columns keep this original seed usable at its historical schema
+        # revision; later account defaults are supplied by the database.
+        session.execute(insert(User.__table__).values(id=user_id, display_name=name, role=role).on_conflict_do_nothing(index_elements=["id"]))
     courses = (("11111111-1111-4111-8111-111111111111", "Software Engineering"), ("22222222-2222-4222-8222-222222222222", "Programming"))
     for value, title in courses:
         if session.get(Course, UUID(value)) is None:

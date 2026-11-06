@@ -1,0 +1,13 @@
+feature_run_id,invocation_id,role,effort,tool,session_id,agent_id,started_at,finished_at
+2026-11-06-ADM05-01,2026-11-06-ADM05-01-spec-writer-1,spec-writer,inherited,codex,unavailable,/root/adm05_spec,2026-11-06T04:05:44.5832996Z,2026-11-06T04:09:09.4309381Z
+2026-11-06-ADM05-01,2026-11-06-ADM05-01-developer-1,developer,inherited,codex,unavailable,/root/adm05_developer,2026-11-06T04:09:09.4376109Z,2026-11-06T04:14:28.1501682Z
+2026-11-06-ADM05-01,2026-11-06-ADM05-01-test-designer-1,test-designer,inherited,codex,unavailable,/root/adm05_tests,2026-11-06T04:09:09.4376109Z,2026-11-06T04:17:49.5325861Z
+2026-11-06-ADM05-01,2026-11-06-ADM05-01-spec-writer-2,spec-writer,inherited,codex,unavailable,/root/adm05_spec,2026-11-06T04:11:49.8422386Z,2026-11-06T04:13:03.7596983Z
+2026-11-06-ADM05-01,2026-11-06-ADM05-01-developer-2,developer,inherited,codex,unavailable,/root/adm05_developer,2026-11-06T04:14:28.1501682Z,2026-11-06T04:25:44.4076557Z
+2026-11-06-ADM05-01,2026-11-06-ADM05-01-orchestrator-1,orchestrator,inherited,codex,01a1aef6-efae-7261-8649-b0c6de1f35e3,,2026-11-06T03:46:55.017Z,2026-11-06T04:43:47.618979+00:00
+2026-11-06-ADM05-01,2026-11-06-ADM05-01-test-designer-2,test-designer,inherited,codex,unavailable,/root/adm05_tests,2026-11-06T04:25:44.4126747Z,2026-11-06T04:42:50.0832118Z
+2026-11-06-ADM05-01,2026-11-06-ADM05-01-developer-3,developer,inherited,codex,unavailable,/root/adm05_developer,2026-11-06T04:27:57.2808375Z,2026-11-06T04:29:49.1363850Z
+2026-11-06-ADM05-01,2026-11-06-ADM05-01-spec-writer-3,spec-writer,inherited,codex,unavailable,/root/adm05_spec,2026-11-06T04:29:16.3275577Z,2026-11-06T04:30:48.2222094Z
+2026-11-06-ADM05-01,2026-11-06-ADM05-01-developer-4,developer,inherited,codex,unavailable,/root/adm05_developer,2026-11-06T04:29:49.1465237Z,2026-11-06T04:31:53.4178748Z
+2026-11-06-ADM05-01,2026-11-06-ADM05-01-verifier-1,verifier,high,codex,unavailable,/root/adm05_verifier,2026-11-06T04:32:10.2172194Z,2026-11-06T04:42:50.0832118Z
+2026-11-06-ADM05-01,2026-11-06-ADM05-01-developer-5,developer,inherited,codex,unavailable,/root/adm05_developer,2026-11-06T04:35:24.6698271Z,2026-11-06T04:37:04.0613496Z
