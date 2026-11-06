@@ -19,7 +19,7 @@ Stages: not started, spec, build, verified (local), merged.
 | TEA-05 | not started | | | |
 | TEA-06 | not started | | | |
 | ADM-01 | not started | | | |
-| ADM-02 | spec | `feat/adm02-targeted-feedback-forms` | | Draft spec/plan/tasks prepared; 21 story criteria plus 4 user-requested draft/resume/completion criteria mapped. Includes private respondent autosave and Completed status. Awaiting human approval of overall contract, including identified admin-only submissions and retention without automatic expiry/deletion. No application implementation yet. |
+| ADM-02 | build | `feat/adm02-targeted-feedback-forms` | | Revised spec/plan approved 2026-11-07 at 629f708; independent developer/test-designer started. Includes persistent private respondent autosave/resume and Completed state. Verification pending. |
 | ADM-03 | not started | | | |
 | ADM-04 | not started | | | |
 | ADM-05 | verified (local) | `feat/adm05-user-and-access-management` | | Fixed-role account creation/lifecycle, courses with General topic, teacher/student assignments. Source `07deb57`; strongest verifier PASS; 391 browser tests, 968 backend cases covered across full/focused runs. Local commits only; apply migration before use. Evidence: `logs/Adm05Verification.md`. |

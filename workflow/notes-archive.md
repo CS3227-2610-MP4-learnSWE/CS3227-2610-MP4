@@ -564,3 +564,12 @@ Newest entry first. Use `templates/handoff.md`. Older entries describe the state
 - Next: review local commit and rerun remote frontend CI after push (not performed here). No backend or deployment changes.
 - Files: styles.css, Progress.tsx, both guides, logs/FrontendCiFix.md and workflow records.
 - Resources: single-session small-fix exemption; no agents/invocation manifest/report/tracker. Inherited Codex model/effort; exact tokens/cost/elapsed attribution unavailable. Diagnostic/configuration recoveries and profile warning; no new feature correction rounds. See session log for run timing caveats.
+
+## 2026-11-06: spec-writer ADM-06 draft contract
+- Done: drafted AI service-attempt reporting, privacy-safe persistent metadata and coverage, independent recorded-token availability and accessible admin UI contracts. No application code/tests/SoC calls; spec and plan remain Draft.
+- Next: human reviews UTC 31-day date range, grouped TEA-02 calls, forward-only coverage and fail-closed metadata reservation. Orchestrator resolves source-aware existing module/provider-field compatibility before independent designer/developer begin; no guessed provider availability.
+- Validation: ADM-06 speccheck PASS (1 checked, 0 failed, 0 waived). Contract includes count/retry unit, pending/coverage gaps, no inferred tokens, auth/session/history/error states, concurrency and privacy tests.
+- Files touched: workflow/specs/ADM-06/spec.md, plan.md, tasks.md; notes/archive handoff only.
+- Invocation ID: 2026-11-06-ADM06-01-spec-writer-01. Source session: 01a1b002-09f9-7d50-8aaf-7b12499d0b9d. Model/effort inherited, exact attribution unavailable; elapsed: manifest timestamps authoritative.
+- Feature-run report: workflow/usage/runs/2026-11-06-ADM06-01/report.md (orchestrator generates at run close).
+- Resource use: tracker not run by spec-writer (orchestrator-owned); total tokens/cost unavailable until report. No retries or feature correction rounds. Blocking: human spec/plan approval and source-aware compatibility mapping; no feature implementation authorised through this draft.

@@ -87,6 +87,8 @@ Integration clarification 2026-11-07: unknown/missing top-level body keys (inclu
 
 Question-definition clarification: V01 concerns the top-level request object. A question's invalid required flag (for example string "true" instead of boolean true), prompt, type, identifier or object shape uses V03; the specific choice/scale validation errors remain V04/V05. Boolean strings are rejected, never coerced. Draft-answer empty string/array values may normalise to null regardless of question type; use nonempty wrong-type values to test answer-type rejection.
 
+Validation metadata: `details` is optional in the error envelope. This release emits the fixed code/message without field-path details; clients must not depend on optional details for recovery. The UI retains the specified error copy and local invalid-field focus behaviour.
+
 ## Components and modules
 Proposed new single-purpose modules: backend `feedback_models.py` for wire validation, `feedback_store.py` for transactions/access, `feedback.py` for routes; frontend `feedbackApi.ts`, `AdminFeedback.tsx`, `FeedbackInbox.tsx`, `FeedbackForm.tsx`, `FeedbackQuestion.tsx`. These are proposed new module names; follow existing package placement conventions.
 
