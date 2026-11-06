@@ -1,5 +1,10 @@
 # Handoff notes
 
+## 2026-11-06: TRK-03 Codex invocation attribution
+- Done: clarified that existing `run-report` supports Codex per-invocation tokens/model/cost when exact source IDs and time windows are in the manifest; detailed `invocations-from-logs` metrics remain Claude-only. Multi-agent run close now requires Codex session IDs and report generation for completed and stopped runs. Missing attribution is explicitly unavailable, not zero.
+- Reported this Codex session: `workflow/usage/runs/2026-11-06-TRK03-CODEX-01/report.md` (35 requests; 120,468 input, 3,022,464 cache read, 18,582 output, 5,959 reasoning; cost unavailable). Report command path example corrected from three parent traversals to two.
+- No tracker code changed because Codex parsing and manifest attribution were already implemented. No tests added or run. Branch: `feat/trk03-codex-usage`. Summary: `logs/Trk03CodexWorkflow.md`.
+
 Newest entry first. Older entries describe the state at the time; the newest entry supersedes their open/merged status. Keep the newest 10 entries here; older ones are in `notes-archive.md`. Feature state is in `STATUS.md`.
 
 ## 2026-11-06: developer frontend CI Progress history synchronization

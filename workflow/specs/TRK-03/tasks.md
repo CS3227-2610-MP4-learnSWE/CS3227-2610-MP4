@@ -23,5 +23,6 @@ Workflow tooling with no stored records and no users, so the template's tasks 6 
 | 17 | Verify: every AC met and covered, DRY/SRP, no new dependencies, privacy, READMEs match behaviour, existing tests unmodified; re-run the suite | verifier | 16 | todo |
 | 18 | Fix defects (max 2 rounds); verifier re-checks | developer, verifier | 17 | todo |
 | 19 | Record the handoff in `workflow/notes.md`, resource use in `workflow/experiments/resource-log.md`, the token report for this run, and the `logs/` summary | orchestrator | 18 | todo |
+| 20 | Codex follow-up: require Codex session/agent IDs in routine manifests, run `run-report` at every run close, and document incomplete attribution rules; Codex parser and manifest attribution already exist, so no tracker implementation change | orchestrator | user request 2026-11-06 | done |
 
 Tasks 2 to 8 run in parallel with tasks 9 to 15 (test-designer and developer do not see each other's files). Task 1 gates both.
