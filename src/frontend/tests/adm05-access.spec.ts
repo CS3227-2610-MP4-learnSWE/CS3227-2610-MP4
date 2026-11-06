@@ -1,6 +1,92 @@
 import { expect, test, type Page } from "@playwright/test";
 import { ADMIN, STUDENT, mockAuthApi } from "./authApi";
 
+test("adm05 follow-up creation shows a green toast and resets fields while retaining role", async ({
+  page,
+}) => {
+  await mockAdmin(page);
+  await page.goto("/admin/users");
+  await expect(
+    page.getByRole("combobox", { name: "Account role", exact: true }),
+  ).toContainText("Student");
+  await page.getByLabel("Display name", { exact: true }).fill("Fresh Teacher");
+  await page
+    .getByLabel("Email", { exact: true })
+    .fill("fresh-teacher@example.com");
+  await choose(page, "Account role", "Teacher");
+  await page.getByLabel("Password", { exact: true }).fill(PASSWORD);
+  await page.getByLabel("Confirm password", { exact: true }).fill(PASSWORD);
+  await page
+    .getByRole("button", { name: "Create account", exact: true })
+    .click();
+  const toast = page
+    .getByRole("status")
+    .filter({ hasText: "Account created." });
+  await expect(toast).toBeVisible();
+  await expect(toast).toHaveClass(/MuiAlert-filledSuccess/);
+  for (const field of [
+    "Display name",
+    "Email",
+    "Password",
+    "Confirm password",
+  ]) {
+    await expect(page.getByLabel(field, { exact: true })).toHaveValue("");
+  }
+  await expect(
+    page.getByRole("combobox", { name: "Account role", exact: true }),
+  ).toContainText("Teacher");
+});
+
+test("adm05 follow-up Manage opens a focused overlay and Escape returns focus", async ({
+  page,
+}) => {
+  await mockAdmin(page);
+  await page.setViewportSize({ width: 1100, height: 560 });
+  await page.goto("/admin/users");
+  const manage = page.getByRole("button", {
+    name: "Manage account ADM05 Learner",
+    exact: true,
+  });
+  await manage.click();
+  const details = page.getByRole("dialog", {
+    name: "Account details",
+    exact: true,
+  });
+  await expect(details).toBeVisible();
+  await expect(details).toContainText("adm05-learner@example.com");
+  await expect(
+    details.getByRole("button", { name: "Close account details", exact: true }),
+  ).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(details).toHaveCount(0);
+  await expect(manage).toBeFocused();
+});
+
+test("adm05 follow-up logout stays inside a short sidebar with a long account name", async ({
+  page,
+}) => {
+  await mockAuthApi(page, {
+    user: {
+      ...ADMIN,
+      display_name: "Administrator with a deliberately long display name",
+    },
+  });
+  await page.setViewportSize({ width: 1100, height: 500 });
+  await page.goto("/admin/overview");
+  const sidebar = page.locator("aside.sidebar");
+  const logout = sidebar.getByRole("button", { name: "Log out", exact: true });
+  await expect(logout).toBeVisible();
+  const bounds = await logout.boundingBox();
+  const shell = await sidebar.boundingBox();
+  expect(bounds).not.toBeNull();
+  expect(shell).not.toBeNull();
+  expect(bounds!.y + bounds!.height).toBeLessThanOrEqual(500);
+  expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(
+    shell!.x + shell!.width,
+  );
+  expect(bounds!.height).toBeLessThanOrEqual(48);
+});
+
 const PASSWORD = "ExampleOnly!7Qm#42vL";
 const learner = {
   id: "u-adm05student",

@@ -2,6 +2,9 @@
 from concurrent.futures import ThreadPoolExecutor
 import threading
 import uuid
+import asyncio
+
+import httpx
 
 import pytest
 
@@ -11,6 +14,27 @@ from stu01_helpers import make_lesson, put_completion, get_lesson, completion_ro
 
 BASE = "/api/admin"
 PASSWORD = "ExampleOnly!7Qm#42vL"  # Test-only illustration, never a default credential.
+
+
+@pytest.mark.parametrize("role", ["student", "teacher"])
+def test_adm05_created_account_login_uses_fresh_browser_cookie_jar(admin, role):
+    account = create(admin, role, email=unique_email("fresh-browser"))
+
+    async def check():
+        from main import app
+
+        # No copied admin cookie, seed identity or manually attached session.
+        async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://127.0.0.1:8000") as browser:
+            before = await browser.get("/api/auth/me")
+            assert before.status_code == 401
+            reply = await browser.post("/api/auth/login", json={"email": account["email"].upper(), "password": PASSWORD}, headers={"Origin": "http://localhost:5173"})
+            assert reply.status_code == 200, reply.text
+            me = await browser.get("/api/auth/me")
+            assert me.status_code == 200, me.text
+            assert me.json()["user"]["id"] == account["id"]
+            assert me.json()["user"]["role"] == role
+
+    asyncio.run(check())
 
 
 @pytest.fixture
