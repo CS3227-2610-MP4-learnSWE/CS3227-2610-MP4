@@ -9,6 +9,9 @@ from concurrent.futures import ThreadPoolExecutor
 from auth_helpers import call, code_of, new_student
 from stu04_helpers import (KEY, answers_with, attempt_rows, body_of, only_set, progress, save, start, submit,
                            topic_item)
+import pytest as _pytest
+
+pytestmark = _pytest.mark.usefixtures("fake_provider")
 
 
 def fire(requests, workers=None):
@@ -125,7 +128,7 @@ def test_stu04_ac17_simultaneous_progress_reads_all_return_the_same_body():
 
 def test_stu04_ac17_simultaneous_attempt_creation_gives_distinct_rows():
     s = new_student()
-    results = fire([lambda: call("POST", "/api/practice-sets/intro-se-1/attempts", s) for _ in range(8)])
+    results = fire([lambda: call("POST", "/api/practice-sets/a0000000-0000-4000-8000-000000000001/attempts", s) for _ in range(8)])
     assert {r.status_code for r in results} == {201}
     ids = [r.json()["attempt_id"] for r in results]
     assert len(set(ids)) == 8

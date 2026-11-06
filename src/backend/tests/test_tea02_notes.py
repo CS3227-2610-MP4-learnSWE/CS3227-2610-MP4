@@ -13,6 +13,9 @@ import httpx
 import pytest
 
 from teacher_auth import teacher_headers
+import pytest as _pytest
+
+pytestmark = _pytest.mark.usefixtures("fake_provider")
 
 BASE = "/api/teacher"
 COURSE = "11111111-1111-4111-8111-111111111111"
@@ -374,11 +377,11 @@ def test_tea02_accepted_output_boundary_and_no_student_publication(notes):
     from auth_helpers import call as student_call, new_student  # SHR-01: practice routes need a session
 
     student = new_student()
-    before = student_call("GET", "/api/practice-sets/intro-se-1", student)
+    before = student_call("GET", "/api/practice-sets/a0000000-0000-4000-8000-000000000001", student)
     fake.text = "x" * 1999
     created = generate(app, source)
     assert created.status_code == 201 and len(created.json()["content"]) == 1999
-    after = student_call("GET", "/api/practice-sets/intro-se-1", student)
+    after = student_call("GET", "/api/practice-sets/a0000000-0000-4000-8000-000000000001", student)
     assert before.status_code == after.status_code == 200 and before.json() == after.json()
     error(call(app, "GET", f"{BASE}/note-drafts/{created.json()['id']}", user="demo-student"), 403, "forbidden")
 

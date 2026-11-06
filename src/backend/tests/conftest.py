@@ -96,3 +96,16 @@ def fake():
     install(f)
     yield f
     uninstall()
+
+
+@pytest.fixture
+def fake_provider():
+    """STU-02-published-sets: a FakeSetProvider (FIXTURE_SET, every student a member) replaces the DB provider.
+
+    Tests that need the real DbSetProvider (test_stu02ps_db_*, seed, TEA-03 route agreement) do not use it.
+    """
+    from fake_sets import install_fake, uninstall_fake
+
+    fake = install_fake()
+    yield fake
+    uninstall_fake()

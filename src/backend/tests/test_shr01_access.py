@@ -7,8 +7,12 @@ import json
 import pytest
 from auth_helpers import COOKIE_NAME, COURSE_A, COURSE_B, call, code_of, login, new_student, seeded, signup, sql
 from auth_helpers import unique_email, unique_password
+from fake_sets import FIXTURE_SET_ID  # noqa: F401
+import pytest as _pytest
 
-SET_ID = "intro-se-1"
+pytestmark = _pytest.mark.usefixtures("fake_provider")
+
+SET_ID = FIXTURE_SET_ID
 EXPLANATIONS = [
     "One focused responsibility makes a function easier to understand, test and change.",
     "Tests protect expected behaviour and can catch regressions introduced by later changes.",

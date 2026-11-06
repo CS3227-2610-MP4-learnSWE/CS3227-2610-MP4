@@ -57,7 +57,7 @@ def columns(iso, table):
 
 
 def new_attempt(iso, *, aid=None, student=STUDENT, status="in_progress", answers="{}", correct=None, total=None,
-                key_version=None, correct_ids="[]", submitted_at=None, set_id="intro-se-1"):
+                key_version=None, correct_ids="[]", submitted_at=None, set_id="a0000000-0000-4000-8000-000000000001"):
     aid = aid or "a-" + uuid.uuid4().hex[:20]
     iso.sql("INSERT INTO practice_attempt(id, student_id, set_id, status, answers, score_correct, score_total, "
             "key_version, correct_question_ids, submitted_at) VALUES (%s, %s, %s, %s, %s::jsonb, %s, %s, %s, "
@@ -116,7 +116,7 @@ def test_stu04_ac18_seq_is_generated_always_and_follows_creation_order(migrated)
     assert rows[second] > rows[first]
     with pytest.raises(psycopg.Error):  # GENERATED ALWAYS refuses an explicit value
         migrated.sql("INSERT INTO practice_attempt(id, seq, student_id, set_id, status) "
-                     "VALUES ('x-explicit', 99, %s, 'intro-se-1', 'in_progress')", (STUDENT,))
+                     "VALUES ('x-explicit', 99, %s, 'a0000000-0000-4000-8000-000000000001', 'in_progress')", (STUDENT,))
 
 
 def test_stu04_ac18_defaults_are_filled_in(migrated):

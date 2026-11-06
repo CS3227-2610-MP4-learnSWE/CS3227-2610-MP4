@@ -6,6 +6,9 @@ import attempt_store
 from auth_helpers import call, code_of, login, new_student, student_from_login
 from stu04_helpers import (KEY, SET_ID, answers_with, attempt_rows, body_of, only_set, save, start, submit,
                            submitted)
+import pytest as _pytest
+
+pytestmark = _pytest.mark.usefixtures("fake_provider")
 
 
 def test_stu04_ac8_the_in_memory_store_is_gone():

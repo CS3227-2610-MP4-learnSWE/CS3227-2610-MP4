@@ -18,8 +18,19 @@ test("student answers, submits and sees the server's score", async ({
   await page.getByLabel(/^password\s*\*?$/i).fill(password!);
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await expect(page).toHaveURL(/\/student\/overview$/);
+  // STU-02-published-sets: the seeded published set (python -m teacher_publications.seed) is picked
+  // from the picker; the page reads the set id from the URL.
   await page.goto("/student/practice");
-  await expect(page.getByText("Software engineering basics")).toBeVisible();
+  await expect(
+    page.getByRole("heading", { level: 1, name: "Choose a practice set" }),
+  ).toBeVisible();
+  await page
+    .getByRole("link", { name: "Software engineering practice", exact: true })
+    .click();
+  await expect(page).toHaveURL(/\/student\/practice\/[0-9a-f-]{36}$/);
+  await expect(
+    page.getByRole("heading", { level: 2, name: "Software engineering practice" }),
+  ).toBeVisible();
   await expect(page.getByText("Correct answer:")).toHaveCount(0);
   await page
     .getByRole("radio", { name: "A single, focused responsibility" })

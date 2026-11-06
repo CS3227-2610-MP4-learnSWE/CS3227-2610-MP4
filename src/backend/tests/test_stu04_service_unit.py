@@ -1,6 +1,7 @@
 """STU-04 AC3, AC4, AC9, AC10, AC11: build_progress with a fake store and synthetic multi-topic sets.
 
-The plan's signature: build_progress(db, student_id, attempts=store, sets=PRACTICE_SETS) -> ProgressOut.
+The plan's signature: build_progress(db, student_id, attempts=store, sets=provider) -> ProgressOut; here `sets` is a FakeSetProvider
+(STU-02-published-sets) built from the mapping the tests pass.
 A real database session is used for the lesson helpers and the topic names (skipped without a database).
 """
 import os
@@ -13,6 +14,7 @@ from sqlalchemy.orm import Session
 
 from attempt_store import Attempt, SetSummary
 from auth_helpers import new_student
+from fake_sets import FakeSetProvider
 from practice_data import PracticeSet, Question
 from progress_service import build_progress
 from stu01_helpers import make_course, make_topic
@@ -59,7 +61,7 @@ def summary(set_id, answered, correct_ids, *, total=None, attempts=1, best=None)
 
 
 def run(db, student, summaries, sets):
-    out = build_progress(db, str(student), FakeStore(summaries), sets)
+    out = build_progress(db, str(student), FakeStore(summaries), FakeSetProvider(list(sets.values())))
     return out.model_dump(mode="json")
 
 
@@ -205,5 +207,5 @@ def test_stu04_ac9_a_summary_for_a_set_that_no_longer_exists_is_skipped(db):
 def test_stu04_ac1_the_store_is_asked_only_for_the_given_student(db):
     s = new_student()
     store = FakeStore([])
-    build_progress(db, str(s), store, {})
+    build_progress(db, str(s), store, FakeSetProvider([]))
     assert store.asked == [str(s)]

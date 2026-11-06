@@ -1,4 +1,4 @@
-"""STU-03 gap tests, written AFTER reading the implementation (practice_data.PRACTICE_SETS,
+"""STU-03 gap tests, written AFTER reading the implementation (the set provider,
 the real SoclaasClient wired to a MockTransport). They cover two items phase 1 could not
 test from the contract alone."""
 import httpx
@@ -20,6 +20,9 @@ from companion_helpers import (
 )
 from llm_client import Limits, Settings, SoclaasClient
 from main import app
+import pytest as _pytest
+
+pytestmark = _pytest.mark.usefixtures("fake_provider")
 
 OTHER_Q = "Which keyword starts a function definition in Python?"
 OTHER_CHOICES = ("Zebra keyword alpha", "Zebra keyword beta")
@@ -35,11 +38,11 @@ def other_set():
         correct="a",
         explanation=OTHER_EXPL,
     )
-    return practice_data.PracticeSet(id="other-set-1", title="Other", questions=(q,))
+    return practice_data.PracticeSet(id="c0000000-0000-4000-8000-000000000003", title="Other", questions=(q,))
 
 
-def test_stu03_ac7_post_impl_pasted_question_of_another_set_forces_hint_in_explain(monkeypatch):
-    monkeypatch.setitem(practice_data.PRACTICE_SETS, "other-set-1", other_set())
+def test_stu03_ac7_post_impl_pasted_question_of_another_set_forces_hint_in_explain(fake_provider):
+    fake_provider.add(other_set())
     fake = FakeLlm()
     install(fake)
     try:

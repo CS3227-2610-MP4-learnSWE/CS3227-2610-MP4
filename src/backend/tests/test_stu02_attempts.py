@@ -4,8 +4,12 @@ SHR-01: identity is a session login (auth_helpers); 401 `missing_student` is now
 No assertion was weakened.
 """
 from auth_helpers import call, code_of, new_student  # session login replaces X-Student-Id (SHR-01)
+from fake_sets import FIXTURE_SET_ID, UNKNOWN_SET_ID  # noqa: F401
+import pytest as _pytest
 
-SET_ID = "intro-se-1"
+pytestmark = _pytest.mark.usefixtures("fake_provider")
+
+SET_ID = FIXTURE_SET_ID
 CORRECT = {"q1": "a", "q2": "b", "q3": "c"}
 EXPLANATIONS = [
     "One focused responsibility makes a function easier to understand, test and change.",
@@ -68,7 +72,7 @@ def test_stu02_ac1_read_set_has_no_key_or_explanation():
 
 
 def test_stu02_ac1_unknown_set_404():
-    r = call("GET", "/api/practice-sets/nope", new_student())
+    r = call("GET", f"/api/practice-sets/{UNKNOWN_SET_ID}", new_student())
     assert r.status_code == 404
     assert code_of(r) == "set_not_found"
 
@@ -97,7 +101,7 @@ def test_stu02_ac2_start_empty_session_cookie_rejected():
 
 
 def test_stu02_ac2_start_unknown_set():
-    r = call("POST", "/api/practice-sets/nope/attempts", new_student())
+    r = call("POST", f"/api/practice-sets/{UNKNOWN_SET_ID}/attempts", new_student())
     assert r.status_code == 404
     assert code_of(r) == "set_not_found"
 
@@ -338,8 +342,8 @@ def test_stu02_ac8_no_leak_from_any_unsubmitted_response():
     resps.append(results(aid, s))
     resps.append(call("GET", f"/api/attempts/{aid}"))
     resps.append(call("GET", "/api/attempts/nonexistent-attempt", s))
-    resps.append(call("GET", "/api/practice-sets/nope", s))
-    resps.append(call("POST", "/api/practice-sets/nope/attempts", s))
+    resps.append(call("GET", f"/api/practice-sets/{UNKNOWN_SET_ID}", s))
+    resps.append(call("POST", f"/api/practice-sets/{UNKNOWN_SET_ID}/attempts", s))
     for resp in resps:
         assert_no_leak(resp)
     # Incomplete submit on a fresh attempt
