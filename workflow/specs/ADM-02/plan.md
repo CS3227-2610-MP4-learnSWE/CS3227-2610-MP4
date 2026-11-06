@@ -83,6 +83,8 @@ Validation priority: auth -> role -> record visibility -> state/version -> input
 
 For draft PUT and submission: visibility -> closed C04 -> already submitted C05 -> draft version C06 -> answer validation (V11 for draft, V10 for submission). Use the same lock order for autosave, submission and collection closure; after waiting, recheck active session/account and current state. A delayed draft save must never recreate a draft after submission. Admin endpoints expose only submitted responses, never unfinished answer data.
 
+Integration clarification 2026-11-07: unknown/missing top-level body keys (including forged user_id), or invalid version/draft_version scalar types, use V01 on both draft PUT and submission POST. Invalid answers containers/items/types, foreign question/option IDs and answer-size limits use V11 on draft PUT and V10 on submission POST. The body byte cap remains V08. This makes the original structural-body versus answer-validation distinction explicit; it changes no authorised behaviour.
+
 ## Components and modules
 Proposed new single-purpose modules: backend `feedback_models.py` for wire validation, `feedback_store.py` for transactions/access, `feedback.py` for routes; frontend `feedbackApi.ts`, `AdminFeedback.tsx`, `FeedbackInbox.tsx`, `FeedbackForm.tsx`, `FeedbackQuestion.tsx`. These are proposed new module names; follow existing package placement conventions.
 
