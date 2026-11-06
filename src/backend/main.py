@@ -6,6 +6,7 @@ from sqlalchemy.exc import SQLAlchemyError
 import companion_routes
 import practice_routes
 import progress_routes
+from feedback import router as feedback_router
 from admin_access.routes import router as admin_router
 from ai_usage.routes import router as ai_usage_router
 from auth.routes import add_no_store, router as auth_router
@@ -21,6 +22,7 @@ app = FastAPI(title="learnSWE Preview API", version="0.1.0")
 app.include_router(auth_router)
 app.include_router(admin_router)
 app.include_router(ai_usage_router)
+app.include_router(feedback_router)
 app.include_router(practice_routes.router)
 app.include_router(teacher_router)
 app.include_router(teacher_notes_router)

@@ -9,7 +9,7 @@ import {
   useMediaQuery,
 } from "@mui/material";
 import { DemoProvider } from "./state";
-import { AuthProvider } from "./auth/AuthContext";
+import { AuthProvider, useAuth } from "./auth/AuthContext";
 import { RequireRole, RootRedirect } from "./auth/RequireRole";
 import Login from "./pages/Login";
 import { CompanionProvider } from "./components/StudyCompanion";
@@ -17,10 +17,28 @@ import Shell from "./components/Shell";
 import Student from "./pages/Student";
 import { PracticeProvider } from "./practice/PracticeContext";
 import InboxPage, { FeedbackForm } from "./pages/Inbox";
+import FeedbackInbox from "./pages/FeedbackInbox";
+import RecipientFeedback from "./pages/RecipientFeedback";
+import AdminFeedback from "./pages/AdminFeedback";
 
 // Loaded on demand so the student pages never download the teacher demo data.
 const Teacher = lazy(() => import("./pages/Teacher"));
 const Admin = lazy(() => import("./pages/Admin"));
+
+function Inbox({ role }: { role: "student" | "teacher" }) {
+  const { status } = useAuth();
+  return status === "authenticated" ? (
+    <FeedbackInbox />
+  ) : (
+    <InboxPage role={role} />
+  );
+}
+
+function LiveFeedback({ admin = false }: { admin?: boolean }) {
+  const { status } = useAuth();
+  if (status !== "authenticated") return <Navigate to="/login" replace />;
+  return admin ? <AdminFeedback /> : <RecipientFeedback />;
+}
 
 export default function App() {
   const prefersDark = useMediaQuery("(prefers-color-scheme: dark)");
@@ -97,7 +115,8 @@ export default function App() {
               }
             >
               <Route index element={<Navigate to="overview" replace />} />
-              <Route path="inbox" element={<InboxPage role="student" />} />
+              <Route path="inbox" element={<Inbox role="student" />} />
+              <Route path="feedback/:formId" element={<LiveFeedback />} />
               <Route
                 path="feedback"
                 element={<FeedbackForm notify={notify} />}
@@ -113,7 +132,8 @@ export default function App() {
               }
             >
               <Route index element={<Navigate to="overview" replace />} />
-              <Route path="inbox" element={<InboxPage role="teacher" />} />
+              <Route path="inbox" element={<Inbox role="teacher" />} />
+              <Route path="feedback/:formId" element={<LiveFeedback />} />
               <Route
                 path="feedback"
                 element={<FeedbackForm notify={notify} />}
@@ -136,6 +156,7 @@ export default function App() {
               }
             >
               <Route index element={<Navigate to="overview" replace />} />
+              <Route path="feedback/*" element={<LiveFeedback admin />} />
               <Route
                 path="*"
                 element={
