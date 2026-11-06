@@ -564,7 +564,7 @@ def test_stu02ps_db_ac24_a_single_alembic_head_and_a_uuid_set_id_is_stored():
     out = subprocess.run([sys.executable, "-m", "alembic", "heads"], cwd=backend, env=os.environ.copy(),
                          capture_output=True, text=True, check=True).stdout
     heads = re.findall(r"^(\S+) \(head\)", out, flags=re.M)
-    assert heads == ["20261105_stu04_practice_attempt"], out
+    assert len(heads) == 1, out  # one head; its name changes as other features add revisions
     cid, tid, sid, s = member_world()
     aid = start(s, sid)
     assert len(sid) == 36
