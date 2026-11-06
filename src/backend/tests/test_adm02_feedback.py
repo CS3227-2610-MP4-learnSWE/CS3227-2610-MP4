@@ -235,12 +235,12 @@ def test_adm02_validation_rejects_malformed_form_without_partial_save(admin, mut
     elif mutation == "bad_scale":
         body["questions"] = [question("linear_scale")]
         body["questions"][0]["scale"]["max"] = True; code = "invalid_feedback_scale"
-    elif mutation == "bad_bool": body["questions"][0]["required"] = "true"
+    elif mutation == "bad_bool": body["questions"][0]["required"] = "true"; code = "invalid_feedback_questions"
     error(call("POST", ADMIN + "/forms", admin, body), 422, code)
 
 
 @pytest.mark.parametrize("kind,value", [("short_answer", 7), ("short_answer", "x" * 501),
-    ("paragraph", "x" * 5001), ("multiple_choice", "foreign"), ("dropdown", []),
+    ("paragraph", "x" * 5001), ("multiple_choice", "foreign"), ("dropdown", ["foreign"]),
     ("checkbox", ["foreign"]), ("linear_scale", True), ("linear_scale", 6)])
 def test_adm02_answer_validation_applies_to_drafts_and_submission(admin, user, kind, value):
     form = published(admin, [user], payload([question(kind)]))

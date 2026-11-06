@@ -52,8 +52,12 @@ test("ADM-02 AC01-03 six question controls and accessible required/optional labe
     await expect(
       page.getByRole("radio", { name: n, exact: true }),
     ).toBeVisible();
-  await expect(page.getByText("Low", { exact: true })).toBeVisible();
-  await expect(page.getByText("High", { exact: true })).toBeVisible();
+  const scaleQuestion = page.getByRole("group", {
+    name: "6. Rate usefulness",
+    exact: true,
+  });
+  await expect(scaleQuestion).toContainText("Low");
+  await expect(scaleQuestion).toContainText("High");
   await expect(status(page, MSG.initial)).toBeVisible();
   expect(ctx.of("GET", FORM_ID)).toHaveLength(1);
   expect(ctx.of("PUT")).toHaveLength(0);
@@ -78,7 +82,11 @@ for (const role of ["student", "teacher"] as const) {
     await page
       .getByRole("link", { name: "Back to inbox", exact: true })
       .click();
-    await expect(page.getByText("Draft", { exact: true })).toBeVisible();
+    await expect(
+      page
+        .getByRole("article")
+        .filter({ has: page.getByRole("link", { name: TITLE, exact: true }) }),
+    ).toContainText(/\bDraft\b/);
     await page.getByRole("link", { name: TITLE, exact: true }).click();
     await expect(firstAnswer(page)).toHaveValue("  Keep my progress  ");
     await expectNoSecretsInBrowser(page, ["Keep my progress"]);
@@ -240,6 +248,16 @@ test("ADM-02 AC04_24 required validation does not complete form or erase draft",
 }) => {
   const ctx = await recipientReady(page);
   await page
+    .getByRole("textbox", { name: "2. Your experience", exact: true })
+    .fill("Preserve this optional draft answer");
+  await expect(status(page, MSG.saved)).toBeVisible();
+  ctx.steps.push({
+    method: "POST",
+    path: "/responses",
+    status: 422,
+    code: "invalid_feedback_answers",
+  });
+  await page
     .getByRole("button", { name: "Submit feedback", exact: true })
     .click();
   await expect(
@@ -247,7 +265,21 @@ test("ADM-02 AC04_24 required validation does not complete form or erase draft",
   ).toBeVisible();
   expect(ctx.submitted).toBe(false);
   await expect(firstAnswer(page)).toBeVisible();
-  expect(ctx.of("POST")).toHaveLength(0);
+  await expect(
+    alert(
+      page,
+      "Answer every required question and check that all answers match their question type.",
+    ),
+  ).toBeVisible();
+  await expect(firstAnswer(page)).toBeFocused();
+  await expect(
+    page.getByRole("textbox", { name: "2. Your experience", exact: true }),
+  ).toHaveValue("Preserve this optional draft answer");
+  expect(ctx.draft.answers).toContainEqual({
+    question_id: questions()[1].id,
+    value: "Preserve this optional draft answer",
+  });
+  expect(ctx.of("POST")).toHaveLength(1);
 });
 
 test("ADM-02 AC24 explicit submit uses final local answers and Completed has no editable controls", async ({
@@ -273,7 +305,7 @@ test("ADM-02 AC24 explicit submit uses final local answers and Completed has no 
   await expect(
     page.getByText("Completed", { exact: true }).first(),
   ).toBeVisible();
-  await expect(page.getByText(MSG.completed, { exact: true })).toBeVisible();
+  await expect(status(page, MSG.completed)).toBeVisible();
   expect(ctx.of("POST", "/responses")).toHaveLength(1);
   await expectNoSecretsInBrowser(page, ["Final answer"]);
 });
@@ -314,7 +346,7 @@ test("ADM-02 AC24 uncertain submission checks server completion without replay",
   await page
     .getByRole("button", { name: "Check submission status", exact: true })
     .click();
-  await expect(page.getByText(MSG.completed, { exact: true })).toBeVisible();
+  await expect(status(page, MSG.completed)).toBeVisible();
   expect(ctx.of("POST")).toHaveLength(1);
   expect(ctx.of("GET", FORM_ID)).toHaveLength(2);
 });
@@ -347,9 +379,7 @@ for (const terminal of ["closed", "completed"] as const) {
     };
     await page.goto(path);
     await expect(
-      page.getByText(terminal === "closed" ? MSG.closed : MSG.completed, {
-        exact: true,
-      }),
+      status(page, terminal === "closed" ? MSG.closed : MSG.completed),
     ).toBeVisible();
     await expect(firstAnswer(page)).toHaveCount(0);
     await expect(page.getByText("PRIVATE", { exact: true })).toHaveCount(0);
@@ -692,6 +722,7 @@ for (const width of [1365, 390]) {
     await page.screenshot({
       path: info.outputPath(`draft-${width}.png`),
       fullPage: true,
+      animations: "disabled",
     });
     await page
       .getByRole("button", { name: "Submit feedback", exact: true })
@@ -700,6 +731,7 @@ for (const width of [1365, 390]) {
     await page.screenshot({
       path: info.outputPath(`completed-${width}.png`),
       fullPage: true,
+      animations: "disabled",
     });
     expect(ctx.of("POST")).toHaveLength(1);
   });
@@ -717,6 +749,7 @@ for (const width of [1365, 390]) {
     await page.screenshot({
       path: info.outputPath(`admin-editor-${width}.png`),
       fullPage: true,
+      animations: "disabled",
     });
     expect(
       await page.evaluate(
@@ -737,6 +770,7 @@ for (const width of [1365, 390]) {
     await page.screenshot({
       path: info.outputPath(`admin-audience-${width}.png`),
       fullPage: true,
+      animations: "disabled",
     });
     await page.keyboard.press("Escape");
     await expect(dialog).toHaveCount(0);
@@ -756,6 +790,7 @@ for (const width of [1365, 390]) {
     await page.screenshot({
       path: info.outputPath(`admin-response-${width}.png`),
       fullPage: true,
+      animations: "disabled",
     });
     expect(
       await page.evaluate(
@@ -784,4 +819,29 @@ test("ADM-02 admin failed draft save preserves editor fields and retries explici
   await page.getByRole("button", { name: "Save draft", exact: true }).click();
   await expect(status(page, "Draft saved.")).toBeVisible();
   expect(ctx.of("PUT")).toHaveLength(2);
+});
+
+test("ADM-02 mobile empty dropdown keeps its label above the selected placeholder", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 900 });
+  await recipientReady(page);
+  const dropdown = page.getByRole("combobox", {
+    name: "4. Pick a topic",
+    exact: true,
+  });
+  const geometry = await dropdown.evaluate((element) => {
+    const select = element as HTMLSelectElement;
+    const label = select.labels?.[0];
+    if (!label) return null;
+    const labelRect = label.getBoundingClientRect();
+    const selectRect = select.getBoundingClientRect();
+    return {
+      labelBottom: labelRect.bottom,
+      textTop:
+        selectRect.top + Number.parseFloat(getComputedStyle(select).paddingTop),
+    };
+  });
+  expect(geometry).not.toBeNull();
+  expect(geometry!.labelBottom).toBeLessThanOrEqual(geometry!.textTop + 1);
 });
