@@ -2,6 +2,7 @@
 from dataclasses import dataclass
 
 KEY_VERSION = "v1"
+SE_BASICS_TOPIC_ID = "66666666-6666-4666-8666-666666666661"
 
 
 @dataclass(frozen=True)
@@ -12,6 +13,7 @@ class Question:
     choices: tuple[tuple[str, str], ...]
     correct: str
     explanation: str
+    topic_id: str | None = None
 
 
 @dataclass(frozen=True)
@@ -36,6 +38,7 @@ _SET = PracticeSet(
             ),
             "a",
             "One focused responsibility makes a function easier to understand, test and change.",
+            SE_BASICS_TOPIC_ID,
         ),
         Question(
             "q2",
@@ -48,6 +51,7 @@ _SET = PracticeSet(
             ),
             "b",
             "Tests protect expected behaviour and can catch regressions introduced by later changes.",
+            SE_BASICS_TOPIC_ID,
         ),
         Question(
             "q3",
@@ -56,6 +60,7 @@ _SET = PracticeSet(
             (("a", "2"), ("b", "4"), ("c", "3")),
             "c",
             "len returns the number of items. The list contains three items.",
+            SE_BASICS_TOPIC_ID,
         ),
     ),
 )

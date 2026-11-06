@@ -9,7 +9,7 @@ Stages: not started, spec, build, verified (local), merged.
 | STU-01 | merged | `feat/stu01-spec` | 18 | Seeded and teacher-published lessons use the same student workflow. Course membership remains required; ADM-05 access management is verified locally on its feature branch. Known limits in `docs/DeveloperGuide.md`. |
 | STU-02 | merged | `feat/stu02-practice-api-workflow-b`, `feat/stu02-frontend-run-b` | 1–5 (numbers per `checklist.md`) | Session authentication merged in PR16; practice records still use server memory. |
 | STU-03 | merged | `feat/stu03-run-b` | 8 | Live provider quality unchecked; no authenticated persistence of chat history. |
-| STU-04 | not started | | | |
+| STU-04 | verified (local) | `claude/stu04-spec-4c7d06` | | Persistent practice attempts (PostgreSQL), `GET /api/progress`, Progress page, Overview with real figures. Verifier PASS in round 3 (user-authorised beyond the 2-round cap). Known limits: no cap on attempts per student, question reuse undecided, practice not course-scoped, a mounted page stays on the loading text after logout then an immediate Back. |
 | STU-05 | not started | | | |
 | STU-06 | not started | | | |
 | TEA-01 | merged | `feat/tea01-materials`, `fix/teacher-postgres-file-storage`, `feat/tea03-edit-mcqs-delete-drafts` | 10, 15, 17 | Upload/organisation/deletion and session auth merged. |

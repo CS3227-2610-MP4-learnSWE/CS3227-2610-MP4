@@ -25,7 +25,7 @@ def isolated():
 
 
 def test_adm05_migration_defaults_and_status_constraints(isolated):
-    isolated.migrate("upgrade", "head")
+    isolated.migrate("upgrade", "20261106_adm05_access")
     isolated.sql('INSERT INTO "user"(id,display_name,role) VALUES (\'adm05-old\',\'Keep me\',\'student\')')
     assert isolated.sql('SELECT access_status,archived_at FROM "user" WHERE id=\'adm05-old\'') == [("enabled", None)]
     with pytest.raises(psycopg.errors.CheckViolation):
@@ -33,20 +33,20 @@ def test_adm05_migration_defaults_and_status_constraints(isolated):
 
 
 def test_adm05_migration_populated_upgrade_and_enabled_downgrade_reupgrade(isolated):
-    isolated.migrate("upgrade", "head")
+    isolated.migrate("upgrade", "20261106_adm05_access")
     isolated.migrate("downgrade", "-1")
     isolated.sql('INSERT INTO "user"(id,display_name,role,email) VALUES (\'adm05-old\',\'Keep me\',\'student\',\'keep@example.com\')')
-    isolated.migrate("upgrade", "head")
+    isolated.migrate("upgrade", "20261106_adm05_access")
     assert isolated.sql('SELECT display_name,email,access_status FROM "user" WHERE id=\'adm05-old\'') == [("Keep me", "keep@example.com", "enabled")]
     isolated.migrate("downgrade", "-1")
     assert isolated.sql('SELECT display_name,email FROM "user" WHERE id=\'adm05-old\'') == [("Keep me", "keep@example.com")]
-    isolated.migrate("upgrade", "head")
+    isolated.migrate("upgrade", "20261106_adm05_access")
     assert isolated.sql('SELECT access_status FROM "user" WHERE id=\'adm05-old\'') == [("enabled",)]
 
 
 @pytest.mark.parametrize("status", ["disabled", "archived"])
 def test_adm05_migration_refuses_downgrade_that_would_reactivate_accounts(isolated, status):
-    isolated.migrate("upgrade", "head")
+    isolated.migrate("upgrade", "20261106_adm05_access")
     isolated.sql('INSERT INTO "user"(id,display_name,role,access_status) VALUES (\'adm05-inactive\',\'Inactive\',\'student\',%s)', (status,))
     response = isolated.migrate("downgrade", "-1", check=False)
     assert response.returncode != 0

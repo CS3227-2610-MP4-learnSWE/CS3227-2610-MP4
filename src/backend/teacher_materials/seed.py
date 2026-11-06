@@ -24,7 +24,7 @@ def seed_demo(session: Session) -> None:
         key = (UUID(course_id), user_id)
         if session.get(CourseMembership, key) is None:
             session.add(CourseMembership(course_id=key[0], user_id=key[1]))
-    for topic_id, course_id, name in (("33333333-3333-4333-8333-333333333333", courses[0][0], "Testing"), ("44444444-4444-4444-8444-444444444444", courses[1][0], "Basics")):
+    for topic_id, course_id, name in (("33333333-3333-4333-8333-333333333333", courses[0][0], "Testing"), ("44444444-4444-4444-8444-444444444444", courses[1][0], "Basics"), ("66666666-6666-4666-8666-666666666661", courses[0][0], "Software engineering basics")):
         if session.get(Topic, UUID(topic_id)) is None:
             session.add(Topic(id=UUID(topic_id), course_id=UUID(course_id), name=name))
     session.commit()

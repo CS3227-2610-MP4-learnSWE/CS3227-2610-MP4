@@ -249,3 +249,17 @@ Final881backend/377browser PASS, zero browser retries, types/lint/format/build/c
 ## 2026-11-05 — Publication CI answer-bundle check correction
 
 Removed obsolete positive-control requirement that Teacher chunk contain deleted sample answers. Actual keys/explanations are server-side. Keep fixture-backed positive control and scan ALL built JS including Teacher chunks. Exact CI step reproduced RED before patch, GREEN after; intentionally injected explanation into separate index/Teacher generated chunks causes expected failure in both, then final clean scan passes after cleanup. No runtime/security control relaxed. Build/typecheck/diffcheck PASS. Remote CI not rerun; no live AI/developer data touched. See logs/TeacherPublicationCiCheckFix.md.
+
+### STU-04 progress dashboard (run 2026-11-05 by the independent verifier, rounds 1 to 3)
+
+| Case | Expected |
+|---|---|
+| `GET /api/progress` with `?user_id=`, `?student_id=`, `X-Student-Id`, `X-Demo-User-Id` | ignored; the session user's data only |
+| No cookie / teacher / admin session | 401 `unauthenticated` / 403 `forbidden` / 403 `forbidden` |
+| Two students on the same set and course | each sees only their own scores, attempt counts and topics |
+| Progress body after submit | no `correct_choice`, `explanation`, `key_version`, question text, choice map or attempt id |
+| In-progress attempt with saved answers | no change in the response |
+| Two simultaneous submits of one attempt | one 200, one 409 `already_submitted`, counted once |
+| Attempt id of another student on STU-02 endpoints after the store change | 404 `attempt_not_found` |
+
+Result: all cases above behaved as expected after fixes, plus: attempt ids containing NUL, longer than 64 characters, padded or upper-cased give 404 `attempt_not_found` (a NUL id gave 503 until round 1, fixed); logout then Back shows no earlier data; a signed-in 401 sends one request and redirects to `/login`. Remaining non-blocking: logout then an immediate Back (before the login page renders) leaves the page on its loading text with no sign-in notice; no data is shown.

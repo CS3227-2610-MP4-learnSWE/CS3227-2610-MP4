@@ -2,6 +2,13 @@
 
 Newest entry first. Older entries describe the state at the time; the newest entry supersedes their open/merged status. Keep the newest 10 entries here; older ones are in `notes-archive.md`. Feature state is in `STATUS.md`.
 
+## 2026-11-06: developer resolved master/STU-04 merge into ADM-05
+- Done: merged master eccc8f0 into ADM-05, preserving both routers, both private-cache protections and both guide/handoff histories. Added no-op20261106_merge_adm05_stu04 joining both unchanged historical heads; populated upgrade tests cover retained disabled accounts and saved attempts. Feature migration tests pin their own revisions; auth/progress browser helpers isolate unrelated API requests from a running local backend.
+- Validation: 209 focused backend PASS, 173 focused browser PASS; types/lint/build/line-ending-aware formatting/diff/conflict checks PASS; speccheck7/0/12existingwaivers. No complete post-merge suite or independent verifier pass claimed. Exact recoveries in logs/Adm05Stu04MasterMerge.md.
+- Next: user applies uv run --env-file .env alembic upgrade head, restarts backend and starts frontend in a second terminal; sign in with their own configured admin credentials and follow Users/Courses smoke checks. Local merge only, no push.
+- Files: five conflict resolutions, additive merge migration/regression, pinned feature migration tests, browser fixture isolation and workflow/session records. No agent changes to developer env/database/seeds/live AI/unrelated worktrees.
+- Resources: single-session merge-maintenance exemption, no agents/manifest/tracker; inherited model/effort, exact per-task tokens/cost unavailable. One incomplete broad run, fixture recoveries and redundant diagnostic backend rerun recorded; no new feature correction rounds.
+
 ## 2026-11-06: developer documentation follow-up for local ADM-05 login/testing
 - Done: added step-by-step UserGuide/DeveloperGuide env, Docker/database, migrate/seed/reset, restart and sign-in walkthroughs. Explain no default admin credentials, unchanged seed hashes, all-configured-role reset scope, quoted public example password, frontend Origin/proxy settings and 401/403/429/503 recovery. Added focused/full automated test commands and isolated test-run directories.
 - Validation: 15 PowerShell command blocks parse; temporary sample env quoting/password/origin check PASS; diff check PASS. Documentation only, no runtime tests or developer .env/DB/process changes. One temporary-env argument-format retry; no application correction rounds.
@@ -60,11 +67,3 @@ Newest entry first. Older entries describe the state at the time; the newest ent
 - Decisions: immutable role; shared CourseMembership interpreted by role; no compulsory password change; archived email retained; serialised admin writes and fresh actor checks. AI recheck covers actual authorised context; no invented course mapping for legacy fixtures.
 - Blocking findings: none. speccheck ADM-05 PASS; git diff --check PASS. Parent validated test-only example password using shared validator.
 - Invocation ID: adm05-spec-01; model/effort inherited and exact provider IDs/tokens/cost unavailable; elapsed about 10 minutes; tracker owned by orchestrator at workflow/usage/runs/2026-11-06-ADM05-01; no retries or correction rounds.
-
-## 2026-11-06: spec-writer advisory review of ADM-05
-- Done: compared ADM-05 stories with SHR-01/STU-01 contracts and teammate handoff. Course membership is only one of three ADM-05 stories; account disabling and role changes must affect existing sessions' subsequent requests. No ADM-05 spec folder found.
-- Next: agree teacher course-access semantics, account/session lifecycle, last-admin protections and concurrency policy; write and approve ADM-05 spec/plan before implementation.
-- Files touched: this handoff and logs/Adm05PreImplementationReview.md. No application changes or tests; remote PR/CI status not checked.
-- Invocation/report: single advisory Codex session; no feature run or agents. Model/effort, tokens and cost unavailable; tracker not run; retries/revision rounds 0.
-
-Newest entry first. Use `templates/handoff.md`. Older entries describe the state at the time; the newest entry supersedes their open/merged status. Keep the newest 10 entries here; older ones are in `notes-archive.md`. Feature state is in `STATUS.md`.

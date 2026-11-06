@@ -120,7 +120,11 @@ def test_stu01_ac15_populated_schema_keeps_every_existing_row_through_upgrade_do
     assert NEW_TABLES <= tables(iso)
 
 
-def test_stu01_ac15_downgrade_with_lessons_and_completions_present_drops_only_the_new_tables(migrated):
+def test_stu01_ac15_downgrade_with_lessons_and_completions_present_drops_only_the_new_tables(iso):
+    # STU-04: head is now a later revision, so stop explicitly at the STU-01 revision.
+    iso.migrate("upgrade", NEW_REVISION)
+    iso.seed_teacher()
+    migrated = iso
     lid = str(uuid.uuid4())
     migrated.sql("INSERT INTO published_lesson(id, course_id, title, content, published_by) "
                  "VALUES (%s, %s, 'T', 'C', 'demo-teacher')", (lid, COURSE_A))

@@ -193,6 +193,22 @@ export async function mockAuthApi(
   options: { user?: User | null; csrf?: string } = {},
 ): Promise<AuthApiMock> {
   const mock = new AuthApiMock(options.user ?? null, options.csrf);
+  // STU-04 loads progress on the student home page. Auth-only fixtures must
+  // not send that request to a developer's real API and receive its 401.
+  // Progress tests register their own route after this neutral fallback.
+  await page.route(
+    (url) => url.pathname === "/api/progress",
+    (route) =>
+      route.fulfill({
+        status: 503,
+        json: {
+          detail: {
+            code: "service_unavailable",
+            message: "Test progress is unavailable.",
+          },
+        },
+      }),
+  );
   await page.route(
     (url) => url.pathname.startsWith("/api/auth/"),
     (route) => mock.handle(route),

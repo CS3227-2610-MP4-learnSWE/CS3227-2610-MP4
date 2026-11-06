@@ -138,7 +138,13 @@ def test_tea01_teacher_lists_and_downloads(app):
     assert courses.json()[0]["created_at"].endswith("Z")
     topics = call(app, "GET", f"{COURSES}/{COURSE_A}/topics")
     assert topics.status_code == 200
-    assert topics.json() == [{"id": TOPIC_A, "course_id": COURSE_A, "name": "Testing", "created_at": topics.json()[0]["created_at"]}]
+    # STU-04: the seed adds a second topic, "Software engineering basics" (order not asserted).
+    assert all(t["course_id"] == COURSE_A and t["created_at"] for t in topics.json())
+    assert {(t["id"], t["name"]) for t in topics.json()} == {
+        (TOPIC_A, "Testing"),
+        ("66666666-6666-4666-8666-666666666661", "Software engineering basics"),
+    }
+    assert len(topics.json()) == 2
     first = upload(app, "old.txt", b"older", "Old")
     second = upload(app, "new.txt", b"newer", "New")
     assert first.status_code == second.status_code == 201

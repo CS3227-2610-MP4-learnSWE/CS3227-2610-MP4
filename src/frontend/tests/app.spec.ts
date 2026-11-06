@@ -5,6 +5,7 @@ import { mockPracticeApi } from "./practiceApi";
 import { mockTeacherMaterialsApi, OLD } from "./teacherMaterialsApi";
 import { mockAuthApi, TEACHER } from "./authApi";
 import { L_TESTING, mockLessonsApi, signedInStudy } from "./lessonsApi";
+import { signedInStudyAndProgress } from "./progressApi";
 
 test.beforeEach(async ({ page }) => {
   await page.route("**/api/health", (route) =>
@@ -44,7 +45,7 @@ test("lesson completion is reversible and reflected in dashboard", async ({
   page,
 }) => {
   // STU-01 AC16: rewritten for server-stored completion (fixture: 4 published lessons, 0 complete).
-  const { api } = await signedInStudy(page);
+  const { lessons: api } = await signedInStudyAndProgress(page);
   await page.goto(`/student/materials/${L_TESTING}`);
   await page
     .getByRole("button", { name: "Mark as complete", exact: true })

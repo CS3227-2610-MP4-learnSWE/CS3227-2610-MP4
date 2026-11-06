@@ -23,6 +23,10 @@ def score(practice_set: PracticeSet, answers: dict[str, str]) -> Score:
     return Score(correct=correct, total=len(practice_set.questions))
 
 
+def correct_question_ids(practice_set: PracticeSet, answers: dict[str, str]) -> list[str]:
+    return [q.id for q in practice_set.questions if answers.get(q.id) == q.correct]
+
+
 def build_results(
     attempt_id: str, set_id: str, practice_set: PracticeSet, answers: dict[str, str]
 ) -> ResultsOut:

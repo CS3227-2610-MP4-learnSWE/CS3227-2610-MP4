@@ -5,7 +5,7 @@ from fastapi.responses import JSONResponse
 import practice_logic as logic
 from attempt_store import Attempt, store
 from errors import ApiError
-from practice_data import PracticeSet, get_set
+from practice_data import KEY_VERSION, PracticeSet, get_set
 from practice_schemas import (
     AnswersIn,
     AnswersSaved,
@@ -82,29 +82,30 @@ def read_attempt(attempt: Attempt = Depends(owned_attempt)) -> AttemptOut:
 
 @router.put("/attempts/{attempt_id}/answers", response_model=AnswersSaved)
 def save_answers(body: AnswersIn, attempt: Attempt = Depends(owned_attempt)) -> AnswersSaved:
-    with store.lock(attempt.id):
-        _require_open(attempt)
-        logic.validate_answers(_set_or_404(attempt.set_id), body.answers)
-        attempt.answers.update(body.answers)
-        return AnswersSaved(attempt_id=attempt.id, status=attempt.status, answers=dict(attempt.answers))
+    with store.lock(attempt.id) as locked:
+        _require_open(locked)
+        logic.validate_answers(_set_or_404(locked.set_id), body.answers)
+        locked.answers.update(body.answers)
+        return AnswersSaved(attempt_id=locked.id, status=locked.status, answers=dict(locked.answers))
 
 
 @router.post("/attempts/{attempt_id}/submit", response_model=SubmitOut)
 def submit(attempt: Attempt = Depends(owned_attempt)) -> SubmitOut:
-    with store.lock(attempt.id):
-        _require_open(attempt)
-        practice_set = _set_or_404(attempt.set_id)
-        missing = logic.missing_questions(practice_set, attempt.answers)
+    with store.lock(attempt.id) as locked:
+        _require_open(locked)
+        practice_set = _set_or_404(locked.set_id)
+        missing = logic.missing_questions(practice_set, locked.answers)
         if missing:
             raise ApiError(
                 422, "incomplete", "All questions must be answered before submitting.", missing=missing
             )
-        attempt.status = "submitted"
-    return SubmitOut(
-        attempt_id=attempt.id,
-        status=attempt.status,
-        score=logic.score(practice_set, attempt.answers),
-    )
+        result = logic.score(practice_set, locked.answers)
+        locked.status = "submitted"
+        locked.score_correct = result.correct
+        locked.score_total = result.total
+        locked.key_version = KEY_VERSION
+        locked.correct_question_ids = logic.correct_question_ids(practice_set, locked.answers)
+        return SubmitOut(attempt_id=locked.id, status=locked.status, score=result)
 
 
 @router.get("/attempts/{attempt_id}/results", response_model=ResultsOut)

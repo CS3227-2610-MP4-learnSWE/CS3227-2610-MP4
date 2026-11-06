@@ -1,13 +1,13 @@
 import { test, expect, type Page } from "@playwright/test";
 import { PASSWORD } from "./authApi";
 import {
-  COURSES,
   COURSE_SE,
   L_DESIGN,
   L_GENERAL,
   L_TESTING,
   signedInStudy,
 } from "./lessonsApi";
+import { emptyProgress, signedInStudyAndProgress } from "./progressApi";
 
 /**
  * STU-01 AC4, AC10, AC14 (SHR-05): a GET still in flight must never be reused across page loads,
@@ -31,7 +31,7 @@ const B = {
 const A_COURSES = {
   courses: [
     {
-      id: COURSES[0].id,
+      id: "11111111-1111-4111-8111-111111111111",
       title: "A private course",
       lesson_count: 9,
       completed_count: 7,
@@ -39,6 +39,13 @@ const A_COURSES = {
   ],
   totals: { lesson_count: 9, completed_count: 7 },
 };
+// STU-04: the Overview now reads GET /api/progress; student A's private figures as that body.
+const A_PROGRESS = (() => {
+  const b = emptyProgress();
+  b.lessons.courses = A_COURSES.courses;
+  b.lessons.totals = A_COURSES.totals;
+  return b;
+})();
 
 async function logoutAndLoginAsB(
   page: Page,
@@ -56,13 +63,13 @@ async function logoutAndLoginAsB(
   await page.waitForURL("**/student/**");
 }
 
-test("stu01 AC14 SHR-05 Overview: student B never sees student A's in-flight courses answer", async ({
+test("stu01 AC14 SHR-05 Overview: student B never sees student A's in-flight progress answer", async ({
   page,
 }) => {
-  const { auth, api } = await signedInStudy(page);
-  api.script("courses", { json: A_COURSES, delayMs: SLOW });
+  const { auth, progress } = await signedInStudyAndProgress(page);
+  progress.script({ json: A_PROGRESS, delayMs: SLOW });
   await page.goto("/student/overview");
-  await expect.poll(() => api.count("courses")).toBe(1);
+  await expect.poll(() => progress.count).toBe(1);
   await logoutAndLoginAsB(page, auth);
   await expect(page.getByText("0 of 4 lessons", { exact: true })).toBeVisible({
     timeout: 9000,
@@ -70,7 +77,7 @@ test("stu01 AC14 SHR-05 Overview: student B never sees student A's in-flight cou
   await page.waitForTimeout(SLOW + 1000);
   await expect(page.getByText("7 of 9 lessons")).toHaveCount(0);
   await expect(page.getByText("0 of 4 lessons", { exact: true })).toBeVisible();
-  expect(api.count("courses")).toBeGreaterThanOrEqual(2);
+  expect(progress.count).toBeGreaterThanOrEqual(2);
 });
 
 test("stu01 AC14 SHR-05 Materials: student B never sees student A's in-flight course titles", async ({
@@ -154,34 +161,25 @@ test("stu01 AC4 AC10 Back/Forward: a slow list request from before the completio
   expect(after.length).toBeGreaterThanOrEqual(1);
 });
 
-test("stu01 AC4 AC10 Back/Forward: a slow Overview courses request from before the completion is not reused", async ({
+test("stu01 AC4 AC10 Back/Forward: a slow Overview progress request from before the completion is not reused", async ({
   page,
 }) => {
-  const { api } = await signedInStudy(page);
+  const { progress, lessons } = await signedInStudyAndProgress(page);
   await page.goto(`/student/materials/${L_TESTING}`);
   const complete = page.getByRole("button", {
     name: "Mark as complete",
     exact: true,
   });
   await expect(complete).toBeVisible();
-  api.script("courses", {
-    json: {
-      courses: COURSES.map((c) => ({
-        id: c.id,
-        title: c.title,
-        lesson_count: c.id === COURSE_SE ? 3 : 1,
-        completed_count: 0,
-      })),
-      totals: { lesson_count: 4, completed_count: 0 },
-    },
-    delayMs: SLOW,
-  });
+  const stale = emptyProgress();
+  stale.lessons.totals = { lesson_count: 4, completed_count: 0 };
+  progress.script({ json: stale, delayMs: SLOW });
   await page.getByRole("link", { name: "Overview", exact: true }).click();
-  await expect.poll(() => api.count("courses")).toBe(1);
+  await expect.poll(() => progress.count).toBe(1);
   await page.goBack();
   await complete.click();
   await expect(page.getByText("Marked as complete.")).toBeVisible();
-  const putAt = api.requests.findIndex((r) => r.step === "put");
+  const before = progress.count;
   await page.goForward();
   await expect(page.getByText("1 of 4 lessons", { exact: true })).toBeVisible({
     timeout: 9000,
@@ -189,8 +187,6 @@ test("stu01 AC4 AC10 Back/Forward: a slow Overview courses request from before t
   await expect(page.getByText("1 / 4", { exact: true })).toBeVisible();
   await page.waitForTimeout(SLOW + 1000);
   await expect(page.getByText("1 of 4 lessons", { exact: true })).toBeVisible();
-  const after = api.requests
-    .slice(putAt + 1)
-    .filter((r) => r.step === "courses");
-  expect(after.length).toBeGreaterThanOrEqual(1);
+  expect(progress.count - before).toBeGreaterThanOrEqual(1);
+  expect(lessons.isDone(L_TESTING)).toBe(true);
 });

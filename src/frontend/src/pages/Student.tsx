@@ -1,62 +1,109 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, Navigate, useLocation } from "react-router";
 import { Button } from "@mui/material";
-import { ArrowRight, Check, Flame, Sparkles } from "lucide-react";
+import { ArrowRight, Check, Sparkles } from "lucide-react";
 import {
   CourseArt,
   EmptyState,
   PageHeading,
-  Panel,
   PrimaryLink,
-  SectionHeading,
   Stat,
-  Tag,
 } from "../components/ui";
-import { weeklyActivity } from "../data";
 import { useAuth } from "../auth/AuthContext";
-import { isSignInNeeded } from "../auth/SignInNotice";
 import { useCompanion } from "../components/StudyCompanion";
-import { listCourses } from "../services/lessons";
+import { ApiError } from "../services/client";
+import {
+  getProgress,
+  type Progress as ProgressData,
+} from "../services/progress";
+import { progressStatDetail } from "../services/progressMessages";
 import Lesson from "./Lesson";
 import Materials from "./Materials";
 import Practice from "./Practice";
+import Progress from "./Progress";
 
-type Totals = { lesson_count: number; completed_count: number };
+type StatsLoad =
+  | { state: "loading" }
+  | { state: "ready"; data: ProgressData; key: string }
+  | { state: "error"; error: ApiError };
 
-/** The "Lessons completed" stat, read from the server totals. */
-function LessonsCompletedStat() {
-  const demoMode = useAuth().status === "anonymous";
-  const [totals, setTotals] = useState<
-    Totals | "loading" | "unauthenticated" | "failed"
-  >("loading");
+/** The three Overview stats, all read from the one progress response. */
+function OverviewStats() {
+  const { status, user } = useAuth();
+  const demoMode = status === "anonymous";
+  const userKey = user?.id ?? "";
+  const keyRef = useRef(userKey);
+  keyRef.current = userKey;
+  const [load, setLoad] = useState<StatsLoad>({ state: "loading" });
   useEffect(() => {
     let current = true;
-    listCourses().then(
-      (result) => current && setTotals(result.totals),
+    const key = keyRef.current;
+    getProgress().then(
+      (data) => current && setLoad({ state: "ready", data, key }),
       (error) =>
         current &&
-        setTotals(isSignInNeeded(error) ? "unauthenticated" : "failed"),
+        setLoad({
+          state: "error",
+          error: error instanceof ApiError ? error : new ApiError(0, "network"),
+        }),
     );
     return () => {
       current = false;
     };
   }, []);
-  // Decided at render so a change of session state never repeats the request.
-  const text =
-    totals === "loading"
-      ? { value: "…", detail: "Loading…" }
-      : totals === "unauthenticated" && demoMode
-        ? { value: "–", detail: "Sign in to see your progress" }
-        : totals === "failed" || totals === "unauthenticated"
-          ? {
-              value: "–",
-              detail: "Unavailable. Open Study materials to try again.",
-            }
-          : {
-              value: `${totals.completed_count} / ${totals.lesson_count}`,
-              detail: `${totals.completed_count} of ${totals.lesson_count} lessons`,
-            };
-  return <Stat label="Lessons completed" icon="book" {...text} />;
+  const none = { value: "–", detail: "" };
+  let lessons = { value: "…", detail: "Loading…" };
+  let practice = lessons;
+  let topics = lessons;
+  if (load.state === "error") {
+    const detail = progressStatDetail(load.error, demoMode);
+    lessons = practice = topics = { ...none, detail };
+  } else if (load.state === "ready" && load.key === userKey) {
+    const { totals } = load.data.lessons;
+    const { sets, average_latest_percent: average } = load.data.practice;
+    const items = load.data.topics.items;
+    lessons = {
+      value: `${totals.completed_count} / ${totals.lesson_count}`,
+      detail: `${totals.completed_count} of ${totals.lesson_count} lessons`,
+    };
+    practice =
+      average === null
+        ? { ...none, detail: "No practice submitted yet" }
+        : {
+            value: `${average}%`,
+            detail: `Average of your latest score on each practice set (${sets.length} ${sets.length === 1 ? "set" : "sets"})`,
+          };
+    topics = {
+      value: String(items.filter((i) => i.status === "needs_practice").length),
+      detail:
+        items.length === 0
+          ? "Not enough activity yet"
+          : "Based on your latest practice results",
+    };
+  }
+  return (
+    <>
+      <div className="stats-grid">
+        <Stat label="Lessons completed" icon="book" {...lessons} />
+        <Stat
+          label="Practice average"
+          icon="code"
+          tone="purple"
+          {...practice}
+        />
+        <Stat
+          label="Topics to revise"
+          icon="overview"
+          tone="green"
+          {...topics}
+        />
+      </div>
+      <Link className="text-link" to="/student/progress">
+        View full progress
+        <ArrowRight size={15} />
+      </Link>
+    </>
+  );
 }
 
 function Overview() {
@@ -67,11 +114,6 @@ function Overview() {
         eyebrow="YOUR LEARNING JOURNEY"
         title="A little progress, every day."
         description="Welcome back, Alex. Let’s make room for something new."
-        action={
-          <span className="streak">
-            <Flame size={16} /> 4-day learning streak
-          </span>
-        }
       />
       <div className="student-hero">
         <div className="hero-copy">
@@ -100,54 +142,7 @@ function Overview() {
           </div>
         </div>
       </div>
-      <div className="stats-grid">
-        <LessonsCompletedStat />
-        <Stat
-          label="Practice average"
-          value="82%"
-          detail="↑ 8% from last week · Sample"
-          icon="code"
-          tone="purple"
-        />
-        <Stat
-          label="Time well spent"
-          value="2.4 hrs"
-          detail="Learning this week · Sample"
-          icon="usage"
-          tone="green"
-        />
-      </div>
-      <div className="dashboard-columns">
-        <div>
-          <SectionHeading title="Your learning rhythm" />
-          <Panel className="rhythm-panel">
-            <div className="rhythm-top">
-              <span>This week</span>
-              <Tag tone="green">Looking good</Tag>
-            </div>
-            <div
-              className="bar-chart"
-              role="img"
-              aria-label="Sample learning activity over seven days"
-            >
-              {weeklyActivity.map((height, i) => (
-                <div key={i}>
-                  <div
-                    className={`chart-bar ${i === 5 ? "highlight" : ""}`}
-                    style={{ height: `${height}%` }}
-                  />
-                  <span>{["M", "T", "W", "T", "F", "S", "S"][i]}</span>
-                </div>
-              ))}
-            </div>
-            <p className="rhythm-note">
-              <span className="dot green-dot" /> Showing up is the hardest part.
-              You’re doing it.
-            </p>
-            <small className="muted">Illustrative activity · Sample data</small>
-          </Panel>
-        </div>
-      </div>
+      <OverviewStats />
       <div className="companion-strip">
         <span className="icon-box purple">
           <Sparkles size={23} />
@@ -182,6 +177,8 @@ export default function Student() {
       return path[3] ? <Lesson key={path[3]} id={path[3]} /> : <Materials />;
     case "practice":
       return <Practice />;
+    case "progress":
+      return <Progress />;
     case "assistant":
       return <LegacyAssistant />;
     default:
