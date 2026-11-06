@@ -1,6 +1,6 @@
 # Spec: ADM-06 AI usage monitoring
 
-Status: Draft (awaiting human approval of spec and plan)
+Status: Approved (by user in chat, 2026-11-06)
 
 ## Goal
 Allow admins to inspect AI service-call attempts, failures and recorded resource measurements by feature and period without exposing private request content.
@@ -57,6 +57,6 @@ Only admins read aggregate metadata. Store and return no user/course/feedback/ch
 - Normalisation: strip surrounding ASCII whitespace from feature/date query values, then require exact case-sensitive enums and strict real `YYYY-MM-DD` dates; reject unknown/repeated query keys and controls. Internally use aware UTC timestamps; start inclusive, end exclusive at midnight after inclusive end_date, capped at `as_of` for today. Never accept client-supplied attribution on application AI endpoints.
 
 ## Open questions
-- Approval required: confirm UTC calendar-day reporting (maximum 31 days), feature-level grouping (combined TEA-02 note/MCQ calls), and deployment-forward coverage with no historical backfill. These are proposed defaults, not prior user decisions.
+- Approved by user in chat on 2026-11-06: UTC calendar-day reporting (maximum 31 days), feature-level grouping (combined TEA-02 note/MCQ calls), and deployment-forward coverage with no historical backfill. These defaults are approved.
 - Exact SoC quotas, model configuration and resource measurements are unresolved in UserStories. Proposal: retain existing quotas/model/retries, accept only explicit provider input/output/total token counters through a documented mapping verified during implementation; absent/unrecognised counters remain unavailable. No external provider lookup/live call is authorised by this spec. Contract mapping changes require a plan amendment before source changes.
 - Initial subject/learner level, upload types/limits, attempt scoring and feedback anonymity/retention do not affect this aggregate-content-free feature; those decisions remain with their owning features. Existing account/course policy is inherited. No new retention policy or silent data deletion is introduced.
