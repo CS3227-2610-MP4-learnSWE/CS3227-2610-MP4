@@ -24,3 +24,11 @@ Notes:
 - Task 4 touches only identity plumbing in `practice_routes.py`; any change to scoring, answer release or companion context logic is out of scope and a defect.
 - Do not edit `teacher_materials/demo_identity.py` or its gate in any task of this feature.
 - Do not remove or alter the demo access (buttons, switcher, anonymous demo path); only relabel it and add the demo-mode notice as specified. Do not edit teacher routes, teacher pages' data flow or `teacher-*.spec.ts`; they must pass unchanged.
+
+## Shared-shell follow-up ? 2026-11-06
+
+- [x] Synchronise prior account UI and new tip/logout contracts.
+- [x] Write RED dismiss/cancel/pending regressions before source.
+- [x] Implement shared dismissal and confirmation; preserve auth failure/expiry behaviour.
+- [x] Adapt existing logout journeys to confirm with no assertion weakening;111 browser checks PASS.
+- [x] Update guides/handoff/security/resource records; inspect visual artifacts.

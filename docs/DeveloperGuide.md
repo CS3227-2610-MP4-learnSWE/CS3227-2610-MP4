@@ -352,3 +352,7 @@ Spec and contract: `workflow/specs/STU-04/`. `GET /api/progress` (student role o
 ### ADM-05/STU-04 migration integration
 
 The additive no-op merge revision `20261106_merge_adm05_stu04` joins both historical migration heads. Existing installations at either feature head use the same `uv run --env-file .env alembic upgrade head` command; the missing branch applies before the join. Account status and saved practice attempts are preserved. Feature migration tests pin their own revisions, while `test_adm05_stu04_merge_migration.py` verifies one final head and populated upgrades from either parent. Use the merged application after migration.
+
+## Shared shell confirmation and tip dismissal
+
+`Shell` owns per-role/account tip dismissal in memory (no browser storage); desktop/sidebar drawer share the same dismissed state until refresh/remount. The X control is labelled Dismiss sidebar tip. Explicit Log out opens Confirm logout, with Cancel and Log out. Opening/cancelling makes no request; confirm sends the existing cookie/CSRF request once. Pending state disables buttons and Escape/backdrop dismissal; network/5xx failure preserves the dialog/session for retry. A logout401 still clears locally, and expired sessions never wait for confirmation. Student, teacher and admin flows share this behaviour. Existing editor/chat/history safeguards run after completed logout, not when the dialog opens. Specs: SHR-01 shared-shell follow-up, ADM-05 AC23-27 and STU-01/STU-04 synchronisation notes.

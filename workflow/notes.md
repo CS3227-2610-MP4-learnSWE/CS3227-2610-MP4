@@ -2,6 +2,13 @@
 
 Newest entry first. Older entries describe the state at the time; the newest entry supersedes their open/merged status. Keep the newest 10 entries here; older ones are in `notes-archive.md`. Feature state is in `STATUS.md`.
 
+## 2026-11-06: developer shared sidebar/logout confirmation and spec synchronisation
+- Done: dismissible sidebar guidance card and Confirm logout dialog for every signed-in role; cancellation makes no request, pending prevents duplicate/dismissal, failure keeps session/dialog for retry, expiry stays immediate. Dismissal is in-memory per role/account until refresh/remount. Prior toast/reset/details-overlay/sidebar fixes remain.
+- Specs: SHR-01 original logout AC/current transport and follow-up spec/plan; ADM-05 AC23-27; STU-01/STU-04 inherited logout semantics; guides synchronised. RED five tests and contracts committedf1c9268 before source.
+- Validation: 111 targeted browser PASS; visual five PASS with inspected tip-X/logout dialog images; types/lint/build/format/spec7/0/12existingwaivers/diff PASS. No server changes or backend/full-suite rerun; no independent verifier claim. Evidence logs/SharedShellConfirmationFollowup.md.
+- Next: user refreshes frontend, dismisses tip with X and confirms/cancels logout. No env/database change or backend restart required. Local commit only; no push/deployment.
+- Resources: single-session maintenance, no agents/manifest/tracker; inherited model/effort, per-task tokens/cost unavailable. No new feature revision rounds.
+
 ## 2026-11-06: developer ADM-05 UI and fresh-browser login follow-up
 - Done: green creation toast, clear name/email/passwords while retaining role, immediate Account details modal with close/confirmation/focus behaviour, and visible aligned logout in short desktop/mobile windows. User-approved spec/plan and RED tests committed99c3c23 before source; no authentication-code/password changes.
 - Login: recent saved student/teacher records enabled with hashes. Isolated real form creation/fresh browser login+reload PASS for both roles; user subsequently confirmed their own login works. Set ignored local development SESSION_COOKIE_SECURE=false for plain HTTP and user restarted. Initial credential401 cause not reproduced; do not conflate it with cookie loss after login.
@@ -59,11 +66,3 @@ Newest entry first. Older entries describe the state at the time; the newest ent
 - Next: test-designer merges source and runs new/existing suites; orchestrator merges tests, then read-only verifier. Obsolete preview-only UI assertion belongs to test-designer; developer did not weaken it. No developer database migration, .env reads, live AI, push or deployment.
 - Files: src/backend/admin_access, migration/auth lifecycle/session/login/seed/teacher access/companion integration; frontend admin pages/client/read hook/navigation/styles; UserGuide and DeveloperGuide.
 - Invocation: adm05-developer-01; inherited model/effort, tokens/cost/session IDs unavailable; orchestrator owns run report under workflow/usage/runs/2026-11-06-ADM05-01. No application revision rounds yet. See logs/Adm05Implementation.md.
-
-## 2026-11-06: spec-writer resynchronised expanded admin stories
-- Done: preserved the user's newly expanded ADM-01 to ADM-04 and ADM-06 text exactly; reconciled only ADM-05 to the agreed six fixed-role stories, with labelled criteria and explicit scope boundaries. FeatureList ADM-01 to ADM-06 summaries now match the expanded stories.
-- Contract: no endpoint, schema, UI, AC numbering or test mapping changes. Copied ADM-05 story criteria verbatim into spec AC1-19; derived AC20-22 unchanged. Teacher learning-results reporting remains TEA-05, outside ADM-05 implementation. Course joining/teacher approval decision was already resolved and remains so.
-- Validation: speccheck ADM-05 PASS; diff check PASS; script asserted every character outside the ADM-05 section of UserStories was preserved from the user's supplied file. No application code or tests touched.
-- Next: developer/test-designer continue against unchanged contract; orchestrator records invocation/report and verifies implementation.
-- Files: docs/FeatureList.md, docs/UserStories.md, workflow/specs/ADM-05/spec.md and plan.md, this note and logs/Adm05AdminStorySynchronization.md.
-- Resource use: follow-up spec-writer invocation; inherited model/effort, exact tokens/cost unavailable; tracker/report owned by orchestrator; no retries or application revision rounds.

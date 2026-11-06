@@ -21,3 +21,11 @@ Tasks 1, 2, 6 and 7 run in parallel in separate worktrees. No live LLM or deploy
 - [x] Implement scoped UI fixes; preserve failure state and nested confirmations.
 - [x] Verify desktop/mobile layout and real form-created student/teacher login in fresh isolated browser contexts.
 - [x] Update guides/handoff/resource/security evidence; user confirms login working.
+
+## Shared-shell follow-up ? 2026-11-06
+
+- [x] Synchronise prior account UI and new tip/logout contracts.
+- [x] Write RED dismiss/cancel/pending regressions before source.
+- [x] Implement shared dismissal and confirmation; preserve auth failure/expiry behaviour.
+- [x] Adapt existing logout journeys to confirm with no assertion weakening;111 browser checks PASS.
+- [x] Update guides/handoff/security/resource records; inspect visual artifacts.

@@ -267,3 +267,7 @@ Result: all cases above behaved as expected after fixes, plus: attempt ids conta
 ## 2026-11-06 ? ADM-05 UI follow-up and fresh-session login
 
 227 backend checks PASS, including two new independent-cookie-jar sign-ins for saved admin-created student/teacher accounts. Two no-mock real browser tests create accounts through the admin form in an isolated schema, sign in with exact form passwords from cookie-empty contexts, verify current-user role and reload persistence; mixed case, # and spaces retained. Disposable servers/schema cleaned up. No password resets or auth bypass. Existing late-session401 regression remains passing after closing the new modal before sidebar logout; 82 auth/admin browser cases and four follow-up UI/mobile cases PASS. Local development ignored .env Secure-cookie setting corrected for HTTP; production defaults unchanged. User confirmed login working; initial reported credential rejection was not independently reproduced. Detailed evidence/limits: logs/Adm05UiFollowup.md.
+
+## 2026-11-06 ? Shared-shell logout confirmation
+
+Client-only confirmation preserves existing CSRF/session safeguards. 111 targeted browser tests PASS including zero POST on cancellation, one POST on confirm/pending protection, network/503 failure keeping session/dialog for retry,401 completion, Back/history/chat clearing and late-response isolation. Expiry never waits for confirmation; server endpoints unchanged. Spec/test commitf1c9268 preceded source, visual checks PASS. Details logs/SharedShellConfirmationFollowup.md.

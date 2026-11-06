@@ -144,12 +144,12 @@ Not touched: `teacher_materials/demo_identity.py` and its dev gate, `teacher_mat
 |---|---|---|
 | Client state | `authenticated`, user from `/api/auth/me` | `anonymous` |
 | Guard | role match renders; other role redirects home | renders any role route, as today |
-| Shell | real name, role, Log out; no role switcher | "Demo (not signed in)", role switcher, link to `/login` |
+| Shell | real name, role, Log out opening Confirm logout; dismissible tip; no role switcher | "Demo (not signed in)", role switcher, link to `/login` |
 | Student API (`request`) | cookie plus CSRF; works | 401 `unauthenticated`; "Sign in" notice, no redirect |
-| Teacher API (`requestTeacher`) | unchanged demo header, only if dev gates are on | unchanged demo header, only if dev gates are on |
+| Teacher API (`requestTeacher`) | cookie plus CSRF and server role/course checks | 401; demo identity headers never grant access |
 | Server | `current_user` validates the session | server never treats the request as signed in |
 
-Only the guard and Shell read the auth state; the server is the only enforcement. A demo user holds no cookie, so every `current_user` route rejects them. In production the backend gates are off, so the teacher demo header also gets no access there, whichever way `VITE_ENABLE_DEMO_ACCESS` is set. The demo student path therefore reaches sample screens only; live practice needs a real student sign-in (seeded `demo-student` or signup). A one-click demo sign-in is not provided (spec Open question 7).
+Guards, Shell and page views read auth state for UX; the server is the only enforcement. A demo user holds no cookie, so every `current_user` route rejects them. Current teacher routes ignore legacy demo identity headers in every environment, whichever way `VITE_ENABLE_DEMO_ACCESS` is set (the earlier rollout descriptions are historical). The demo student path therefore reaches sample screens only; live practice needs a real student sign-in (seeded `demo-student` or signup). A one-click demo sign-in is not provided (spec Open question 7).
 
 ### Shared `current_user` contract (documented for teammates in `docs/DeveloperGuide.md`)
 

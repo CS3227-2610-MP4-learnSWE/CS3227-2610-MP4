@@ -824,11 +824,17 @@ button:focus-visible {
   flex-shrink: 0;
 }
 .sidebar-tip {
+  position: relative;
   margin: 30px 20px 22px;
   border: 1px solid var(--line);
   border-radius: 12px;
   padding: 17px;
   background: linear-gradient(135deg, var(--bg), var(--paper));
+}
+.sidebar-tip .sidebar-tip-dismiss {
+  position: absolute;
+  top: 8px;
+  right: 8px;
 }
 .tip-sparkle {
   display: block;

@@ -3,13 +3,14 @@ import { ADMIN, STUDENT, TEACHER, mockAuthApi } from "./authApi";
 
 test("shr01 shell tip dismisses, stays dismissed on navigation and returns after refresh", async ({
   page,
-}) => {
+}, testInfo) => {
   await mockAuthApi(page, { user: ADMIN });
   await page.setViewportSize({ width: 1280, height: 1000 });
   await page.goto("/admin/overview");
   await expect(
     page.getByText("Listen. Learn. Improve.", { exact: true }),
   ).toBeVisible();
+  await page.screenshot({ path: testInfo.outputPath("dismissible-tip.png") });
   await page
     .getByRole("button", { name: "Dismiss sidebar tip", exact: true })
     .click();
@@ -31,7 +32,7 @@ test("shr01 shell tip dismisses, stays dismissed on navigation and returns after
 for (const user of [STUDENT, TEACHER, ADMIN]) {
   test(`shr01 ${user.role} logout cancel and Escape preserve session without a POST`, async ({
     page,
-  }) => {
+  }, testInfo) => {
     const auth = await mockAuthApi(page, { user });
     await page.goto(`/${user.role}/overview`);
     await page.getByRole("button", { name: "Log out", exact: true }).click();
@@ -40,6 +41,15 @@ for (const user of [STUDENT, TEACHER, ADMIN]) {
       exact: true,
     });
     await expect(dialog).toBeVisible();
+    if (user.role === "admin") {
+      await expect(page.locator(".MuiDialog-container").last()).toHaveCSS(
+        "opacity",
+        "1",
+      );
+      await page.screenshot({
+        path: testInfo.outputPath("logout-confirmation.png"),
+      });
+    }
     expect(auth.count("logout")).toBe(0);
     await dialog.getByRole("button", { name: "Cancel", exact: true }).click();
     await expect(dialog).toHaveCount(0);

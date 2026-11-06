@@ -2,6 +2,14 @@
 
 Entries moved unchanged from `notes.md` on 2026-11-03 and 2026-11-05, newest first. They describe the state at the time; `notes.md` and `STATUS.md` supersede them.
 
+## 2026-11-06: spec-writer resynchronised expanded admin stories
+- Done: preserved the user's newly expanded ADM-01 to ADM-04 and ADM-06 text exactly; reconciled only ADM-05 to the agreed six fixed-role stories, with labelled criteria and explicit scope boundaries. FeatureList ADM-01 to ADM-06 summaries now match the expanded stories.
+- Contract: no endpoint, schema, UI, AC numbering or test mapping changes. Copied ADM-05 story criteria verbatim into spec AC1-19; derived AC20-22 unchanged. Teacher learning-results reporting remains TEA-05, outside ADM-05 implementation. Course joining/teacher approval decision was already resolved and remains so.
+- Validation: speccheck ADM-05 PASS; diff check PASS; script asserted every character outside the ADM-05 section of UserStories was preserved from the user's supplied file. No application code or tests touched.
+- Next: developer/test-designer continue against unchanged contract; orchestrator records invocation/report and verifies implementation.
+- Files: docs/FeatureList.md, docs/UserStories.md, workflow/specs/ADM-05/spec.md and plan.md, this note and logs/Adm05AdminStorySynchronization.md.
+- Resource use: follow-up spec-writer invocation; inherited model/effort, exact tokens/cost unavailable; tracker/report owned by orchestrator; no retries or application revision rounds.
+
 ## 2026-11-06: spec-writer ADM-05 agreed scope and approved contract
 - Done: revised FeatureList/UserStories for fixed roles, admin-created accounts/courses, disable/archive lifecycle and course access; wrote ADM-05 spec, API/UI plan and ordered tasks. Approved functional decisions and implementation instruction supplied by user in conversation; no redundant approval gate inferred.
 - Next: orchestrator starts independent developer/test-designer from this commit, then merged read-only verifier; no application code written by spec-writer.
