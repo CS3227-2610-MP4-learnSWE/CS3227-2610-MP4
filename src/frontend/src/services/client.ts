@@ -70,20 +70,29 @@ async function send(
   timeoutMs: number,
   readOk: (response: Response) => Promise<unknown>,
   distinguishTimeout = false,
+  signal?: AbortSignal,
 ): Promise<unknown> {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  const abort = () => controller.abort();
+  if (signal?.aborted) controller.abort();
+  signal?.addEventListener("abort", abort, { once: true });
+  let timedOut = false;
+  const timer = setTimeout(() => {
+    timedOut = true;
+    controller.abort();
+  }, timeoutMs);
   try {
     const response = await fetch(path, { ...init, signal: controller.signal });
     if (!response.ok) throw await errorFrom(response);
     return await readOk(response);
   } catch (error) {
-    if (distinguishTimeout && controller.signal.aborted)
-      throw new ApiError(0, "timeout");
+    if (signal?.aborted) throw new ApiError(0, "aborted");
+    if (distinguishTimeout && timedOut) throw new ApiError(0, "timeout");
     if (error instanceof ApiError) throw error;
     throw new ApiError(0, "network");
   } finally {
     clearTimeout(timer);
+    signal?.removeEventListener("abort", abort);
   }
 }
 
@@ -96,6 +105,7 @@ export async function request(
     timeoutMs?: number;
     distinguishTimeout?: boolean;
     cache?: RequestCache;
+    signal?: AbortSignal;
   } = {},
 ): Promise<unknown> {
   // A delayed rejection from a previous account must not sign out a newer one.
@@ -127,6 +137,7 @@ export async function request(
         return data;
       },
       options.distinguishTimeout ?? false,
+      options.signal,
     );
   } catch (error) {
     if (

@@ -536,3 +536,53 @@ Expected: **40 passed**. Covers filters, messages, retry, timeout, access, histo
 - Coverage: forward-only. No backfill, retention deletion or gap-recovery tool. Downgrade removes usage metadata.
 - Production deployment: GitHub Actions; replace every worker before activation.
 - Full contract: [ADM-06 spec and plan](../workflow/specs/ADM-06/).
+
+## ADM-02: targeted feedback implementation
+
+Apply additive migration `20261107_adm02_feedback` before starting the updated application. It follows `20261106_adm06_ai_usage` and adds `feedback_forms`, `feedback_recipients`, `feedback_responses` and `feedback_response_drafts`. Existing account, course, lesson and AI data are preserved. Use your existing configured database; never point development commands at production.
+
+Windows (from a configured local checkout):
+
+```powershell
+Set-Location (git rev-parse --show-toplevel)
+Set-Location src\backend
+uv sync --frozen
+uv run alembic upgrade head
+uv run uvicorn main:app --host 127.0.0.1 --port 8000 --reload
+```
+
+macOS/Linux:
+
+```bash
+cd "$(git rev-parse --show-toplevel)/src/backend"
+uv sync --frozen
+uv run alembic upgrade head
+uv run uvicorn main:app --host 127.0.0.1 --port 8000 --reload
+```
+
+Start the frontend with the existing setup instructions. Sign in as an enabled admin and open `/admin/feedback`; use separate student/teacher browser profiles to check targeted `/student/inbox` and `/teacher/inbox` delivery. Follow the [ADM-02 user walkthrough](UserGuide.md#adm-02-targeted-feedback-forms). No LLM configuration or calls are needed for this feature.
+
+### Storage, access and concurrency
+
+- `feedback_models.py` owns relational records, `feedback_validation.py` validates definitions/answers, `feedback_store.py` serialises snapshots and centralises access/locking, and `feedback.py` owns HTTP routes, strict query/body handling, quotas and fixed error translation. The approved [plan](../workflow/specs/ADM-02/plan.md) is the endpoint/schema contract.
+- Reuse cookie sessions, role checks, Origin/CSRF validation and the existing SQLAlchemy session/pool. Before record work, reuse the account lifecycle transaction advisory lock and freshly verify the session/account. Survey operations take that lock before feature records, so account disable/archive, publication, saves, submit and close use a consistent ordering across workers. This simple global ordering favours correctness over throughput.
+- Publication freezes definitions/audience and inserts all recipient inbox rows in the same transaction. Partial publication rolls back. Form editing and private draft saving have independent optimistic versions. A unique form/recipient response plus serialised submit/close prevents duplicate completion or late draft resurrection.
+- Draft PUT preserves exact text and allows missing required answers. The final POST carries `draft_version` and the complete final answers, validates required fields and atomically inserts the immutable form/question/answer snapshot and removes the private draft. Acknowledgement determines saved/completed UI state; elapsed time alone never does.
+- Draft answers are owner-only while open. Admins see submitted responses only. Recipient terminal reads and inbox payloads contain no answer text. Association references are metadata and confer no course/lesson access. The study companion receives no feedback answers or form contents.
+- All protected feedback successes/errors use `Cache-Control: no-store`. Render text without HTML interpretation. Strict types reject unknown fields, invalid/foreign IDs, duplicate questions/options/answers and booleans masquerading as scale integers. Body cap is 256 KiB; combined answer text is 20,000 characters. Form and field limits are in the plan.
+- Per-account rolling minute quotas: reads 120, general mutations 60, submissions additionally 10, private draft writes separately 120. Shared `auth.rate_limit.admit` is process-local; multiple workers do not share these quota counters. Rate-limit responses include retry timing, and clients do not retry automatically.
+- Forms and submissions have no expiry/deletion API; closure retains submitted responses and hidden private drafts. Downgrading this additive migration drops its feedback tables and their contents; back up data before an intentional downgrade.
+
+### Browser lifecycle
+
+`services/feedbackApi.ts` validates public payloads and coalesces only in-flight reads within the same session/write generation. The shared client now accepts an optional AbortSignal without changing existing callers. Feature requests use a 15-second timeout, distinct transport/timeout errors and abort on unmount; late results cannot overwrite a new account's state.
+
+`useResponseDraft` owns the one-second autosave debounce, one in-flight write, coalesced later edits, explicit retry/conflict handling and navigation flushing. Hydration produces no write. Submission cancels debounce, waits for a pending save, then posts once with final answers. A saved draft is recovered server-side after reload or another device; answers never enter localStorage/sessionStorage. Beforeunload warns for unacknowledged edits. Session exit clears the view immediately and does not wait for autosave. Native abrupt termination can lose edits that never reached the server.
+
+Signed-in student/teacher inboxes use persistent request data, with no sample rows or sample unread badge. The inbox shows the real unread count. Anonymous demo previews remain explicitly sample-only. Admin sidebar feedback navigation points to the live form manager; unrelated analytics/announcement previews retain their existing labels.
+
+### Verification
+
+Run the existing backend suite with `uv run pytest -q`, plus the frontend `npm run typecheck`, `npm run lint` and `npm test`. Tests need the documented disposable PostgreSQL schema harness. Set process-local `PGCONNECT_TIMEOUT=3` when running the historical unavailable-database test on Windows if a refused port otherwise waits indefinitely; this bounds the test process's libpq connection attempts without changing application configuration. Use `pytest -k adm02` and Playwright `--grep ADM-02` for the independent feature cases after their integration. No live AI calls are required.
+
+Manual checks: save/reopen all six question types; publish to selected student and teacher accounts separately; verify an unselected account cannot open the URL; save partial required answers, navigate away/return and resume; submit once and see Completed; close collection and verify further saves/submits fail; review preserved submitted snapshots as admin. Test two tabs saving the same draft, close racing submission, failure/retry, session change and mobile keyboard access. Deployment remains through the team's GitHub Actions process.
