@@ -39,7 +39,7 @@ All role features below are MVP requirements. Optional extensions are listed sep
 - **ADM-02 — Targeted feedback forms:** Create and distribute feedback forms to students or teachers, associating each form with a specific feature or lesson where relevant. Publishing delivers a survey request to intended recipients’ in-app inboxes.
 - **ADM-03 — AI feedback analysis:** Summarise collected responses, group recurring issues and suggest improvements, with references to supporting feedback. Admins review the analysis before acting on it.
 - **ADM-04 — Feedback follow-up:** Review and send responses or announcements to relevant students and teachers through recipients’ in-app inboxes.
-- **ADM-05 — User and access management:** Manage accounts, roles and course access. Prevent users from granting themselves additional privileges.
+- **ADM-05 — User and access management:** Create fixed-role student, teacher and admin accounts; enable, disable or permanently archive accounts; create courses and manage student enrolments and teacher assignments. Prevent self-escalation and administrator lockout.
 - **ADM-06 — AI usage monitoring:** View AI request counts, failures and available resource-usage measurements to help manage SoC LLM limits. Show unavailable measurements explicitly rather than estimating them as facts.
 
 ## Shared requirements

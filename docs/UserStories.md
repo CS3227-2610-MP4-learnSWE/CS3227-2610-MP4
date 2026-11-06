@@ -485,25 +485,59 @@ As an admin, I want to enable or disable an account’s access so that I can con
 Acceptance criteria:
 
 - I can inspect an account’s access status and explicitly change it.
-- Disabling access prevents subsequent protected requests.
+- Disabling access prevents subsequent protected requests and ends all sessions; re-enabling requires a fresh login.
+- Disabling preserves learning records and course assignments; admins can edit assignments while the account remains disabled.
+- Admins cannot disable themselves, and concurrent actions cannot remove the last enabled admin.
 
-#### US-ADM-05-02 — Assign user roles
+#### US-ADM-05-02 — Create fixed-role accounts
 
-As an admin, I want to assign a supported role to a user so that I can give them the appropriate capabilities.
+As an admin, I want to create student, teacher and admin accounts so that users receive the appropriate capabilities without changing an existing account’s role.
 
 Acceptance criteria:
 
-- Only an authorised admin can change roles; self-escalation by non-admins is rejected.
-- Role changes affect subsequent protected requests.
+- Only an authorised admin can create accounts with a selected supported role; public signup remains student-only.
+- Each account has exactly one immutable role; promotion, demotion and self-escalation are rejected.
+- The admin enters and confirms an initial password; existing shared password rules apply, passwords are stored only as hashes and never returned in account details.
+- Mandatory first-login password changes are deferred; guides include a validated test-only example password, never a default credential.
 
 #### US-ADM-05-03 — Manage course access
 
-As an admin, I want to grant or revoke a user’s course access so that I can restrict course content to its intended users.
+As an admin, I want to grant or revoke a user?s course access so that I can restrict course content to its intended users.
 
 Acceptance criteria:
 
-- I can inspect and change course access for the selected user.
-- Revocation affects subsequent content and AI retrieval requests.
+- I can inspect and change course access for the selected user: student enrolments and teacher management assignments are distinct.
+- Revocation affects subsequent content and AI retrieval requests; access is checked again before releasing AI results, while other already-authorised requests may finish.
+- Repeated grants and revocations succeed harmlessly; concurrent opposite actions follow server processing order.
+- Revocation preserves learning and authorship records; granting access again restores visibility of retained records within existing feature rules.
+
+#### US-ADM-05-04 — Archive accounts permanently
+
+As an admin, I want to permanently archive an account so that it cannot access the app again without deleting linked history.
+
+Acceptance criteria:
+
+- Archiving ends all sessions, blocks login permanently and removes all course permissions, while retaining linked learning and authorship records.
+- Archived accounts cannot be restored and their emails remain reserved for both public signup and admin creation.
+- Admins cannot archive themselves, and concurrent actions cannot remove the last enabled admin.
+
+#### US-ADM-05-05 — Create courses
+
+As an admin, I want to create a course with a title and assign teachers so that teachers can manage its content and students can be enrolled.
+
+Acceptance criteria:
+
+- I can create a course with a validated title and explicitly assign teachers using course-access management.
+- Teacher accounts begin without course assignments; teachers manage content and authorised learning results only in their assigned courses.
+
+#### US-ADM-05-06 — Find accounts and confirm access removal
+
+As an admin, I want to find accounts and review destructive access changes so that I can manage the correct person safely.
+
+Acceptance criteria:
+
+- I can search accounts by name or email, filter by role and status, and browse paginated results including archived accounts through a status filter.
+- Disabling, archiving and removing course access require confirmation; creation and grants use explicit form buttons.
 
 ### ADM-06 — AI usage monitoring
 
@@ -583,7 +617,7 @@ The following apply across all relevant stories and map to SHR-01 through SHR-05
 
 - Initial programming subject and learner level.
 - Supported upload formats and file-size limits.
-- How users join courses and how teacher accounts are approved.
+- ADM-05 resolves course joining and teacher approval: admins create teacher accounts and courses, assign teachers and manually enrol students; account roles are fixed.
 - Repeat-attempt scoring, question reuse after answers have been seen, and the rule for identifying weak topics. The fixed policy is hints only until each whole-set attempt is successfully submitted.
 - Whether feedback is identified or anonymous, together with retention and deletion rules.
 - Exact SoC LLM quotas, model configuration and resource measurements available to the app.

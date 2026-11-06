@@ -1,5 +1,19 @@
 # Handoff notes
 
+## 2026-11-06: spec-writer ADM-05 agreed scope and approved contract
+- Done: revised FeatureList/UserStories for fixed roles, admin-created accounts/courses, disable/archive lifecycle and course access; wrote ADM-05 spec, API/UI plan and ordered tasks. Approved functional decisions and implementation instruction supplied by user in conversation; no redundant approval gate inferred.
+- Next: orchestrator starts independent developer/test-designer from this commit, then merged read-only verifier; no application code written by spec-writer.
+- Files touched: docs/FeatureList.md, docs/UserStories.md, workflow/specs/ADM-05/{spec,plan,tasks}.md, workflow/notes.md.
+- Decisions: immutable role; shared CourseMembership interpreted by role; no compulsory password change; archived email retained; serialised admin writes and fresh actor checks. AI recheck covers actual authorised context; no invented course mapping for legacy fixtures.
+- Blocking findings: none. speccheck ADM-05 PASS; git diff --check PASS. Parent validated test-only example password using shared validator.
+- Invocation ID: adm05-spec-01; model/effort inherited and exact provider IDs/tokens/cost unavailable; elapsed about 10 minutes; tracker owned by orchestrator at workflow/usage/runs/2026-11-06-ADM05-01; no retries or correction rounds.
+
+## 2026-11-06: spec-writer advisory review of ADM-05
+- Done: compared ADM-05 stories with SHR-01/STU-01 contracts and teammate handoff. Course membership is only one of three ADM-05 stories; account disabling and role changes must affect existing sessions' subsequent requests. No ADM-05 spec folder found.
+- Next: agree teacher course-access semantics, account/session lifecycle, last-admin protections and concurrency policy; write and approve ADM-05 spec/plan before implementation.
+- Files touched: this handoff and logs/Adm05PreImplementationReview.md. No application changes or tests; remote PR/CI status not checked.
+- Invocation/report: single advisory Codex session; no feature run or agents. Model/effort, tokens and cost unavailable; tracker not run; retries/revision rounds 0.
+
 Newest entry first. Use `templates/handoff.md`. Older entries describe the state at the time; the newest entry supersedes their open/merged status. Keep the newest 10 entries here; older ones are in `notes-archive.md`. Feature state is in `STATUS.md`.
 
 
