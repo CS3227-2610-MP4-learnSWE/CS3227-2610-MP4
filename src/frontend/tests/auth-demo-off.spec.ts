@@ -1,5 +1,12 @@
 import { test, expect } from "@playwright/test";
-import { ADMIN, DEMO_HEADING, STUDENT, TEACHER, mockAuthApi } from "./authApi";
+import {
+  logOutWithConfirmation,
+  ADMIN,
+  DEMO_HEADING,
+  STUDENT,
+  TEACHER,
+  mockAuthApi,
+} from "./authApi";
 
 /**
  * SHR-01 AC22 flag-off: the build sets VITE_ENABLE_DEMO_ACCESS=false (project "demo-off" in
@@ -93,10 +100,7 @@ test("shr01 AC22 flag off: after logout the user lands on /login and cannot retu
 }) => {
   const auth = await mockAuthApi(page, { user: STUDENT });
   await page.goto("/student/overview");
-  await page
-    .getByRole("button", { name: /log out/i })
-    .first()
-    .click();
+  await logOutWithConfirmation(page);
   await expect(page).toHaveURL(/\/login$/);
   await page.goBack();
   await expect(page).toHaveURL(/\/login$/);

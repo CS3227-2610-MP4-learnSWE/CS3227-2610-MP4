@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { ADMIN, TEACHER } from "./authApi";
+import { logOutWithConfirmation, ADMIN, TEACHER } from "./authApi";
 import { L_TESTING } from "./lessonsApi";
 import {
   MSG,
@@ -655,7 +655,7 @@ test("stu04 AC16 demo mode: a 401 shows the sign-in notice with a Go to sign in 
 
 test("stu04 AC16 logout then Back shows no progress data", async ({ page }) => {
   const { auth } = await openProgress(page);
-  await page.getByRole("button", { name: "Log out" }).click();
+  await logOutWithConfirmation(page);
   await page.waitForURL("**/login");
   expect(auth.user).toBeNull();
   await page.goBack();

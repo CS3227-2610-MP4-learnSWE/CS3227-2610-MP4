@@ -131,7 +131,7 @@ Edited existing files:
 - `src/frontend/src/auth/RequireRole.tsx` (new): route guard component; `homePath(role)` helper (single source of the role to path mapping). Logic: `loading` -> loading status; `authenticated` and role matches -> children; `authenticated` and role differs -> `<Navigate to={homePath(user.role)}>`; `anonymous` and `demoAccessEnabled()` -> children (demo mode, unchanged behaviour); `anonymous` otherwise -> `<Navigate to="/login">`.
 - `src/frontend/src/pages/Login.tsx`: add the real sign-in / create-account form (see AC21). Keep the existing role "Explore {role} demo" buttons and "Demo · Sample data" pill, moved under the heading "Demo shortcut (development): sample data, not signed in, no real account"; hidden when `demoAccessEnabled()` is false. Remove only the misleading "Preview only" / "visual previews" copy that implies sign-in does nothing.
 - `src/frontend/src/App.tsx`: wrap in `AuthProvider`; wrap `/student`, `/teacher`, `/admin` routes in `RequireRole`; `/` redirects authenticated users to their home and others to `/login`. Anonymous direct navigation to role routes still works while demo access is enabled.
-- `src/frontend/src/components/Shell.tsx`: keep the Demo role select, shown only when `status` is anonymous (demo mode); when authenticated show the real display name and role and replace "Back to login preview" with a Log out button calling `useAuth().logout`; when anonymous show "Demo (not signed in)" and keep the link back to `/login`.
+- `src/frontend/src/components/Shell.tsx`: keep the Demo role select, shown only when `status` is anonymous (demo mode); when authenticated show the real display name and role and replace "Back to login preview" with a Log out button opening Confirm logout; only its confirmed action calls `useAuth().logout`; when anonymous show "Demo (not signed in)" and keep the link back to `/login`.
 - Student practice and companion components (`Practice.tsx`, `StudyCompanion.tsx` and their data hooks): when a call fails with 401 `unauthenticated` while anonymous, show the notice "Sign in to use live practice and the study companion" with a link to `/login`; no other behaviour change.
 - `src/frontend/src/main.tsx`: unchanged unless the provider placement requires it (AuthProvider lives inside `App`).
 - Docs: `docs/SharedDataContract.md` (user columns, auth endpoints, replace the "Real authentication must resolve..." handoff paragraph with the implemented flow and what remains for teacher routes), `docs/DeveloperGuide.md`, `docs/UserGuide.md`, `workflow/security/test-log.md`, `workflow/security/threat-model.md`, `.env.example` (backend), CI workflow env if the backend tests need the new variables.
@@ -232,3 +232,27 @@ Frontend unit-level checks (`npm test`, `npm run typecheck`, `npm run lint`) for
 - Sync route handlers (threadpool) so password hashing does not block the event loop.
 - Student routes keep `require_student(...) -> str` so downstream code is untouched; `AuthUser` is returned by `current_user`.
 - `GET /api/courses/{course_id}` is included as the minimal, real, testable use of `require_course_member`.
+
+## Approved shared-shell follow-up ? 2026-11-06
+
+User-requested behaviour applies to student, teacher and admin workspaces. Sidebar marketing tips are cards, not modal dialogs. Button "Dismiss sidebar tip" removes the card from both desktop sidebar and mobile drawer for the current role/account until refresh or workspace remount; navigation does not restore it, and nothing is stored in browser storage.
+
+A signed-in "Log out" button opens a modal named "Confirm logout", description "Are you sure you want to log out?", with buttons "Cancel" and "Log out". Opening/cancelling/Escape/backdrop sends zero logout requests and retains the session, page, unsaved edits and chat. Confirm sends one existing CSRF-protected logout request. While pending show role status "Logging out...", disable both buttons, and ignore Escape/backdrop and repeated submits. Success uses existing session clearing and login navigation. Network/5xx failure keeps the user signed in and dialog open, shows role alert "Could not log out. Try again.", and re-enables retry/cancel. A logout401 still clears the client as before. Session expiry/revocation never waits for confirmation. Demo "Back to login preview" remains a link without session logout.
+
+| Action | Loading | Success/empty | Failure/recovery |
+|---|---|---|---|
+| Dismiss sidebar tip | none; no request | card removed, navigation expands | not applicable |
+| Open/Cancel logout | confirmation dialog; no request | Cancel/Escape/backdrop restores caller focus and changes no URL | not applicable |
+| Confirm logout | Logging out...; buttons disabled; one POST | existing logout redirect/session clearing | fixed logout error in dialog; explicit retry, no automatic retry |
+
+- Requests per load and per retry: no new requests on shell load or tip/dialog changes; exactly one POST per confirmation/retry.
+- Wrong role: applies to each signed-in role; underlying route/API guards unchanged.
+- Link history: push or replace: no URL change on dismissal/open/cancel; confirmed logout retains existing pushed login navigation, expiry retains replacement.
+- Refresh: tip reappears; logout confirmation resets; normal session lookup continues.
+- Back and Forward: tip stays dismissed in a mounted workspace; completed logout never restores a signed-in session.
+- Expired session or logout: expiry remains immediate; confirmation never retains protected data after revocation.
+- Backend down: confirmed logout shows fixed failure and retains session/dialog for retry.
+- Longest wait before an error: existing client10second request timeout.
+- No generic failure message: logout uses its fixed failure message above.
+
+Test mapping: shared shell tests cover dismiss/navigation/refresh, confirmation/cancel for all roles, pending duplicate prevention, and existing CSRF/failure/retry/401/history/chat/editor regressions updated to explicitly confirm. No API or authentication-policy changes.

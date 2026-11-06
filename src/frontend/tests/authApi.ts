@@ -235,6 +235,21 @@ export function passwordField(page: Page) {
   return page.getByLabel(/^password\s*\*?$/i);
 }
 
+/** Explicit user logout: cancel tests use the dialog directly instead. */
+export async function logOutWithConfirmation(page: Page) {
+  const dialog = page.getByRole("dialog", {
+    name: "Confirm logout",
+    exact: true,
+  });
+  if (!(await dialog.isVisible())) {
+    await page
+      .getByRole("button", { name: /^log out$/i })
+      .first()
+      .click();
+  }
+  await dialog.getByRole("button", { name: "Log out", exact: true }).click();
+}
+
 /** Demo-mode storage and cookie state, read in the page. */
 export async function browserState(page: Page) {
   return page.evaluate(() => ({

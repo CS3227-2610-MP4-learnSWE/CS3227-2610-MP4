@@ -134,3 +134,27 @@ Closed (decided by the user, recorded in "Approved decisions" 8 to 10): 1 reuse 
 4. Deployment topology: same-site (API behind the same host or a reverse proxy, `SameSite=Lax`) is assumed. If the static frontend and API are on different registrable domains on Render, `SameSite=None; Secure` and `ALLOWED_ORIGINS` plus a frontend API base URL are needed; the code supports this by configuration, but the frontend API base URL setting is not designed here. Decide when hosting is chosen.
 6. Closed (user, 2026-11-03): demo access stays on for now (`VITE_ENABLE_DEMO_ACCESS` unset). Whether the deployed build sets it to `false` is decided at deployment; server enforcement is the same either way.
 7. Closed (user, 2026-11-03): accepted the student demo limitation. Migrated STU-02/STU-03 routes need a real session, so anonymous demo students see a "Sign in" notice and can use the seeded `demo-student` login or sign up. A dev-only, server-gated demo sign-in endpoint remains a possible later follow-up, not part of this feature.
+
+## Approved shared-shell follow-up ? 2026-11-06
+
+User-requested behaviour applies to student, teacher and admin workspaces. Sidebar marketing tips are cards, not modal dialogs. Button "Dismiss sidebar tip" removes the card from both desktop sidebar and mobile drawer for the current role/account until refresh or workspace remount; navigation does not restore it, and nothing is stored in browser storage.
+
+A signed-in "Log out" button opens a modal named "Confirm logout", description "Are you sure you want to log out?", with buttons "Cancel" and "Log out". Opening/cancelling/Escape/backdrop sends zero logout requests and retains the session, page, unsaved edits and chat. Confirm sends one existing CSRF-protected logout request. While pending show role status "Logging out...", disable both buttons, and ignore Escape/backdrop and repeated submits. Success uses existing session clearing and login navigation. Network/5xx failure keeps the user signed in and dialog open, shows role alert "Could not log out. Try again.", and re-enables retry/cancel. A logout401 still clears the client as before. Session expiry/revocation never waits for confirmation. Demo "Back to login preview" remains a link without session logout.
+
+| Action | Loading | Success/empty | Failure/recovery |
+|---|---|---|---|
+| Dismiss sidebar tip | none; no request | card removed, navigation expands | not applicable |
+| Open/Cancel logout | confirmation dialog; no request | Cancel/Escape/backdrop restores caller focus and changes no URL | not applicable |
+| Confirm logout | Logging out...; buttons disabled; one POST | existing logout redirect/session clearing | fixed logout error in dialog; explicit retry, no automatic retry |
+
+- Requests per load and per retry: no new requests on shell load or tip/dialog changes; exactly one POST per confirmation/retry.
+- Wrong role: applies to each signed-in role; underlying route/API guards unchanged.
+- Link history: push or replace: no URL change on dismissal/open/cancel; confirmed logout retains existing pushed login navigation, expiry retains replacement.
+- Refresh: tip reappears; logout confirmation resets; normal session lookup continues.
+- Back and Forward: tip stays dismissed in a mounted workspace; completed logout never restores a signed-in session.
+- Expired session or logout: expiry remains immediate; confirmation never retains protected data after revocation.
+- Backend down: confirmed logout shows fixed failure and retains session/dialog for retry.
+- Longest wait before an error: existing client10second request timeout.
+- No generic failure message: logout uses its fixed failure message above.
+
+Test mapping: shared shell tests cover dismiss/navigation/refresh, confirmation/cancel for all roles, pending duplicate prevention, and existing CSRF/failure/retry/401/history/chat/editor regressions updated to explicitly confirm. No API or authentication-policy changes.

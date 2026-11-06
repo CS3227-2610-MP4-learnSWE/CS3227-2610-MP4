@@ -36,6 +36,9 @@ Admin navigation exposes /admin/users and /admin/courses. Accounts have enabled,
 - [ ] AC24 (user follow-up): Manage account immediately opens a modal named Account details, including loading/error states; Close account details, Escape or backdrop closes when no mutation is pending and returns focus to the triggering control. Nested confirmations preserve the account modal.
 - [ ] AC25 (user follow-up): Logout remains aligned, on one line and reachable within short desktop/mobile viewports; long account names do not push controls outside the sidebar.
 
+- [ ] AC26 (user follow-up): Sidebar tip can be dismissed for the current workspace without a request; stays hidden during navigation and returns after refresh.
+- [ ] AC27 (user follow-up): Explicit logout requires the shared Confirm logout dialog; cancel preserves the session, confirm submits once, failure allows retry, and expiry still clears immediately (SHR-01 shared-shell contract).
+
 ## UI states and copy
 
 | Screen or action | Control (button, tab, link, field) and its exact label | Loading | Success | Empty | Each failure that can happen and exact message | After a failed action |
@@ -69,3 +72,7 @@ Reuse current_user(role="admin"), session, CSRF/Origin, hashing, errors and teac
 
 ## Open questions
 None blocking. User approved functional scope and 2026-11-06 follow-up UI fixes (green creation toast, reset text/password fields while keeping role, immediately visible account-details modal, visible aligned logout). API/UI details and bounds below are implementation decisions. AI course-specific revocation applies where authorised course context exists, while missing future retrieval is not claimed implemented.
+
+## Shared shell synchronisation
+
+Tip dismissal and logout confirmation follow the approved SHR-01 shared-shell follow-up in spec.md and plan.md. Earlier approved AC23-25 remain: green success toast, all creation text/password fields reset while role stays selected, modal Account details, and aligned/reachable logout. No changed API/password policy.

@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { ADMIN, STUDENT, mockAuthApi } from "./authApi";
+import { logOutWithConfirmation, ADMIN, STUDENT, mockAuthApi } from "./authApi";
 
 test("adm05 follow-up creation shows a green toast and resets fields while retaining role", async ({
   page,
@@ -623,7 +623,7 @@ test("adm05 late old-session 401 cannot sign out a newly authenticated admin", a
   await page
     .getByRole("button", { name: "Close account details", exact: true })
     .click();
-  await page.getByRole("button", { name: /log out/i }).click();
+  await logOutWithConfirmation(page);
   await expect(page).toHaveURL(/\/login$/);
   await page.getByLabel(/^email/i).fill(second.email!);
   await page.getByLabel(/^password/i).fill("second-admin-password-7391");

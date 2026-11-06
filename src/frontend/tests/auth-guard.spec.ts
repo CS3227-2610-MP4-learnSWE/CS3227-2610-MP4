@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import {
+  logOutWithConfirmation,
   ADMIN,
   DEMO_HEADING,
   PASSWORD,
@@ -243,10 +244,7 @@ test("shr01 AC22 logout posts with the CSRF token, clears client state and retur
 }) => {
   const auth = await mockAuthApi(page, { user: STUDENT });
   await page.goto("/student/overview");
-  await page
-    .getByRole("button", { name: /log out/i })
-    .first()
-    .click();
+  await logOutWithConfirmation(page);
   await expect(page).toHaveURL(/\/login$/);
   expect(auth.count("logout")).toBe(1);
   expect(auth.of("logout")[0].headers["x-csrf-token"]).toBe(auth.csrf);
@@ -259,10 +257,7 @@ test("shr01 AC22 after logout the back button does not show the signed-in area",
 }) => {
   const auth = await mockAuthApi(page, { user: STUDENT });
   await page.goto("/student/overview");
-  await page
-    .getByRole("button", { name: /log out/i })
-    .first()
-    .click();
+  await logOutWithConfirmation(page);
   await expect(page).toHaveURL(/\/login$/);
   await page.goBack();
   // Either the login page or the labelled demo mode (flag unset): never the signed-in shell.
@@ -281,14 +276,13 @@ for (const [label, failure] of [
     const auth = await mockAuthApi(page, { user: STUDENT });
     auth.script("logout", failure);
     await page.goto("/student/overview");
-    const logout = page.getByRole("button", { name: /log out/i }).first();
-    await logout.click();
+    await logOutWithConfirmation(page);
     await expect(page.getByRole("alert")).toContainText(/could not log out/i);
     await expect(page).toHaveURL(/\/student\/overview$/);
     await expect(page.getByText("Sam Student").first()).toBeVisible();
     expect(auth.user).not.toBeNull(); // the server session is still alive, so the UI must say so
     // The server recovers: a second click retries and signs out.
-    await logout.click();
+    await logOutWithConfirmation(page);
     await expect(page).toHaveURL(/\/login$/);
     expect(auth.count("logout")).toBe(2);
     expect(auth.user).toBeNull();
@@ -302,10 +296,7 @@ test("shr01 AC22 a 401 on logout still ends the client session", async ({
   const auth = await mockAuthApi(page, { user: STUDENT });
   auth.script("logout", authError(401, "unauthenticated"));
   await page.goto("/student/overview");
-  await page
-    .getByRole("button", { name: /log out/i })
-    .first()
-    .click();
+  await logOutWithConfirmation(page);
   await expect(page).toHaveURL(/\/login$/);
   await expect(page.getByText("Sam Student")).toHaveCount(0);
 });
@@ -329,10 +320,7 @@ test("shr01 AC22 companion history from a signed-in session is gone after logout
     "Private signed-in message",
   );
   await page.getByRole("button", { name: "Minimise study companion" }).click();
-  await page
-    .getByRole("button", { name: /log out/i })
-    .first()
-    .click();
+  await logOutWithConfirmation(page);
   await expect(page).toHaveURL(/\/login$/);
   await emailField(page).fill(STUDENT.email!);
   await passwordField(page).fill(PASSWORD);

@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { PASSWORD } from "./authApi";
+import { logOutWithConfirmation, PASSWORD } from "./authApi";
 import {
   COURSE_SE,
   L_DESIGN,
@@ -52,7 +52,7 @@ async function logoutAndLoginAsB(
   auth: Awaited<ReturnType<typeof signedInStudy>>["auth"],
 ) {
   auth.accounts.set(B.email, { password: PASSWORD, user: B });
-  await page.getByRole("button", { name: "Log out" }).click();
+  await logOutWithConfirmation(page);
   await page.waitForURL("**/login");
   await page.getByLabel(/email/i).fill(B.email);
   await page
