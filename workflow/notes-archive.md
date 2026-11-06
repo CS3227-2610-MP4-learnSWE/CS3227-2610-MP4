@@ -550,3 +550,10 @@ Newest entry first. Use `templates/handoff.md`. Older entries describe the state
 - Files: AdminAccounts/styles, independent cookie/browser regressions and opt-in real E2E, approved contract/guides and workflow records. No user database writes/resets, production config changes, live AI, push or deployment.
 - Next: refresh frontend; use Account details overlay and creation toast. Login works per user confirmation. Local commit only.
 - Resource use: single-session scoped maintenance after feature closure; no agents/tracker/manifest. Inherited model/effort and per-task tokens/cost unavailable. Harness/test-interaction recoveries in session log, no extension of original feature correction rounds.
+
+## 2026-11-06: developer shared sidebar/logout confirmation and spec synchronisation
+- Done: dismissible sidebar guidance card and Confirm logout dialog for every signed-in role; cancellation makes no request, pending prevents duplicate/dismissal, failure keeps session/dialog for retry, expiry stays immediate. Dismissal is in-memory per role/account until refresh/remount. Prior toast/reset/details-overlay/sidebar fixes remain.
+- Specs: SHR-01 original logout AC/current transport and follow-up spec/plan; ADM-05 AC23-27; STU-01/STU-04 inherited logout semantics; guides synchronised. RED five tests and contracts committedf1c9268 before source.
+- Validation: 111 targeted browser PASS; visual five PASS with inspected tip-X/logout dialog images; types/lint/build/format/spec7/0/12existingwaivers/diff PASS. No server changes or backend/full-suite rerun; no independent verifier claim. Evidence logs/SharedShellConfirmationFollowup.md.
+- Next: user refreshes frontend, dismisses tip with X and confirms/cancels logout. No env/database change or backend restart required. Local commit only; no push/deployment.
+- Resources: single-session maintenance, no agents/manifest/tracker; inherited model/effort, per-task tokens/cost unavailable. No new feature revision rounds.

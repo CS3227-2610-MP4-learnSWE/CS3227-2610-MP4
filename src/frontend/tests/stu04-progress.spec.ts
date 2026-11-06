@@ -575,11 +575,24 @@ test("stu04 AC15 Back and Forward re-request the page (no client cache)", async 
   expect(api.count).toBe(1);
   await page.getByRole("link", { name: "Practice", exact: true }).click();
   await expect(page).toHaveURL(/\/student\/practice$/);
+  // React Router can update history before its concurrent render commits.
+  // A URL match alone can send Back while Progress is still the current view.
+  const practiceHeading = page.getByRole("heading", {
+    level: 1,
+    name: "Put your knowledge to work.",
+    exact: true,
+  });
+  await expect(practiceHeading).toBeVisible();
+  await expect(region(page, "Lesson progress")).toHaveCount(0);
   await page.goBack();
   await expect(region(page, "Lesson progress")).toBeVisible();
   await expect.poll(() => api.count).toBe(2);
   await page.goForward();
+  await expect(page).toHaveURL(/\/student\/practice$/);
+  await expect(practiceHeading).toBeVisible();
+  await expect(region(page, "Lesson progress")).toHaveCount(0);
   await page.goBack();
+  await expect(region(page, "Lesson progress")).toBeVisible();
   await expect.poll(() => api.count).toBe(3);
 });
 

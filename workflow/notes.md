@@ -2,6 +2,12 @@
 
 Newest entry first. Older entries describe the state at the time; the newest entry supersedes their open/merged status. Keep the newest 10 entries here; older ones are in `notes-archive.md`. Feature state is in `STATUS.md`.
 
+## 2026-11-06: developer frontend CI Progress history synchronization
+- Done: reproduced reported count1instead2 race10/10 under6xCPU; history/heading trace shows URL push/pop before Practice rendered. Test now waits Practice heading and Progress absence before both Back operations; exact1/2/3request counts retained. No app source/timeout/retry changes; DeveloperGuide note added.
+- Validation:20/20throttled repeatsPASS(1.7min); isolated full513/513browserPASS286.19s, zero skipped/flaky/retries, backend proxy deliberately unavailable. JSON stats asserted; type/lint/format/diffPASS. No backend run needed. PowerShellstderr wrapper anomaly diagnosed separately from greenJSON.
+- Next: push local branch and rerun remoteCI. Earlier locationkey hardening did not establish this synchronization cause; actual reproduction/evidence in logs/ProgressHistoryCiFix.md.
+- Resources: single-session test-maintenance exemption; no agents/tracker/manifest/report, inherited model/effort and per-tasktokens/cost unavailable; no new feature rounds. No liveAI/env/DB/userprocess changes. Temporary test removed; unrelated .claude/worktrees/ retained.
+
 ## 2026-11-06: developer ADM-06 report readability
 - Done:24px inset/16px mobile; larger14?16px report/table text; fixed wrapping columns and caption within visible scroll width. User-approved visual contract/testRED committed4b05725 before source; copy/auth/request behavior unchanged. Both guides updated.
 - Validation:40ADM06 browserPASS26s;2extra visual casesPASS and1365dark/390light images inspected. Type/lint/build/format/spec1/0/0/diffPASS. No backend/unrelated full browser rerun. Log: logs/Adm06ReadabilityFix.md.
@@ -59,10 +65,3 @@ Newest entry first. Older entries describe the state at the time; the newest ent
 - Next: review local commit and rerun remote frontend CI after push (not performed here). No backend or deployment changes.
 - Files: styles.css, Progress.tsx, both guides, logs/FrontendCiFix.md and workflow records.
 - Resources: single-session small-fix exemption; no agents/invocation manifest/report/tracker. Inherited Codex model/effort; exact tokens/cost/elapsed attribution unavailable. Diagnostic/configuration recoveries and profile warning; no new feature correction rounds. See session log for run timing caveats.
-
-## 2026-11-06: developer shared sidebar/logout confirmation and spec synchronisation
-- Done: dismissible sidebar guidance card and Confirm logout dialog for every signed-in role; cancellation makes no request, pending prevents duplicate/dismissal, failure keeps session/dialog for retry, expiry stays immediate. Dismissal is in-memory per role/account until refresh/remount. Prior toast/reset/details-overlay/sidebar fixes remain.
-- Specs: SHR-01 original logout AC/current transport and follow-up spec/plan; ADM-05 AC23-27; STU-01/STU-04 inherited logout semantics; guides synchronised. RED five tests and contracts committedf1c9268 before source.
-- Validation: 111 targeted browser PASS; visual five PASS with inspected tip-X/logout dialog images; types/lint/build/format/spec7/0/12existingwaivers/diff PASS. No server changes or backend/full-suite rerun; no independent verifier claim. Evidence logs/SharedShellConfirmationFollowup.md.
-- Next: user refreshes frontend, dismisses tip with X and confirms/cancels logout. No env/database change or backend restart required. Local commit only; no push/deployment.
-- Resources: single-session maintenance, no agents/manifest/tracker; inherited model/effort, per-task tokens/cost unavailable. No new feature revision rounds.

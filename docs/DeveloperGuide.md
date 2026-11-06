@@ -342,6 +342,8 @@ For only ADM-05 browser tests, replace the last command with `npm.cmd test -- te
 
 ## Progress dashboard (STU-04)
 
+History-test synchronization: wait for the destination page heading before Back or Forward. React Router can update the URL before React commits the view; a URL assertion alone does not establish a page visit. The navigation regression retains exact progress-request counts of 1, 2 and 3.
+
 Spec and contract: `workflow/specs/STU-04/`. `GET /api/progress` (student role only; user from the session; `Cache-Control: no-store`) feeds both the Progress page and the Overview stats.
 
 - Storage: migration `20261105_stu04_practice_attempt` and `attempt_models.PracticeAttempt` (table `practice_attempt`: opaque `id`, creation order `seq`, `status` in_progress or submitted, `answers`, score, `key_version` and `correct_question_ids` stored at submission, `submitted_at`; CHECKs keep submitted rows complete). `attempt_store.DbAttemptStore` replaces the in-memory store. Interface: `create`, `get_owned` (None if unknown or not owned), `list_for_student`, `lock` (see the practice section; an unknown id raises 404 `attempt_not_found`; a row already submitted is never rewritten) and `submitted_summaries(student_id)` (per set: submitted count, best and latest submitted attempt, computed in SQL with window functions; in-progress attempts never appear). The store opens its own short session per call, so routes need no session.
