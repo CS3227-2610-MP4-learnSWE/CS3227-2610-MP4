@@ -186,6 +186,6 @@ def read_course(course_id: str, user: AuthUser = Depends(current_user()), db: Se
 async def add_no_store(request: Request, call_next):
     """Middleware: auth and per-student study responses must never be cached."""
     response = await call_next(request)
-    if request.url.path.startswith(("/api/auth/", "/api/study/", "/api/teacher/", "/api/progress")):
+    if request.url.path.startswith(("/api/auth/", "/api/study/", "/api/teacher/", "/api/progress", "/api/practice-sets", "/api/attempts")):
         response.headers["Cache-Control"] = "no-store"
     return response

@@ -140,6 +140,7 @@ jobs:
           uv run python -m teacher_materials.seed
           uv run python -m auth.seed
           uv run python -m study_lessons.seed
+          uv run python -m teacher_publications.seed
       - name: Start backend
         working-directory: src/backend
         run: |

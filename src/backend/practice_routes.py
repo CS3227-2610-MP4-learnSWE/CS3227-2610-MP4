@@ -5,16 +5,25 @@ from fastapi.responses import JSONResponse
 import practice_logic as logic
 from attempt_store import Attempt, store
 from errors import ApiError
-from practice_data import KEY_VERSION, PracticeSet, get_set
+from practice_data import KEY_VERSION, PracticeSet
 from practice_schemas import (
     AnswersIn,
     AnswersSaved,
     AttemptOut,
+    BestScoreOut,
+    CatalogCourseOut,
+    CatalogSetOut,
+    PracticeCatalogOut,
     PracticeSetOut,
     ResultsOut,
     SubmitOut,
+    TopicRefOut,
+    public_set,
 )
+from set_provider import CATALOG_SETS_PER_COURSE, SetProvider, get_set_provider
 from student_identity import require_student
+from teacher_access import parse_uuid
+from timestamps import utc_timestamp
 
 router = APIRouter(prefix="/api")
 
@@ -26,8 +35,8 @@ def error_response(_: Request, exc: ApiError) -> JSONResponse:
     return JSONResponse(status_code=exc.status, content={"detail": detail}, headers=headers)
 
 
-def _set_or_404(set_id: str) -> PracticeSet:
-    practice_set = get_set(set_id)
+def _set_or_404(provider: SetProvider, set_id: str, student: str) -> PracticeSet:
+    practice_set = provider.get_for_student(set_id, student)
     if practice_set is None:
         raise ApiError(404, "set_not_found", "Practice set not found.")
     return practice_set
@@ -49,51 +58,84 @@ def _attempt_out(a: Attempt) -> AttemptOut:
     return AttemptOut(attempt_id=a.id, set_id=a.set_id, status=a.status, answers=dict(a.answers))
 
 
-@router.get("/practice-sets/{set_id}", response_model=PracticeSetOut)
-def read_set(set_id: str, _: str = Depends(require_student)) -> PracticeSetOut:
-    s = _set_or_404(set_id)
-    return PracticeSetOut.model_validate(
-        {
-            "id": s.id,
-            "title": s.title,
-            "questions": [
-                {
-                    "id": q.id,
-                    "text": q.text,
-                    "code": q.code,
-                    "choices": [{"id": c, "text": t} for c, t in q.choices],
-                }
-                for q in s.questions
-            ],
-        }
+@router.get("/practice-sets", response_model=PracticeCatalogOut)
+def list_sets(
+    student: str = Depends(require_student), provider: SetProvider = Depends(get_set_provider)
+) -> PracticeCatalogOut:
+    catalog = provider.catalog_for_student(student, per_course_limit=CATALOG_SETS_PER_COURSE)
+    best = {s.set_id: BestScoreOut(correct=s.best_correct, total=s.best_total) for s in store.submitted_summaries(student)}
+    return PracticeCatalogOut(
+        courses=[
+            CatalogCourseOut(
+                id=course.id,
+                title=course.title,
+                sets=[
+                    CatalogSetOut(
+                        id=s.id,
+                        title=s.title,
+                        topic=TopicRefOut(id=s.topic_id, name=s.topic_name),
+                        published_at=utc_timestamp(s.published_at),
+                        question_count=s.question_count,
+                        best=best.get(s.id),
+                    )
+                    for s in course.sets
+                ],
+            )
+            for course in catalog
+        ]
     )
 
 
+@router.get("/practice-sets/{set_id}", response_model=PracticeSetOut)
+def read_set(
+    set_id: str, student: str = Depends(require_student), provider: SetProvider = Depends(get_set_provider)
+) -> PracticeSetOut:
+    return public_set(_set_or_404(provider, str(parse_uuid(set_id)), student))
+
+
 @router.post("/practice-sets/{set_id}/attempts", status_code=201, response_model=AttemptOut)
-def start_attempt(set_id: str, student: str = Depends(require_student)) -> AttemptOut:
-    _set_or_404(set_id)
-    return _attempt_out(store.create(student, set_id))
+def start_attempt(
+    set_id: str, student: str = Depends(require_student), provider: SetProvider = Depends(get_set_provider)
+) -> AttemptOut:
+    key = str(parse_uuid(set_id))
+    _set_or_404(provider, key, student)
+    return _attempt_out(store.create(student, key))
 
 
 @router.get("/attempts/{attempt_id}", response_model=AttemptOut)
-def read_attempt(attempt: Attempt = Depends(owned_attempt)) -> AttemptOut:
+def read_attempt(
+    attempt: Attempt = Depends(owned_attempt),
+    student: str = Depends(require_student),
+    provider: SetProvider = Depends(get_set_provider),
+) -> AttemptOut:
+    _set_or_404(provider, attempt.set_id, student)
     return _attempt_out(attempt)
 
 
 @router.put("/attempts/{attempt_id}/answers", response_model=AnswersSaved)
-def save_answers(body: AnswersIn, attempt: Attempt = Depends(owned_attempt)) -> AnswersSaved:
+def save_answers(
+    body: AnswersIn,
+    attempt: Attempt = Depends(owned_attempt),
+    student: str = Depends(require_student),
+    provider: SetProvider = Depends(get_set_provider),
+) -> AnswersSaved:
+    practice_set = _set_or_404(provider, attempt.set_id, student)
     with store.lock(attempt.id) as locked:
         _require_open(locked)
-        logic.validate_answers(_set_or_404(locked.set_id), body.answers)
+        logic.validate_answers(practice_set, body.answers)
         locked.answers.update(body.answers)
         return AnswersSaved(attempt_id=locked.id, status=locked.status, answers=dict(locked.answers))
 
 
 @router.post("/attempts/{attempt_id}/submit", response_model=SubmitOut)
-def submit(attempt: Attempt = Depends(owned_attempt)) -> SubmitOut:
+def submit(
+    attempt: Attempt = Depends(owned_attempt),
+    student: str = Depends(require_student),
+    provider: SetProvider = Depends(get_set_provider),
+) -> SubmitOut:
+    practice_set = _set_or_404(provider, attempt.set_id, student)
     with store.lock(attempt.id) as locked:
         _require_open(locked)
-        practice_set = _set_or_404(locked.set_id)
         missing = logic.missing_questions(practice_set, locked.answers)
         if missing:
             raise ApiError(
@@ -109,9 +151,12 @@ def submit(attempt: Attempt = Depends(owned_attempt)) -> SubmitOut:
 
 
 @router.get("/attempts/{attempt_id}/results", response_model=ResultsOut)
-def results(attempt: Attempt = Depends(owned_attempt)) -> ResultsOut:
+def results(
+    attempt: Attempt = Depends(owned_attempt),
+    student: str = Depends(require_student),
+    provider: SetProvider = Depends(get_set_provider),
+) -> ResultsOut:
+    practice_set = _set_or_404(provider, attempt.set_id, student)
     if attempt.status != "submitted":
         raise ApiError(403, "not_submitted", "Results are available after submission.")
-    return logic.build_results(
-        attempt.id, attempt.set_id, _set_or_404(attempt.set_id), dict(attempt.answers)
-    )
+    return logic.build_results(attempt.id, attempt.set_id, practice_set, dict(attempt.answers))

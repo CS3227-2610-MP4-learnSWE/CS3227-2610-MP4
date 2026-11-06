@@ -1,5 +1,4 @@
 """Builds the progress view from lesson helpers, attempt summaries and topic names."""
-from collections.abc import Mapping
 from fractions import Fraction
 from uuid import UUID
 
@@ -7,7 +6,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from attempt_store import AttemptStore, SetSummary, store
-from practice_data import PRACTICE_SETS, PracticeSet
+from practice_data import PracticeSet
 from progress_rules import (
     MIN_ANSWERS_FOR_TOPIC,
     RECENT_LESSON_LIMIT,
@@ -30,6 +29,7 @@ from progress_schemas import (
     TopicRef,
     TopicRule,
 )
+from set_provider import SetProvider, provider
 from study_lessons.progress import CourseCounts, completed_lessons, completion_counts, member_courses
 from teacher_materials.models import Topic
 from timestamps import utc_timestamp
@@ -124,13 +124,15 @@ def build_progress(
     db: Session,
     student_id: str,
     attempts: AttemptStore = store,
-    sets: Mapping[str, PracticeSet] = PRACTICE_SETS,
+    sets: SetProvider = provider,
 ) -> ProgressOut:
     lessons = _lessons(db, student_id)
     tally: Tally = {}
     progress_sets = []
-    for summary in attempts.submitted_summaries(student_id):
-        practice_set = sets.get(summary.set_id)
+    summaries = attempts.submitted_summaries(student_id)
+    available = sets.get_many_for_student(student_id, {s.set_id for s in summaries})
+    for summary in summaries:
+        practice_set = available.get(summary.set_id)
         if practice_set is None:
             continue
         progress_sets.append(_set_progress(summary, practice_set))
