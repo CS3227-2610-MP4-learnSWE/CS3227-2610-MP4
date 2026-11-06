@@ -189,7 +189,13 @@ function Questions({
   );
 }
 
-export default function FeedbackDraftEditor({ initial }: { initial?: Form }) {
+export default function FeedbackDraftEditor({
+  initial,
+  created,
+}: {
+  initial?: Form;
+  created?: (form: Form) => void;
+}) {
   const navigate = useNavigate();
   const associations = useFeedbackRead(
     "/api/admin/feedback/associations",
@@ -313,7 +319,10 @@ export default function FeedbackDraftEditor({ initial }: { initial?: Form }) {
       setVersion(row.version);
       setDirty(false);
       setSuccess("Draft saved.");
-      if (!initial) setDestination(`/admin/feedback/${row.id}`);
+      if (!initial) {
+        created?.(row);
+        setDestination(`/admin/feedback/${row.id}`);
+      }
     } catch (failure) {
       if (alive.current) {
         setError(feedbackError(failure));

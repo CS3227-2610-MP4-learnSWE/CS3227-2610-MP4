@@ -34,8 +34,10 @@ function Editor({ initial }: { initial: RecipientForm }) {
     if (index >= 0)
       field?.querySelector<HTMLElement>("input,textarea,select")?.focus();
   }, [draft.code, draft.submitting, draft.form.questions, draft.answers]);
-  const terminal = draft.form.submitted || draft.form.state === "closed";
+  const terminal =
+    draft.unavailable || draft.form.submitted || draft.form.state === "closed";
   const locked =
+    draft.unavailable ||
     draft.submitting ||
     draft.leaving ||
     draft.checking ||
@@ -55,19 +57,21 @@ function Editor({ initial }: { initial: RecipientForm }) {
         </p>
         {draft.error && <p role="alert">{draft.error}</p>}
         {terminal ? (
-          <p role="status">
-            {draft.form.submitted ? (
-              <>
-                <strong>Completed</strong>
-                <br />
-                {draft.completedNow
-                  ? "Feedback submitted. Thank you."
-                  : "You have already submitted feedback."}
-              </>
-            ) : (
-              "This form is closed."
-            )}
-          </p>
+          draft.unavailable ? null : (
+            <p role="status">
+              {draft.form.submitted ? (
+                <>
+                  <strong>Completed</strong>
+                  <br />
+                  {draft.completedNow
+                    ? "Feedback submitted. Thank you."
+                    : "You have already submitted feedback."}
+                </>
+              ) : (
+                "This form is closed."
+              )}
+            </p>
+          )
         ) : (
           <>
             <p role="status">

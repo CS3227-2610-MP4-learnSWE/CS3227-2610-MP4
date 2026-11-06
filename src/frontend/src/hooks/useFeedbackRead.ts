@@ -10,6 +10,7 @@ import {
 export function useFeedbackRead<K extends Parameters<typeof feedbackRead>[1]>(
   path: string | null,
   kind: K,
+  initialData?: Results[K],
 ) {
   const location = useLocation();
   const [retry, setRetry] = useState(0);
@@ -17,20 +18,37 @@ export function useFeedbackRead<K extends Parameters<typeof feedbackRead>[1]>(
     data: Results[K] | null;
     error: string;
     loading: boolean;
-  }>({ data: null, error: "", loading: !!path });
+  }>({
+    data: initialData ?? null,
+    error: "",
+    loading: !!path && initialData === undefined,
+  });
   const serial = useRef(0);
+  const revision = useRef(0);
+  const initial = useRef({ data: initialData, path, key: location.key });
   useEffect(() => {
     const current = ++serial.current;
     if (!path) {
       setState({ data: null, error: "", loading: false });
       return;
     }
+    // A validated mutation receipt may seed this one mounted history entry.
+    // Keep the seed through StrictMode replay; retries and later entries read.
+    if (
+      retry === 0 &&
+      initial.current.data !== undefined &&
+      initial.current.path === path &&
+      initial.current.key === location.key
+    )
+      return;
     setState((old) => ({ ...old, error: "", loading: true }));
     const read = feedbackRead(path, kind);
     read.promise
       .then((data) => {
-        if (current === serial.current)
+        if (current === serial.current) {
+          revision.current++;
           setState({ data, error: "", loading: false });
+        }
       })
       .catch((error) => {
         if (current === serial.current)
@@ -53,11 +71,13 @@ export function useFeedbackRead<K extends Parameters<typeof feedbackRead>[1]>(
   }, [path]);
   return {
     ...state,
+    revision: revision.current,
     data: changed ? null : state.data,
     loading: changed || state.loading,
     reload: () => setRetry((v) => v + 1),
     replace: (data: NonNullable<typeof state.data>) => {
       serial.current++;
+      revision.current++;
       setState({ data, error: "", loading: false });
     },
   };

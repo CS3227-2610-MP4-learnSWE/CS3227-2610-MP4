@@ -11,6 +11,7 @@ import { PageHeading, Panel } from "../components/ui";
 import FeedbackDraftEditor from "../components/FeedbackDraftEditor";
 import FeedbackAudience from "../components/FeedbackAudience";
 import { useFeedbackRead } from "../hooks/useFeedbackRead";
+import { getSessionGeneration } from "../services/client";
 import {
   adminBase,
   feedbackError,
@@ -89,11 +90,12 @@ function Forms() {
   );
 }
 
-function Detail({ id }: { id: string }) {
+function Detail({ id, initial }: { id: string; initial?: Form }) {
   const location = useLocation();
   const read = useFeedbackRead(
     `${adminBase}/${encodeURIComponent(id)}`,
     "form",
+    initial,
   );
   const [audience, setAudience] = useState(false);
   const [closeDialog, setCloseDialog] = useState(false);
@@ -103,6 +105,7 @@ function Detail({ id }: { id: string }) {
   );
   const [error, setError] = useState("");
   const [reconcile, setReconcile] = useState(false);
+  const reloadBaseline = useRef<number | null>(null);
   const alive = useRef(true);
   const controller = useRef<AbortController | null>(null);
   useEffect(() => {
@@ -112,11 +115,25 @@ function Detail({ id }: { id: string }) {
       controller.current?.abort();
     };
   }, []);
+  useEffect(() => {
+    if (
+      reloadBaseline.current !== null &&
+      read.revision > reloadBaseline.current &&
+      !read.loading &&
+      !read.error &&
+      read.data
+    ) {
+      reloadBaseline.current = null;
+      setReconcile(false);
+      setError("");
+    }
+  }, [read.revision, read.loading, read.error, read.data]);
   function published(form: Form) {
     read.replace(form);
     setAudience(false);
     setNotice("Form published. Inbox requests sent.");
     setError("");
+    setReconcile(false);
   }
   async function close() {
     if (pending || reconcile || !read.data) return;
@@ -156,9 +173,13 @@ function Detail({ id }: { id: string }) {
   function reloadForm() {
     setCloseDialog(false);
     setAudience(false);
-    setReconcile(false);
     setError("");
+    reloadBaseline.current = read.revision;
     read.reload();
+  }
+  function requireReload(message: string) {
+    setReconcile(true);
+    setError(message);
   }
   if (read.loading) return <p role="status">Loading feedback form...</p>;
   if (read.error) return <ReadError error={read.error} retry={read.reload} />;
@@ -189,7 +210,11 @@ function Detail({ id }: { id: string }) {
         <p>Responses: {form.response_count}</p>
         {form.state === "draft" && (
           <>
-            <Button component={Link} to={`/admin/feedback/${id}/edit`}>
+            <Button
+              component={Link}
+              to={`/admin/feedback/${id}/edit`}
+              disabled={reconcile}
+            >
               Edit draft
             </Button>
             <Button onClick={() => setAudience(true)}>Review audience</Button>
@@ -216,6 +241,9 @@ function Detail({ id }: { id: string }) {
           close={() => setAudience(false)}
           published={published}
           reload={reloadForm}
+          reconcile={reconcile}
+          reconcileError={error}
+          requireReload={requireReload}
         />
       )}
       <Dialog
@@ -362,8 +390,28 @@ function Response({ id, responseId }: { id: string; responseId: string }) {
 export default function AdminFeedback() {
   const location = useLocation();
   const [, , , id, action, responseId] = location.pathname.split("/");
+  const generation = getSessionGeneration();
+  const creation = useRef<{ form: Form; generation: number } | null>(null);
+  const createdForm =
+    creation.current?.generation === generation &&
+    creation.current.form.id === id
+      ? creation.current.form
+      : undefined;
+  useEffect(() => {
+    // The create receipt belongs only to the immediate replacement entry.
+    // Detail captures it on mount; subsequent history entries must fetch again.
+    if (id !== "new") creation.current = null;
+  }, [id, location.key, generation]);
   if (!id) return <Forms key={location.key} />;
-  if (id === "new") return <FeedbackDraftEditor key={location.key} />;
+  if (id === "new")
+    return (
+      <FeedbackDraftEditor
+        key={location.key}
+        created={(form) => {
+          creation.current = { form, generation };
+        }}
+      />
+    );
   if (action === "edit") return <Edit key={`${id}:${location.key}`} id={id} />;
   if (action === "responses")
     return responseId ? (
@@ -375,5 +423,11 @@ export default function AdminFeedback() {
     ) : (
       <Responses key={`${id}:${location.key}`} id={id} />
     );
-  return <Detail key={`${id}:${location.key}`} id={id} />;
+  return (
+    <Detail
+      key={`${id}:${location.key}:${generation}`}
+      id={id}
+      initial={createdForm}
+    />
+  );
 }

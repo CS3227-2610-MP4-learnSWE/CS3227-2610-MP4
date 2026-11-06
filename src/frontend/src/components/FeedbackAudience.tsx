@@ -25,11 +25,17 @@ export default function FeedbackAudience({
   close,
   published,
   reload,
+  reconcile,
+  reconcileError,
+  requireReload,
 }: {
   form: Form;
   close: () => void;
   published: (form: Form) => void;
   reload: () => void;
+  reconcile: boolean;
+  reconcileError: string;
+  requireReload: (message: string) => void;
 }) {
   const [role, setRole] = useState<"student" | "teacher">("student");
   const [search, setSearch] = useState("");
@@ -39,7 +45,6 @@ export default function FeedbackAudience({
   const [review, setReview] = useState(false);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
-  const [reconcile, setReconcile] = useState(false);
   const read = useFeedbackRead(
     `${adminBase}/${form.id}/audience?role=${role}&search=${encodeURIComponent(query)}&limit=20&offset=${offset}`,
     "audience",
@@ -81,7 +86,7 @@ export default function FeedbackAudience({
           feedbackCode(failure),
         )
       )
-        setReconcile(true);
+        requireReload(feedbackError(failure));
       if (feedbackCode(failure) === "feedback_audience_changed") {
         setReview(false);
         setSelected(new Map());
@@ -100,8 +105,10 @@ export default function FeedbackAudience({
       maxWidth="sm"
     >
       <DialogTitle id="feedback-audience-title">Review audience</DialogTitle>
-      <DialogContent>
-        {error && <p role="alert">{error}</p>}
+      <DialogContent sx={{ "&&": { paddingTop: "12px" } }}>
+        {(error || (reconcile && reconcileError)) && (
+          <p role="alert">{error || reconcileError}</p>
+        )}
         {reconcile && <Button onClick={reload}>Reload saved form</Button>}
         {pending && <p role="status">Publishing form...</p>}
         {review ? (
