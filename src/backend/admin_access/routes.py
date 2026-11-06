@@ -13,7 +13,7 @@ from auth.db import get_session
 from auth.dependencies import AuthUser, current_user
 from auth.passwords import check_password_rules, hash_password, normalise_display_name, normalise_email
 from errors import ApiError
-from teacher_materials.models import Course, User
+from teacher_materials.models import Course, Topic, User
 from text_validation import is_postgres_text
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
@@ -189,5 +189,9 @@ def create_course(request: Request, raw: bytes = Depends(raw_body), _: AuthUser 
         raise invalid()
     course = Course(id=uuid4(), title=title)
     db.add(course)
+    db.flush()
+    # A fresh course must be usable by existing publication forms, which
+    # require a same-course topic. Both records commit or roll back together.
+    db.add(Topic(id=uuid4(), course_id=course.id, name="General"))
     db.commit()
     return service.course_json(course)

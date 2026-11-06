@@ -445,7 +445,7 @@ function AccountsContent() {
               <p>No accounts found.</p>
             ) : (
               <div className="table-scroll">
-                <table>
+                <table className="admin-accounts-table">
                   <thead>
                     <tr>
                       <th>Account</th>
@@ -463,8 +463,8 @@ function AccountsContent() {
                             <small>{account.email ?? "No email"}</small>
                           </div>
                         </td>
-                        <td>{account.role}</td>
-                        <td>{account.status}</td>
+                        <td data-label="Role">{account.role}</td>
+                        <td data-label="Status">{account.status}</td>
                         <td>
                           <Button
                             aria-label={`Manage account ${account.display_name}`}
