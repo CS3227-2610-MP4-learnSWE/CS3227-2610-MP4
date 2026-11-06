@@ -382,7 +382,9 @@ for (const [status, code, message] of [
     expect(ctx.requests).toHaveLength(1);
     if (status === 403) await expect(retry(page)).toHaveCount(0);
     else {
-      await retry(page).click();
+      // The approved 422 recovery is valid resubmission via Apply filters.
+      if (status === 422) await apply(page).click();
+      else await retry(page).click();
       await expect(table(page)).toBeVisible();
       expect(ctx.requests).toHaveLength(2);
     }
@@ -430,7 +432,8 @@ for (const bad of ["network", "json", "shape"] as const) {
 test("adm06 AC13 timeout is bounded to 15 seconds with no automatic retry", async ({
   page,
 }) => {
-  await page.clock.install();
+  await page.clock.install({ time: new Date("2026-11-06T12:00:00Z") });
+  await page.clock.pauseAt(new Date("2026-11-06T12:00:01Z"));
   const ctx = await setup(page, { hold: true });
   await page.goto(PATH);
   await expect(apply(page)).toBeDisabled();
@@ -464,7 +467,7 @@ test("adm06 AC13 refresh and Back/Forward each reload default filters exactly on
   await page.reload();
   await expect(table(page).getByRole("row")).toHaveCount(4);
   expect(ctx.requests).toHaveLength(3);
-  await page.getByRole("link", { name: "Overview", exact: true }).click();
+  await page.locator('a[href="/admin/overview"]').first().click();
   await expect(table(page)).toHaveCount(0);
   await page.goBack();
   await expect(table(page)).toBeVisible();
@@ -505,7 +508,14 @@ test("adm06 AC13 failed logout preserves session and report, success and Back cl
   await expect(
     page.getByRole("dialog", { name: "Confirm logout", exact: true }),
   ).toBeVisible();
-  await expect(table(page)).toBeVisible();
+  // The modal correctly removes its background from the accessibility tree.
+  await expect(
+    page.getByRole("table", {
+      name: "AI usage by feature",
+      exact: true,
+      includeHidden: true,
+    }),
+  ).toBeVisible();
   await logOutWithConfirmation(page);
   await expect(page).toHaveURL(/\/login/);
   await page.goBack();
@@ -570,7 +580,7 @@ test("adm06 AC13 navigating away drops late result and return gets fresh report"
   const ctx = await setup(page, { hold: true });
   await page.goto(PATH);
   await expect(apply(page)).toBeDisabled();
-  await page.getByRole("link", { name: "Overview", exact: true }).click();
+  await page.locator('a[href="/admin/overview"]').first().click();
   ctx.release();
   await expect(table(page)).toHaveCount(0);
   await page.getByRole("link", { name: "AI usage", exact: true }).click();

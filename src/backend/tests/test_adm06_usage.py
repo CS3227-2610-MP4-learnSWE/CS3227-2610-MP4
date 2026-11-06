@@ -288,6 +288,9 @@ def test_adm06_ac11_report_throttle_30_per_60_seconds_has_retry_after(admin, mon
     from auth import rate_limit
     now = [10000.0]
     monkeypatch.setattr(rate_limit.time, "monotonic", lambda: now[0])
+    # Prior API tests may already have constructed this shared limiter with a real clock.
+    # Isolate its cache so this test actually installs the mocked clock at construction.
+    monkeypatch.setattr(rate_limit, "_limiters", {})
     for _ in range(30):
         r = call("GET", PATH + QUERY, admin)
         assert r.status_code == 200, r.text
