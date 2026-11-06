@@ -320,3 +320,12 @@ def test_adm05_ac10_ai_result_discarded_when_account_revoked_during_inference(ad
         assert fake.reply not in reply.text
     finally:
         fake.gate.set()
+
+@pytest.mark.parametrize("user_id", ["bad%00id", "x" * 65])
+@pytest.mark.parametrize("method,suffix,body", [("GET", "", None), ("PUT", "/status", {"status": "disabled"}), ("POST", "/archive", None)])
+def test_adm05_ac21_invalid_opaque_user_ids_are_422_after_auth(admin, user_id, method, suffix, body):
+    path = f"{BASE}/accounts/{user_id}{suffix}"
+    anonymous = call(method, path, json=body)
+    assert anonymous.status_code == 401
+    rejected = call(method, path, admin, body)
+    assert rejected.status_code == 422 and code_of(rejected) == "validation_error"
