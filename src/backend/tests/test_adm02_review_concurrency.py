@@ -36,11 +36,15 @@ def test_adm02_publish_racing_update_freezes_one_consistent_revision():
     assert form_get(user, form).json()["questions"] == current["questions"]
 
 
-def test_adm02_revoked_recipient_waiting_behind_admin_disable_cannot_save():
+def test_adm02_revoked_recipient_waiting_behind_admin_disable_cannot_save(monkeypatch):
     admin, user = actor("admin"), actor()
     form = published(admin, [user])
     holder = psycopg.connect(psycopg_url())
     observer = psycopg.connect(psycopg_url(), autocommit=True)
+    marker = "adm02_revocation_" + form["id"].replace("-", "")
+    engine = create_engine(os.environ["DATABASE_URL"], pool_size=3, max_overflow=0,
+                           connect_args={"application_name": marker})
+    monkeypatch.setattr("auth.db.engine_for", lambda _url: engine)
     pool = ThreadPoolExecutor(max_workers=2)
     try:
         holder.execute('SELECT id FROM "user" WHERE id=%s FOR UPDATE', (str(user),))
@@ -49,7 +53,7 @@ def test_adm02_revoked_recipient_waiting_behind_admin_disable_cannot_save():
         deadline = time.monotonic() + 10
         disable_pid = None
         while time.monotonic() < deadline:
-            rows = observer.execute("SELECT pid FROM pg_stat_activity WHERE %s=ANY(pg_blocking_pids(pid))", (holder_pid,)).fetchall()
+            rows = observer.execute("SELECT pid FROM pg_stat_activity WHERE %s=ANY(pg_blocking_pids(pid)) AND application_name=%s", (holder_pid, marker)).fetchall()
             if rows:
                 disable_pid = rows[0][0]
                 break
@@ -60,7 +64,7 @@ def test_adm02_revoked_recipient_waiting_behind_admin_disable_cannot_save():
         deadline = time.monotonic() + 10
         observed_wait = False
         while time.monotonic() < deadline:
-            rows = observer.execute("SELECT pid FROM pg_stat_activity WHERE %s=ANY(pg_blocking_pids(pid))", (disable_pid,)).fetchall()
+            rows = observer.execute("SELECT pid FROM pg_stat_activity WHERE %s=ANY(pg_blocking_pids(pid)) AND application_name=%s", (disable_pid, marker)).fetchall()
             if rows:
                 observed_wait = True
                 break
@@ -76,6 +80,7 @@ def test_adm02_revoked_recipient_waiting_behind_admin_disable_cannot_save():
         holder.close()
         observer.close()
         pool.shutdown(wait=True)
+        engine.dispose()
 
 
 def test_adm02_shared_single_connection_pool_handles_parallel_reads_save_and_submit(monkeypatch):
