@@ -48,3 +48,6 @@ This tool reads local metadata and emits aggregate usage data. It does not call 
 
 ## Open questions
 None for the agreed minimal implementation.
+
+## Approved maintenance amendment ? 2026-11-07
+The user requests mandatory report generation for every workflow invocation and one Token usage column. This supersedes category-column presentation in AC5, AC6 and no-match token/cost presentation in AC11: total tokens include uncached input, cache reads/writes and output exactly once; reasoning is not added to output. No-match token usage/cost and incomplete run token/cost totals are unavailable. Requests remain observed counts (zero matches is not zero actual use). Existing raw exports and detailed TRK-03 metrics remain intact.

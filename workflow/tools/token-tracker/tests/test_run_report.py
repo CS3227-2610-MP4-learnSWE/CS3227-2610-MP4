@@ -110,8 +110,23 @@ class RunReportTest(unittest.TestCase):
         self.assertIn("feature_run_total", report)
         total_line = next(line for line in report.splitlines() if "| feature_run_total |" in line)
         total_cells = [cell.strip() for cell in total_line.strip("|").split("|")]
-        self.assertEqual(total_cells[7:14], ["3", "60", "15", "6", "3", "60", "9"])
-        self.assertEqual(total_cells[14], "0.750000")
+        self.assertEqual(total_cells[7:9], ["3", "144"])
+        self.assertIn("| Token usage |", report)
+        self.assertNotIn("| Reasoning |", report)
+        self.assertEqual(total_cells[9], "0.750000")
+
+    def test_partial_usage_does_not_report_zero_or_partial_total_as_complete(self):
+        self.write_manifest([
+            manifest_row("dev-01", "developer", "s1", "a1", "2026-11-05T12:00:00+00:00", "2026-11-05T12:01:00+00:00"),
+            manifest_row("dev-02", "developer", "s2", "a2", "2026-11-05T12:02:00+00:00", "2026-11-05T12:03:00+00:00"),
+        ])
+        run_id, invocations = read_manifest(self.path)
+        report = render_report(run_id, invocations, [usage_row("s1", "a1", "2026-11-05T12:00:30+00:00")])
+        missing = next(line for line in report.splitlines() if "| invocation |" in line and "developer-02" in line)
+        total = next(line for line in report.splitlines() if "| feature_run_total |" in line)
+        for line in (missing, total):
+            cells = [cell.strip() for cell in line.strip("|").split("|")]
+            self.assertEqual(cells[8:10], ["unavailable", "unavailable"])
 
     def test_reused_source_ids_are_separated_by_time(self):
         self.write_manifest(
@@ -131,7 +146,8 @@ class RunReportTest(unittest.TestCase):
         )
         self.assertIn(f"{RUN_ID}-developer-01", report)
         self.assertIn(f"{RUN_ID}-developer-02", report)
-        self.assertIn("33", report)
+        lines = [line for line in report.splitlines() if line.startswith("| invocation |") or line.startswith("| feature_run_total |")]
+        self.assertEqual([line.strip("|").split("|")[8].strip() for line in lines], ["39", "50", "89"])
 
     def test_ambiguous_and_out_of_window_source_records_fail(self):
         overlapping = [
