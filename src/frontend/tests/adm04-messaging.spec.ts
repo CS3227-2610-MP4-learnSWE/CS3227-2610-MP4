@@ -1,4 +1,4 @@
-﻿import { expect, test } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 import { logOutWithConfirmation, signInThroughForm } from "./authApi";
 import {
   STUDENT,
@@ -548,6 +548,7 @@ test("adm04 AC13 mobile long text and malicious HTML remain literal and controls
       .locator("main")
       .evaluate((el) => el.scrollWidth <= el.clientWidth + 1),
   ).toBe(true);
+  await confirm(page).scrollIntoViewIfNeeded();
   await expect(confirm(page)).toBeInViewport();
   await confirm(page).click();
   await expect(heading(page, "Message sent")).toBeVisible();
