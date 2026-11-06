@@ -1,5 +1,15 @@
 # Handoff notes
 
+## 2026-11-07: orchestrator ADM-04 focused integration PASS
+- Round1 source `30d663b` plus designer fixture repair `318d568`: independent focused backend116/116 PASS63.70s, browser48/48 PASS26.0s, zero retries; typecheck/lint/demo-off build PASS. All identified source defects resolved.
+- Designer full backend1358/browser615 suites running on fixed committed worktree. Parent integrates independently committed tests after focused report; read-only verifier starts next and final closure awaits complete suite results and verifier sign-off. One correction round used; one remains.
+- Test designer invocation02 continues; [usage report](usage/runs/2026-11-07-ADM04-01/report.md) regenerated at closeout. No live AI/user DB/env/process changes.
+
+## 2026-11-07: orchestrator ADM-04 independent integration
+- Developer ready at `de5c17b`, handoff `d89c46b`; all1242existing backend and567browser cases covered passing across full/targeted runs. Exact environment/historical-browser recoveries in `logs/Adm04Implementation.md`; no test weakening. Types/lint/build/format/compile/diff PASS.
+- Independent tests committed before source visibility: backend `4ce8c3d` (116cases), browser `83be154` (48cases), initial missing-feature RED evidence. Designer now authorised to merge source in separate worktree and run focused then full suites. No feature correction rounds yet.
+- Invocation `2026-11-07-ADM04-01-test-designer-02` started; exact source IDs/times in manifest. [Usage report](usage/runs/2026-11-07-ADM04-01/report.md) regenerated at closeout; forked child attribution may be unavailable. No live AI, developer DB/env or user-process changes.
+
 ## 2026-11-07: developer ADM-04 source ready for independent integration
 - Done: additive durable preview/message/delivery migration; server-derived respondent, reviewed role audiences, cross-process account-lock reauthentication, atomic replay-safe fanout and owned inbox/read APIs. Added admin compose/review/recovery, separate recipient Messages section, literal rendering and exact error/timeout/history states. Preserved anonymous announcement preview and existing surveys. Both guides updated.
 - Validation so far: typecheck/lint/build/compile/diff PASS; mocked compose-review-edit-send and 320px no-overflow PASS, desktop/mobile screenshots inspected by orchestrator. Existing browser full 566 PASS/1 anonymous-preview timeout during development, then unchanged targeted case1PASS (JSON expected1, unexpected0, no flaky/skips/retries); all567cases covered passing across runs, not one all-green full run. Backend full1235PASS/7pytest-temp-ACLsetupERROR588.16s; exact7unchangednodes rerun with unique ignored basetemp7PASS9.86s. All1242existing backend cases covered passing across runs. Source commit de5c17b. No independent feature tests read or edited.

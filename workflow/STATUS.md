@@ -21,7 +21,7 @@ Stages: not started, spec, build, verified (local), merged.
 | ADM-01 | not started | | | |
 | ADM-02 | build | `feat/adm02-targeted-feedback-forms` | | Revised spec/plan approved 2026-11-07 at 629f708; independent developer/test-designer started. Includes persistent private respondent autosave/resume and Completed state. Verification pending. |
 | ADM-03 | not started | | | |
-| ADM-04 | spec | `feat/adm04-feedback-follow-up` | | Draft spec/plan complete; speccheck PASS. Awaiting human approval before independent tests and implementation. Run `2026-11-07-ADM04-01`. |
+| ADM-04 | build | `feat/adm04-feedback-follow-up` | | Spec/plan approved 2026-11-07. Source `de5c17b`; independent tests committed and integration underway. Run `2026-11-07-ADM04-01`; verification pending. |
 | ADM-05 | verified (local) | `feat/adm05-user-and-access-management` | | Fixed-role account creation/lifecycle, courses with General topic, teacher/student assignments. Source `07deb57`; strongest verifier PASS; 391 browser tests, 968 backend cases covered across full/focused runs. Local commits only; apply migration before use. Evidence: `logs/Adm05Verification.md`. |
 | ADM-06 | verified (local) | `feat/adm06-ai-usage-monitoring` | | Source c4df076; strongest verifier PASS at e85279e. Backend1169 PASS; all513 browser cases covered across full+focused recovery. Migration/restart/activation required; local only, human PR pending. [Retro](specs/ADM-06/retro.md), logs/Adm06Implementation.md. |
 | SHR-01 | merged | `feat/shr01-auth-spec`, `feat/tea03-edit-mcqs-delete-drafts` | 16, 17 | Teacher session integration merged; deployment settings remain separate. |
