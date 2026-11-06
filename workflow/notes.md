@@ -4,6 +4,7 @@ Newest entry first. Older entries describe the state at the time; the newest ent
 
 
 ## 2026-11-07: spec-writer ADM-02 draft contract
+- Follow-up user amendment: unfinished student/teacher responses automatically save as private server-side drafts, restore on return, and become Completed only on successful submission. Added AC22-25, draft/version API and persistence, owner-only access, save/failure/retry/navigation copy, closure and save/submit race coverage. Full spec/plan remain Draft; no approval inferred for remaining policies. Single-session spec edit, no subagents/tracker invocation; inherited model, exact tokens/cost/elapsed unavailable, no application revision rounds. Follow-up log: logs/Adm02RespondentDraftSpecification.md.
 - Done: drafted all four stories with copied AC01-21, six question types, durable drafts, atomic targeted publication and existing student/teacher inbox integration, once-only submission, close and admin-only immutable response snapshots. Exact schemas, errors, UI states, request counts/history, 15-second timeout, quotas and concurrency boundaries recorded. Source compatibility amendments supplied by orchestrator incorporated; no application source read or code/tests written.
 - Next: human approves spec/plan and identified-response/no-expiry proposals, then orchestrator records approved start commit and starts isolated developer/test-designer workflow. Draft only; no implementation authorised yet.
 - Files touched: workflow/specs/ADM-02/spec.md, plan.md, tasks.md; workflow/notes.md and notes-archive.md.
