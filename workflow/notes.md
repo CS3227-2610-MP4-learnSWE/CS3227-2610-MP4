@@ -1,5 +1,10 @@
 # Handoff notes
 
+## 2026-11-06: developer ADM-05 correction round 1
+- Fixed: exact accessible field names now explicitly label the input elements, and select display names no longer include selected option text. Visible labels and required validation remain intact. Independent browser report identified these contract mismatches; tests were not read or changed.
+- Validation: frontend typecheck/lint/build PASS. Independent designer previously reported backend 78 PASS and browser 8 PASS/4 FAIL before this correction; focused browser rerun remains designer-owned. Opaque account IDs already reject non-PostgreSQL text in the initial source commit.
+- Files: AdminAccounts.tsx, AdminCourses.tsx, this note and implementation log. Next: designer rerun and verifier. Revision rounds used 1/2. Resource attribution remains orchestrator-owned, inherited model/effort and exact tokens/cost unavailable.
+
 ## 2026-11-06: developer ADM-05 implementation ready for independent verification
 - Done: live Users/Courses pages, strict admin APIs, additive lifecycle migration, fixed-role account creation, disable/re-enable/archive/session invalidation, course creation and role-scoped memberships. Shared auth rejects inactive accounts; companion output rechecks fresh session/account. Guides include migration/manual walkthrough and validated public test-only password example. No tests changed/read from independent worktree.
 - Validation: frontend typecheck/lint/build PASS; existing browser suite 376 PASS, 1 obsolete anonymous-admin route heading assertion FAIL (app.spec.ts:120). Existing SHR-01 historical seed migration tests 22 PASS after seeds were made independent of newer lifecycle columns; TEA-03 MCQ cleanup 36 PASS. Earlier full backend run was stopped at >89% because it began before the seed correction and retained imported old code; independent clean full rerun is required.

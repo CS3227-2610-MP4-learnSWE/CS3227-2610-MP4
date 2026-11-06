@@ -47,7 +47,9 @@ function CoursesContent() {
             onChange={(event) => setTitle(event.target.value)}
             required
             disabled={busy}
-            slotProps={{ htmlInput: { maxLength: 200 } }}
+            slotProps={{
+              htmlInput: { maxLength: 200, "aria-label": "Course title" },
+            }}
           />
           <Button variant="contained" type="submit" disabled={busy}>
             Create course

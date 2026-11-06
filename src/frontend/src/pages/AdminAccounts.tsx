@@ -70,11 +70,14 @@ function CreateAccount({ created }: { created: () => Promise<void> }) {
           value={name}
           onChange={(event) => setName(event.target.value)}
           required
-          slotProps={{ htmlInput: { maxLength: 80 } }}
+          slotProps={{
+            htmlInput: { maxLength: 80, "aria-label": "Display name" },
+          }}
           disabled={busy}
         />
         <TextField
           label="Email"
+          slotProps={{ htmlInput: { "aria-label": "Email" } }}
           type="email"
           autoComplete="off"
           value={email}
@@ -85,6 +88,14 @@ function CreateAccount({ created }: { created: () => Promise<void> }) {
         <TextField
           select
           label="Account role"
+          slotProps={{
+            select: {
+              SelectDisplayProps: {
+                "aria-label": "Account role",
+                "aria-labelledby": undefined,
+              },
+            },
+          }}
           value={role}
           onChange={(event) => setRole(event.target.value as api.AccountRole)}
           disabled={busy}
@@ -95,6 +106,7 @@ function CreateAccount({ created }: { created: () => Promise<void> }) {
         </TextField>
         <TextField
           label="Password"
+          slotProps={{ htmlInput: { "aria-label": "Password" } }}
           type="password"
           autoComplete="new-password"
           value={password}
@@ -104,6 +116,7 @@ function CreateAccount({ created }: { created: () => Promise<void> }) {
         />
         <TextField
           label="Confirm password"
+          slotProps={{ htmlInput: { "aria-label": "Confirm password" } }}
           type="password"
           autoComplete="new-password"
           value={confirmation}
@@ -265,6 +278,14 @@ function AccountDetails({
                   <TextField
                     select
                     label="Course"
+                    slotProps={{
+                      select: {
+                        SelectDisplayProps: {
+                          "aria-label": "Course",
+                          "aria-labelledby": undefined,
+                        },
+                      },
+                    }}
                     value={courseId}
                     disabled={busy}
                     onChange={(event) => setCourseId(event.target.value)}
@@ -361,6 +382,7 @@ function AccountsContent() {
         >
           <TextField
             label="Search accounts"
+            slotProps={{ htmlInput: { "aria-label": "Search accounts" } }}
             value={search}
             onChange={(event) => setSearch(event.target.value)}
           />
@@ -370,6 +392,14 @@ function AccountsContent() {
           <TextField
             select
             label="Role filter"
+            slotProps={{
+              select: {
+                SelectDisplayProps: {
+                  "aria-label": "Role filter",
+                  "aria-labelledby": undefined,
+                },
+              },
+            }}
             value={query.role ?? ""}
             onChange={(event) =>
               setFilter({
@@ -386,6 +416,14 @@ function AccountsContent() {
           <TextField
             select
             label="Status filter"
+            slotProps={{
+              select: {
+                SelectDisplayProps: {
+                  "aria-label": "Status filter",
+                  "aria-labelledby": undefined,
+                },
+              },
+            }}
             value={query.status ?? "enabled"}
             onChange={(event) =>
               setFilter({
