@@ -1,5 +1,10 @@
 # Handoff notes
 
+## 2026-11-06: developer ADM-05 final correction round 2
+- Fixed verifier blocker after independent RED regression: generic client requests capture their originating session generation, and a delayed 401 only clears authentication when it still belongs to the active session. An account A response cannot log out newly signed-in account B.
+- Validation: frontend typecheck/lint/build PASS; existing auth-guard, STU-01 session isolation and teacher HTTP cache suites 32 PASS (40 seconds). Independent new regression and final full suites remain designer/verifier-owned. No tests inspected or edited.
+- Files: services/client.ts, this handoff and implementation log. Revision rounds used 2/2; additional blocking source findings must escalate. Resource attribution remains orchestrator-owned, exact model/effort/tokens/cost unavailable.
+
 ## 2026-11-06: developer ADM-05 correction 1 integration follow-up
 - Fixed after approved General-topic amendment and independent RED regression: course creation now adds one General topic atomically, so assigned teachers can use existing publishing forms immediately. Guides updated. Existing courses unchanged.
 - Mobile account rows now stack identity, role/status and action within the viewport; clicking Manage no longer scrolls name/email out of the horizontal table. Original screenshot issue was action-induced internal scrolling, not a hidden-column CSS rule.
