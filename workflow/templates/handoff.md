@@ -14,3 +14,5 @@
   - Total tokens:
   - Cost (USD):
   - Retries and revision rounds:
+
+- Required usage-table closeout: report.md generated and inspected; all invocation rows and run total present; one Token usage column; resource-log and notes links recorded. Give report path in user handoff. If interrupted, recover before next handoff; unavailable counts are not zero.

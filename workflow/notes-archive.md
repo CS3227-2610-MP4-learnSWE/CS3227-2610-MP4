@@ -557,3 +557,19 @@ Newest entry first. Use `templates/handoff.md`. Older entries describe the state
 - Validation: 111 targeted browser PASS; visual five PASS with inspected tip-X/logout dialog images; types/lint/build/format/spec7/0/12existingwaivers/diff PASS. No server changes or backend/full-suite rerun; no independent verifier claim. Evidence logs/SharedShellConfirmationFollowup.md.
 - Next: user refreshes frontend, dismisses tip with X and confirms/cancels logout. No env/database change or backend restart required. Local commit only; no push/deployment.
 - Resources: single-session maintenance, no agents/manifest/tracker; inherited model/effort, per-task tokens/cost unavailable. No new feature revision rounds.
+
+## 2026-11-06: developer frontend CI maintenance
+- Done: restored sidebar tip/companion shortcut in short viewports; Progress reads now depend on the router history-entry key as well as retry state. Existing approved shell/STU-04 contracts and all test assertions retained; both guides updated.
+- Validation: isolated full browser suite 473/473 PASS (4.5 minutes, no retries); first reused-local-server run 472 PASS/1 unrelated backend-interference failure; 40 repeated reported cases PASS (20 each), types/lint/build and LF-normalized formatting of 108 frontend files PASS. Raw format check reports existing Windows CRLF warnings. Historical Progress flake not reproduced before source hardening; no proven original flake mechanism claimed.
+- Next: review local commit and rerun remote frontend CI after push (not performed here). No backend or deployment changes.
+- Files: styles.css, Progress.tsx, both guides, logs/FrontendCiFix.md and workflow records.
+- Resources: single-session small-fix exemption; no agents/invocation manifest/report/tracker. Inherited Codex model/effort; exact tokens/cost/elapsed attribution unavailable. Diagnostic/configuration recoveries and profile warning; no new feature correction rounds. See session log for run timing caveats.
+
+## 2026-11-06: spec-writer ADM-06 draft contract
+- Done: drafted AI service-attempt reporting, privacy-safe persistent metadata and coverage, independent recorded-token availability and accessible admin UI contracts. No application code/tests/SoC calls; spec and plan remain Draft.
+- Next: human reviews UTC 31-day date range, grouped TEA-02 calls, forward-only coverage and fail-closed metadata reservation. Orchestrator resolves source-aware existing module/provider-field compatibility before independent designer/developer begin; no guessed provider availability.
+- Validation: ADM-06 speccheck PASS (1 checked, 0 failed, 0 waived). Contract includes count/retry unit, pending/coverage gaps, no inferred tokens, auth/session/history/error states, concurrency and privacy tests.
+- Files touched: workflow/specs/ADM-06/spec.md, plan.md, tasks.md; notes/archive handoff only.
+- Invocation ID: 2026-11-06-ADM06-01-spec-writer-01. Source session: 01a1b002-09f9-7d50-8aaf-7b12499d0b9d. Model/effort inherited, exact attribution unavailable; elapsed: manifest timestamps authoritative.
+- Feature-run report: workflow/usage/runs/2026-11-06-ADM06-01/report.md (orchestrator generates at run close).
+- Resource use: tracker not run by spec-writer (orchestrator-owned); total tokens/cost unavailable until report. No retries or feature correction rounds. Blocking: human spec/plan approval and source-aware compatibility mapping; no feature implementation authorised through this draft.

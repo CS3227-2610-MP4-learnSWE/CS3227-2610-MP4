@@ -61,3 +61,13 @@ Per feature, check from git history and notes: spec approved before code; tests 
 
 ## When not to use multi-agent
 Small fixes, docs edits and one-file changes go directly to a single session. Record the decision so the cost-benefit analysis has data.
+
+## Mandatory usage table for every workflow invocation
+
+When the user invokes the project workflow, create a unique run ID and manifest before work starts, including a single-agent workflow run. Ordinary chat and small maintenance outside an explicitly invoked workflow keep their existing exemption. Record the orchestrator as well as delegated roles, every start/return and retry; resolve actual provider session IDs from metadata when available. Never substitute a role name for a source ID or guess token usage.
+
+Before ending a workflow invocation (completed, awaiting human approval, interrupted or blocked), generate `workflow/usage/runs/<run-id>/report.md`, verify that its table exists and includes every completed invocation plus a run-total row, link it from `workflow/experiments/resource-log.md` and `workflow/notes.md`, and give the user its path in the handoff. Treat this as a required closeout check, not deferred housekeeping. If execution is forcibly interrupted before closeout, recover it first when work resumes. Resume regenerates the same run report; a new workflow run gets a new ID. Do not claim a background provider hook exists.
+
+The standard handoff table uses one **Token usage** column: uncached input + cache reads + cache writes + output. Reasoning is already part of output, so never add it twice. Unknown/unmatched usage and incomplete total usage/cost must be `unavailable`, never zero. Raw exports and TRK-03 detailed metrics retain their separate fields. If provider logs are unsupported, still generate the invocation table, state the limitation and link it; this does not justify omitting the report or inventing measured totals. Exact interrupted return times must remain identified as bounds if only last-observed timestamps are recoverable.
+
+Closeout command from `workflow/tools/token-tracker`: `python -m tracker run-report --manifest ../../usage/runs/<run-id>/invocations.csv`. TRK-03 Claude runs additionally generate `report-v2.md`/`metrics-v2.csv` when applicable; the standard `report.md` table is required for every provider.

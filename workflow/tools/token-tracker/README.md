@@ -39,7 +39,7 @@ Generate one report for all agent invocations in a feature run (the manifest and
 ```powershell
 Set-Location (git rev-parse --show-toplevel)
 Set-Location workflow\tools\token-tracker
-python -m tracker run-report --manifest ..\..\..\usage\runs\2026-11-05-STU04-01\invocations.csv
+python -m tracker run-report --manifest ..\..\usage\runs\2026-11-05-STU04-01\invocations.csv
 ```
 
 The command writes `report.md` next to the manifest. Supply `--out PATH` to choose another location. A manifest has one row per agent start and these columns in order: `feature_run_id, invocation_id, role, effort, tool, session_id, agent_id, started_at, finished_at`. Use a globally unique `feature_run_id`; build each `invocation_id` as `<feature_run_id>-<role>-<sequence>`. Record start and finish timestamps with a timezone. `tool` is `claude` or `codex`; the source session/agent IDs connect local usage records to the invocation. Model names come from usage records; effort is recorded in the manifest.
@@ -147,3 +147,7 @@ python3 -m unittest discover -s tests
 ```
 
 Tests build synthetic logs in temporary folders; no real logs are in the repo. The original tracker spec is in `workflow/specs/TRK-01/`; invocation reports are specified in `workflow/specs/TRK-02/`; log-derived invocations and metrics in `workflow/specs/TRK-03/`.
+
+## Compact standard workflow table (2026-11-07 amendment)
+
+`run-report` displays one Token usage column instead of six token-category columns: uncached input + cache reads + cache writes + output, without adding reasoning again. Raw exports, aggregate reports and TRK-03 detailed metrics are unchanged. Unmatched invocation usage/cost and incomplete totals display unavailable. Generate/link report.md before every workflow handoff, including incomplete runs. This is an orchestrator duty, not a background hook.
