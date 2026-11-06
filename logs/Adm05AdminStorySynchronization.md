@@ -7,3 +7,7 @@ Preserved all supplied UserStories text outside ADM-05 exactly, verified by a sc
 Validation: ADM-05 speccheck passed (1 checked, 0 failed); git diff --check passed. No application code or tests changed; no runtime suite warranted for this documentation synchronization. Implementation agents continue independently.
 
 Resource use: follow-up spec-writer, inherited model/effort; tokens/cost unavailable; no retries or correction rounds. Orchestrator owns invocation manifest/report.
+
+## New-course integration clarification
+
+The orchestrator found that teacher publication requires a same-course Topic, but new admin-created courses had none and existing teacher tooling exposes no topic creation. The agreed course-creation outcome therefore requires one default General topic, created atomically with the course. UserStories and spec AC16 now match verbatim; plan covers storage, unchanged API response, guide walkthrough and independent regression/rollback cases. This is course usability integration, not a new topic-management feature. Existing courses/topics remain unchanged; no content is published automatically. No source, tests or guides edited by spec-writer. ADM-05 speccheck and diff check passed.
