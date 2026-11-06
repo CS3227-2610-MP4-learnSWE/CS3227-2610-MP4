@@ -338,3 +338,37 @@ def test_adm05_ac16_new_course_can_be_used_by_assigned_teacher_without_manual_to
     topics = call("GET", f"/api/teacher/courses/{crs['id']}/topics", user)
     assert topics.status_code == 200, topics.text
     assert any(topic["name"] == "General" for topic in topics.json()), topics.text
+
+
+def test_adm05_ac16_default_topic_is_usable_for_existing_publication_workflow(admin):
+    from stu01_helpers import make_draft
+    teacher, learner, crs = create(admin, "teacher"), create(admin), course(admin)
+    assert access(admin, teacher, crs).status_code == 200
+    assert access(admin, learner, crs).status_code == 200
+    teacher_session, learner_session = signed(teacher), signed(learner)
+    topics = call("GET", f"/api/teacher/courses/{crs['id']}/topics", teacher_session).json()
+    general = next(t for t in topics if t["name"] == "General")
+    draft = make_draft(crs["id"], title="ADM05 integrated note", content="A usable course can publish a lesson.")
+    published = call("POST", f"/api/teacher/note-drafts/{draft}/publish", teacher_session,
+                     {"version": 1, "title": "ADM05 integrated lesson", "topic_id": general["id"]})
+    assert published.status_code == 201, published.text
+    lesson = get_lesson(learner_session, published.json()["id"])
+    assert lesson.status_code == 200 and lesson.json()["content"] == "A usable course can publish a lesson."
+    assert access(admin, learner, crs, "DELETE").status_code == 200
+    assert get_lesson(learner_session, published.json()["id"]).status_code == 404
+
+
+def test_adm05_ac16_course_and_default_topic_creation_roll_back_together(admin):
+    suffix = uuid.uuid4().hex
+    function, trigger, title = "adm05_fail_" + suffix, "adm05_fail_" + suffix, "ADM05 rollback " + suffix
+    sql(f"CREATE FUNCTION {function}() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN "
+        f"IF EXISTS (SELECT 1 FROM course WHERE id=NEW.course_id AND title='{title}') THEN "
+        "RAISE EXCEPTION 'test-only default-topic failure' USING ERRCODE='23514'; END IF; RETURN NEW; END $$")
+    sql(f"CREATE TRIGGER {trigger} BEFORE INSERT ON topic FOR EACH ROW EXECUTE FUNCTION {function}()")
+    try:
+        response = call("POST", f"{BASE}/courses", admin, {"title": title})
+        assert response.status_code == 503, response.text
+        assert sql("SELECT count(*) FROM course WHERE title=%s", (title,))[0][0] == 0
+    finally:
+        sql(f"DROP TRIGGER {trigger} ON topic")
+        sql(f"DROP FUNCTION {function}()")
