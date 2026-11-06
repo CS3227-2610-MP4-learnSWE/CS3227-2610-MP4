@@ -1,6 +1,7 @@
 import { useState } from "react";
 import AdminAccounts from "./AdminAccounts";
 import AdminCourses from "./AdminCourses";
+import AdminAiUsage from "./AdminAiUsage";
 import { Link, useLocation } from "react-router";
 import {
   Button,
@@ -658,6 +659,8 @@ export default function Admin() {
       return <AdminCourses />;
     case "usage":
       return <Usage />;
+    case "ai-usage":
+      return <AdminAiUsage />;
     default:
       return (
         <EmptyState title="This page isn’t here">

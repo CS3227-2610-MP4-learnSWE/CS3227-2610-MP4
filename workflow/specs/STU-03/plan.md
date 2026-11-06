@@ -1,5 +1,9 @@
 # Plan: STU-03 AI study companion (first slice: hint, explain, help)
 
+## Connection lifetime maintenance (2026-11-06)
+
+The companion releases its initial read-only authentication transaction before practice-store reads or the model call. Reuse the dependency-cached `auth.db.get_session` session and roll it back after identity/Origin/CSRF checks have returned immutable auth values. Keep the fresh post-model session/account check before releasing text. Requests must not hold one pool connection while waiting for another; do not increase pool limits or weaken the 30-request concurrency test. Regression: help and practice requests succeed with a one-connection pool, with no connection checked out during the fake model call. This preserves the approved behavior and security contract.
+
 Status: Approved by the user on 2026-10-30 together with the spec (Draft v2 text below), written for the user's decisions in `spec.md` ("Decisions made": leak layers 1+2+3, pasted-question rule, canned reply on a block, per-student limits 20 per minute and 300 per day with no shared limit, generic client) and the recommendations still open there (a to j). Nothing here has been built.
 
 ## Contract (fixed; developer and test-designer work from this alone)

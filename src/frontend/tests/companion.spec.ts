@@ -32,6 +32,21 @@ test.beforeEach(async ({ page }) => {
   );
   // SHR-01: the live companion needs a signed-in student; the session exists before the page opens.
   await mockAuthApi(page, { user: STUDENT });
+  // This suite exercises chat context on the materials page, not its study API.
+  // Keep that unrelated read away from a developer backend and its real 401s.
+  await page.route(
+    (url) => url.pathname.startsWith("/api/study/"),
+    (route) =>
+      route.fulfill({
+        status: 503,
+        json: {
+          detail: {
+            code: "service_unavailable",
+            message: "Test study data is unavailable.",
+          },
+        },
+      }),
+  );
 });
 
 function chatOf(page: Page) {

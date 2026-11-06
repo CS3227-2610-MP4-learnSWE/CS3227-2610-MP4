@@ -14,6 +14,7 @@ The sun/moon button toggles light/dark mode. The initial theme follows your oper
 
 ## Student
 
+- Study companion access is checked again before a reply is returned. If your session ends or your account is disabled while waiting, the reply is withheld and you must sign in again.
 - Overview shows three real figures for a signed-in student, all read from the server in one request: "Lessons completed" (completed lessons out of all published lessons in your courses), "Practice average" (the average, rounded down, of your latest score on each practice set you have submitted; "–" until you submit one) and "Topics to revise" (how many topics need practice, see Progress). If they cannot be read they show "–" with a note (or ask you to sign in in demo mode). The link "View full progress" opens the Progress page. The hero and the study companion strip are unchanged; the old sample figures, streak and activity chart are gone.
 - Progress (requires a student sign-in; sidebar item "Progress") shows three sections. Lesson progress lists each of your courses with "N of M lessons complete" (or "No lessons published yet.") and your five most recently completed lessons, which link to the lesson. Practice scores lists every practice set you have submitted: your best score, your latest score (both written "correct / total") and how many attempts you submitted; attempts you have not submitted are ignored. Topics to revise uses this rule: for each practice set only your latest submitted attempt counts; a topic needs practice when you answered at least 3 questions on it (added up over those attempts) and fewer than 60% were correct (exactly 60% is fine); a topic with fewer than 3 answers is listed as not enough activity yet and is not called weak. Questions without a known topic count under "General". Empty states explain what to do (join a course, submit a practice set). If the server cannot be read the page says so with "Try again". Scores are kept on the server, so they survive a restart, sign-out and a new browser. Teachers and admins cannot open this page.
 - Study materials (requires a student sign-in) lists the courses you belong to. Choose a course, filter by topic, search lesson titles and open a lesson. The list says how many lessons of the course you have completed. On a lesson, "Mark as complete" (or "Mark as incomplete") saves your choice on the server after it confirms; it is kept when you reload, sign out and sign in again, and updates the Overview figure when you open it. Lessons are plain text. You see lessons only after a teacher publishes them, through the content studio; developers can also add sample lessons with the seed command, and a new student sees "No courses yet" until added to a course. Demo mode shows a sign-in notice here instead of sample lessons.
@@ -51,7 +52,7 @@ The former **Practice sets** builder has been removed. Its old URL opens the con
 - **Courses** creates courses with a title of 1–200 characters and a default **General** topic for teacher publishing. To assign a teacher or enrol a student, return to Users, choose their account, select a Course and choose **Grant course access**. New accounts begin with no assignments; teachers can manage only assigned courses. Disabled accounts can still have assignments edited. Admin accounts do not receive course assignments.
 - **Disable account** requires confirmation and ends all sessions while keeping records and assignments. **Enable account** permits a fresh login; old sessions do not return. **Archive account** requires confirmation and is permanent: login is blocked, sessions/assignments are removed, and the email remains reserved. Learning/authorship records are retained. You cannot disable/archive yourself, and the last enabled admin is protected.
 - **Remove course access** requires confirmation. Subsequent content requests are denied, but completion/authorship records remain; granting access again restores their visibility under existing feature rules. AI results are withheld if account/session access is lost while generation runs. Teacher generation also rechecks current course access; the student companion's legacy practice fixtures are not course-grounded retrieval.
-- AI usage displays illustrative requests/failures; actual token usage is explicitly unavailable.
+- **AI usage** requires an admin sign-in and reports recorded service attempts, failure categories and available token measurements. Collection must be activated after migration/restart; incomplete history and missing measurements are shown as unavailable. See ADM-06 below.
 
 ### Set up local admin sign-in (PowerShell)
 
@@ -161,7 +162,7 @@ Use these steps with the existing local database configured in your checkout. Fo
 
 ## Limitations and recovery
 
-The demo shortcut screens are public local demonstrations with unrestricted role switching. Do not use real credentials or sensitive materials in them. Preview state is temporary; refresh returns to sample defaults. Teacher material metadata and original bytes persist together in PostgreSQL. The new storage version uses a fresh database; previous local uploads/drafts remain in the old setup and must be recreated in the new one. Unknown routes send a signed-in user to their own home and everyone else to login, except inside a role area, which shows a role-specific not-found view. An unavailable backend shows a footer status and does not prevent exploring screens, except the student Practice page, which needs the backend to load questions. The practice server withholds the answer key and explanations until whole-set submission and checks attempt ownership using the signed-in student's account. Teacher data screens require a teacher sign-in and current course membership. Admin Users and Courses use live account/course records; other admin business screens remain sample previews. Online deployment and admin AI remain future work. The student study companion and teacher note/MCQ generation call the SoC LLM. Every teacher API uses the shared authenticated session, checks course membership and ignores legacy identity headers. Practice attempts are stored in the database (attempts made before the STU-04 change are lost); browser reload clears the current page state.
+The demo shortcut screens are public local demonstrations with unrestricted role switching. Do not use real credentials or sensitive materials in them. Preview state is temporary; refresh returns to sample defaults. Teacher material metadata and original bytes persist together in PostgreSQL. The new storage version uses a fresh database; previous local uploads/drafts remain in the old setup and must be recreated in the new one. Unknown routes send a signed-in user to their own home and everyone else to login, except inside a role area, which shows a role-specific not-found view. An unavailable backend shows a footer status and does not prevent exploring screens, except the student Practice page, which needs the backend to load questions. The practice server withholds the answer key and explanations until whole-set submission and checks attempt ownership using the signed-in student's account. Teacher data screens require a teacher sign-in and current course membership. Admin Users and Courses use live account/course records; AI usage reports real recorded monitoring metadata after collection activation. Other admin business screens remain sample previews. Online deployment and AI feedback analysis remain future work. The student study companion and teacher note/MCQ generation call the SoC LLM. Every teacher API uses the shared authenticated session, checks course membership and ignores legacy identity headers. Practice attempts are stored in the database (attempts made before the STU-04 change are lost); browser reload clears the current page state.
 
 ## Publishing reviewed teacher content
 
@@ -172,3 +173,54 @@ Notes become available to enrolled students in **Study materials** after refresh
 Each draft can publish once. Editing it afterward changes only the private working draft; it cannot update or republish the snapshot. Published references prevent draft deletion and therefore also protect the source. No unpublish or published-content deletion controls exist. **View published version** opens **Published content**, where course/type filters and direct links reopen read-only snapshots. Older lessons can show **General**, missing provenance or **Withdrawn**; withdrawal cannot be changed here.
 
 Failed publication preserves form input. Reload and review stale drafts before confirming again. After an uncertain/lost response, use **Refresh publication status** before retrying; mutations never retry automatically. An identical retry returns the existing snapshot instead of another publication.
+
+
+## Admin AI usage monitoring (ADM-06)
+
+### Before testing
+
+- Complete [ADM-06 local setup](DeveloperGuide.md#adm-06-local-setup).
+- Use an enabled admin account. Demo shortcuts do not sign you in.
+- Open **http://127.0.0.1:5173/login**.
+
+### Manual test checklist
+
+Report text is inset from the panel border. Long explanations wrap inside their columns; scroll the table horizontally to see all metrics.
+
+| Step | Action | Expected result |
+|---|---|---|
+| 1 | Sign in as admin. Open **AI usage**. | Filters and feature rows. Default: All features, last seven UTC dates. |
+| 2 | Select **Student assistant (STU-03)**. Click **Apply filters**. | One student-assistant row. |
+| 3 | Select **Teacher generation (TEA-02)**. Apply. | One row combining notes and MCQ calls. |
+| 4 | Select **Feedback analysis (ADM-03)**. Apply. | **Unavailable**: collection is not enabled. |
+| 5 | Set Start date after End date. Apply. | Date-range error. Correct the dates and apply again. |
+| 6 | Try more than 31 days, then a future End date. | Both selections rejected. |
+| 7 | Change filters, refresh, then navigate away and Back. | Default filters and a fresh report each time. |
+| 8 | Log out. Sign in as student or teacher. Open `/admin/ai-usage`. | Redirect to your own role's home. No admin report. |
+
+### Check real request counts
+
+1. Configure SoC credentials for chat/generation. Real calls use SoC quota.
+2. After activation's next **00:00 UTC** (08:00 Singapore), set both dates to the current UTC date.
+3. Select STU-03 or TEA-02. Record its Requests value.
+4. In another browser profile, send one student chat message or generate teacher notes/MCQs.
+5. Return as admin. Click **Apply filters**.
+
+Expected results:
+
+- Requests increases by one per provider attempt. A retry adds another attempt.
+- Provider failures increase Failures. Provider 429s also increase Rate-limit failures.
+- Local validation/quota rejection does not increase counts.
+- Tokens appear only when that measurement was recorded for every call. Total tokens are never calculated from the other columns.
+- Complete coverage with no calls shows zero counts and unavailable tokens.
+- Earlier history, partial coverage and interrupted recording show **Unavailable** with a reason.
+- Credentials, prompts, replies and user identities are excluded.
+
+**Need results immediately?** Run the [ADM-06 automated tests](DeveloperGuide.md#adm-06-automated-tests). They use mocks: no waiting or live AI.
+
+### Recovery checks
+
+- Stop the backend with Ctrl+C. Apply filters. Expect an error with **Retry**.
+- Restart the backend. Click **Retry**. The last applied selection loads; unsent edits stay in the fields.
+- Requests time out after 15 seconds. No automatic retry.
+- Session expiry returns to sign-in with "Your session has expired. Sign in again." Logout clears the report.
