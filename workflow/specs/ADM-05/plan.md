@@ -57,3 +57,5 @@ Independent test-designer writes tests before source visibility, in isolated wor
 
 ## Decisions
 User decisions are recorded in spec and revised stories. No role-change feature. Student memberships and teacher assignments share existing storage and differ by immutable role. Admins can create courses and all account types, but courses cannot be assigned to admins. Admin-set passwords intentionally have no compulsory-change flow. Archive is retention, not erasure. Routine schema bounds/query defaults/UI copy are fixed above. Deployment and email delivery are not part of this change.
+
+Documentation synchronization, 2026-11-06: expanded admin stories were supplied during implementation. ADM-01 through ADM-04 and ADM-06 remain separate features; FeatureList summaries now reflect their new criteria. ADM-05 retains the already-approved six-story fixed-role contract. Its 19 story criteria are copied verbatim with labels into spec AC1-19, with AC20-22 retaining derived security/regression checks. The test mapping and API/UI contract are unchanged. TEA-05 learning-results reporting is not newly implemented by ADM-05.

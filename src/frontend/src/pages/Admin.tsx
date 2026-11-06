@@ -1,7 +1,8 @@
 import { useState } from "react";
+import AdminAccounts from "./AdminAccounts";
+import AdminCourses from "./AdminCourses";
 import { Link, useLocation } from "react-router";
 import {
-  Avatar,
   Button,
   Checkbox,
   Dialog,
@@ -33,7 +34,6 @@ import {
 } from "../components/ui";
 import { feedback, weeklyActivity } from "../data";
 
-type Props = { notify: (message?: string) => void };
 function Overview() {
   const [period, setPeriod] = useState("This week");
   return (
@@ -527,136 +527,6 @@ function Announcements() {
     </>
   );
 }
-function People({ notify }: Props) {
-  const [filter, setFilter] = useState("All roles");
-  const people = [
-    {
-      name: "Alex Lee",
-      initials: "AL",
-      email: "alex@example.com",
-      role: "Student",
-      status: "Active",
-    },
-    {
-      name: "Jamie Wong",
-      initials: "JW",
-      email: "jamie@example.com",
-      role: "Teacher",
-      status: "Active",
-    },
-    {
-      name: "Morgan Wong",
-      initials: "MW",
-      email: "morgan@example.com",
-      role: "Admin",
-      status: "Active",
-    },
-    {
-      name: "Sam Chen",
-      initials: "SC",
-      email: "sam@example.com",
-      role: "Student",
-      status: "Invited",
-    },
-  ];
-  return (
-    <>
-      <PageHeading
-        eyebrow="A COMMUNITY OF CURIOUS MINDS"
-        title="The people who make it happen."
-        description="A preview of account roles and course access. No real users are connected."
-      />
-      <Panel className="library-panel">
-        <div className="library-toolbar">
-          <h2>
-            People <span className="count-badge">4</span>
-          </h2>
-          <TextField
-            select
-            label="Filter role"
-            value={filter}
-            onChange={(e) => setFilter(e.target.value)}
-            sx={{ width: 170 }}
-          >
-            {["All roles", "Student", "Teacher", "Admin"].map((value) => (
-              <MenuItem key={value} value={value}>
-                {value}
-              </MenuItem>
-            ))}
-          </TextField>
-        </div>
-        <div className="table-scroll">
-          <table>
-            <thead>
-              <tr>
-                <th>Person</th>
-                <th>Role</th>
-                <th>Course access</th>
-                <th>Status</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {people
-                .filter(
-                  (person) => filter === "All roles" || person.role === filter,
-                )
-                .map((person) => (
-                  <tr key={person.email}>
-                    <td>
-                      <Avatar
-                        sx={{
-                          width: 35,
-                          height: 35,
-                          fontSize: 12,
-                          bgcolor: "action.selected",
-                          color: "primary.main",
-                        }}
-                      >
-                        {person.initials}
-                      </Avatar>
-                      <div>
-                        <strong>{person.name}</strong>
-                        <small>{person.email}</small>
-                      </div>
-                    </td>
-                    <td>{person.role}</td>
-                    <td>
-                      {person.role === "Admin"
-                        ? "Administrative access"
-                        : "SE essentials"}
-                    </td>
-                    <td>
-                      <Tag
-                        tone={person.status === "Active" ? "green" : "amber"}
-                      >
-                        {person.status}
-                      </Tag>
-                    </td>
-                    <td>
-                      <Button
-                        size="small"
-                        onClick={() =>
-                          notify(
-                            "Access-management preview only. No account or permission was changed.",
-                          )
-                        }
-                      >
-                        Preview access
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
-            </tbody>
-          </table>
-        </div>
-      </Panel>
-      <PreviewNote>
-        All names and addresses are fictitious sample records.
-      </PreviewNote>
-    </>
-  );
-}
 function Usage() {
   const [period, setPeriod] = useState("This week");
   return (
@@ -771,7 +641,7 @@ function Usage() {
     </>
   );
 }
-export default function Admin({ notify }: Props) {
+export default function Admin() {
   const section = useLocation().pathname.split("/")[2];
   switch (section) {
     case "overview":
@@ -783,7 +653,9 @@ export default function Admin({ notify }: Props) {
     case "announcements":
       return <Announcements />;
     case "users":
-      return <People notify={notify} />;
+      return <AdminAccounts />;
+    case "courses":
+      return <AdminCourses />;
     case "usage":
       return <Usage />;
     default:

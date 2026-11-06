@@ -7,6 +7,8 @@ from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
 from auth.models import AuthSession
+from auth.lifecycle import lock_account_changes
+from errors import ApiError
 from teacher_materials.models import User
 
 
@@ -24,6 +26,10 @@ def purge_expired(db: Session) -> None:
 
 def create_session(db: Session, user: User, ttl_seconds: int) -> tuple[str, AuthSession]:
     """New session with a fresh random token. Returns the raw token (cookie value) and the row."""
+    lock_account_changes(db)
+    db.refresh(user)
+    if user.access_status != "enabled":
+        raise ApiError(401, "invalid_credentials", "Email or password is incorrect.")
     token = secrets.token_urlsafe(32)
     now = _now()
     row = AuthSession(
@@ -45,11 +51,12 @@ def load_session(db: Session, token: str) -> tuple[AuthSession, User] | None:
         select(AuthSession, User)
         .join(User, User.id == AuthSession.user_id)
         .where(AuthSession.token_hash == hash_token(token))
+        .execution_options(populate_existing=True)
     ).first()
     if found is None:
         return None
     session_row, user = found
-    if session_row.expires_at <= _now():
+    if session_row.expires_at <= _now() or user.access_status != "enabled":
         db.execute(delete(AuthSession).where(AuthSession.id == session_row.id))
         db.commit()
         return None

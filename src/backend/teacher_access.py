@@ -43,7 +43,7 @@ def teacher_session(request: Request) -> Iterator[tuple[Session, AuthUser]]:
                 if row is None or row.user_id != teacher.id:
                     raise unauthenticated()
                 user = session.scalar(select(User).where(User.id == row.user_id).with_for_update(read=True).execution_options(populate_existing=True))
-                if user is None or row.expires_at <= datetime.now(timezone.utc):
+                if user is None or user.access_status != "enabled" or row.expires_at <= datetime.now(timezone.utc):
                     raise unauthenticated()
                 check_csrf(request, row)
                 teacher = current_user(role="teacher")(SessionContext(AuthUser.from_row(user), row.csrf_token))

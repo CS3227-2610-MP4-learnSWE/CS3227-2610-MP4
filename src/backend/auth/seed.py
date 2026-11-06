@@ -6,8 +6,8 @@ import os
 import sys
 from collections.abc import Mapping
 
-from sqlalchemy import create_engine, select
-from sqlalchemy.orm import Session
+from sqlalchemy import create_engine, insert, select
+from sqlalchemy.orm import Session, load_only
 
 from auth.passwords import check_password_rules, hash_password, normalise_email
 from teacher_materials.models import User
@@ -33,7 +33,9 @@ def seed_accounts(db: Session, environ: Mapping[str, str], reset_passwords: bool
         if check_password_rules(password, email):
             lines.append(f"{user_id}: skipped: password breaks the password rules")
             continue
-        user = db.get(User, user_id)
+        # Seed credentials only: do not depend on later lifecycle columns when
+        # migration tests seed this module at its original revision.
+        user = db.scalar(select(User).where(User.id == user_id).options(load_only(User.id, User.display_name, User.role, User.email, User.password_hash)))
         if user is None and display_name is None:
             lines.append(f"{user_id}: skipped: user is missing (run teacher_materials.seed first)")
             continue
@@ -50,9 +52,9 @@ def seed_accounts(db: Session, environ: Mapping[str, str], reset_passwords: bool
             failed = True
             continue
         if user is None:
-            user = User(id=user_id, display_name=display_name, role=role)
-            db.add(user)
-        user.email, user.password_hash = email, hash_password(password)
+            db.execute(insert(User.__table__).values(id=user_id, display_name=display_name, role=role, email=email, password_hash=hash_password(password)))
+        else:
+            user.email, user.password_hash = email, hash_password(password)
         db.commit()
         lines.append(f"{user_id}: seeded")
     return lines, failed
