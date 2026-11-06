@@ -332,7 +332,7 @@ def test_tea03_publications_migration_preserves_legacy_and_guards_downgrade(tea0
             db.execute("INSERT INTO published_lesson(id,course_id,title,content,published_by) VALUES(%s,%s,'Legacy','Preserve me','demo-teacher')",(old,COURSE))
             db.execute("INSERT INTO lesson_completion(user_id,lesson_id,course_id,completed,completed_at) VALUES('demo-student',%s,%s,true,now())",(old,COURSE))
             completion=db.execute('SELECT user_id,lesson_id,course_id,completed,completed_at FROM lesson_completion').fetchall()
-            migrate('upgrade','head')
+            migrate('upgrade','20261105_tea03_publications')
             assert db.execute('SELECT user_id,lesson_id,course_id,completed,completed_at FROM lesson_completion').fetchall()==completion
             assert db.execute('SELECT version_num FROM alembic_version').fetchone()[0]=='20261105_tea03_publications'
             assert db.execute('SELECT content,source_version FROM published_lesson WHERE id=%s',(old,)).fetchone()==('Preserve me',None)
@@ -347,20 +347,35 @@ def test_tea03_publications_migration_preserves_legacy_and_guards_downgrade(tea0
             migrate('downgrade','20261104_stu01_lessons')
             assert db.execute('SELECT content FROM published_lesson WHERE id=%s',(old,)).fetchone()==('Preserve me',)
             assert db.execute('SELECT user_id,lesson_id,course_id,completed,completed_at FROM lesson_completion').fetchall()==completion
-            migrate('upgrade','head')
+            migrate('upgrade','20261105_tea03_publications')
             assert db.execute('SELECT source_version FROM published_lesson WHERE id=%s',(old,)).fetchone()==(None,)
             assert db.execute("SELECT to_regclass('published_practice_question') IS NOT NULL").fetchone()[0]
         finally:
             db.execute('SET search_path TO public');db.execute(f'DROP SCHEMA "{schema}" CASCADE')
 
 
-def test_tea03_publications_migration_refuses_populated_practice_sets(mcqs,tea01_database):
-    app,_,_,draft=prepared(mcqs)
-    saved=post(app,draft).json()
-    before=tea01_database.execute('SELECT version_num FROM alembic_version').fetchone()[0]
-    result=subprocess.run([sys.executable,'-m','alembic','downgrade','20261104_stu01_lessons'],env=os.environ.copy(),capture_output=True,text=True)
-    assert result.returncode!=0 and 'Cannot downgrade publication storage' in result.stderr
-    assert tea01_database.execute('SELECT version_num FROM alembic_version').fetchone()[0]==before
-    assert tea01_database.execute("SELECT to_regclass('published_practice_set'),to_regclass('published_practice_question')").fetchone()==('published_practice_set','published_practice_question')
-    assert tea01_database.execute('SELECT count(*) FROM published_practice_question WHERE set_id=%s',(saved['id'],)).fetchone()[0]==3
-    assert detail(app,saved).json()==saved
+def test_tea03_publications_migration_refuses_populated_practice_sets(mcqs,tea01_database,monkeypatch):
+    # This migration's guard must not depend on inactive ADM-05 accounts left by
+    # unrelated tests in the shared schema. Its populated data lives separately.
+    import psycopg
+    from test_shr01_seed_migration import Isolated
+    base=os.environ['TEA01_TEST_DATABASE_URL'];schema='pub_guard_'+uuid.uuid4().hex
+    with psycopg.connect(base.replace('postgresql+psycopg://','postgresql://',1),autocommit=True) as owner:
+        owner.execute(f'CREATE SCHEMA "{schema}"')
+        try:
+            isolated=Isolated(base,schema)
+            isolated.migrate('upgrade','head')
+            isolated.seed_teacher()
+            monkeypatch.setenv('DATABASE_URL',isolated.url)
+            app,_,_,draft=prepared(mcqs)
+            saved=post(app,draft).json()
+            with psycopg.connect(isolated.url.replace('postgresql+psycopg://','postgresql://',1),autocommit=True) as db:
+                before=db.execute('SELECT version_num FROM alembic_version').fetchone()[0]
+                result=isolated.migrate('downgrade','20261104_stu01_lessons',check=False)
+                assert result.returncode!=0 and 'Cannot downgrade publication storage' in result.stderr
+                assert db.execute('SELECT version_num FROM alembic_version').fetchone()[0]==before
+                assert db.execute("SELECT to_regclass('published_practice_set'),to_regclass('published_practice_question')").fetchone()==('published_practice_set','published_practice_question')
+                assert db.execute('SELECT count(*) FROM published_practice_question WHERE set_id=%s',(saved['id'],)).fetchone()[0]==3
+                assert detail(app,saved).json()==saved
+        finally:
+            owner.execute(f'DROP SCHEMA "{schema}" CASCADE')
