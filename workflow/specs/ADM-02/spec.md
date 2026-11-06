@@ -1,0 +1,77 @@
+# Spec: ADM-02 Targeted feedback forms
+
+Status: Draft (human approval required)
+
+## Goal
+Admins prepare targeted surveys, publish private inbox requests, close collection and review preserved responses.
+
+## Behaviour
+An active admin manages forms under `/admin/feedback`. Drafts can be saved, reopened and edited. A form has a title, optional description, ordered questions and at most one optional feature or published-lesson association. Publish requires a saved, valid draft and a reviewed selection of individual active students or individual active teachers (one role per form). Publication freezes the form and recipient set and atomically creates one unread survey request per recipient. Later account creation or course changes never expand the audience. A lesson association is metadata only: it neither expands the recipient set nor grants access to lesson content. The admin selector accepts only currently published, nonwithdrawn lessons; respondents may receive a survey about a lesson without receiving permission to open that lesson.
+
+Student and teacher survey inboxes are provided at `/student/inbox` and `/teacher/inbox`; this is the minimum survey-request delivery surface, not general messaging. Recipients open a request, complete its form and submit once. Saving a respondent draft is outside scope. Closing a published form permanently ends submission. Admins can review responses while open or closed. Raw answers never appear in inbox list data, recipient form reads, activity context or AI requests. Respondents see submission status, not stored answer content. Admins see respondent identity under the proposed identified-feedback policy below. No deletion or reopening action is provided.
+
+## Acceptance criteria
+The following criteria are copied from `docs/UserStories.md`, with IDs for test mapping.
+
+- [ ] AC01 **Supported question types:** I can add short-answer and paragraph text questions; multiple-choice and dropdown questions that accept one answer; checkbox questions that accept multiple answers; and linear-scale questions where a respondent selects one value within the scale's configured range.
+- [ ] AC02 **Choice options:** For multiple-choice, dropdown, and checkbox questions, I can enter the answer options respondents can choose from.
+- [ ] AC03 **Linear-scale setup:** For a linear-scale question, I can configure its range and optionally label its endpoints.
+- [ ] AC04 **Required questions:** I can mark each question required or optional. Respondents cannot submit a form while a required question is unanswered.
+- [ ] AC05 **Form association:** I can optionally associate the form with a feature or lesson.
+- [ ] AC06 **Persistence:** When I save and reopen a draft, its questions, required-field settings, and optional association are unchanged.
+- [ ] AC07 **Publication restriction:** A draft is unpublished and cannot be opened for response submission, including by direct request.
+- [ ] AC08 **Scope boundary:** Drafting does not send inbox requests or make the form available to respondents; publication and recipient selection are covered by ADM-02-02.
+- [ ] AC09 **Audience review:** Before publication, I can review whether the form is being sent to the selected student or teacher audience.
+- [ ] AC10 **Inbox delivery:** Publishing creates an in-app inbox request with a link to the form for each intended recipient.
+- [ ] AC11 **Access restriction:** While the form is open, only intended recipients can view and submit it; other users are denied through both the interface and direct requests.
+- [ ] AC12 **Submission eligibility:** A form can receive responses only after publication and before it is closed.
+- [ ] AC13 **Scope boundary:** This story distributes the form request; it does not cover composing a separate follow-up message or announcement (ADM-04).
+- [ ] AC14 **State change:** I can close a published form to end response collection.
+- [ ] AC15 **Submission restriction:** After closure, the form rejects new responses through both the interface and direct requests, including requests from intended recipients.
+- [ ] AC16 **Existing data:** Closing the form preserves responses already submitted; authorised admins can still review them.
+- [ ] AC17 **Scope boundary:** Closing does not delete the form or its responses. Reopening a closed form is outside this story.
+- [ ] AC18 **Response association:** Each submitted response is shown with its form and the questions it answers.
+- [ ] AC19 **Question snapshot:** The wording and required status of each question at the time of submission remain available with the response; later form edits do not alter that record.
+- [ ] AC20 **Access restriction:** Only an authorised admin can review collected responses.
+- [ ] AC21 **Scope boundary:** This story provides direct review of form responses. It does not generate AI summaries or select evidence for an analysis (ADM-03).
+
+## UI states and copy
+All API reads display `role=status`; failures display `role=alert`; successful actions display `role=status`. Exact error copy is defined by the plan's error dictionary, incorporated here by reference. Field validation uses the exact messages in that dictionary and focuses the first invalid field. Labels and numbered question controls are fixed in the plan.
+
+| Screen or action | Control (button, tab, link, field) and its exact label | Loading | Success | Empty | Each failure that can happen (wrong input, 401, 403, 404, 409, 422, 429, network, timeout) and the exact message | After a failed action (what stays, what is retried) |
+|---|---|---|---|---|---|---|
+| Admin list | heading `Feedback forms`; link `New feedback form`; link with form title; button `Next page` | `Loading feedback forms...` | Form title, state, response count | `No feedback forms yet. Create a form to collect feedback.` | Common errors E01-E08 | Existing list stays; button `Retry` repeats failed page read |
+| New/edit draft | heading `New feedback form` or `Edit feedback form`; button `Save draft` | Existing draft: `Loading feedback form...`; save: `Saving draft...` | `Draft saved.` | No questions: `Add a question to get started.` | Common E01-E08; V01-V08; C01-C02 | Fields, order and association stay; retry explicit save, never automatic; stale conflict requires `Reload saved form` |
+| Publication | button `Review audience`; dialog `Review audience`; button `Publish form` | `Loading audience...` then `Publishing form...` | `Form published. Inbox requests sent.` | `No eligible recipients found.` | Common E01-E08; V09; C01-C03 | Draft stays; selected recipients stay on temporary failure; eligibility conflict clears review and requires reselection |
+| Close | button `Close collection`; dialog `Close collection`; button `Confirm close` | `Closing collection...` | `Collection closed.` | Not applicable | Common E01-E08; C01-C02 | Form stays; explicit retry; conflict offers reload |
+| Admin detail/review | heading form title; link `Review responses`; heading `Responses`; link `Response {response_id}`; button `Next page` | `Loading feedback form...` or `Loading responses...` or `Loading response...` | Form state; response list; response detail with identity, timestamp, question snapshots and answers | `No responses yet.`; optional omitted answer `No answer` | Common E01-E08 | Loaded data stays on pagination failure; detail failure exposes no stale private data |
+| Recipient inbox | heading `Feedback requests`; link form title; button `Next page` | `Loading feedback requests...` | Rows show title, unread/read, open/closed/submitted; unread count | `No feedback requests yet.` | Common E01-E08 | Prior rows stay; button `Retry` repeats page read |
+| Recipient form | heading form title; button `Submit feedback` | `Loading feedback form...`; `Submitting feedback...` | `Feedback submitted. Thank you.` | No optional answer is valid; invalid published empty form cannot exist | Common E01-E08; V10; C04-C05 | Answers stay for validation/network/timeout/429/503; closed/already-submitted response clears editable answers and disables submit |
+| Recipient closed/submitted view | link `Back to inbox` | `Loading feedback form...` | `This form is closed.` or `You have already submitted feedback.` | Not applicable | Common E01-E08 | No answer values fetched or shown |
+
+- Requests per load and per retry: One request for each list, detail, response list, response detail or recipient form load; zero for a new draft. Opening an existing editor sends one form read and one association-options read; new editor sends one association-options read. Association options are fetched once, not per keystroke. Audience review sends one paged audience read, explicit search/role/page changes send one each; review confirmation makes no read. Each save/publish/close/submit sends one mutation; success uses its response to update the page, no automatic re-fetch. Recipient form GET also marks its request read atomically; no second mark-read request. Each `Retry` repeats only the failed request once. Development effect replay must not duplicate reads. No polling or automatic retries.
+- Wrong role: Admin routes redirect students/teachers to their own authenticated landing area using replace and send zero ADM-02 requests. Recipient routes redirect admins to their landing area and student/teacher cross-role paths to their own landing area, using replace and sending zero feature requests. Direct backend requests remain forbidden.
+- Link history: push or replace: Sidebar links, list-title links, `New feedback form`, `Review responses`, response links and `Back to inbox` push. First successful create replaces new-form URL with saved detail URL. Save/publish/close/submit, dialogs, pagination and filtering do not change URL. Authentication redirects replace.
+- Refresh: Saved data reloaded with the request counts above. Unsent editor/response changes reset; display `Unsaved changes are lost when you leave or refresh.` near save/submit. No browser persistence of answers or private response data.
+- Back and Forward: Re-entering a route reloads current authorised state once; never restore private response content from client cache. List pagination resets to first page. Previously closed/submitted forms show current terminal state.
+- Expired session or logout: Abort pending feature requests, clear loaded private data and unsent fields, and replace with sign-in using the existing authenticated-session flow. 401 message is `Your session has expired. Sign in again.` A late response must not repopulate data after account change.
+- Backend down: Show `Cannot connect to the server. Check your connection and try again.` with `Retry` on reads; preserve unsent fields on mutations and allow the same explicit action again. Do not assert a timed-out mutation failed to commit.
+- Longest wait before an error: 15 seconds per feature request, then abort and display `The request timed out. Check the current form before trying again.` Pending controls disabled, navigation remains available. Following an uncertain save, publication, close or submission, explicit reload discovers server state before another state-changing action.
+- No generic failure message: Each failure uses the plan dictionary; network copy is reserved for transport failures. Unexpected HTTP 500 uses `The feedback service encountered an error. Try again later.` Unknown HTTP statuses use the same honest service-error copy, not network copy.
+
+## Out of scope
+AI analysis, feedback follow-up, announcements, email/push, anonymous responses, deletion/export/retention automation, reopening, editing after publication, multiple submissions, response editing, attachments, branching questions, autosave, respondent draft persistence and a full general inbox. STU-05/STU-06/TEA-06 are not claimed complete by this delivery; their required full stories remain separate.
+
+## Security and AI safeguards
+Every endpoint checks an active authenticated session and the required role. All active admins are authorised to manage/review all feedback. Only snapshotted recipients can read/submit published forms; raw answers and respondent identities are admin-only. Hidden/nonrecipient/draft IDs return the same 404. Respondents cannot impersonate another account by supplying an owner ID. Associated lesson reads expose title and course metadata only, never unpublished content or protected answers. Association validity is checked at save and publication; no associated lesson body is returned. Disabled/archived recipients lose access; retained response identity uses immutable user ID, with a stored display-name snapshot.
+
+No SoC LLM calls occur. Feedback is plain untrusted text, rendered as text, never HTML or instructions. Do not add feedback to the study companion context. No credentials, answers or question text in security logs. Persistent server storage and additive migration required; no memory-only records. List results bounded, request/answer limits and quotas fixed in plan. Sensitive responses use `Cache-Control: no-store`; client data is cleared on logout. Respect keyboard controls, reduced motion, and 390px mobile layouts without hidden controls.
+
+- Concurrent requests (same time): Optimistic version checks prevent lost draft updates. Publication is atomic with recipient/inbox creation; retries cannot duplicate requests. Submission is unique per form/user and serialises with close, so either it commits before close or is rejected after close. Concurrent close is idempotent. Account eligibility changes serialise with publication/submission eligibility checks. Snapshots and responses never mutate after commit.
+- Normalisation: Form/question/option/response/inbox UUID identifiers parsed canonically; account IDs remain exact opaque strings of 1-64 characters; malformed IDs produce 404. Trim titles, prompts, options, labels and association values, reject blank values and duplicate options after casefold comparison. Trim text-answer boundaries before required validation. Do not alter inner whitespace or text case. Checkbox option IDs are unique and sorted by configured option order before storage. Unknown keys, foreign question/option IDs, wrong scalar types including boolean-as-integer, repeated question IDs and oversized bodies are rejected.
+
+## Open questions
+1. Human approval required: use identified responses visible only to active admins, with immutable submitter ID and display-name snapshot? Recommended to support ADM-04 individual follow-up. Tell respondents `Your name and feedback are visible to administrators.`
+2. Human approval required: retain forms, inbox requests and responses without automatic expiry for this release, with no delete interface/API; account archival preserves links? A production retention/deletion policy remains a team decision before broader rollout.
+3. Human approval required for the proposed plan policies: one audience role per form, explicit individual selection (maximum 500), one submission per recipient, immutable publication, metadata-only lesson associations, and bounded question/scale settings.
+Initial subject/learner level and upload formats do not affect this feature. ADM-05 account/course decisions are reused. Practice scoring/answer release remains unchanged and protected content is excluded. SoC quota/model/measurement decisions are not applicable because ADM-02 makes no AI calls.

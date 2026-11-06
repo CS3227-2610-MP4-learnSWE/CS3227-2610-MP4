@@ -557,3 +557,10 @@ Newest entry first. Use `templates/handoff.md`. Older entries describe the state
 - Validation: 111 targeted browser PASS; visual five PASS with inspected tip-X/logout dialog images; types/lint/build/format/spec7/0/12existingwaivers/diff PASS. No server changes or backend/full-suite rerun; no independent verifier claim. Evidence logs/SharedShellConfirmationFollowup.md.
 - Next: user refreshes frontend, dismisses tip with X and confirms/cancels logout. No env/database change or backend restart required. Local commit only; no push/deployment.
 - Resources: single-session maintenance, no agents/manifest/tracker; inherited model/effort, per-task tokens/cost unavailable. No new feature revision rounds.
+
+## 2026-11-06: developer frontend CI maintenance
+- Done: restored sidebar tip/companion shortcut in short viewports; Progress reads now depend on the router history-entry key as well as retry state. Existing approved shell/STU-04 contracts and all test assertions retained; both guides updated.
+- Validation: isolated full browser suite 473/473 PASS (4.5 minutes, no retries); first reused-local-server run 472 PASS/1 unrelated backend-interference failure; 40 repeated reported cases PASS (20 each), types/lint/build and LF-normalized formatting of 108 frontend files PASS. Raw format check reports existing Windows CRLF warnings. Historical Progress flake not reproduced before source hardening; no proven original flake mechanism claimed.
+- Next: review local commit and rerun remote frontend CI after push (not performed here). No backend or deployment changes.
+- Files: styles.css, Progress.tsx, both guides, logs/FrontendCiFix.md and workflow records.
+- Resources: single-session small-fix exemption; no agents/invocation manifest/report/tracker. Inherited Codex model/effort; exact tokens/cost/elapsed attribution unavailable. Diagnostic/configuration recoveries and profile warning; no new feature correction rounds. See session log for run timing caveats.

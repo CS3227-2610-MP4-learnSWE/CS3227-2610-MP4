@@ -2,6 +2,16 @@
 
 Newest entry first. Older entries describe the state at the time; the newest entry supersedes their open/merged status. Keep the newest 10 entries here; older ones are in `notes-archive.md`. Feature state is in `STATUS.md`.
 
+
+## 2026-11-07: spec-writer ADM-02 draft contract
+- Done: drafted all four stories with copied AC01-21, six question types, durable drafts, atomic targeted publication and existing student/teacher inbox integration, once-only submission, close and admin-only immutable response snapshots. Exact schemas, errors, UI states, request counts/history, 15-second timeout, quotas and concurrency boundaries recorded. Source compatibility amendments supplied by orchestrator incorporated; no application source read or code/tests written.
+- Next: human approves spec/plan and identified-response/no-expiry proposals, then orchestrator records approved start commit and starts isolated developer/test-designer workflow. Draft only; no implementation authorised yet.
+- Files touched: workflow/specs/ADM-02/spec.md, plan.md, tasks.md; workflow/notes.md and notes-archive.md.
+- Invocation ID: 2026-11-07-ADM02-01-spec-writer-01. Source session ID unavailable through tool interface; do not invent attribution. Model/effort inherited; elapsed: manifest timestamps authoritative.
+- Report: workflow/usage/runs/2026-11-07-ADM02-01/report.md (orchestrator-owned generation). Tracker not run by spec-writer. Tokens/cost unavailable; no retries or correction rounds; draft amendments during initial pass only.
+- Open questions/blocking: human approval required, especially identified admin-only feedback and retention without expiry/deletion; routine proposed limits/policies listed in plan. No live AI calls, database/env/process changes, application tests or commits.
+- Orchestrator close: spec checker PASS (1 checked, 0 failed, 0 waived), page-type notation corrected and query/sort contract clarified. Tracker executed after relative-path recovery; report generated with unmatched attribution, so tokens/cost unavailable and generated zeros are not actual zero usage. Feature remains incomplete at approval gate. Status/resource/session records updated; draft workflow artifacts committed locally by orchestrator. Session log: logs/Adm02Specification.md.
+
 ## 2026-11-06: developer frontend CI Progress history synchronization
 - Done: reproduced reported count1instead2 race10/10 under6xCPU; history/heading trace shows URL push/pop before Practice rendered. Test now waits Practice heading and Progress absence before both Back operations; exact1/2/3request counts retained. No app source/timeout/retry changes; DeveloperGuide note added.
 - Validation:20/20throttled repeatsPASS(1.7min); isolated full513/513browserPASS286.19s, zero skipped/flaky/retries, backend proxy deliberately unavailable. JSON stats asserted; type/lint/format/diffPASS. No backend run needed. PowerShellstderr wrapper anomaly diagnosed separately from greenJSON.
@@ -59,9 +69,3 @@ Newest entry first. Older entries describe the state at the time; the newest ent
 - Invocation ID: 2026-11-06-ADM06-01-spec-writer-01. Source session: 01a1b002-09f9-7d50-8aaf-7b12499d0b9d. Model/effort inherited, exact attribution unavailable; elapsed: manifest timestamps authoritative.
 - Feature-run report: workflow/usage/runs/2026-11-06-ADM06-01/report.md (orchestrator generates at run close).
 - Resource use: tracker not run by spec-writer (orchestrator-owned); total tokens/cost unavailable until report. No retries or feature correction rounds. Blocking: human spec/plan approval and source-aware compatibility mapping; no feature implementation authorised through this draft.
-## 2026-11-06: developer frontend CI maintenance
-- Done: restored sidebar tip/companion shortcut in short viewports; Progress reads now depend on the router history-entry key as well as retry state. Existing approved shell/STU-04 contracts and all test assertions retained; both guides updated.
-- Validation: isolated full browser suite 473/473 PASS (4.5 minutes, no retries); first reused-local-server run 472 PASS/1 unrelated backend-interference failure; 40 repeated reported cases PASS (20 each), types/lint/build and LF-normalized formatting of 108 frontend files PASS. Raw format check reports existing Windows CRLF warnings. Historical Progress flake not reproduced before source hardening; no proven original flake mechanism claimed.
-- Next: review local commit and rerun remote frontend CI after push (not performed here). No backend or deployment changes.
-- Files: styles.css, Progress.tsx, both guides, logs/FrontendCiFix.md and workflow records.
-- Resources: single-session small-fix exemption; no agents/invocation manifest/report/tracker. Inherited Codex model/effort; exact tokens/cost/elapsed attribution unavailable. Diagnostic/configuration recoveries and profile warning; no new feature correction rounds. See session log for run timing caveats.
