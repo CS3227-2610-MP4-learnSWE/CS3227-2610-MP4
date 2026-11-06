@@ -189,12 +189,18 @@ test("adm05 AC5 AC7 creation confirms password, sends no confirmation field and 
 }) => {
   const api = await mockAdmin(page);
   await page.goto("/admin/users");
-  await page.getByLabel("Display name", { exact: true }).fill("New Teacher");
   await page
-    .getByLabel("Email", { exact: true })
+    .getByRole("textbox", { name: "Display name", exact: true })
+    .fill("New Teacher");
+  await page
+    .getByRole("textbox", { name: "Email", exact: true })
     .fill("new-teacher@example.com");
-  await page.getByLabel("Password", { exact: true }).fill(PASSWORD);
-  await page.getByLabel("Confirm password", { exact: true }).fill("mismatch");
+  await page
+    .getByRole("textbox", { name: "Password", exact: true })
+    .fill(PASSWORD);
+  await page
+    .getByRole("textbox", { name: "Confirm password", exact: true })
+    .fill("mismatch");
   await choose(page, "Account role", "Teacher");
   await page
     .getByRole("button", { name: "Create account", exact: true })
@@ -203,7 +209,9 @@ test("adm05 AC5 AC7 creation confirms password, sends no confirmation field and 
     "Passwords do not match.",
   );
   expect(api.requests.filter((r) => r.method === "POST")).toHaveLength(0);
-  await page.getByLabel("Confirm password", { exact: true }).fill(PASSWORD);
+  await page
+    .getByRole("textbox", { name: "Confirm password", exact: true })
+    .fill(PASSWORD);
   await page
     .getByRole("button", { name: "Create account", exact: true })
     .click();
@@ -218,9 +226,11 @@ test("adm05 AC5 AC7 creation confirms password, sends no confirmation field and 
     role: "teacher",
   });
   expect(write.headers["x-csrf-token"]).toBeTruthy();
-  await expect(page.getByLabel("Password", { exact: true })).toHaveValue("");
   await expect(
-    page.getByLabel("Confirm password", { exact: true }),
+    page.getByRole("textbox", { name: "Password", exact: true }),
+  ).toHaveValue("");
+  await expect(
+    page.getByRole("textbox", { name: "Confirm password", exact: true }),
   ).toHaveValue("");
   const storage = await page.evaluate(() =>
     JSON.stringify([
@@ -360,10 +370,18 @@ test("adm05 failed creation preserves entered fields and reports duplicate email
 }) => {
   const api = await mockAdmin(page);
   await page.goto("/admin/users");
-  await page.getByLabel("Display name", { exact: true }).fill("New User");
-  await page.getByLabel("Email", { exact: true }).fill("duplicate@example.com");
-  await page.getByLabel("Password", { exact: true }).fill(PASSWORD);
-  await page.getByLabel("Confirm password", { exact: true }).fill(PASSWORD);
+  await page
+    .getByRole("textbox", { name: "Display name", exact: true })
+    .fill("New User");
+  await page
+    .getByRole("textbox", { name: "Email", exact: true })
+    .fill("duplicate@example.com");
+  await page
+    .getByRole("textbox", { name: "Password", exact: true })
+    .fill(PASSWORD);
+  await page
+    .getByRole("textbox", { name: "Confirm password", exact: true })
+    .fill(PASSWORD);
   api.failNextWrite(409, "email_exists");
   await page
     .getByRole("button", { name: "Create account", exact: true })
@@ -371,12 +389,12 @@ test("adm05 failed creation preserves entered fields and reports duplicate email
   await expect(page.getByRole("alert")).toContainText(
     "An account with this email already exists.",
   );
-  await expect(page.getByLabel("Display name", { exact: true })).toHaveValue(
-    "New User",
-  );
-  await expect(page.getByLabel("Email", { exact: true })).toHaveValue(
-    "duplicate@example.com",
-  );
+  await expect(
+    page.getByRole("textbox", { name: "Display name", exact: true }),
+  ).toHaveValue("New User");
+  await expect(
+    page.getByRole("textbox", { name: "Email", exact: true }),
+  ).toHaveValue("duplicate@example.com");
   expect(api.requests.filter((r) => r.method === "POST")).toHaveLength(1);
 });
 
@@ -440,7 +458,9 @@ test("adm05 session expiry clears selected account and entered password", async 
   const api = await mockAdmin(page);
   await page.goto("/admin/users");
   await openAccount(page);
-  await page.getByLabel("Password", { exact: true }).fill(PASSWORD);
+  await page
+    .getByRole("textbox", { name: "Password", exact: true })
+    .fill(PASSWORD);
   await page
     .getByRole("button", { name: "Disable account", exact: true })
     .click();

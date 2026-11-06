@@ -113,6 +113,7 @@ const routesByRole: Record<string, string[]> = {
     "/admin/responses",
     "/admin/announcements",
     "/admin/users",
+    "/admin/courses",
     "/admin/usage",
   ],
 };
@@ -123,7 +124,20 @@ for (const [role, routes] of Object.entries(routesByRole)) {
     if (role === "teacher") await mockAuthApi(page, { user: TEACHER });
     for (const route of routes) {
       await page.goto(route);
-      await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+      if (route === "/admin/users" || route === "/admin/courses") {
+        // ADM-05 is live-only; anonymous demo navigation must expose no account data.
+        await expect(page.getByRole("alert")).toContainText(
+          "Sign in to manage accounts and courses.",
+        );
+        await expect(
+          page.getByRole("link", { name: "Go to sign in" }),
+        ).toBeVisible();
+        await expect(
+          page.getByRole("button", { name: "Create account", exact: true }),
+        ).toHaveCount(0);
+      } else {
+        await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+      }
     }
     if (role === "admin") {
       await page.reload();
