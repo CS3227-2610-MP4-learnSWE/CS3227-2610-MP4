@@ -195,12 +195,8 @@ test("adm05 AC5 AC7 creation confirms password, sends no confirmation field and 
   await page
     .getByRole("textbox", { name: "Email", exact: true })
     .fill("new-teacher@example.com");
-  await page
-    .getByRole("textbox", { name: "Password", exact: true })
-    .fill(PASSWORD);
-  await page
-    .getByRole("textbox", { name: "Confirm password", exact: true })
-    .fill("mismatch");
+  await page.getByLabel("Password", { exact: true }).fill(PASSWORD);
+  await page.getByLabel("Confirm password", { exact: true }).fill("mismatch");
   await choose(page, "Account role", "Teacher");
   await page
     .getByRole("button", { name: "Create account", exact: true })
@@ -209,9 +205,7 @@ test("adm05 AC5 AC7 creation confirms password, sends no confirmation field and 
     "Passwords do not match.",
   );
   expect(api.requests.filter((r) => r.method === "POST")).toHaveLength(0);
-  await page
-    .getByRole("textbox", { name: "Confirm password", exact: true })
-    .fill(PASSWORD);
+  await page.getByLabel("Confirm password", { exact: true }).fill(PASSWORD);
   await page
     .getByRole("button", { name: "Create account", exact: true })
     .click();
@@ -226,11 +220,9 @@ test("adm05 AC5 AC7 creation confirms password, sends no confirmation field and 
     role: "teacher",
   });
   expect(write.headers["x-csrf-token"]).toBeTruthy();
+  await expect(page.getByLabel("Password", { exact: true })).toHaveValue("");
   await expect(
-    page.getByRole("textbox", { name: "Password", exact: true }),
-  ).toHaveValue("");
-  await expect(
-    page.getByRole("textbox", { name: "Confirm password", exact: true }),
+    page.getByLabel("Confirm password", { exact: true }),
   ).toHaveValue("");
   const storage = await page.evaluate(() =>
     JSON.stringify([
@@ -376,12 +368,8 @@ test("adm05 failed creation preserves entered fields and reports duplicate email
   await page
     .getByRole("textbox", { name: "Email", exact: true })
     .fill("duplicate@example.com");
-  await page
-    .getByRole("textbox", { name: "Password", exact: true })
-    .fill(PASSWORD);
-  await page
-    .getByRole("textbox", { name: "Confirm password", exact: true })
-    .fill(PASSWORD);
+  await page.getByLabel("Password", { exact: true }).fill(PASSWORD);
+  await page.getByLabel("Confirm password", { exact: true }).fill(PASSWORD);
   api.failNextWrite(409, "email_exists");
   await page
     .getByRole("button", { name: "Create account", exact: true })
@@ -458,9 +446,7 @@ test("adm05 session expiry clears selected account and entered password", async 
   const api = await mockAdmin(page);
   await page.goto("/admin/users");
   await openAccount(page);
-  await page
-    .getByRole("textbox", { name: "Password", exact: true })
-    .fill(PASSWORD);
+  await page.getByLabel("Password", { exact: true }).fill(PASSWORD);
   await page
     .getByRole("button", { name: "Disable account", exact: true })
     .click();
