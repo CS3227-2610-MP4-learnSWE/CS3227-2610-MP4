@@ -1,6 +1,6 @@
-# Plan: TRK-03 Per-invocation metrics from Claude Code logs
+# Plan: TRK-03 Per-invocation usage from Claude Code and Codex logs
 
-Status: Approved by user in chat (2026-11-05).
+Status: Original contract approved by user in chat (2026-11-05); Codex run-report and mandatory workflow attribution follow-up approved by the user's request (2026-11-06).
 
 All paths are under `workflow/tools/token-tracker/` unless stated. Python 3.12+, standard library only. Metric formulas are in `spec.md` ("Metric definitions"); this plan fixes names, shapes, texts and layouts. The test-designer and developer both rely only on this contract.
 
@@ -95,6 +95,13 @@ CSV encoding: UTF-8 without BOM, `\n` line endings, `csv.writer` default quoting
 ## API endpoints
 Not applicable: local CLI tool (no server, no network).
 
+## Codex invocation usage in the multi-agent workflow
+No new parser is required for the routine report: `tracker.codex_logs.read_codex_rows` already emits request-level `UsageRow` values, and `tracker.run_report.render_report` already attributes both `tool=codex` and `tool=claude` rows by exact `(tool, session_id, agent_id)` and invocation time window. The manifest contract is the existing `workflow/usage/templates/invocations.csv` header and `run-report` CLI above; no schema or output changes.
+
+Codex manifest mapping is fixed: `tool=codex`; `session_id` is exactly `session_meta.payload.id`; `agent_id` is the session ID for a log with `parent_thread_id` and blank for a main session; timestamps are timezone-aware invocation start/finish. The Markdown report contains model(s), request count, input, cache read/write, output, reasoning, and cost for each matching invocation. If a Codex source ID is missing or the local logs do not match it, the run closeout is incomplete and the resource log records attribution unavailable; no ID is invented and no missing total is called zero. The detailed `invocations-from-logs` path stays Claude-only.
+
+The orchestrator invokes `python -m tracker run-report --manifest <manifest>` at every completed or stopped multi-agent run close, then commits the manifest and report and links the report from the resource log. This is a required workflow action, not a provider hook. Local logs from another machine must be contributed before the report can be considered complete.
+
 ## Components and modules
 
 ### CLI contract
@@ -104,7 +111,7 @@ python -m tracker invocations-from-logs --run-id RUN_ID [--meta PATH] [--claude-
 ```
 - `--run-id` required. Valid: starts with a letter or digit, then only letters, digits, `.`, `_`, `-`.
 - Positional `SESSION_ID` one or more (argparse `nargs="+"`).
-- `--meta PATH` optional sidecar. `--claude-dir` default `~/.claude`. `--codex-dir` default `~/.codex` (only passed to `collect_rows`; Codex rows are discarded). `--prices` default `prices.json` in the tool folder (a missing file means no prices, as for the other commands).
+- `--meta PATH` optional sidecar. `--claude-dir` default `~/.claude`. `--codex-dir` default `~/.codex` (used by aggregate report cross-check; this Claude-specific reconstruction command does not cut Codex invocations). `--prices` default `prices.json` in the tool folder (a missing file means no prices, as for the other commands).
 - `--out-md` default `<workflow>/usage/runs/<RUN_ID>/report-v2.md`; `--out-csv` default `<workflow>/usage/runs/<RUN_ID>/metrics-v2.csv`, where `<workflow>` is `TOOL_DIR.parents[1]` (the repo's `workflow` folder), independent of the current directory. Parent folders are created. Existing files are overwritten only after every check has passed.
 - Success: stdout one line `Wrote invocation report for run {run_id} ({n} invocations) to {md_path} and {csv_path}`, where `n` counts invocation rows including orchestrator rows; exit 0. Warnings go to stderr, one per line, before any other output, and do not change the exit code.
 - Failure: stderr one or more lines starting `error: ` (exact texts below), exit code as listed, no output file written or changed. Every message says what is wrong and names the input that caused it. Argparse usage errors (missing `--run-id`, no session ID) exit 2 with argparse's own text.
@@ -257,7 +264,7 @@ Privacy test method (R7): synthetic logs carry distinct sentinel strings (for ex
 Security tests from the threat model: none apply (no web surface); the privacy test is the security test. Record its result in `workflow/security/` only if the orchestrator wants it logged; not required for a local tool.
 
 ### R8 docs (what the READMEs must state)
-Command, options and defaults; output files and layouts; the sidecar columns and the two-step flow (run once to get IDs, then write the sidecar); metric rules in short; exit codes. Known limits: the Claude Code log format is undocumented and may change (fields are observed in one probe session, `workflow/specs/TRK-03/log-probe.md`); where a worktree-isolated subagent's log is stored is unverified; Codex logs get no new metrics; the Haiku tier rule is an unverified assumption, and Haiku variant IDs are priced by the prefix rule in "Data model" (a provider-prefixed or otherwise non-prefix ID is not priced); list prices are estimates, not billed ("tracker list-price estimates, not billed"); wall-clock gaps are not dependencies; orchestrator elapsed includes idle time and its tool time includes waiting for subagents; "human messages" may include injected non-meta messages; repeated reads ignore offsets; roles depend on the session's agent registry; the probe is one session only. The README must also explain how to read the role columns (`role` = what the log says, `requested_agent_type` = what the orchestrator asked for in the Agent call, `role_label` = what the human says it was, display only, never in an ID), that `likely_agent (inferred guess)` is an inference with the three rules (`window`, `nearest`, `none`) and is never added to an agent's own totals, and the descriptive error and cross-check messages.
+Command, options and defaults; output files and layouts; the sidecar columns and the two-step flow (run once to get IDs, then write the sidecar); metric rules in short; exit codes. Known limits: the Claude Code log format is undocumented and may change (fields are observed in one probe session, `workflow/specs/TRK-03/log-probe.md`); where a worktree-isolated subagent's log is stored is unverified; Codex gets token totals through `run-report` but not Claude-specific tool, file-read, context or detailed timing metrics; the Haiku tier rule is an unverified assumption, and Haiku variant IDs are priced by the prefix rule in "Data model" (a provider-prefixed or otherwise non-prefix ID is not priced); list prices are estimates, not billed ("tracker list-price estimates, not billed"); wall-clock gaps are not dependencies; orchestrator elapsed includes idle time and its tool time includes waiting for subagents; "human messages" may include injected non-meta messages; repeated reads ignore offsets; roles depend on the session's agent registry; the probe is one session only. The README must also explain how to read the role columns (`role` = what the log says, `requested_agent_type` = what the orchestrator asked for in the Agent call, `role_label` = what the human says it was, display only, never in an ID), that `likely_agent (inferred guess)` is an inference with the three rules (`window`, `nearest`, `none`) and is never added to an agent's own totals, and the descriptive error and cross-check messages.
 
 ## Decisions
 - Orchestrator rows are one per session (not split per human turn): simplest, deterministic, matches the blank-agent-ID rule; stated as a limit.

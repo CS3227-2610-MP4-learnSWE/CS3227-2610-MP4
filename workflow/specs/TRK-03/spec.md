@@ -1,9 +1,9 @@
-# Spec: TRK-03 Per-invocation metrics from Claude Code logs
+# Spec: TRK-03 Per-invocation usage from Claude Code and Codex logs
 
-Status: Approved by user in chat (2026-11-05), spec, plan and tasks, with the decisions D1 to D5 in "Open questions".
+Status: Original contract approved by user in chat (2026-11-05); Codex run-report and mandatory workflow attribution follow-up approved by the user's request (2026-11-06).
 
 ## Goal
-The ADM-01 workflow experiment needs per-invocation detail the token tracker does not give today: cache behaviour, tool and file-read counts, time split, orchestrator rows and a Haiku price. TRK-03 adds these so the experiment needs no one-off scripts. It is workflow tooling in `workflow/tools/token-tracker/` (Python 3.12+, standard library only), not product code. TRK-03 has no user story; the source is the orchestrator's brief, and its requirements are traced below as R1 to R8.
+The ADM-01 workflow experiment needs per-invocation detail the token tracker does not give today: cache behaviour, tool and file-read counts, time split, orchestrator rows and a Haiku price. Multi-agent feature reports must also attribute Codex token usage to each invocation. TRK-03 uses the existing Codex parser and `run-report` manifest path for Codex token totals; the richer log-reconstructed metrics remain Claude-only. It is workflow tooling in `workflow/tools/token-tracker/` (Python 3.12+, standard library only), not product code. TRK-03 has no user story; the source is the orchestrator's brief and the follow-up request dated 2026-11-06.
 
 ## Behaviour
 - R1 Pricing: `prices.json` gains Claude Haiku 5.5 (`claude-haiku-5-5`) with two per-request tiers chosen by prompt size. Existing models and flat price entries keep working unchanged. Variant model IDs of Haiku 5.5 (dated or suffixed, for example `claude-haiku-5-5-20261105` or `claude-haiku-5-5[1m]`) are priced as `claude-haiku-5-5` by one deterministic rule (see "Model ID matching").
@@ -15,6 +15,7 @@ The ADM-01 workflow experiment needs per-invocation detail the token tracker doe
 - R6 Cross-check: per-invocation sums plus unattributed usage must equal what the existing `report` code path gives for the same sessions. A mismatch is an error: non-zero exit and nothing written.
 - R7 Privacy: outputs and error messages hold only numbers, IDs, model names, roles, timestamps, branch names, folder paths and the paths of files read. No prompt, reply, tool input (other than a `Read` file path and the short `subagent_type` of an `Agent` call), tool result or file content. The `Agent` call's `description` and `prompt` and the meta `description` are never read into outputs.
 - R8 Docs: `workflow/tools/token-tracker/README.md` and `workflow/usage/README.md` are updated in the same change, with the known limits.
+- R9 Codex feature-run attribution: routine multi-agent manifests include the Codex session ID for the orchestrator and every Codex agent invocation. `run-report` matches Codex rows by tool, session ID, agent ID and invocation time window, and reports model, request count, input/cache/output/reasoning tokens and list-price cost. The orchestrator runs it at every multi-agent run close, including stopped runs. Missing session IDs or unmatched records are explicitly recorded as unavailable/incomplete in the resource log; they are never reported as zero use.
 
 ### Terms
 - Prompt size of a request = `input + cache_read + cache_write_5m + cache_write_1h` tokens (the values of one `UsageRow`).
@@ -94,12 +95,13 @@ The ADM-01 workflow experiment needs per-invocation detail the token tracker doe
 - [ ] AC23 (R8): the token-tracker README and `workflow/usage/README.md` document the command, outputs, sidecar, the metric rules and the known limits listed in the plan, and label costs "tracker list-price estimates, not billed".
 - [ ] AC24 (regression): the 37 existing tracker tests pass unmodified; `report`, `export` and `run-report` behave as before and `run-report` output for the existing fixtures is byte-identical; the `invocation-v1` manifest and report are unchanged.
 - [ ] AC25 (constraints): standard library only, no new dependency, no real logs in tests (synthetic logs in temporary folders), `jsonl.read_objects`, `claude_logs`, `pricing` and `collect_rows` reused, not copied.
+- [ ] AC31 (Codex workflow): a feature-run manifest containing Codex invocations with exact session/agent IDs attributes Codex usage rows to the matching invocation and time window; reported model, requests, token categories and priced cost equal the underlying rows. A missing/unmatched Codex source is called out as unavailable/incomplete, never asserted to be zero. Multi-agent workflow documentation requires the orchestrator to populate these IDs and run `run-report` at close for completed and stopped runs. Claude detailed metrics and historical command behavior remain unchanged.
 
 ## UI states and copy
 No screen: this is a local command-line tool. Its output, messages and exit codes are fixed in `plan.md` ("CLI contract").
 
 ## Out of scope
-- Codex logs: no new metrics for Codex sessions; a session ID found only in Codex logs counts as "no logs".
+- Codex detailed log reconstruction: `invocations-from-logs` remains Claude-only; Codex receives token and cost attribution through the existing `run-report` manifest command, without Claude-specific tool, file-read, context or timing metrics.
 - Generating the `invocation-v1` manifest or changing `run-report`.
 - Estimating missing data (the one labelled guess for unattributed usage excepted), live monitoring, dashboards, HTML, new dependencies.
 - Reading or reporting any prompt, reply, tool result or file content, or the `description` or `prompt` of an `Agent` call.
