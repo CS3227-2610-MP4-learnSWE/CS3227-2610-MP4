@@ -175,6 +175,9 @@ test("stu02ps AC15 courses and sets appear in the order the server sent them", a
   page,
 }) => {
   await openPicker(page, { catalog: twoCourses() });
+  await expect(
+    page.getByRole("link", { name: "Testing basics" }),
+  ).toBeVisible();
   const headings = await page
     .getByRole("heading", { level: 2 })
     .allInnerTexts();
@@ -514,6 +517,13 @@ test("stu02ps AC15 after the session ends, Back shows no practice data", async (
     page.getByRole("link", { name: "Testing basics" }),
   ).toBeVisible();
   await page.getByRole("link", { name: "Testing basics" }).click();
+  await expect(
+    page.getByRole("heading", {
+      level: 1,
+      name: "Put your knowledge to work.",
+    }),
+  ).toBeVisible();
+  await expect.poll(() => mock.count("getSet")).toBe(1);
   auth.expire();
   await page.goBack();
   await expect(page.getByText("Testing basics")).toHaveCount(0);
