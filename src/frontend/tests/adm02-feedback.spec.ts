@@ -754,7 +754,9 @@ test("ADM-02 admin form and response rows are one-line, full-row links with hove
       responseLink.evaluate((node) => getComputedStyle(node).backgroundColor),
     )
     .not.toBe(responseColor);
-  await responseLink.getByText(STUDENT.display_name, { exact: true }).click();
+  await responseLink
+    .getByText(`${STUDENT.display_name} · ${TIME}`, { exact: true })
+    .click();
   await expect(page).toHaveURL(
     `/admin/feedback/${FORM_ID}/responses/${RESPONSE_ID}`,
   );

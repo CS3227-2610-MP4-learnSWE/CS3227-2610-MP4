@@ -283,7 +283,10 @@ export async function setup(page: Page, user: User = STUDENT) {
               {
                 id: RESPONSE_ID,
                 form_id: FORM_ID,
-                respondent: { id: user.id, display_name: user.display_name },
+                respondent: {
+                  id: STUDENT.id,
+                  display_name: STUDENT.display_name,
+                },
                 submitted_at: TIME,
               },
             ]

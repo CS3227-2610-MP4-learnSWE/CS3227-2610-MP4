@@ -17,6 +17,12 @@
 
 Newest entry first. Older entries describe the state at the time; the newest entry supersedes their open/merged status. Keep the newest 10 entries here; older ones are in `notes-archive.md`. Feature state is in `STATUS.md`.
 
+## 2026-11-07: developer ADM-02 frontend CI fixture repair
+- Done: reproduced missing response link; aligned admin list fixture with student detail fixture and corrected exact metadata click. Application behavior and all row assertions retained. Files: two browser test files, DeveloperGuide, logs/Adm02FrontendCiFix.md, this handoff.
+- Validation: both fixture-consuming browser suites 54/54 PASS (53.4s), zero retries; typecheck/lint/format/diff checks PASS. Initial fixture-only run 47 PASS/1 click failure exposed the second locator defect; no retries or timeout changes. Full 567-case suite not rerun for this fixture-only repair.
+- Next: rerun remote CI after pushing the fix. No backend/env/database changes.
+- Resources: single-session small test-maintenance exemption, no agents/workflow invocation/tracker/report. Model/effort inherited; tokens/cost/exact elapsed unavailable.
+
 
 ## 2026-11-07: orchestrator ADM-02 approved build and integration
 - Workflow table maintenance: user requested mandatory table per invocation and one Token usage column. Agent rules/closeout template updated, tracker compact renderer implemented, current ADM02 table regenerated; all168tracker tests PASS. Raw export/TRK03 detailed schemas unchanged; Codex attribution still unavailable. Single-session maintenance, no new agents/invocation, tokens/cost unavailable. logs/WorkflowUsageTable.md.

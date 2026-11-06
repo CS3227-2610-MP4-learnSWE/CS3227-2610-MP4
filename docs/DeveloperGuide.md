@@ -539,6 +539,8 @@ Expected: **40 passed**. Covers filters, messages, retry, timeout, access, histo
 
 ## ADM-02: targeted feedback implementation
 
+Browser fixture maintenance: admin response lists and response details in `tests/adm02Api.ts` describe the same student respondent, independent of the signed-in reviewer. Row navigation tests click the complete name-and-timestamp metadata text, which shares one span.
+
 Apply additive migration `20261107_adm02_feedback` before starting the updated application. It follows `20261106_adm06_ai_usage` and adds `feedback_forms`, `feedback_recipients`, `feedback_responses` and `feedback_response_drafts`. Existing account, course, lesson and AI data are preserved. Use your existing configured database; never point development commands at production.
 
 Windows (from a configured local checkout; both commands load `.env` so migration and API use the same `DATABASE_URL`):
