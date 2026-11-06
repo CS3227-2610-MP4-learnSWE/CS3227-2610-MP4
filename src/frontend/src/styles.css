@@ -3569,3 +3569,14 @@ td .MuiButton-root {
 .publication-viewer > h2 {
   margin-top: 0;
 }
+.practice-set-list {
+  list-style: none;
+  margin: 0 0 20px;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+.practice-set-row h3,
+.practice-set-row p {
+  margin: 4px 0;
+}

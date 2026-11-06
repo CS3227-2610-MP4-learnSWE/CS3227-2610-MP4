@@ -109,7 +109,7 @@ export default function StudyCompanion() {
   const demoMode = useAuth().status === "anonymous";
   // Bumped by "Clear chat" so a reply that arrives later is ignored.
   const generation = useRef(0);
-  const { submitted, submittedAttemptId, setId } = usePractice();
+  const { submitted, submittedAttemptId, setId: practiceSetId } = usePractice();
   const location = useLocation();
   const path = location.pathname.split("/");
   const page =
@@ -138,7 +138,8 @@ export default function StudyCompanion() {
     document.addEventListener("keydown", close);
     return () => document.removeEventListener("keydown", close);
   }, [open, setOpen]);
-  const onPractice = path[2] === "practice";
+  const urlSetId = path[2] === "practice" && path[3] ? path[3] : null;
+  const onPractice = urlSetId !== null;
   const send = async () => {
     const text = draft.trim();
     if (!text || pending) return;
@@ -164,8 +165,11 @@ export default function StudyCompanion() {
         history,
         context: {
           page: onPractice ? "practice" : "other",
-          set_id: onPractice ? setId : null,
-          attempt_id: onPractice ? submittedAttemptId : null,
+          set_id: urlSetId,
+          attempt_id:
+            onPractice && practiceSetId === urlSetId
+              ? submittedAttemptId
+              : null,
           label: page.slice(0, 80),
         },
       });
