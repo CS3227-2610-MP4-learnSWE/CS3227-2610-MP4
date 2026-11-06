@@ -178,3 +178,39 @@ def test_stu02ps_fake_ac20_the_provider_is_asked_once_for_the_students_sets(db):
     build_progress(db, "s1", Store([summary(FIXTURE_SET.id, ["q1"], ["q1"])]), provider)
     assert [c[0] for c in provider.calls] == ["get_many_for_student"]
     assert provider.calls[0][2] == "s1"
+
+
+# ---------------------------------------------------------------- B2: one spelling rule for the set id everywhere
+def _spellings(set_id):
+    return [set_id.upper(), "{" + set_id + "}", set_id.replace("-", ""), "urn:uuid:" + set_id, set_id.upper().replace("-", "")]
+
+
+@pytest.mark.parametrize("index", range(5))
+def test_stu02ps_fake_b2_companion_accepts_any_uuid_spelling_with_an_attempt_of_that_set(fake, index):
+    s = new_student()
+    aid = submitted_attempt(s)
+    spelling = _spellings(SET_ID)[index]
+    r = ask(s, "why?", page="practice", set_id=spelling, attempt_id=aid)
+    assert r.status_code == 200, (spelling, r.text)
+    assert r.json()["mode"] == "explain"
+    assert len(fake.calls) == 1
+
+
+def test_stu02ps_fake_b2_companion_with_an_attempt_still_rejects_another_set_and_non_uuid_ids(fake, fake_provider):
+    fake_provider.add(other_set())
+    s = new_student()
+    aid = start(s)
+    for wrong in (OTHER_SET_ID, OTHER_SET_ID.upper(), "intro-se-1", "nope"):
+        r = ask(s, "hi", page="practice", set_id=wrong, attempt_id=aid)
+        assert r.status_code == 422 and code_of(r) == "invalid_context", (wrong, r.text)
+    assert fake.calls == []
+
+
+@pytest.mark.parametrize("index", range(5))
+def test_stu02ps_fake_b2_set_routes_treat_every_spelling_as_the_same_set(index):
+    s = new_student()
+    spelling = _spellings(SET_ID)[index].replace("{", "%7B").replace("}", "%7D")
+    r = call("GET", f"/api/practice-sets/{spelling}", s)
+    assert r.status_code == 200 and r.json()["id"] == SET_ID
+    a = call("POST", f"/api/practice-sets/{spelling}/attempts", s)
+    assert a.status_code == 201 and a.json()["set_id"] == SET_ID
