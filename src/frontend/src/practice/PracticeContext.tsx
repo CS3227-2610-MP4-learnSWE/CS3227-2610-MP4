@@ -164,10 +164,12 @@ export function PracticeProvider({ children }: { children: ReactNode }) {
               attemptId.current = started;
             }
             await saveAnswers(attemptId.current, choices);
+            if (mine !== epoch.current) return;
             step.current = "submit";
           }
           if (step.current === "submit") {
             await submitAttempt(attemptId.current!);
+            if (mine !== epoch.current) return;
             step.current = "results";
           }
           await finish(mine);

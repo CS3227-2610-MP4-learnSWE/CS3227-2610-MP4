@@ -1,6 +1,7 @@
 """HTTP route for the study companion: resolves context, calls the model, checks the reply."""
 import logging
 import time
+from uuid import UUID
 
 from fastapi import APIRouter, Depends
 
@@ -56,6 +57,14 @@ def _map_error(exc: LlmError) -> ApiError:
     return ApiError(503, "llm_unavailable", "The study companion is unavailable right now.")
 
 
+def _canonical_set_id(value: str) -> str:
+    """Lowercase hyphenated form of a UUID spelling; any other text is returned unchanged."""
+    try:
+        return str(UUID(value))
+    except ValueError:
+        return value
+
+
 def _resolve_context(
     ctx: ContextIn, student: str, provider: SetProvider
 ) -> tuple[PracticeSet | None, Attempt | None]:
@@ -67,7 +76,7 @@ def _resolve_context(
             attempt = store.get_owned(ctx.attempt_id, student)
             if attempt is None:
                 raise ApiError(404, "attempt_not_found", "Attempt not found.")
-            if ctx.set_id is not None and ctx.set_id != attempt.set_id:
+            if ctx.set_id is not None and _canonical_set_id(ctx.set_id) != attempt.set_id:
                 raise ApiError(422, "invalid_context", "The page context is not consistent.")
             set_id = attempt.set_id
         else:
