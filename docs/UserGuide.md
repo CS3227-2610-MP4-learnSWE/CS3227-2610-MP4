@@ -52,6 +52,102 @@ The former **Practice sets** builder has been removed. Its old URL opens the con
 - **Remove course access** requires confirmation. Subsequent content requests are denied, but completion/authorship records remain; granting access again restores their visibility under existing feature rules. AI results are withheld if account/session access is lost while generation runs. Teacher generation also rechecks current course access; the student companion's legacy practice fixtures are not course-grounded retrieval.
 - AI usage displays illustrative requests/failures; actual token usage is explicitly unavailable.
 
+### Set up local admin sign-in (PowerShell)
+
+Use these steps with the existing local database configured in your checkout. For a fresh database, first follow [developer database setup](DeveloperGuide.md#local-admin-setup-and-password-reset-powershell). Commands assume a PowerShell terminal inside this repository. Keep existing database and SoC settings; do not overwrite an existing `.env` with the example file.
+
+1. Start Docker Desktop, then prepare the backend env file without replacing it:
+
+   ```powershell
+   Set-Location (git rev-parse --show-toplevel)
+   docker compose up -d postgres
+   Set-Location src\backend
+   if (-not (Test-Path .env)) { Copy-Item .env.example .env }
+   notepad .env
+   ```
+
+2. In **`src/backend/.env`**, add/update these settings, save, and close the editor. Replace existing entries rather than adding duplicate keys. These are public **local-test examples**, not production credentials:
+
+   ```dotenv
+   APP_ENV=development
+   SESSION_COOKIE_SECURE=false
+   SESSION_COOKIE_SAMESITE=lax
+   ALLOWED_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
+   SEED_ADMIN_EMAIL=adm05-test@example.com
+   SEED_ADMIN_PASSWORD='ExampleOnly!7Qm#42vL'
+   ```
+
+   Keep the password quoted in `.env` so `#` is literal; sign in without the quotes. There is **no default admin credential**. Public Create account creates students only. `.env` is Git-ignored. SOCLAAS credentials are not needed for login or account/course management.
+
+3. Install backend dependencies, migrate, and seed:
+
+   ```powershell
+   Set-Location (git rev-parse --show-toplevel)
+   Set-Location src\backend
+   uv sync --frozen
+   uv run --env-file .env alembic upgrade head
+   uv run --env-file .env python -m teacher_materials.seed
+   uv run --env-file .env python -m auth.seed
+   ```
+
+   `demo-admin: seeded` means credentials were saved. `unchanged` keeps the existing password/email. `skipped` means missing or invalid settings; read the reported reason. If you changed the password of an **existing seeded account**, run this explicitly:
+
+   ```powershell
+   Set-Location (git rev-parse --show-toplevel)
+   Set-Location src\backend
+   uv run --env-file .env python -m auth.seed --reset-passwords
+   ```
+
+   This updates **all configured seed accounts**, including student/teacher if their email/password pairs are set, not just the admin. It does not reset accounts created through Users, enable disabled accounts or restore archived accounts. If the email belongs to another account, use an unused test email. Editing `.env` alone, restarting, or seeding without this flag does not replace an existing password.
+
+4. Start the backend. If already running, first press **Ctrl+C** in its terminal:
+
+   ```powershell
+   Set-Location (git rev-parse --show-toplevel)
+   Set-Location src\backend
+   uv run --env-file .env uvicorn main:app --host 127.0.0.1 --port 8000 --reload
+   ```
+
+   Keep this terminal open. After backend `.env` changes, fully stop and restart this command: `--reload` does not reload environment values loaded into the parent process by `uv`.
+
+5. In a **second terminal**, prepare the frontend env file:
+
+   ```powershell
+   Set-Location (git rev-parse --show-toplevel)
+   Set-Location src\frontend
+   if (-not (Test-Path .env)) { Copy-Item .env.example .env }
+   notepad .env
+   ```
+
+   In **`src/frontend/.env`**, save these settings:
+
+   ```dotenv
+   API_PORT=8000
+   VITE_ENABLE_DEMO_ACCESS=true
+   ```
+
+   If `API_PROXY_TARGET` is already configured, use `http://127.0.0.1:8000` or remove that override so `API_PORT` is used. Stop any existing frontend with Ctrl+C, then run:
+
+   ```powershell
+   npm.cmd ci
+   npm.cmd run dev
+   ```
+
+   Restart after frontend `.env` changes too. `npm.cmd` avoids PowerShell's `npm.ps1` execution-policy error.
+
+6. Open **http://127.0.0.1:5173/login** and use **Sign in**, not the demo shortcut. With the example settings, use `adm05-test@example.com` / `ExampleOnly!7Qm#42vL`. Successful login opens the admin workspace. Continue with the account/course checks below.
+
+7. To test a password change, keep the admin email unchanged, edit `SEED_ADMIN_PASSWORD`, save, and run the reset command in step 3. Sign out, try the old password once (it should fail), then sign in with the new password (it should succeed). Reset seeding does not end existing browser sessions; a page that remains signed in is not evidence that the new password works.
+
+| Result | Meaning and next step |
+|---|---|
+| Initial `GET /api/auth/me` 401 | Normal before sign-in: no authenticated session yet. |
+| `POST /api/auth/login` 401 | Incorrect credentials or inactive account. Check the seed output, then apply `--reset-passwords` if you changed an existing seed password. |
+| Login 403 | Origin verification failed. Check `ALLOWED_ORIGINS` includes your exact frontend address/port, then fully restart the backend. Do not disable CSRF protection. |
+| Protected action 403 | Can be a wrong role or CSRF/Origin problem. Inspect `forbidden` versus `csrf_failed`; sign in with the appropriate account. |
+| Login 429 | Too many attempts. Wait for the retry period; restarting a local development backend also clears its in-memory limiter. |
+| API 503 or network failure | Check PostgreSQL, migrations, backend port and frontend proxy settings; this does not mean the password is incorrect. |
+
 ### Try account and course management locally
 
 1. Sign in with your locally configured seeded admin. Open Courses and create `ADM-05 test course`.

@@ -2,6 +2,12 @@
 
 Newest entry first. Older entries describe the state at the time; the newest entry supersedes their open/merged status. Keep the newest 10 entries here; older ones are in `notes-archive.md`. Feature state is in `STATUS.md`.
 
+## 2026-11-06: developer documentation follow-up for local ADM-05 login/testing
+- Done: added step-by-step UserGuide/DeveloperGuide env, Docker/database, migrate/seed/reset, restart and sign-in walkthroughs. Explain no default admin credentials, unchanged seed hashes, all-configured-role reset scope, quoted public example password, frontend Origin/proxy settings and 401/403/429/503 recovery. Added focused/full automated test commands and isolated test-run directories.
+- Validation: 15 PowerShell command blocks parse; temporary sample env quoting/password/origin check PASS; diff check PASS. Documentation only, no runtime tests or developer .env/DB/process changes. One temporary-env argument-format retry; no application correction rounds.
+- Next: user follows docs/UserGuide.md local sign-in setup, then account/course checks; DeveloperGuide includes fresh database and automated testing steps.
+- Files: UserGuide, DeveloperGuide, logs/Adm05LoginTestingWalkthrough.md, notes/archive and resource log. Single-session documentation exemption; no agents/run manifest. Inherited Codex model/effort, per-task tokens/cost and elapsed attribution unavailable; tracker not run for this docs-only follow-up.
+
 ## 2026-11-06: orchestrator ADM-05 verified and committed locally
 - Done: synchronised the user's expanded admin stories, preserved ADM-01?04/ADM-06 text, and implemented fixed-role account creation/lifecycle, courses with atomic General topic, student enrolments and teacher management assignments. No promotion/demotion or password-change flow. Source `07deb57`; strongest read-only verifier PASS, no remaining defects. Two application correction rounds used.
 - Evidence: clean full browser 391/391 PASS; all 968 final backend cases covered across full/focused runs, including 87 ADM-05 cases. Historical publication migration assumptions corrected without weakening; Windows TEMP and browser harness collisions recovered. Types/lint/build, all-spec check 6/0/12existingwaivers, diff and line-ending-aware formatting PASS. See logs/Adm05Verification.md and workflow/security/test-log.md.
@@ -62,8 +68,3 @@ Newest entry first. Older entries describe the state at the time; the newest ent
 - Invocation/report: single advisory Codex session; no feature run or agents. Model/effort, tokens and cost unavailable; tracker not run; retries/revision rounds 0.
 
 Newest entry first. Use `templates/handoff.md`. Older entries describe the state at the time; the newest entry supersedes their open/merged status. Keep the newest 10 entries here; older ones are in `notes-archive.md`. Feature state is in `STATUS.md`.
-
-## 2026-11-05: Fix obsolete CI teacher-answer positive control (orchestrator)
-- Done: user-reported CI failure reproduced exactly after fresh build. Publishing removed teacherDemo answers; CI still required them inside Teacher chunk. Positive control now uses backend fixture; scan includes ALL JS, no teacher exemption. README/DeveloperGuide aligned. No app/runtime changes.
-- Evidence: original exact YAML step RED; corrected clean build GREEN; injected index and Teacher explanation controls both rejected; cleanup/final scan/build/typecheck/diffcheck PASS. Full app suites unchanged/not rerun; remote GitHub CI not rerun. See logs/TeacherPublicationCiCheckFix.md and security log.
-- Next: commit locally, user pushes fix and reruns CI. No .env/developer DB/live AI/remote Git touched; separate CI maintenance correction, not application round3. Tracker attempted0 attributed requests (usage/cost unavailable), inherited Codex single session/no agents; experiments/results/teacher-publication-ci-fix.csv.

@@ -2,6 +2,11 @@
 
 Entries moved unchanged from `notes.md` on 2026-11-03 and 2026-11-05, newest first. They describe the state at the time; `notes.md` and `STATUS.md` supersede them.
 
+## 2026-11-05: Fix obsolete CI teacher-answer positive control (orchestrator)
+- Done: user-reported CI failure reproduced exactly after fresh build. Publishing removed teacherDemo answers; CI still required them inside Teacher chunk. Positive control now uses backend fixture; scan includes ALL JS, no teacher exemption. README/DeveloperGuide aligned. No app/runtime changes.
+- Evidence: original exact YAML step RED; corrected clean build GREEN; injected index and Teacher explanation controls both rejected; cleanup/final scan/build/typecheck/diffcheck PASS. Full app suites unchanged/not rerun; remote GitHub CI not rerun. See logs/TeacherPublicationCiCheckFix.md and security log.
+- Next: commit locally, user pushes fix and reruns CI. No .env/developer DB/live AI/remote Git touched; separate CI maintenance correction, not application round3. Tracker attempted0 attributed requests (usage/cost unavailable), inherited Codex single session/no agents; experiments/results/teacher-publication-ci-fix.csv.
+
 ## 2026-11-05: Merge master PR20 into teacher publishing (orchestrator)
 - Done: merged local master0aa7932 into feat/tea03-publish-content. Master adds TRK-02 invocation-report tooling/docs/tests and ADM-01/TRK-03 planning logs; no src application changes. Status/notes conflicts preserve both histories; older notes archived under the ten-entry rule. TRK-02 records PR20 merged, CHK-01 remains merged.
 - Publishing remains verified at380749e (881backend/377browser plus final14focused and visual checks); these prior application suites are not rerun for this tooling/docs-only merge. Current tracker/checker and merge integrity verification recorded in logs/TeacherPublishingMasterMerge20261105.md.

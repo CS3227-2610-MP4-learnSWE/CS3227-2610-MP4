@@ -189,7 +189,49 @@ Notes use existing student Materials/completion APIs unchanged. Published MCQs m
 
 The live admin screens are `/admin/users` and `/admin/courses`. All `/api/admin/*` routes use cookie authentication, the admin role, shared CSRF/Origin checks and `Cache-Control: no-store`. `admin_access/routes.py` owns strict input/API handling; `admin_access/service.py` owns account lifecycle and membership transactions. Creating a course also inserts exactly one General topic in the same transaction so existing teacher publication forms can select it. Existing courses are unchanged. The approved exact API/UI contract is in `workflow/specs/ADM-05/plan.md`.
 
-Apply the additive `20261106_adm05_access` migration before starting the updated backend. Existing users default to enabled; `User.access_status` is enabled/disabled/archived and `archived_at` records irreversible archival. Downgrade refuses while any disabled/archived account exists, rather than silently granting access. Do not edit old migrations. Run from the repository root in PowerShell:
+### Local admin setup and password reset (PowerShell)
+
+Prerequisites: Git, uv, Node/npm and Docker Desktop as in [README](../README.md). Run commands from inside this checkout. Existing env/database settings must be preserved; no default admin credentials are shipped. Public signup creates students only. No SoC credentials are needed for ADM-05 or mocked tests.
+
+**1. Prepare env files and PostgreSQL.** Start Docker Desktop, then run:
+
+```powershell
+Set-Location (git rev-parse --show-toplevel)
+docker compose up -d postgres
+docker compose exec -T postgres pg_isready -U learnswe -d learnswe
+if (-not (Test-Path src\backend\.env)) { Copy-Item src\backend\.env.example src\backend\.env }
+if (-not (Test-Path src\frontend\.env)) { Copy-Item src\frontend\.env.example src\frontend\.env }
+notepad src\backend\.env
+```
+
+The readiness command should report `accepting connections`. If PostgreSQL is still starting, repeat that check before creating a database or running migrations.
+
+**2. Update `src/backend/.env`.** Keep existing database/SoC values and replace existing assignments rather than adding duplicate keys. For a fresh setup, the template uses the database URL below. Credentials here are public **local-test examples**, never shared/production credentials:
+
+```dotenv
+DATABASE_URL=postgresql+psycopg://learnswe:learnswe-local-only@127.0.0.1:5433/learnswe_db_files
+APP_ENV=development
+SESSION_COOKIE_SECURE=false
+SESSION_COOKIE_SAMESITE=lax
+ALLOWED_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
+SEED_ADMIN_EMAIL=adm05-test@example.com
+SEED_ADMIN_PASSWORD='ExampleOnly!7Qm#42vL'
+```
+
+Save the file. Quoting keeps `#` literal; do not enter quotes in the login form. `.env` is ignored; never commit credentials. Optional `SEED_STUDENT_EMAIL`/`SEED_STUDENT_PASSWORD` and `SEED_TEACHER_EMAIL`/`SEED_TEACHER_PASSWORD` pairs configure fixed demo accounts; incomplete pairs are skipped. SOCLAAS settings are required only for actual generation/chat, not login.
+
+**Fresh database only:** when using `learnswe_db_files`, create it only if missing. Skip this block when retaining a different existing `DATABASE_URL`; ensure that database is reachable instead. This block preserves any existing database:
+
+```powershell
+Set-Location (git rev-parse --show-toplevel)
+$adm05DatabaseExists = docker compose exec -T postgres psql -U learnswe -d postgres -tAc "SELECT 1 FROM pg_database WHERE datname = 'learnswe_db_files'"
+if ($LASTEXITCODE -ne 0) { throw 'Cannot inspect PostgreSQL; check Docker Desktop and the postgres service.' }
+if (($adm05DatabaseExists -join '').Trim() -ne '1') {
+    docker compose exec -T postgres createdb -U learnswe learnswe_db_files
+}
+```
+
+**3. Apply migrations and seed, then start the backend.** Apply the additive `20261106_adm05_access` migration before starting the updated backend. Existing users default to enabled; `User.access_status` is enabled/disabled/archived and `archived_at` records irreversible archival. Downgrade refuses while any disabled/archived account exists, rather than silently granting access. Do not edit old migrations. Stop any existing backend with Ctrl+C in its terminal first:
 
 ```powershell
 Set-Location (git rev-parse --show-toplevel)
@@ -202,9 +244,59 @@ uv run --env-file .env python -m auth.seed
 uv run --env-file .env uvicorn main:app --host 127.0.0.1 --port 8000 --reload
 ```
 
-Use the existing ignored `.env` settings and `SEED_ADMIN_EMAIL`/`SEED_ADMIN_PASSWORD` to provision the first administrator; never commit credentials. Seeds are explicit development/setup commands. Admin creation handles later student/teacher/admin accounts; public signup stays student-only. Roles cannot change through the admin API. No password reset or compulsory-change flow is added. The password `ExampleOnly!7Qm#42vL` passes the shared validator for `adm05-test@example.com`; it is a public, test-only example, never a seed/default/production credential.
+`demo-admin: seeded` means credentials were saved; `unchanged` keeps the previous hash/email; `skipped` identifies missing or invalid settings. Resolve wrong-role/email-conflict errors rather than ignoring them. Seed email is normalised; passwords are not trimmed or printed. Admin-created accounts are not seed targets. Roles remain fixed; no end-user password reset/change flow exists.
 
-In another terminal, start the frontend with `Set-Location src\frontend` from the root, then `npm.cmd ci` and `npm.cmd run dev`. Follow the ADM-05 walkthrough in UserGuide. Account creation sends the password once and confirms it only on the client; responses never return password/hash/session metadata. Password fields clear on success or unmount and are never stored in browser storage.
+**4. Explicitly reset an existing seed password after editing `.env`.** Run in another terminal, or before starting the backend in step 3:
+
+```powershell
+Set-Location (git rev-parse --show-toplevel)
+Set-Location src\backend
+uv run --env-file .env python -m auth.seed --reset-passwords
+```
+
+Changing `.env`, restarting the API, or rerunning the seed without this flag does not replace an existing hash. The flag applies **every configured seed role**, not just admin, and can update configured emails subject to uniqueness. It does not enable disabled accounts, restore archived accounts or revoke sessions. For a password-change test, keep the email unchanged, sign out, check the old password fails once, then check the new password succeeds. Do not infer success from an already-open authenticated session. Repeated failed attempts trigger the login limiter.
+
+After changing backend settings such as `ALLOWED_ORIGINS`, fully stop and restart the `uv run --env-file .env uvicorn ...` command. Uvicorn `--reload` does not refresh the environment loaded by its parent `uv` process. Seed commands are separate processes and read saved `.env` values each time. Vite proxies with `changeOrigin: true`; explicitly allow the frontend origin instead of disabling Origin/CSRF checks.
+
+**5. Configure/start the frontend in a second terminal.** Edit **`src/frontend/.env`**:
+
+```powershell
+Set-Location (git rev-parse --show-toplevel)
+notepad src\frontend\.env
+```
+
+```dotenv
+API_PORT=8000
+VITE_ENABLE_DEMO_ACCESS=true
+```
+
+If `API_PROXY_TARGET` is present, set it to `http://127.0.0.1:8000` or remove it to use `API_PORT`; the target overrides the port. Never put secrets in `VITE_*` variables. Save, stop any running frontend with Ctrl+C, then run:
+
+```powershell
+Set-Location (git rev-parse --show-toplevel)
+Set-Location src\frontend
+npm.cmd ci
+npm.cmd run dev
+```
+
+`npm.cmd` avoids PowerShell's `npm.ps1` execution-policy error. Restart the frontend after its `.env` changes. Open **http://127.0.0.1:5173/login**, use Sign in with the configured admin email/password without quotes, and follow the [account/course walkthrough](UserGuide.md#try-account-and-course-management-locally). Demo shortcuts and login role tabs do not grant a real admin session. Account creation sends the password once, confirms it on the client, never returns hashes/passwords/session metadata, and clears secret fields on success/unmount.
+
+**6. Diagnose failures using the Network response, not just the Uvicorn status line.**
+
+| Request/status | Interpretation and recovery |
+|---|---|
+| Initial `/api/auth/me` 401 | Expected before login. |
+| Login 200 and admin workspace | Configured account authenticated successfully. |
+| Login 401 `invalid_credentials` | Wrong credentials or inactive account; deliberately indistinguishable. Check seed output/reset flag and account status. |
+| Login 403 `csrf_failed` | Origin mismatch. Allow the exact frontend scheme/host/port and restart API. Login validates Origin; it does not need a pre-existing session CSRF token. |
+| Protected request 403 `forbidden` | Wrong role; selecting the Admin demo tab does not alter the account role. |
+| Protected write 403 `csrf_failed` | Invalid session CSRF token or disallowed Origin. Sign in again and check settings. |
+| Login 429 `rate_limited` | Wait for retry time. Defaults are 5 failures/email or 20/IP in 900 seconds. The limiter is process-local, so a local restart clears it. |
+| API 503 or network error | Check configuration, PostgreSQL/migration head, proxy target and running processes; not proof of a wrong password. |
+
+The [UserGuide sign-in walkthrough](UserGuide.md#set-up-local-admin-sign-in-powershell) provides the user-facing steps. These local settings are not a production deployment configuration.
+
+### Lifecycle implementation and automated verification
 
 Admin writes and login issuance share a transaction advisory lock so concurrent lifecycle changes cannot reactivate/archive users inconsistently or issue sessions after disable commits. The acting admin is rechecked after lock acquisition. Session rows are deleted before account updates, respecting teacher writes' existing session-then-user lock order. Every subsequent protected request rejects inactive users. The same `course_membership` composite key stores student enrolment and teacher management; immutable roles give each row its meaning. Revocation deletes memberships without deleting completion or authorship. Archive retains the user/email/history and deletes sessions/memberships atomically. Repeated grants/removals are idempotent; opposite actions follow transaction lock processing order. Self-disable/archive and removal of the last enabled administrator are rejected.
 
@@ -217,7 +309,26 @@ Set-Location (git rev-parse --show-toplevel)
 Set-Location src\backend
 $env:TEA01_TEST_DATABASE_URL = 'postgresql+psycopg://learnswe:learnswe-local-only@127.0.0.1:5433/learnswe'
 $env:PGCONNECT_TIMEOUT = '2'
-uv run pytest -q
+uv run pytest -q --basetemp .pytest_cache/adm05-local-tests
 ```
 
-Frontend checks, from `src\frontend`: `npm.cmd run typecheck`, `npm.cmd run lint`, `npm.cmd run build`, and `npm.cmd test -- --workers=2`. API checks should include anonymous/student/teacher rejection, missing CSRF/disallowed Origin, all fixed-role account creation, disable while logged in, fresh-login re-enable, archive/email reservation, teacher/student cross-course denial, repeated/concurrent assignment actions, last-admin races and withholding AI results after session/account revocation. Mock the SoC client; keep database fixtures isolated.
+Use a fresh dedicated basetemp path for each simultaneous pytest run; pytest owns and clears that directory. The ignored `.pytest_cache` location avoids inaccessible old Windows TEMP directories. To run ADM-05 only instead, replace the last command with:
+
+```powershell
+uv run pytest -q tests/test_adm05_access.py tests/test_adm05_migration.py --basetemp .pytest_cache/adm05-focused-tests
+```
+
+Frontend tests intercept APIs; no running backend or live SoC service is needed. Run **one browser-test runner at a time** and stop manually started frontend servers first so the harness owns its ports. Do not overlap full/focused runs against shared servers/output directories:
+
+```powershell
+Set-Location (git rev-parse --show-toplevel)
+Set-Location src\frontend
+npm.cmd ci
+npx.cmd playwright install chromium
+npm.cmd run typecheck
+npm.cmd run lint
+npm.cmd run build
+npm.cmd test -- --workers=2 --output=test-results/adm05-full
+```
+
+For only ADM-05 browser tests, replace the last command with `npm.cmd test -- tests/adm05-access.spec.ts --workers=2 --output=test-results/adm05-focused`. API checks include anonymous/student/teacher rejection, CSRF/Origin, fixed-role creation, disable/fresh-login re-enable, archive/email reservation, cross-course denial, repeated/concurrent assignments, last-admin races and withholding AI after revocation. Mock the SoC client; keep fixtures isolated.
