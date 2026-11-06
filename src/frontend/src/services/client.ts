@@ -69,6 +69,7 @@ async function send(
   init: RequestInit,
   timeoutMs: number,
   readOk: (response: Response) => Promise<unknown>,
+  distinguishTimeout = false,
 ): Promise<unknown> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -77,6 +78,8 @@ async function send(
     if (!response.ok) throw await errorFrom(response);
     return await readOk(response);
   } catch (error) {
+    if (distinguishTimeout && controller.signal.aborted)
+      throw new ApiError(0, "timeout");
     if (error instanceof ApiError) throw error;
     throw new ApiError(0, "network");
   } finally {
@@ -89,7 +92,11 @@ export async function request(
   method: string,
   path: string,
   body?: unknown,
-  options: { timeoutMs?: number } = {},
+  options: {
+    timeoutMs?: number;
+    distinguishTimeout?: boolean;
+    cache?: RequestCache;
+  } = {},
 ): Promise<unknown> {
   // A delayed rejection from a previous account must not sign out a newer one.
   const originGeneration = getSessionGeneration();
@@ -99,6 +106,7 @@ export async function request(
       {
         method,
         credentials: "same-origin",
+        cache: options.cache,
         headers: {
           ...(body === undefined ? {} : { "Content-Type": "application/json" }),
           ...(csrfToken && !SAFE_METHODS.includes(method.toUpperCase())
@@ -118,6 +126,7 @@ export async function request(
         if (data === undefined) throw new ApiError(0, "bad_response");
         return data;
       },
+      options.distinguishTimeout ?? false,
     );
   } catch (error) {
     if (

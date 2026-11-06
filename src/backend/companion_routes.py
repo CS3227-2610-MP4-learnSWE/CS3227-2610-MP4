@@ -25,6 +25,7 @@ from llm_client import (
     LlmNotConfigured,
     LlmRateLimited,
     get_llm_client,
+    usage_feature,
 )
 from practice_data import PracticeSet, Question
 from question_match import find_match
@@ -124,7 +125,8 @@ def post_message(
 
     started = time.monotonic()
     try:
-        reply = llm.complete(messages, max_tokens=config.MAX_TOKENS[plan.mode], caller_id=student)
+        with usage_feature("STU-03"):
+            reply = llm.complete(messages, max_tokens=config.MAX_TOKENS[plan.mode], caller_id=student)
     except LlmError as exc:
         error = _map_error(exc)
         _log(plan.mode, error.code, started)

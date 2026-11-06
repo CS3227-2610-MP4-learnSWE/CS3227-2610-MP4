@@ -188,4 +188,10 @@ async def add_no_store(request: Request, call_next):
     response = await call_next(request)
     if request.url.path.startswith(("/api/auth/", "/api/study/", "/api/teacher/", "/api/admin/", "/api/progress")):
         response.headers["Cache-Control"] = "no-store"
+    if request.url.path == "/api/admin/ai-usage":
+        response.headers["Cache-Control"] = "private, no-store"
+        vary = [value.strip() for value in response.headers.get("Vary", "").split(",") if value.strip()]
+        if "cookie" not in {value.lower() for value in vary}:
+            vary.append("Cookie")
+        response.headers["Vary"] = ", ".join(vary)
     return response
