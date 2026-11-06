@@ -185,6 +185,8 @@ Failed publication preserves form input. Reload and review stale drafts before c
 
 ### Manual test checklist
 
+Report text is inset from the panel border. Long explanations wrap inside their columns; scroll the table horizontally to see all metrics.
+
 | Step | Action | Expected result |
 |---|---|---|
 | 1 | Sign in as admin. Open **AI usage**. | Filters and feature rows. Default: All features, last seven UTC dates. |

@@ -3686,8 +3686,14 @@ td .MuiButton-root {
 }
 
 /* ADM-06 controls remain visible while the wide aggregate table scrolls. */
-.ai-usage-panel {
+.ai-usage-panel.MuiPaper-root {
   min-width: 0;
+  padding: 24px;
+}
+.ai-usage-panel > p {
+  font-size: 16px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
 }
 .ai-usage-filters {
   display: grid;
@@ -3701,24 +3707,49 @@ td .MuiButton-root {
 }
 .ai-usage-results {
   max-width: 100%;
+  container-type: inline-size;
 }
 .ai-usage-results table {
-  min-width: 1050px;
+  min-width: 1280px;
+  table-layout: fixed;
+  white-space: normal;
+}
+.ai-usage-results th,
+.ai-usage-results td {
+  padding: 16px;
+  line-height: 1.5;
+  vertical-align: top;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.ai-usage-results th {
+  font-size: 14px;
+}
+.ai-usage-results td,
+.ai-usage-results th[scope="row"] {
+  font-size: 15px;
 }
 .ai-usage-results caption {
-  padding: 12px 0;
+  padding: 0 0 16px;
+  font-size: 16px;
+  line-height: 1.6;
   text-align: left;
 }
-.ai-usage-results th[scope="row"] {
-  min-width: 200px;
+.ai-usage-results caption > span {
+  display: block;
+  max-width: 100cqi;
+  overflow-wrap: anywhere;
+}
+.ai-usage-results th:first-child {
+  width: 230px;
   text-align: left;
 }
 .ai-usage-reason {
   display: block;
+  font-size: 14px;
   font-weight: 400;
   line-height: 1.5;
   margin-top: 6px;
-  max-width: 230px;
 }
 @media (max-width: 1000px) {
   .ai-usage-filters {
@@ -3726,6 +3757,9 @@ td .MuiButton-root {
   }
 }
 @media (max-width: 600px) {
+  .ai-usage-panel.MuiPaper-root {
+    padding: 16px;
+  }
   .ai-usage-filters {
     grid-template-columns: minmax(0, 1fr);
   }

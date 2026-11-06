@@ -2,6 +2,12 @@
 
 Newest entry first. Older entries describe the state at the time; the newest entry supersedes their open/merged status. Keep the newest 10 entries here; older ones are in `notes-archive.md`. Feature state is in `STATUS.md`.
 
+## 2026-11-06: developer ADM-06 report readability
+- Done:24px inset/16px mobile; larger14?16px report/table text; fixed wrapping columns and caption within visible scroll width. User-approved visual contract/testRED committed4b05725 before source; copy/auth/request behavior unchanged. Both guides updated.
+- Validation:40ADM06 browserPASS26s;2extra visual casesPASS and1365dark/390light images inspected. Type/lint/build/format/spec1/0/0/diffPASS. No backend/unrelated full browser rerun. Log: logs/Adm06ReadabilityFix.md.
+- Next: refresh AIusage. Period/caption inset and unavailable explanations wrap; wide table remains horizontally scrollable. No env/DB/backend restart needed.
+- Resources: single-session maintenance exemption; no agents/tracker/manifest/report, inherited model/effort, tokens/cost unavailable, no new feature rounds. One cwd write recovered; user processes/data untouched, .claude/worktrees/ preserved.
+
 ## 2026-11-06: developer STU-03 failure reflection
 - Done: added one concise evidence-linked reflection on connection ownership, independent-review blind spots and deterministic constrained-pool testing. Preserved other reflection content; no generic model/context claims.
 - Validation: evidence links/commit records/diffPASS; docs only, no runtime tests or app/env/DB changes. Log: logs/Stu03FailureReflection.md.
@@ -60,11 +66,3 @@ Newest entry first. Older entries describe the state at the time; the newest ent
 - Validation: 111 targeted browser PASS; visual five PASS with inspected tip-X/logout dialog images; types/lint/build/format/spec7/0/12existingwaivers/diff PASS. No server changes or backend/full-suite rerun; no independent verifier claim. Evidence logs/SharedShellConfirmationFollowup.md.
 - Next: user refreshes frontend, dismisses tip with X and confirms/cancels logout. No env/database change or backend restart required. Local commit only; no push/deployment.
 - Resources: single-session maintenance, no agents/manifest/tracker; inherited model/effort, per-task tokens/cost unavailable. No new feature revision rounds.
-
-## 2026-11-06: developer ADM-05 UI and fresh-browser login follow-up
-- Done: green creation toast, clear name/email/passwords while retaining role, immediate Account details modal with close/confirmation/focus behaviour, and visible aligned logout in short desktop/mobile windows. User-approved spec/plan and RED tests committed99c3c23 before source; no authentication-code/password changes.
-- Login: recent saved student/teacher records enabled with hashes. Isolated real form creation/fresh browser login+reload PASS for both roles; user subsequently confirmed their own login works. Set ignored local development SESSION_COOKIE_SECURE=false for plain HTTP and user restarted. Initial credential401 cause not reproduced; do not conflate it with cookie loss after login.
-- Validation: 227 backend PASS, 82 auth/admin browser PASS, four follow-up desktop/mobile cases PASS, two no-mock real-browser cases PASS; types/lint/build/format/spec7/0/12existingwaivers/diff PASS. Screenshots inspected. Details/recoveries: logs/Adm05UiFollowup.md.
-- Files: AdminAccounts/styles, independent cookie/browser regressions and opt-in real E2E, approved contract/guides and workflow records. No user database writes/resets, production config changes, live AI, push or deployment.
-- Next: refresh frontend; use Account details overlay and creation toast. Login works per user confirmation. Local commit only.
-- Resource use: single-session scoped maintenance after feature closure; no agents/tracker/manifest. Inherited model/effort and per-task tokens/cost unavailable. Harness/test-interaction recoveries in session log, no extension of original feature correction rounds.

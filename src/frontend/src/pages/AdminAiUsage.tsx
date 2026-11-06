@@ -194,8 +194,10 @@ function UsageReport() {
             >
               <table aria-label="AI usage by feature">
                 <caption>
-                  Service-call attempts, including retries. Dates are UTC. Local
-                  quota rejections are excluded.
+                  <span>
+                    Service-call attempts, including retries. Dates are UTC.
+                    Local quota rejections are excluded.
+                  </span>
                 </caption>
                 <thead>
                   <tr>

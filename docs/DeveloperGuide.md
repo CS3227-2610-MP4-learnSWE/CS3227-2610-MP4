@@ -519,6 +519,7 @@ Expected: **40 passed**. Covers filters, messages, retry, timeout, access, histo
 
 ### ADM-06 implementation notes
 
+- Report layout: scoped panel padding, 14–16px text and fixed wrapping columns. Caption text stays within the visible scroll region using its inline-size container; table semantics and accessible name remain unchanged.
 - `ai_usage`: metadata only. No prompts, replies, credentials or user identifiers.
 - Production: `SoclaasClient` + `DatabaseAttemptObserver`. Each retry gets a record. Standalone test clients may omit the observer; production clients must not.
 - `usage_feature`: server-owned context; resets after each call. STU-03 and TEA-02 integrated; ADM-03 disabled.
