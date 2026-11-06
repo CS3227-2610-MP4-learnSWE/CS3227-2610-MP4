@@ -1,5 +1,13 @@
 # Security test log
 
+## 2026-11-06 — ADM-05 verified locally
+
+Strongest read-only verifier PASS at application source `07deb57`; no remaining ranked defects. Independent tests were committed before implementation visibility. Security cases passed: cookie-only admin identity on every endpoint, non-admin/anonymous rejection, CSRF/Origin, immutable roles and student-only public signup, strict/normalised inputs and no password/hash/session responses, disabled/archived login and existing-session rejection, re-enable requiring fresh login, permanent archive with reserved email and retained learning/authorship, teacher/student course boundaries and revocation, idempotent/concurrent grants, duplicate-email races, archive/grant races, concurrent admin disable/archive and fresh actor checks after lock acquisition. Verifier's additional archive/archive and disable/archive probes each left exactly one enabled admin.
+
+Late AI results are discarded after account/session revocation; existing teacher generation rechecks and answer-release controls remain enforced. Static companion fixtures are not course-grounded retrieval. General-topic integration verifies teacher publication, enrolled student reading, denial after revocation and atomic rollback on topic failure. Browser RED regression reproduced an old-session 401 clearing a newer login; `07deb57` fixes it, with independent browser and original verifier reproduction GREEN. No prompt-only controls, new provider, live AI or secret changes.
+
+Final clean browser suite 391/391 PASS; all 968 final backend cases covered across full and focused runs. Verifier full backend 957 PASS plus all nine historical-migration/TEMP recoveries PASS; three General-topic cases separately PASS. Designer 87 ADM-05 backend and 14 ADM-05 browser cases PASS. Types/lint/build/spec/diff checks PASS; Windows line-ending-aware format check PASS. Earlier browser artifact/server-owner collisions were discarded/recovered, not accepted as application verification. No developer schema, `.env`, real credentials, remote push or deployment touched. Exact evidence and limitations: `logs/Adm05Verification.md`; usage: `workflow/usage/runs/2026-11-06-ADM05-01/report.md`.
+
 | Date | Feature | Case | Expected | Actual | Fix / status |
 |---|---|---|---|---|---|
 | 2026-10-29 | STU-02 | Attempt endpoint without `X-Student-Id`, or whitespace-only | 401 `missing_student` | 401 | Pass |
