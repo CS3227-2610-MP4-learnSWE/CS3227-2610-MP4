@@ -29,7 +29,10 @@ test("student answers, submits and sees the server's score", async ({
     .click();
   await expect(page).toHaveURL(/\/student\/practice\/[0-9a-f-]{36}$/);
   await expect(
-    page.getByRole("heading", { level: 2, name: "Software engineering practice" }),
+    page.getByRole("heading", {
+      level: 2,
+      name: "Software engineering practice",
+    }),
   ).toBeVisible();
   await expect(page.getByText("Correct answer:")).toHaveCount(0);
   await page

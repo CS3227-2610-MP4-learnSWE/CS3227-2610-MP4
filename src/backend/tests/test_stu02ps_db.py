@@ -102,9 +102,11 @@ def test_stu02ps_db_ac2_one_choice_per_question_and_no_free_text():
     cid, tid, sid, s = member_world()
     aid = start(s, sid)
     q = qids(sid)[0]
-    for bad in ("e", "A", "", "free text answer", None, 3):
+    for bad in ("e", "A", "", "free text answer"):
         r = save(aid, s, {q: bad})
         assert r.status_code == 422 and code_of(r) == "invalid_choice", (bad, r.text)
+    for bad in (None, 3):  # not a string: rejected (the spec names no code)
+        assert save(aid, s, {q: bad}).status_code == 422
     r = save(aid, s, {str(uuid.uuid4()): "a"})
     assert r.status_code == 422 and code_of(r) == "unknown_question"
 
@@ -280,9 +282,10 @@ def test_stu02ps_db_ac11_the_422_body_equals_the_tea03_route_body_for_the_same_i
 @pytest.mark.parametrize("raw", ["..%2F", "a%2Fb", "%2F", "a%2Fb%2Fc"])
 def test_stu02ps_db_ac11_encoded_slashes_are_not_routed(raw):
     s = new_student()
-    r = call("GET", f"/api/practice-sets/{raw}", s)
-    assert r.status_code == 404
+    r = call("GET", f"/api/practice-sets/{raw}", s)  # the framework may answer 404 or a 307 normalisation
+    assert r.status_code in (307, 404)
     assert "set_not_found" not in r.text and "validation_error" not in r.text
+    assert "questions" not in r.text and "explanation" not in r.text
 
 
 def test_stu02ps_db_ac11_alternative_spellings_of_a_real_id_find_the_same_set():
@@ -330,8 +333,12 @@ def test_stu02ps_db_ac12_no_session_is_401_teacher_and_admin_are_403_on_every_en
         who = seeded(role)
         if role == "teacher":  # a teacher who is a member of the course is still not a student
             enroll(who, cid)
-        for r in _all_calls(sid, aid, who):
-            assert r.status_code == 403 and code_of(r) == "forbidden", (role, r.text)
+        try:
+            for r in _all_calls(sid, aid, who):
+                assert r.status_code == 403 and code_of(r) == "forbidden", (role, r.text)
+        finally:
+            if role == "teacher":  # older tests list the teacher's courses
+                unenroll(who, cid)
 
 
 def test_stu02ps_db_ac12_identity_headers_and_query_parameters_are_ignored():

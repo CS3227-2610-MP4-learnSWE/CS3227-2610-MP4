@@ -80,10 +80,14 @@ def test_stu02ps_cross_teacher_and_admin_cannot_touch_a_students_attempts_or_set
     who = seeded(role)
     if role == "teacher":
         enroll(who, cid)  # even a member teacher of the set's course
-    for r in touch_all(who, aid, q) + [call("GET", f"/api/practice-sets/{sid}", who),
-                                       call("POST", f"/api/practice-sets/{sid}/attempts", who),
-                                       call("GET", "/api/practice-sets", who)]:
-        assert r.status_code == 403 and r.json()["detail"]["code"] == "forbidden"
+    try:
+        for r in touch_all(who, aid, q) + [call("GET", f"/api/practice-sets/{sid}", who),
+                                           call("POST", f"/api/practice-sets/{sid}/attempts", who),
+                                           call("GET", "/api/practice-sets", who)]:
+            assert r.status_code == 403 and r.json()["detail"]["code"] == "forbidden"
+    finally:
+        if role == "teacher":  # older tests list the teacher's courses
+            unenroll(who, cid)
     assert call("GET", f"/api/attempts/{aid}/results", owner).status_code == 200
     assert call("GET", f"/api/attempts/{open_aid}", owner).json()["answers"] == {}
 

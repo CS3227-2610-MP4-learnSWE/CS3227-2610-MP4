@@ -136,13 +136,7 @@ export const TWO_OF_THREE: Record<string, string> = {
 };
 
 export type Step =
-  | "catalog"
-  | "getSet"
-  | "start"
-  | "getAttempt"
-  | "save"
-  | "submit"
-  | "results";
+  "catalog" | "getSet" | "start" | "getAttempt" | "save" | "submit" | "results";
 
 /** One scripted reply. Without `json`/`body` the default fake server answers. */
 export interface Reply {
