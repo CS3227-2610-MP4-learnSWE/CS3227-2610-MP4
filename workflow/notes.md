@@ -12,14 +12,15 @@ Newest entry first. Older entries describe the state at the time; the newest ent
 - Evaluation data: `experiments/results/stu02ps-first-run.md`.
 - Invocation ID(s) for this handoff: run `2026-11-06-STU02PS-01` (spec-writer 3, test-designer 4 plus interim re-entries, developer 3, verifier 2; manifest `invocations.csv`).
 - Model(s) and effort setting: Sonnet 5.5 for spec-writer, developer, test-designer and orchestrator; Opus 5.5 for the verifier; effort not set.
-- Elapsed wall-clock time: about 5 h 45 min from the first agent start to the end of verifier round 2 (includes waits on 23 to 54 minute suites).
+- Elapsed wall-clock time: about 7 h 15 min from the first agent start to the last merged check (includes waits on 12 to 54 minute suites).
 - Feature-run report path: `workflow/usage/runs/2026-11-06-STU02PS-01/report-v2.md` (rebuilt from session logs with `invocations-from-logs`; the manifest-based `run-report` rejected the orchestrator's own usage before the first agent start).
 - Blocking findings: none after round 2.
+- After the verifier (PR 28, `claude/stu02-published-sets`): merged master (ADM-05, one conflict round in `auth/routes.py`, `companion_routes.py`, `styles.css`, `DeveloperGuide.md`, `notes.md`, `test-log.md`; the companion keeps master's fresh-session check and our accessible-set leak scope; Alembic head is now master's `20261106_merge_adm05_stu04`). Re-run on the merged code: backend 1215 passed and 1 failed (my AC24 test pinned the old head; changed to assert one head, passes), mocked Playwright 545 of 545 (after the two click-then-Back race fixes in `stu02ps-picker.spec.ts` and `stu04-progress.spec.ts`, waits only, no assertion changed), typecheck and lint clean. These re-runs were not re-verified by the verifier agent.
 - Resource use:
   - Tracker run: yes (`report-v2.md`)
   - Model: see above
-  - Total tokens: about 67.8M cache-read, 3.2M cache-write, 99k output across 458 requests (see the report)
-  - Cost (USD): about 23.69 (tracker list-price estimate, not billed)
+  - Total tokens: about 85.7M cache-read, 3.9M cache-write, 449k output (107k of it reasoning) across 523 requests, 14 invocations (see the report)
+  - Cost (USD): about 26.87 (tracker list-price estimate, not billed)
   - Retries and revision rounds: verifier 2 rounds; test-designer and developer revisions as above
 
 ## 2026-11-06: spec-writer on STU-02 published sets (practice on teacher-published sets)
