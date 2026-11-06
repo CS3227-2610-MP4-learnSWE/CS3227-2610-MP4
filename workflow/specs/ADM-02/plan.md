@@ -85,6 +85,8 @@ For draft PUT and submission: visibility -> closed C04 -> already submitted C05 
 
 Integration clarification 2026-11-07: unknown/missing top-level body keys (including forged user_id), or invalid version/draft_version scalar types, use V01 on both draft PUT and submission POST. Invalid answers containers/items/types, foreign question/option IDs and answer-size limits use V11 on draft PUT and V10 on submission POST. The body byte cap remains V08. This makes the original structural-body versus answer-validation distinction explicit; it changes no authorised behaviour.
 
+Question-definition clarification: V01 concerns the top-level request object. A question's invalid required flag (for example string "true" instead of boolean true), prompt, type, identifier or object shape uses V03; the specific choice/scale validation errors remain V04/V05. Boolean strings are rejected, never coerced. Draft-answer empty string/array values may normalise to null regardless of question type; use nonempty wrong-type values to test answer-type rejection.
+
 ## Components and modules
 Proposed new single-purpose modules: backend `feedback_models.py` for wire validation, `feedback_store.py` for transactions/access, `feedback.py` for routes; frontend `feedbackApi.ts`, `AdminFeedback.tsx`, `FeedbackInbox.tsx`, `FeedbackForm.tsx`, `FeedbackQuestion.tsx`. These are proposed new module names; follow existing package placement conventions.
 
