@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Link } from "react-router";
+import { Link, useLocation } from "react-router";
 import { Alert, Button } from "@mui/material";
 import { EmptyState, PageHeading, Panel } from "../components/ui";
 import { useAuth } from "../auth/AuthContext";
@@ -229,6 +229,7 @@ function Failure({
 }
 
 export default function Progress() {
+  const { key: locationKey } = useLocation();
   const { status, user } = useAuth();
   const demoMode = status === "anonymous";
   const userKey = user?.id ?? "";
@@ -236,6 +237,8 @@ export default function Progress() {
   keyRef.current = userKey;
   const [load, setLoad] = useState<Load>({ state: "loading" });
   const [attempt, setAttempt] = useState(0);
+  // Rapid history navigation can return before React commits an unmount.
+  // Each history entry must still load fresh progress.
   useEffect(() => {
     let current = true;
     setLoad({ state: "loading" });
@@ -247,7 +250,7 @@ export default function Progress() {
     return () => {
       current = false;
     };
-  }, [attempt]);
+  }, [attempt, locationKey]);
   return (
     <>
       <PageHeading

@@ -190,3 +190,7 @@ Workflow: Variant B (developer and test-designer in separate worktrees from the 
 - Paths use `/api/study/...` to avoid clashing with `/api/courses/{id}` (SHR-01) and `/api/practice-sets` (STU-02).
 - Not optimistic in the UI: the button changes after the server confirms, so the screen never claims a state the database does not hold.
 - Plain text rendering only; no Markdown dependency added. No new Python or npm dependency, no new environment variable.
+
+## Shared-shell synchronisation ? 2026-11-06
+
+User-initiated logout follows SHR-01 Confirm logout: Cancel/Escape/backdrop preserves session/page/unsaved state with no request; only confirmation submits. Existing logout/history/clear-data criteria refer to completed logout. Expiry/revocation still clears immediately without confirmation. Sidebar tips are dismissible until workspace reload/remount. No student API or progress/completion contract changes.

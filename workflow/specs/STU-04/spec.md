@@ -123,3 +123,7 @@ These need a human answer; the plan states the default used if none is given.
 5. Empty states: no courses ("Join a course to start"); lessons but no activity; fewer than 3 answers on a topic.
 6. Scope: one read-only `GET /api/progress` (student only, user from the session) and one Progress page; no charts or trends.
 7. The Overview's fake "82%" and sample week chart are replaced by real figures from the same endpoint; Overview states are specified.
+
+## Shared-shell synchronisation ? 2026-11-06
+
+User-initiated logout follows SHR-01 Confirm logout: Cancel/Escape/backdrop preserves session/page/unsaved state with no request; only confirmation submits. Existing logout/history/clear-data criteria refer to completed logout. Expiry/revocation still clears immediately without confirmation. Sidebar tips are dismissible until workspace reload/remount. No student API or progress/completion contract changes.

@@ -91,6 +91,8 @@ export async function request(
   body?: unknown,
   options: { timeoutMs?: number } = {},
 ): Promise<unknown> {
+  // A delayed rejection from a previous account must not sign out a newer one.
+  const originGeneration = getSessionGeneration();
   try {
     return await send(
       path,
@@ -121,7 +123,8 @@ export async function request(
     if (
       error instanceof ApiError &&
       error.status === 401 &&
-      error.code === "unauthenticated"
+      error.code === "unauthenticated" &&
+      originGeneration === getSessionGeneration()
     )
       onUnauthenticated?.();
     throw error;

@@ -35,12 +35,12 @@ All role features below are MVP requirements. Optional extensions are listed sep
 
 ## Admin
 
-- **ADM-01 — Feature analytics:** Track selected feature usage, including chatbot requests, practice completion and AI generation success rates. Define event meanings and reporting periods consistently.
-- **ADM-02 — Targeted feedback forms:** Create and distribute feedback forms to students or teachers, associating each form with a specific feature or lesson where relevant. Publishing delivers a survey request to intended recipients’ in-app inboxes.
-- **ADM-03 — AI feedback analysis:** Summarise collected responses, group recurring issues and suggest improvements, with references to supporting feedback. Admins review the analysis before acting on it.
-- **ADM-04 — Feedback follow-up:** Review and send responses or announcements to relevant students and teachers through recipients’ in-app inboxes.
-- **ADM-05 — User and access management:** Manage accounts, roles and course access. Prevent users from granting themselves additional privileges.
-- **ADM-06 — AI usage monitoring:** View AI request counts, failures and available resource-usage measurements to help manage SoC LLM limits. Show unavailable measurements explicitly rather than estimating them as facts.
+- **ADM-01 — Feature analytics:** Report chatbot outcomes, practice-set completion and generation success rates for defined periods. Review advisory AI response-quality grades, response timing, session message counts and linked activity durations, with privacy safeguards and explicit unavailable data; operational AI service counts belong to ADM-06.
+- **ADM-02 — Targeted feedback forms:** Draft forms with short-answer, paragraph, single-choice, dropdown, checkbox and linear-scale questions, required/optional settings and optional feature/lesson associations. Publish to selected students or teachers through inbox requests, close collection and review admin-only responses with question snapshots.
+- **ADM-03 — AI feedback analysis:** Analyse selected authorised feedback into summaries, recurring issues and clearly distinguished suggestions, with supporting-response references, explicit failure states and human review. Analysis and evidence review do not send messages or change content.
+- **ADM-04 — Feedback follow-up:** Review and send one-to-one responses to feedback submitters or announcements to selected student or teacher audiences through private in-app inboxes. Recipients receive unread messages; email and push delivery are outside the MVP.
+- **ADM-05 — User and access management:** Create fixed-role student, teacher and admin accounts; enable, disable or permanently archive accounts; create courses and manage student enrolments and teacher assignments. Provide account search/filtering and confirmations; prevent self-escalation and administrator lockout while retaining linked history.
+- **ADM-06 — AI usage monitoring:** Report AI service-call attempts (including retries), failure counts and rate-limit failures by feature and period, separately from feature outcome percentages. Show recorded token/resource measurements with explicit unavailable values; exclude private request content and inferred measurements.
 
 ## Shared requirements
 

@@ -3,7 +3,12 @@ import logging
 import time
 from uuid import UUID
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
+from sqlalchemy.orm import Session
+
+from auth.db import engine_for
+from auth.dependencies import current_user, session_context, unauthenticated
+from auth.settings import load_settings
 
 import companion_config as config
 import companion_service as service
@@ -117,6 +122,7 @@ def _log(
 @router.post("/companion/messages", response_model=CompanionReplyOut)
 def post_message(
     body: CompanionMessageIn,
+    request: Request,
     student: str = Depends(require_student),
     llm: LlmClient = Depends(get_llm_client),
     provider: SetProvider = Depends(get_set_provider),
@@ -137,6 +143,13 @@ def post_message(
         error = _map_error(exc)
         _log(plan.mode, error.code, started)
         raise error from None
+    # A model call may outlive logout/disable/archive. Use a new transaction
+    # rather than the dependency's earlier ORM snapshot before releasing text.
+    with Session(engine_for(load_settings().database_url)) as access_db:
+        fresh = current_user(role="student")(session_context(request, access_db))
+        if fresh.id != student:
+            raise unauthenticated()
+    # The leak scope covers only the sets this student can access (set_provider).
     leak = leak_check.find_leak(reply.text, _leak_scope(plan, accessible))
     outcome = "withheld" if leak else "ok"
     _log(plan.mode, outcome, started, reply.prompt_tokens, reply.completion_tokens)

@@ -32,7 +32,7 @@ def iso():
 
 @pytest.fixture
 def migrated(iso):
-    iso.migrate("upgrade", "head")
+    iso.migrate("upgrade", NEW_REVISION)
     iso.seed_teacher()
     return iso
 
@@ -76,7 +76,7 @@ def submitted_attempt(iso, **kw):
 def test_stu04_ac18_upgrade_on_a_fresh_schema_creates_exactly_practice_attempt(iso):
     iso.migrate("upgrade", PREVIOUS_REVISION)
     before = tables(iso)
-    iso.migrate("upgrade", "head")
+    iso.migrate("upgrade", NEW_REVISION)
     assert iso.sql("SELECT version_num FROM alembic_version")[0][0] == NEW_REVISION
     assert tables(iso) - before == NEW_TABLES
     assert before - tables(iso) == set()
@@ -142,7 +142,7 @@ def test_stu04_ac18_populated_schema_keeps_every_existing_row_through_upgrade_do
     before = snapshot(iso, old)
     assert before["published_lesson"] and before["lesson_completion"] and before["user"]
 
-    iso.migrate("upgrade", "head")
+    iso.migrate("upgrade", NEW_REVISION)
     assert tables(iso) - {"alembic_version"} == old | NEW_TABLES
     assert snapshot(iso, old) == before
 
@@ -151,7 +151,7 @@ def test_stu04_ac18_populated_schema_keeps_every_existing_row_through_upgrade_do
     assert tables(iso) - {"alembic_version"} == old
     assert snapshot(iso, old) == before
 
-    iso.migrate("upgrade", "head")
+    iso.migrate("upgrade", NEW_REVISION)
     assert iso.sql("SELECT version_num FROM alembic_version")[0][0] == NEW_REVISION
     assert snapshot(iso, old) == before
     assert NEW_TABLES <= tables(iso)

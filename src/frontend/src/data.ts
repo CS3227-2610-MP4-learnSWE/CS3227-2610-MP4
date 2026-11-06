@@ -28,7 +28,8 @@ export const navigation: Record<
     { path: "forms", label: "Feedback forms", icon: "forms" },
     { path: "responses", label: "Feedback insights", icon: "sparkles" },
     { path: "announcements", label: "Announcements", icon: "inbox" },
-    { path: "users", label: "People & access", icon: "people" },
+    { path: "users", label: "Users", icon: "people" },
+    { path: "courses", label: "Courses", icon: "book" },
     { path: "usage", label: "AI usage", icon: "usage" },
   ],
 };

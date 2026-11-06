@@ -1,12 +1,12 @@
 # Feature status
 
-One row per feature in `docs/FeatureList.md` (plus workflow tooling). The orchestrator updates the row when a feature changes stage. State as of 2026-11-05 on `feat/tea03-publish-content`, after merging local master `0aa7932` (including PR20 usage reports). Details and history: `notes.md`, `notes-archive.md`.
+One row per feature in `docs/FeatureList.md` (plus workflow tooling). The orchestrator updates the row when a feature changes stage. ADM-05 updated on 2026-11-06 on `feat/adm05-user-and-access-management`; other feature rows retain their recorded handoff state. Details and history: `notes.md`, `notes-archive.md`.
 
 Stages: not started, spec, build, verified (local), merged.
 
 | ID | Stage | Branch | PR | Open items |
 |---|---|---|---|---|
-| STU-01 | merged | `feat/stu01-spec` | 18 | Seeded and teacher-published lessons use the same student workflow. Course membership remains required; ADM-05 access management is future. Known limits in `docs/DeveloperGuide.md`. |
+| STU-01 | merged | `feat/stu01-spec` | 18 | Seeded and teacher-published lessons use the same student workflow. Course membership remains required; ADM-05 access management is verified locally on its feature branch. Known limits in `docs/DeveloperGuide.md`. |
 | STU-02 | merged | `feat/stu02-practice-api-workflow-b`, `feat/stu02-frontend-run-b` | 1–5 (numbers per `checklist.md`) | Session authentication merged in PR16; practice records still use server memory. |
 | STU-03 | merged | `feat/stu03-run-b` | 8 | Live provider quality unchecked; no authenticated persistence of chat history. |
 | STU-04 | verified (local) | `claude/stu04-spec-4c7d06` | | Persistent practice attempts (PostgreSQL), `GET /api/progress`, Progress page, Overview with real figures. Verifier PASS in round 3 (user-authorised beyond the 2-round cap). Known limits: no cap on attempts per student, question reuse undecided, practice not course-scoped, a mounted page stays on the loading text after logout then an immediate Back. |
@@ -23,7 +23,7 @@ Stages: not started, spec, build, verified (local), merged.
 | ADM-02 | not started | | | |
 | ADM-03 | not started | | | |
 | ADM-04 | not started | | | |
-| ADM-05 | not started | | | |
+| ADM-05 | verified (local) | `feat/adm05-user-and-access-management` | | Fixed-role account creation/lifecycle, courses with General topic, teacher/student assignments. Source `07deb57`; strongest verifier PASS; 391 browser tests, 968 backend cases covered across full/focused runs. Local commits only; apply migration before use. Evidence: `logs/Adm05Verification.md`. |
 | ADM-06 | not started | | | |
 | SHR-01 | merged | `feat/shr01-auth-spec`, `feat/tea03-edit-mcqs-delete-drafts` | 16, 17 | Teacher session integration merged; deployment settings remain separate. |
 | SHR-02 to SHR-05 | in progress per feature | | | Enforced and tested inside each feature so far; no cross-feature check yet. |

@@ -303,6 +303,24 @@ export async function signedInProgress(
   options: Omit<ProgressOptions, "auth"> & { user?: User | null } = {},
 ) {
   const { user = STUDENT, ...rest } = options;
+  // Navigation tests leave Progress for lesson/practice pages without loading
+  // their feature fixtures. Keep those unrelated requests off a real API.
+  await page.route(
+    (url) =>
+      url.pathname.startsWith("/api/study/") ||
+      url.pathname.startsWith("/api/practice-sets/") ||
+      url.pathname.startsWith("/api/attempts/"),
+    (route) =>
+      route.fulfill({
+        status: 503,
+        json: {
+          detail: {
+            code: "service_unavailable",
+            message: "Unrelated test data is unavailable.",
+          },
+        },
+      }),
+  );
   const auth = await mockAuthApi(page, { user });
   const api = await mockProgressApi(page, { ...rest, auth });
   return { auth, api };

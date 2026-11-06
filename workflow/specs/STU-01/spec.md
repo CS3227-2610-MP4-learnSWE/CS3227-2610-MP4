@@ -111,3 +111,7 @@ None remain open. The questions raised while writing this spec were answered by 
 7. A new student sees "No courses yet" until a `course_membership` row exists; enrolment is ADM-05.
 8. Other decision-list items do not affect STU-01 behaviour (subject and level affect only seeded texts).
 9. Cap of 500 lessons per course, no pagination.
+
+## Shared-shell synchronisation ? 2026-11-06
+
+User-initiated logout follows SHR-01 Confirm logout: Cancel/Escape/backdrop preserves session/page/unsaved state with no request; only confirmation submits. Existing logout/history/clear-data criteria refer to completed logout. Expiry/revocation still clears immediately without confirmation. Sidebar tips are dismissible until workspace reload/remount. No student API or progress/completion contract changes.

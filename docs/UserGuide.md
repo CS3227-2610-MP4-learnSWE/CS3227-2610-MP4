@@ -4,13 +4,13 @@ Start the app using [README.md](../README.md). This guide covers the current pre
 
 ## Enter a workspace
 
-At `/login`, use **Sign in** with your email and password. The server decides your role (student, teacher or admin) and takes you to that workspace; opening another role's page sends you back to your own. To register, choose **Create account**, enter a display name, email and a password of 10 to 128 characters (not a common password and not your email), then sign in. Accounts created this way are always student accounts; the page gives the same reply whether or not the email was already registered. **Log out** in the sidebar ends the session. You stay signed in for up to 12 hours. After too many failed attempts the page says how long to wait.
+At `/login`, use **Sign in** with your email and password. The server decides your role (student, teacher or admin) and takes you to that workspace; opening another role's page sends you back to your own. To register, choose **Create account**, enter a display name, email and a password of 10 to 128 characters (not a common password and not your email), then sign in. Accounts created this way are always student accounts; the page gives the same reply whether or not the email was already registered. **Log out** in the sidebar opens **Confirm logout**. Choose **Cancel**, Escape or the backdrop to stay signed in; choose **Log out** in the dialog to end the session. While the request is pending the controls are disabled. A failed logout keeps you signed in and the dialog open for retry. Session expiry still signs you out immediately without asking. You stay signed in for up to 12 hours. After too many failed attempts the page says how long to wait.
 
 The Student, Teacher and Admin tabs on the login page only choose which demo shortcut to show; they do not change who you sign in as. After 5 wrong passwords for one email, sign-in for that email is refused for 15 minutes, even with the right password. Restarting the local backend clears this.
 
 Separately, the **Demo shortcut (development)** buttons under the form open sample-data screens with no account and no session. In that demo mode the sidebar says "Demo (not signed in)", and you can switch roles using the header selector or return to the login page using the footer link. Demo mode cannot use live teacher materials/drafts, practice or the study companion. Teacher data pages show "Sign in to manage teacher materials and drafts."; student practice and the companion show "Sign in to use live practice and the study companion". A signed-in user does not see the role selector.
 
-The sun/moon button toggles light/dark mode. The initial theme follows your operating-system preference. Theme and other local state reset on refresh. On narrow screens, open the navigation drawer with the menu button.
+The sun/moon button toggles light/dark mode. The initial theme follows your operating-system preference. Theme and other local state reset on refresh. On narrow screens, open the navigation drawer with the menu button. The sidebar guidance card and its Open companion shortcut remain available in short windows; scroll the navigation list to reach other pages. Close a sidebar guidance card (including "Listen. Learn. Improve.") with its **Dismiss sidebar tip** X button. It stays hidden as you navigate the workspace; refresh or a new account/workspace restores it.
 
 ## Student
 
@@ -46,12 +46,122 @@ The former **Practice sets** builder has been removed. Its old URL opens the con
 - Feedback forms lets you edit questions, required flags, audience and related feature. Preview survey request opens a summary without creating a form or sending a request.
 - Feedback insights offers sentiment filtering, fixed AI analysis and links to supporting sample responses.
 - Announcements accepts a subject/message and shows a recipient preview. Nothing is sent.
-- People & access filters fictitious records by role. Preview access cannot change permissions.
+- **Users** requires an admin sign-in and manages real accounts. Search by name or email, filter by role/status, and use Previous/Next to browse results. **Manage account** immediately opens an Account details overlay with status and course access; use **Close account details**, Escape or the backdrop to close it when no save is pending. Accounts have one fixed role; there is no promotion or demotion.
+- Use **Create account** to create a student, teacher or admin. Enter a display name, email, role, password and matching confirmation. A green **Account created.** toast confirms success; name, email and both password fields clear while the chosen role stays selected (initially Student). Failed creation keeps your input. Existing password rules apply (10–128 characters, not common or equal to the email/name part). The password is not shown in account details. New accounts sign in with the password entered here, not a `SEED_*_PASSWORD` from `.env`. Share it privately with the owner; mandatory first-login password changes and password reset are not implemented.
+- **Courses** creates courses with a title of 1–200 characters and a default **General** topic for teacher publishing. To assign a teacher or enrol a student, return to Users, choose their account, select a Course and choose **Grant course access**. New accounts begin with no assignments; teachers can manage only assigned courses. Disabled accounts can still have assignments edited. Admin accounts do not receive course assignments.
+- **Disable account** requires confirmation and ends all sessions while keeping records and assignments. **Enable account** permits a fresh login; old sessions do not return. **Archive account** requires confirmation and is permanent: login is blocked, sessions/assignments are removed, and the email remains reserved. Learning/authorship records are retained. You cannot disable/archive yourself, and the last enabled admin is protected.
+- **Remove course access** requires confirmation. Subsequent content requests are denied, but completion/authorship records remain; granting access again restores their visibility under existing feature rules. AI results are withheld if account/session access is lost while generation runs. Teacher generation also rechecks current course access; the student companion's legacy practice fixtures are not course-grounded retrieval.
 - AI usage displays illustrative requests/failures; actual token usage is explicitly unavailable.
+
+### Set up local admin sign-in (PowerShell)
+
+Use these steps with the existing local database configured in your checkout. For a fresh database, first follow [developer database setup](DeveloperGuide.md#local-admin-setup-and-password-reset-powershell). Commands assume a PowerShell terminal inside this repository. Keep existing database and SoC settings; do not overwrite an existing `.env` with the example file.
+
+1. Start Docker Desktop, then prepare the backend env file without replacing it:
+
+   ```powershell
+   Set-Location (git rev-parse --show-toplevel)
+   docker compose up -d postgres
+   Set-Location src\backend
+   if (-not (Test-Path .env)) { Copy-Item .env.example .env }
+   notepad .env
+   ```
+
+2. In **`src/backend/.env`**, add/update these settings, save, and close the editor. Replace existing entries rather than adding duplicate keys. These are public **local-test examples**, not production credentials:
+
+   ```dotenv
+   APP_ENV=development
+   SESSION_COOKIE_SECURE=false
+   SESSION_COOKIE_SAMESITE=lax
+   ALLOWED_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
+   SEED_ADMIN_EMAIL=adm05-test@example.com
+   SEED_ADMIN_PASSWORD='ExampleOnly!7Qm#42vL'
+   ```
+
+   Keep the password quoted in `.env` so `#` is literal; sign in without the quotes. There is **no default admin credential**. Public Create account creates students only. `.env` is Git-ignored. SOCLAAS credentials are not needed for login or account/course management.
+
+3. Install backend dependencies, migrate, and seed:
+
+   ```powershell
+   Set-Location (git rev-parse --show-toplevel)
+   Set-Location src\backend
+   uv sync --frozen
+   uv run --env-file .env alembic upgrade head
+   uv run --env-file .env python -m teacher_materials.seed
+   uv run --env-file .env python -m auth.seed
+   ```
+
+   `demo-admin: seeded` means credentials were saved. `unchanged` keeps the existing password/email. `skipped` means missing or invalid settings; read the reported reason. If you changed the password of an **existing seeded account**, run this explicitly:
+
+   ```powershell
+   Set-Location (git rev-parse --show-toplevel)
+   Set-Location src\backend
+   uv run --env-file .env python -m auth.seed --reset-passwords
+   ```
+
+   This updates **all configured seed accounts**, including student/teacher if their email/password pairs are set, not just the admin. It does not reset accounts created through Users, enable disabled accounts or restore archived accounts. If the email belongs to another account, use an unused test email. Editing `.env` alone, restarting, or seeding without this flag does not replace an existing password.
+
+4. Start the backend. If already running, first press **Ctrl+C** in its terminal:
+
+   ```powershell
+   Set-Location (git rev-parse --show-toplevel)
+   Set-Location src\backend
+   uv run --env-file .env uvicorn main:app --host 127.0.0.1 --port 8000 --reload
+   ```
+
+   Keep this terminal open. After backend `.env` changes, fully stop and restart this command: `--reload` does not reload environment values loaded into the parent process by `uv`.
+
+5. In a **second terminal**, prepare the frontend env file:
+
+   ```powershell
+   Set-Location (git rev-parse --show-toplevel)
+   Set-Location src\frontend
+   if (-not (Test-Path .env)) { Copy-Item .env.example .env }
+   notepad .env
+   ```
+
+   In **`src/frontend/.env`**, save these settings:
+
+   ```dotenv
+   API_PORT=8000
+   VITE_ENABLE_DEMO_ACCESS=true
+   ```
+
+   If `API_PROXY_TARGET` is already configured, use `http://127.0.0.1:8000` or remove that override so `API_PORT` is used. Stop any existing frontend with Ctrl+C, then run:
+
+   ```powershell
+   npm.cmd ci
+   npm.cmd run dev
+   ```
+
+   Restart after frontend `.env` changes too. `npm.cmd` avoids PowerShell's `npm.ps1` execution-policy error.
+
+6. Open **http://127.0.0.1:5173/login** and use **Sign in**, not the demo shortcut. With the example settings, use `adm05-test@example.com` / `ExampleOnly!7Qm#42vL`. Successful login opens the admin workspace. Continue with the account/course checks below.
+
+7. To test a password change, keep the admin email unchanged, edit `SEED_ADMIN_PASSWORD`, save, and run the reset command in step 3. Sign out, try the old password once (it should fail), then sign in with the new password (it should succeed). Reset seeding does not end existing browser sessions; a page that remains signed in is not evidence that the new password works.
+
+| Result | Meaning and next step |
+|---|---|
+| Initial `GET /api/auth/me` 401 | Normal before sign-in: no authenticated session yet. |
+| `POST /api/auth/login` 401 | Incorrect credentials or inactive account. Check the seed output, then apply `--reset-passwords` if you changed an existing seed password. |
+| Login 403 | Origin verification failed. Check `ALLOWED_ORIGINS` includes your exact frontend address/port, then fully restart the backend. Do not disable CSRF protection. |
+| Login succeeds, but the session disappears on the next request | For local plain HTTP, check backend `SESSION_COOKIE_SECURE=false`, fully restart, and retry. Production HTTPS requires Secure cookies. This differs from a login 401 rejecting credentials. |
+| Protected action 403 | Can be a wrong role or CSRF/Origin problem. Inspect `forbidden` versus `csrf_failed`; sign in with the appropriate account. |
+| Login 429 | Too many attempts. Wait for the retry period; restarting a local development backend also clears its in-memory limiter. |
+| API 503 or network failure | Check PostgreSQL, migrations, backend port and frontend proxy settings; this does not mean the password is incorrect. |
+
+### Try account and course management locally
+
+1. Sign in with your locally configured seeded admin. Open Courses and create `ADM-05 test course`.
+2. Open Users and create a test student and teacher using different unused test emails. For a local test only, `ExampleOnly!7Qm#42vL` is a valid example password. It is public example text, never a production password or default credential.
+3. Manage each account and grant the test course. Sign in as the teacher in a separate browser profile: the course appears in Materials with its General topic available for publishing. A student sees the course in Study materials, initially with no published lessons. Publish a note as the teacher to test student reading/completion.
+4. Keep the student signed in while the admin disables them. Their next protected request must require sign-in. Re-enable the account and sign in again; enrolment/completion are retained.
+5. Remove the student's course access and confirm. A fresh lesson request must show unavailable. Regrant to check retained completion.
+6. Archive the test account and confirm. It cannot sign in, be re-enabled or recreated with the same email. Select Archived in the Status filter to inspect the retained account. Never use an important account for this irreversible test.
 
 ## Limitations and recovery
 
-The demo shortcut screens are public local demonstrations with unrestricted role switching. Do not use real credentials or sensitive materials in them. Preview state is temporary; refresh returns to sample defaults. Teacher material metadata and original bytes persist together in PostgreSQL. The new storage version uses a fresh database; previous local uploads/drafts remain in the old setup and must be recreated in the new one. Unknown routes send a signed-in user to their own home and everyone else to login, except inside a role area, which shows a role-specific not-found view. An unavailable backend shows a footer status and does not prevent exploring screens, except the student Practice page, which needs the backend to load questions. The practice server withholds the answer key and explanations until whole-set submission and checks attempt ownership using the signed-in student's account. Teacher data screens require a teacher sign-in and current course membership. Admin business screens remain sample previews; online deployment and admin AI remain future work. The student study companion and teacher note/MCQ generation call the SoC LLM. Every teacher API uses the shared authenticated session, checks course membership and ignores legacy identity headers. Practice attempts are stored in the database (attempts made before the STU-04 change are lost); browser reload clears the current page state.
+The demo shortcut screens are public local demonstrations with unrestricted role switching. Do not use real credentials or sensitive materials in them. Preview state is temporary; refresh returns to sample defaults. Teacher material metadata and original bytes persist together in PostgreSQL. The new storage version uses a fresh database; previous local uploads/drafts remain in the old setup and must be recreated in the new one. Unknown routes send a signed-in user to their own home and everyone else to login, except inside a role area, which shows a role-specific not-found view. An unavailable backend shows a footer status and does not prevent exploring screens, except the student Practice page, which needs the backend to load questions. The practice server withholds the answer key and explanations until whole-set submission and checks attempt ownership using the signed-in student's account. Teacher data screens require a teacher sign-in and current course membership. Admin Users and Courses use live account/course records; other admin business screens remain sample previews. Online deployment and admin AI remain future work. The student study companion and teacher note/MCQ generation call the SoC LLM. Every teacher API uses the shared authenticated session, checks course membership and ignores legacy identity headers. Practice attempts are stored in the database (attempts made before the STU-04 change are lost); browser reload clears the current page state.
 
 ## Publishing reviewed teacher content
 

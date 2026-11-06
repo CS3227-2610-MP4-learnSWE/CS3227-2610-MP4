@@ -140,7 +140,7 @@ export default function App() {
                 path="*"
                 element={
                   <Suspense fallback={<p role="status">Loading…</p>}>
-                    <Admin notify={notify} />
+                    <Admin />
                   </Suspense>
                 }
               />

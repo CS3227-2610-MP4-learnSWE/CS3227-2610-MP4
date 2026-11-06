@@ -1,5 +1,94 @@
 import { expect, test } from "@playwright/test";
 
+for (const role of ["student", "teacher"] as const) {
+  test(`admin-created ${role} signs in from an independent browser context`, async ({
+    page,
+    browser,
+    baseURL,
+  }, testInfo) => {
+    test.skip(
+      process.env.E2E_ALLOW_ADMIN_ACCOUNT_CREATION !== "1" ||
+        !process.env.E2E_ADMIN_EMAIL ||
+        !process.env.E2E_ADMIN_PASSWORD,
+      "Requires explicit opt-in and an administrator in an isolated test database",
+    );
+    const email = `fresh-${role}-${Date.now()}-${Math.random().toString(16).slice(2)}@example.test`;
+    const password =
+      role === "student" ? "E2E!CaseSensitive9#42" : "Mixed Case!9 #Z";
+    const name = `Fresh ${role}`;
+    await page.goto("/login");
+    await page.getByLabel(/^email/i).fill(process.env.E2E_ADMIN_EMAIL!);
+    await page.getByLabel(/^password/i).fill(process.env.E2E_ADMIN_PASSWORD!);
+    await page.getByRole("button", { name: "Sign in", exact: true }).click();
+    await expect(page).toHaveURL(/\/admin\/overview$/);
+    await page.goto("/admin/users");
+    await page.getByLabel("Display name", { exact: true }).fill(name);
+    await page.getByLabel("Email", { exact: true }).fill(email);
+    await page
+      .getByRole("combobox", { name: "Account role", exact: true })
+      .click();
+    await page
+      .getByRole("option", {
+        name: role === "student" ? "Student" : "Teacher",
+        exact: true,
+      })
+      .click();
+    await page.getByLabel("Password", { exact: true }).fill(password);
+    await page.getByLabel("Confirm password", { exact: true }).fill(password);
+    const response = page.waitForResponse(
+      (r) =>
+        new URL(r.url()).pathname === "/api/admin/accounts" &&
+        r.request().method() === "POST",
+    );
+    await page
+      .getByRole("button", { name: "Create account", exact: true })
+      .click();
+    expect((await response).status()).toBe(201);
+    await expect(
+      page.getByRole("status").filter({ hasText: "Account created." }),
+    ).toBeVisible();
+
+    const fresh = await browser.newContext({ baseURL });
+    try {
+      expect(await fresh.cookies()).toHaveLength(0);
+      const loginPage = await fresh.newPage();
+      await loginPage.goto("/login");
+      await loginPage.getByLabel(/^email/i).fill(email);
+      await loginPage.getByLabel(/^password/i).fill(password);
+      await loginPage
+        .getByRole("button", { name: "Sign in", exact: true })
+        .click();
+      await expect(loginPage).toHaveURL(new RegExp(`/${role}/overview$`));
+      const me = await fresh.request.get("/api/auth/me");
+      expect(me.status()).toBe(200);
+      expect((await me.json()).user.role).toBe(role);
+      await loginPage.reload();
+      await expect(loginPage).toHaveURL(new RegExp(`/${role}/overview$`));
+    } finally {
+      await fresh.close();
+    }
+    await page.setViewportSize({ width: 1100, height: 600 });
+    await page.screenshot({ path: testInfo.outputPath("created-account.png") });
+    await page
+      .getByRole("button", { name: `Manage account ${name}`, exact: true })
+      .click();
+    await expect(
+      page.getByRole("dialog", { name: "Account details", exact: true }),
+    ).toBeVisible();
+    await expect(page.locator(".MuiDialog-container").last()).toHaveCSS(
+      "opacity",
+      "1",
+    );
+    const screenshot = testInfo.outputPath("account-details.png");
+    await page.screenshot({ path: screenshot });
+    await testInfo.attach("Account details overlay", {
+      path: screenshot,
+      contentType: "image/png",
+    });
+    console.log("Account overlay visual:", screenshot);
+  });
+}
+
 // Runs against the real FastAPI backend (no mocks): a contract change on either side fails here.
 // Start the backend first, then: REAL_BACKEND=1 npx playwright test --project=real-backend
 test("student answers, submits and sees the server's score", async ({

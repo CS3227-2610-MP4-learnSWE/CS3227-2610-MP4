@@ -379,102 +379,150 @@ Acceptance criteria:
 
 #### US-ADM-01-01 — Inspect feature usage
 
-As an admin, I want to view chatbot requests and practice completion for a reporting period so that I can understand feature adoption.
+As an admin, I want to view chatbot outcomes and student practice-set completion for a selected reporting period so that I can understand how these learning features are being used.
 
 Acceptance criteria:
 
-- Counts use documented event definitions and the selected period.
-- The report distinguishes no activity from unavailable data without displaying private chat content.
+- **Chatbot outcome definition:** A chatbot request is successful only when the chatbot returns a valid response message; an error or missing response is non-successful.
+- **Chatbot counts:** For the selected period, the report shows each student's and each teacher's successful and non-successful chatbot request counts, grouped by role, plus the totals for each outcome across both roles.
+- **Practice-set completion definition:** A started practice attempt is complete only when the student successfully submits the whole set. For attempts started during the selected period, the completion percentage is attempts submitted by the end of that period divided by attempts started during that period.
+- **No denominator:** If no practice attempts were started in the selected period, show that the completion percentage is not applicable rather than displaying a percentage.
+- **Data states:** Show zero when data is available and the count is zero; label data unavailable when the report cannot obtain a reliable count.
+- **Privacy and scope boundary:** Show chatbot counts associated with the relevant user account, but do not show chatbot messages or other private conversation content. This story reports feature outcomes, not AI service-call totals, failure categories, or resource measurements; those belong to ADM-06.
 
 #### US-ADM-01-02 — Inspect generation reliability
 
-As an admin, I want to view AI generation success rates so that I can identify unreliable workflows.
+As an admin, I want to compare the success rates of AI content-generation workflows for a selected reporting period so that I can identify workflows that may be unreliable.
 
 Acceptance criteria:
 
-- The report uses a documented success definition and denominator for the selected period.
-- Periods with no requests do not display a misleading success percentage.
+- **Workflow selection:** The report identifies the content-generation workflow and reporting period for every rate shown.
+- **Attempt definition:** Count a generation attempt when a valid request is accepted for generation. Requests rejected before generation begins, including rate-limited requests, are not generation attempts.
+- **Success definition:** An attempt is successful only when it returns a complete output in the expected format; errors, timeouts, and incomplete or invalid outputs are unsuccessful.
+- **Rate calculation:** For each workflow and period, calculate successful attempts divided by all generation attempts in that workflow and period.
+- **No denominator:** If there were no generation attempts, show that no rate can be calculated rather than showing a percentage.
+- **Scope boundary:** This story reports generation outcome percentages, not chatbot interaction outcomes (ADM-01-01) or AI service-call and failure counts (ADM-06-01).
+
+#### US-ADM-01-03 — Assess AI response quality and session activity
+
+As an admin, I want to review AI-assisted quality grades and session activity for student exercises and teacher lesson planning so that I can identify areas where AI assistance may need improvement.
+
+Acceptance criteria:
+
+- **Assessment scope:** I can select a reporting period and review results separately for student exercise assistance and teacher lesson-planning assistance. Each assessment covers an individual completed AI response to a request received in that period and identifies its workflow and reporting period.
+- **Quality rubric:** AI grades each assessable response separately for relevance to the request, factual accuracy against available authorised context, clarity, and safety. Each dimension uses a 1–5 scale: 1 is unacceptable, 2 has major shortcomings, 3 is adequate with notable shortcomings, 4 is good with minor shortcomings, and 5 is excellent with no identified shortcomings.
+- **Evidence and uncertainty:** Each grade includes a brief reason grounded in the response and available authorised context, without quoting private conversation content. If a dimension cannot be assessed from that material, it is marked unassessable rather than assigned a grade.
+- **Human review:** The admin can review the grades and reasons. Grades are AI assessments, not verified facts, and do not automatically change access or application content.
+- **Response time:** For each assessed request, show the elapsed time from receipt of the user's request to delivery of the final response. Identify failed or incomplete requests separately and do not present their elapsed time as a successful response time.
+- **Session message count:** A session begins with the first message linked to an activity and ends when that activity ends or the user starts a new conversation, whichever occurs first. For sessions that begin in the selected period, show the average number of user and AI messages per session, counting each message separately and dividing the total messages by the number of sessions included. Show the number of sessions used.
+- **Associated activity time:** For sessions linked to an exercise or lesson-planning activity, show the average session message count alongside the average elapsed time from the recorded start to the recorded end of each distinct associated activity. Show the number of linked sessions and distinct activities used, and identify the activity start and end events; elapsed time includes idle time unless it is measured separately.
+- **Missing data:** Exclude sessions without a recorded link or activity start and end from the associated-activity comparison, and show how many were excluded. Label a metric unavailable when its measurements are missing or incomplete; if there are no eligible records, show that no average can be calculated.
+- **Privacy and safeguards:** Evaluate only responses and the minimum context authorised for this purpose; exclude credentials, unnecessary personal data, and protected answer keys or solutions. Do not display private conversation content in the analytics report, and treat evaluated content as untrusted input.
+- **Interpretation and scope:** Present timing and message counts as descriptive measurements, not as quality grades or evidence of time saved. Comparing against a no-AI baseline is outside this story.
 
 ### ADM-02 — Targeted feedback forms
 
 #### US-ADM-02-01 — Draft a feedback form
 
-As an admin, I want to create a form with questions and required fields so that I can collect focused feedback.
+As an admin, I want to create and save an unpublished feedback form using common survey question types so that I can prepare a focused survey before distributing it.
 
 Acceptance criteria:
 
-- I can save and reopen a draft with questions and an optional feature or lesson association.
-- An unpublished form cannot receive responses.
+- **Supported question types:** I can add short-answer and paragraph text questions; multiple-choice and dropdown questions that accept one answer; checkbox questions that accept multiple answers; and linear-scale questions where a respondent selects one value within the scale's configured range.
+- **Choice options:** For multiple-choice, dropdown, and checkbox questions, I can enter the answer options respondents can choose from.
+- **Linear-scale setup:** For a linear-scale question, I can configure its range and optionally label its endpoints.
+- **Required questions:** I can mark each question required or optional. Respondents cannot submit a form while a required question is unanswered.
+- **Form association:** I can optionally associate the form with a feature or lesson.
+- **Persistence:** When I save and reopen a draft, its questions, required-field settings, and optional association are unchanged.
+- **Publication restriction:** A draft is unpublished and cannot be opened for response submission, including by direct request.
+- **Scope boundary:** Drafting does not send inbox requests or make the form available to respondents; publication and recipient selection are covered by ADM-02-02.
 
 #### US-ADM-02-02 — Publish a targeted form
 
-As an admin, I want to choose a student or teacher audience and publish a form so that I can reach the relevant users.
+As an admin, I want to select students or teachers as the audience for a form and publish it so that the intended users can provide feedback.
 
 Acceptance criteria:
 
-- The selected audience is shown before publication.
-- Publishing delivers an in-app inbox request with a form link to intended recipients.
-- Only intended recipients can access and submit the open form.
+- **Audience review:** Before publication, I can review whether the form is being sent to the selected student or teacher audience.
+- **Inbox delivery:** Publishing creates an in-app inbox request with a link to the form for each intended recipient.
+- **Access restriction:** While the form is open, only intended recipients can view and submit it; other users are denied through both the interface and direct requests.
+- **Submission eligibility:** A form can receive responses only after publication and before it is closed.
+- **Scope boundary:** This story distributes the form request; it does not cover composing a separate follow-up message or announcement (ADM-04).
 
 #### US-ADM-02-03 — Close feedback collection
 
-As an admin, I want to close a published form so that I can end collection when I have enough feedback.
+As an admin, I want to close a published form so that users can no longer submit feedback when collection has ended.
 
 Acceptance criteria:
 
-- Closed forms reject further submissions, including direct requests.
-- Previously collected responses remain available to authorised admins.
+- **State change:** I can close a published form to end response collection.
+- **Submission restriction:** After closure, the form rejects new responses through both the interface and direct requests, including requests from intended recipients.
+- **Existing data:** Closing the form preserves responses already submitted; authorised admins can still review them.
+- **Scope boundary:** Closing does not delete the form or its responses. Reopening a closed form is outside this story.
 
 #### US-ADM-02-04 — Review collected responses
 
-As an admin, I want to read responses to a form so that I can inspect the feedback users submitted.
+As an admin, I want to review the responses to a feedback form so that I can understand what respondents submitted.
 
 Acceptance criteria:
 
-- Responses are associated with the correct form and questions.
-- Later form edits cannot silently change the meaning of existing answers.
+- **Response association:** Each submitted response is shown with its form and the questions it answers.
+- **Question snapshot:** The wording and required status of each question at the time of submission remain available with the response; later form edits do not alter that record.
+- **Access restriction:** Only an authorised admin can review collected responses.
+- **Scope boundary:** This story provides direct review of form responses. It does not generate AI summaries or select evidence for an analysis (ADM-03).
 
 ### ADM-03 — AI feedback analysis
 
 #### US-ADM-03-01 — Generate a feedback analysis
 
-As an admin, I want to ask AI to analyse selected feedback responses so that I can identify recurring issues and possible improvements.
+As an admin, I want AI to analyse feedback responses that I select and am authorised to review so that I can identify recurring issues and possible improvements.
 
 Acceptance criteria:
 
-- The result includes a summary, grouped issues and suggestions clearly distinguished from reported feedback.
-- Findings reference supporting responses in the selected authorised input.
-- Empty input, request limits and failures produce clear messages.
+- **Input selection:** I can select responses for analysis, and the analysis uses only selected responses that I am authorised to review.
+- **Result sections:** The result contains a summary, recurring issues grouped by theme, and suggested improvements.
+- **Fact versus suggestion:** The result distinguishes issues reported in the selected feedback from AI-generated suggestions.
+- **Evidence references:** Each grouped issue includes references to supporting responses in the selected input. A suggestion presented as based on specific feedback also references its supporting responses; a suggestion without such evidence is identified as an AI suggestion, not a reported finding.
+- **Empty input:** If no responses are selected, the system does not generate an analysis and tells me that a selection is required.
+- **Failure states:** If a request limit is reached or analysis fails, the system tells me which occurred and does not present a partial or failed result as complete.
+- **Scope boundary:** Analysis is advisory only; it does not edit forms or responses, send messages, or apply suggested changes.
 
 #### US-ADM-03-02 — Review supporting feedback
 
-As an admin, I want to open the responses supporting an AI finding so that I can verify the analysis before acting.
+As an admin, I want to open the feedback responses cited by an AI finding so that I can check the evidence before deciding what to do.
 
 Acceptance criteria:
 
-- Each supporting reference opens its corresponding authorised response.
-- The analysis is reviewable and does not automatically send messages or change the app.
+- **Reference target:** Selecting a supporting-response reference opens the exact response cited by that finding.
+- **Access restriction:** The response is displayed only if I remain authorised to access it; an invalid, deleted, or inaccessible reference does not reveal response content.
+- **Scope boundary:** This story opens only responses cited by an analysis. Browsing all responses for a form is covered by ADM-02-04.
+- **No side effects:** Opening a finding or response does not send a message or modify the analysis, form, or response.
 
 ### ADM-04 — Feedback follow-up
 
 #### US-ADM-04-01 — Send a feedback response
 
-As an admin, I want to compose, review and send a response to a feedback submitter so that I can explain how their feedback is being addressed.
+As an admin, I want to compose, review, and send a message to an individual feedback submitter so that I can explain how their feedback is being addressed.
 
 Acceptance criteria:
 
-- I can review the message and intended recipient before sending.
-- The sent message is saved in that recipient’s inbox as unread.
-- Other respondents’ private feedback is not automatically included.
+- **Recipient scope:** I can address a response to the individual who submitted the selected feedback; the recipient is shown before sending.
+- **Message review:** I can review the message content before confirming the send action.
+- **Delivery:** After sending, the message appears as unread in that recipient’s in-app inbox.
+- **Privacy restriction:** The message does not include or expose other respondents’ private responses.
+- **Scope boundary:** This is a one-to-one follow-up, not a group announcement; group announcements are covered by ADM-04-02. Email and push delivery are outside the MVP.
 
 #### US-ADM-04-02 — Send a targeted announcement
 
-As an admin, I want to review and send an announcement to a selected student or teacher audience so that I can communicate relevant improvements.
+As an admin, I want to review and send an announcement to a selected student or teacher audience so that I can share relevant improvements with those users.
 
 Acceptance criteria:
 
-- The message and audience are shown before sending.
-- The saved announcement appears as unread in intended recipients’ inboxes and is accessible only to them.
+- **Audience review:** Before sending, I can review whether the selected audience is students or teachers.
+- **Message review:** I can review the announcement content before confirming the send action.
+- **Delivery:** The announcement appears as unread in the in-app inbox of each intended recipient.
+- **Access restriction:** Only intended recipients can access the announcement, including through direct requests.
+- **Scope boundary:** An announcement is a shared message to an audience, not a response to an individual submission (ADM-04-01). Email and push delivery are outside the MVP.
 
 ### ADM-05 — User and access management
 
@@ -482,48 +530,101 @@ Acceptance criteria:
 
 As an admin, I want to enable or disable an account’s access so that I can control who can use the app.
 
-Acceptance criteria:
-
-- I can inspect an account’s access status and explicitly change it.
-- Disabling access prevents subsequent protected requests.
-
-#### US-ADM-05-02 — Assign user roles
-
-As an admin, I want to assign a supported role to a user so that I can give them the appropriate capabilities.
+**Scope boundary:** Account status changes do not change the fixed role, course assignments or stored learning/authorship records. Permanent archiving is covered by US-ADM-05-04.
 
 Acceptance criteria:
 
-- Only an authorised admin can change roles; self-escalation by non-admins is rejected.
-- Role changes affect subsequent protected requests.
+- **Status management:** I can inspect an account’s access status and explicitly change it.
+- **Disable and re-enable:** Disabling access prevents subsequent protected requests and ends all sessions; re-enabling requires a fresh login.
+- **Retained records and assignments:** Disabling preserves learning records and course assignments; admins can edit assignments while the account remains disabled.
+- **Administrator protection:** Admins cannot disable themselves, and concurrent actions cannot remove the last enabled admin.
+
+#### US-ADM-05-02 — Create fixed-role accounts
+
+As an admin, I want to create student, teacher and admin accounts so that users receive the appropriate capabilities without changing an existing account’s role.
+
+**Scope boundary:** Accounts have one fixed type; there is no role-change, promotion or demotion workflow. Public signup remains available for students only. Admin-set initial passwords have no mandatory first-login password-change flow.
+
+Acceptance criteria:
+
+- **Authorised account creation:** Only an authorised admin can create accounts with a selected supported role; public signup remains student-only.
+- **Fixed roles:** Each account has exactly one immutable role; promotion, demotion and self-escalation are rejected.
+- **Initial password:** The admin enters and confirms an initial password; existing shared password rules apply, passwords are stored only as hashes and never returned in account details.
+- **Password-change scope:** Mandatory first-login password changes are deferred; guides include a validated test-only example password, never a default credential.
 
 #### US-ADM-05-03 — Manage course access
 
-As an admin, I want to grant or revoke a user’s course access so that I can restrict course content to its intended users.
+As an admin, I want to grant or revoke a user?s course access so that I can restrict course content to its intended users.
+
+**Scope boundary:** Course access does not change account status or role. Admins manually manage student enrolments and teacher assignments, including while the account is disabled; admin accounts do not receive course assignments.
 
 Acceptance criteria:
 
-- I can inspect and change course access for the selected user.
-- Revocation affects subsequent content and AI retrieval requests.
+- **Access display and changes:** I can inspect and change course access for the selected user: student enrolments and teacher management assignments are distinct.
+- **Revocation enforcement:** Revocation affects subsequent content and AI retrieval requests; access is checked again before releasing AI results, while other already-authorised requests may finish.
+- **Repeated and concurrent changes:** Repeated grants and revocations succeed harmlessly; concurrent opposite actions follow server processing order.
+- **Retained history:** Revocation preserves learning and authorship records; granting access again restores visibility of retained records within existing feature rules.
+
+#### US-ADM-05-04 — Archive accounts permanently
+
+As an admin, I want to permanently archive an account so that it cannot access the app again without deleting linked history.
+
+**Scope boundary:** Archiving is permanent access removal with retained history, not hard deletion or anonymisation. It cannot be reversed and does not make the archived email reusable.
+
+Acceptance criteria:
+
+- **Permanent archive:** Archiving ends all sessions, blocks login permanently and removes all course permissions, while retaining linked learning and authorship records.
+- **Email reservation:** Archived accounts cannot be restored and their emails remain reserved for both public signup and admin creation.
+- **Administrator protection:** Admins cannot archive themselves, and concurrent actions cannot remove the last enabled admin.
+
+#### US-ADM-05-05 — Create courses
+
+As an admin, I want to create a course with a title and assign teachers so that teachers can manage its content and students can be enrolled.
+
+**Scope boundary:** ADM-05 creates courses and assigns teachers. Teachers upload, generate, review and publish content under the existing TEA stories; viewing authorised learning results belongs to TEA-05 and is not newly implemented by ADM-05. Course editing and deletion are outside this change.
+
+Acceptance criteria:
+
+- **Course creation:** I can create a course with a validated title and explicitly assign teachers using course-access management; each new course atomically receives a default General topic so assigned teachers can publish content through the existing workflow.
+- **Teacher assignments:** Teacher accounts begin without course assignments; teachers manage content and authorised learning results only in their assigned courses.
+
+#### US-ADM-05-06 — Find accounts and confirm access removal
+
+As an admin, I want to find accounts and review destructive access changes so that I can manage the correct person safely.
+
+**Scope boundary:** This story provides account discovery and confirmation of access-removing actions; it does not introduce bulk operations or audit analytics.
+
+Acceptance criteria:
+
+- **Account discovery:** I can search accounts by name or email, filter by role and status, and browse paginated results including archived accounts through a status filter.
+- **Confirmations:** Disabling, archiving and removing course access require confirmation; creation and grants use explicit form buttons.
+
 
 ### ADM-06 — AI usage monitoring
 
 #### US-ADM-06-01 — Inspect AI requests and failures
 
-As an admin, I want to view requests and failures by AI feature and period so that I can understand capacity use and service problems.
+As an admin, I want to view AI request and failure counts by feature and reporting period so that I can understand service usage and problems.
 
 Acceptance criteria:
 
-- Counts reflect the selected feature and period, with rate-limit failures identifiable.
-- The view does not expose credentials or private request contents.
+- **Request unit:** Count each AI service-call attempt as one request, including a retry as a separate attempt.
+- **Breakdown:** For the selected feature and reporting period, show the total request count and failure count.
+- **Failure category:** Identify rate-limit failures separately from other failures.
+- **Zero activity and unavailable data:** If the data is available and no requests occurred in the selected period, show zero requests and failures. If the data source is unavailable or incomplete, label the affected counts unavailable rather than showing zero.
+- **Privacy restriction:** Do not display credentials, private prompts, or private response content.
+- **Scope boundary:** This story reports operational counts and failure categories, not generation success percentages (ADM-01-02) or resource measurements (ADM-06-02).
 
 #### US-ADM-06-02 — Inspect AI resource measurements
 
-As an admin, I want to view available token and resource measurements so that I can plan use within SoC LLM limits.
+As an admin, I want to view available token and other resource measurements for AI use so that I can plan within SoC LLM limits.
 
 Acceptance criteria:
 
-- Available measurements identify their feature and reporting period.
-- Unavailable measurements are labelled explicitly rather than presented as estimated facts.
+- **Measurement context:** Each available token or other resource measurement identifies the AI feature and reporting period it describes.
+- **Unavailable values:** If a measurement is unavailable, label it unavailable; do not show an estimate as if it were an observed value.
+- **Scope boundary:** Show recorded measurements only. Forecasts, inferred measurements, and private request content are outside this story.
+
 
 ## Nice-to-have stories — outside the MVP
 
@@ -583,7 +684,7 @@ The following apply across all relevant stories and map to SHR-01 through SHR-05
 
 - Initial programming subject and learner level.
 - Supported upload formats and file-size limits.
-- How users join courses and how teacher accounts are approved.
+- ADM-05 resolves course joining and teacher approval: admins create teacher accounts and courses, assign teachers and manually enrol students; account roles are fixed.
 - Repeat-attempt scoring, question reuse after answers have been seen, and the rule for identifying weak topics. The fixed policy is hints only until each whole-set attempt is successfully submitted.
 - Whether feedback is identified or anonymous, together with retention and deletion rules.
 - Exact SoC LLM quotas, model configuration and resource measurements available to the app.
