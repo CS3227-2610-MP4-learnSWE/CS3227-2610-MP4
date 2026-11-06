@@ -255,3 +255,41 @@ Removed obsolete positive-control requirement that Teacher chunk contain deleted
 | Attempt id of another student on STU-02 endpoints after the store change | 404 `attempt_not_found` |
 
 Result: all cases above behaved as expected after fixes, plus: attempt ids containing NUL, longer than 64 characters, padded or upper-cased give 404 `attempt_not_found` (a NUL id gave 503 until round 1, fixed); logout then Back shows no earlier data; a signed-in 401 sends one request and redirects to `/login`. Remaining non-blocking: logout then an immediate Back (before the login page renders) leaves the page on its loading text with no sign-in notice; no data is shown.
+
+## 2026-11-06: STU-02-published-sets (practice on teacher-published sets, verifier rounds 1 and 2)
+
+Branch `claude/stu02-published-sets-6e8525`. Cases below were checked by the independent verifier (round 1 and the round 2 re-check); results as expected unless marked.
+
+| # | Case | Expected | Actual |
+|---|---|---|---|
+| 1 | No session on every practice endpoint and the picker | 401 | 401 |
+| 2 | Teacher or admin (including the course's own teacher) on student routes | 403 | 403 |
+| 3 | `X-Student-Id`, `X-Demo-User-Id`, `?student_id=` | ignored | ignored |
+| 4 | Unknown valid UUID vs set in another course vs removed membership | identical 404 `set_not_found` on read, start, attempt read, save, submit, results | identical |
+| 5 | Malformed id (`intro-se-1`, NUL, CRLF, SQL-like, 5000 chars, 35 chars) | 422 before any query, never 500 | 422; provider also rejects non-canonical ids without a query |
+| 6 | Encoded slash in the id | routing 404 or redirect, no data | 307 or 404, nothing leaked |
+| 7 | Uppercase, braced or urn spelling of a real id | same set everywhere | same set on practice routes; companion rejected it after submit in round 1 (B2), fixed in round 2 |
+| 8 | Space or underscore inside an id | 422 per AC11 wording | accepted and canonicalised (known limit, human decision) |
+| 9 | Set read body | only `id`, `title`, `questions[id, text, code, choices]`; no key or explanation | as expected |
+| 10 | Error bodies and results before submit | no key; 403 `not_submitted` | as expected |
+| 11 | Another student's attempt id | 404 `attempt_not_found`, same as unknown | as expected |
+| 12 | Membership removed mid-attempt | next read, save, submit, results 404 and nothing released; restoring access unblocks | as expected (a request already past the check may finish once) |
+| 13 | Set deleted in the database | 404, attempt unchanged, progress skips it, no 500 | as expected |
+| 14 | Two simultaneous submits of one attempt | one 200, one 409 | as expected |
+| 15 | Concurrent saves | merged | merged |
+| 16 | Eight concurrent starts | eight independent attempts | as expected |
+| 17 | Membership removal racing a save or submit | only 200 or 404 | as expected |
+| 18 | Companion with an inaccessible set, a non-UUID `set_id`, or a stale `intro-se-1` attempt | 404 or 422, no model call | as expected |
+| 19 | Companion paste match and help-mode leak scope | only accessible sets (newest 200) | as expected |
+| 20 | Companion hint context before submit | no key or explanation | as expected |
+| 21 | Picker | only the caller's best scores, no answer data, no non-member course, 100 sets per course | as expected |
+| 22 | Teacher-written titles, topics and course names | rendered as plain text | plain text |
+| 23 | No-store header on `/api/practice-sets*` and `/api/attempts*` | present | present |
+| 24 | Dev seed with `APP_ENV` not `development` | exit 1, nothing created; run twice changes nothing | as expected |
+| 25 | CI answer-key bundle scan | positive control matches the seed text | grep failed in round 1 (B1, pointed at the deleted fixture); fixed, exit 0 in round 2 |
+| 26 | Back after the session expired, set page rendered | no practice data, redirect to `/login` | as expected |
+| 27 | Companion with an attempt plus any spelling of the attempt's own set id | 200 explain, one model call | 200 (round 2) |
+| 28 | Companion with an attempt plus another set's id or a non-UUID | 422 `invalid_context`, no model call, check order unchanged | as expected |
+| 29 | Can a canonicalised `set_id` reach a set the student cannot access? | no | no (the set used is the stored attempt set; membership still applies) |
+
+Fixes: B1 CI control now greps `teacher_publications/seed.py`; B2 companion compares the canonical id (backend `_canonical_set_id`, frontend sends the server's set id). Not run: real-backend Playwright, GitHub CI.

@@ -1,6 +1,6 @@
 # Spec: STU-02 Practice on teacher-published sets
 
-Status: Draft (2026-11-06), not approved. The six decisions under "Decisions (user)" were given by the user; the open questions below carry a recommended default that is used until a human answers.
+Status: Approved by the user on 2026-11-06 (six decisions under "Decisions (user)", the recommended answers to open questions 1 to 11, and question 12 resolved as 422 on every set-id route). Built and verified locally on 2026-11-06 (verifier PASS in round 2). Open question 5 (question reuse and an attempt cap) and the `parse_uuid` leniency noted in the notes stay undecided.
 
 ## Goal
 From the user stories: a student answers and submits a published practice set so that they can check their understanding (US-STU-02-01), and reviews a saved attempt after submission (US-STU-02-02). Until now the practice flow ran on one code fixture set (`intro-se-1`). This feature makes the same flow run on the practice sets that teachers publish (TEA-03), restricted to the courses the student belongs to, and lets the student pick which set to practise.
