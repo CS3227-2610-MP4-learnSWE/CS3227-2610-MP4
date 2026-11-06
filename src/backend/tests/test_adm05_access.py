@@ -329,3 +329,12 @@ def test_adm05_ac21_invalid_opaque_user_ids_are_422_after_auth(admin, user_id, m
     assert anonymous.status_code == 401
     rejected = call(method, path, admin, body)
     assert rejected.status_code == 422 and code_of(rejected) == "validation_error"
+
+
+def test_adm05_ac16_new_course_can_be_used_by_assigned_teacher_without_manual_topic_seed(admin):
+    account, crs = create(admin, "teacher"), course(admin)
+    user = signed(account)
+    assert access(admin, account, crs).status_code == 200
+    topics = call("GET", f"/api/teacher/courses/{crs['id']}/topics", user)
+    assert topics.status_code == 200, topics.text
+    assert any(topic["name"] == "General" for topic in topics.json()), topics.text
