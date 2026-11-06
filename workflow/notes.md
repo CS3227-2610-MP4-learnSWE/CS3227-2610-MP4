@@ -2,6 +2,12 @@
 
 Newest entry first. Older entries describe the state at the time; the newest entry supersedes their open/merged status. Keep the newest 10 entries here; older ones are in `notes-archive.md`. Feature state is in `STATUS.md`.
 
+## 2026-11-06: developer STU-03 companion concurrency 503 fix
+- Done: reproduced help/practice503 with one-connection pool, tests/maintenance contract committedf66d647 before source. Companion returns initial read-only auth connection before nested store/model work; fresh post-model session/account check retained. No pool expansion/retry/CI/original concurrency assertion changes. Both guides updated.
+- Validation: new2RED before source;6targetedGREEN;20original30parallel runsPASS (600requests); final full backend1171PASS348.43s. Compile/spec8/0/12existingwaivers/diffPASS. No frontend changes/browser rerun or independent verifier claim. RemoteCI underlying SQLAlchemy trace unavailable; deterministic local resource defect reproduced with same public503.
+- Next: push local branch and rerun remoteCI. Logs/Stu03ConcurrencyPoolFix.md, security/test-log.md. No liveAI/developerDB/env changes or user process restarts.
+- Resources: single-session small-fix exemption; no agents/invocations/tracker/report, model/effort inherited, exacttokens/cost unavailable. Initial duplicate-node command selected1test; temporary plugin confirmed20. No new feature revisionrounds. Unrelated .claude/worktrees/ preserved.
+
 ## 2026-11-06: developer ADM-06 concise testing walkthrough
 - Done: replaced ADM-06 prose with short setup steps, paired Windows/macOS/Linux commands, focused77backend/40browser test commands, manual checklist/expected results and real-count/recovery steps. Only ADM-06 guide sections changed; app behavior unchanged.
 - Validation: sixPowerShell/sixbash blocks parse; heading/file links and diffPASS; collection-only77backend/40browser. Local Compose help confirms --wait health support. No runtime suites/setup commands/liveAI/developerDB/env/process changes. Policy-blocked shell-write recovered via apply_patch; trailingblank corrected.
@@ -64,9 +70,3 @@ Newest entry first. Older entries describe the state at the time; the newest ent
 - Next: user applies uv run --env-file .env alembic upgrade head, restarts backend and starts frontend in a second terminal; sign in with their own configured admin credentials and follow Users/Courses smoke checks. Local merge only, no push.
 - Files: five conflict resolutions, additive merge migration/regression, pinned feature migration tests, browser fixture isolation and workflow/session records. No agent changes to developer env/database/seeds/live AI/unrelated worktrees.
 - Resources: single-session merge-maintenance exemption, no agents/manifest/tracker; inherited model/effort, exact per-task tokens/cost unavailable. One incomplete broad run, fixture recoveries and redundant diagnostic backend rerun recorded; no new feature correction rounds.
-
-## 2026-11-06: developer documentation follow-up for local ADM-05 login/testing
-- Done: added step-by-step UserGuide/DeveloperGuide env, Docker/database, migrate/seed/reset, restart and sign-in walkthroughs. Explain no default admin credentials, unchanged seed hashes, all-configured-role reset scope, quoted public example password, frontend Origin/proxy settings and 401/403/429/503 recovery. Added focused/full automated test commands and isolated test-run directories.
-- Validation: 15 PowerShell command blocks parse; temporary sample env quoting/password/origin check PASS; diff check PASS. Documentation only, no runtime tests or developer .env/DB/process changes. One temporary-env argument-format retry; no application correction rounds.
-- Next: user follows docs/UserGuide.md local sign-in setup, then account/course checks; DeveloperGuide includes fresh database and automated testing steps.
-- Files: UserGuide, DeveloperGuide, logs/Adm05LoginTestingWalkthrough.md, notes/archive and resource log. Single-session documentation exemption; no agents/run manifest. Inherited Codex model/effort, per-task tokens/cost and elapsed attribution unavailable; tracker not run for this docs-only follow-up.

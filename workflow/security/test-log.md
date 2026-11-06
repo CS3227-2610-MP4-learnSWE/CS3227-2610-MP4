@@ -1,5 +1,9 @@
 # Security test log
 
+## 2026-11-06 ? STU-03 companion connection lifetime maintenance
+
+Deterministic regression: help and practice requests each returned503 with a one-connection pool before fix (test/plan commitf66d647). Companion now releases the completed read-only initial auth transaction before independent store/model work, retaining initial identity/role/Origin/CSRF checks and fresh post-model session/account recheck. This removes nested checkout starvation without increasing pool limits, changing rate limits or adding retries. New regressions require zero checked-out connections during fake model calls and at completion. Original30parallel mode/answer-context assertions unchanged;20consecutivePASS (600requests). Existing disabled/archived-during-inference tests still return401 without generated text. Full backend1171PASS348.43s. Single-session maintenance, no independent verifier claim or liveAI/developerDB/env changes. Underlying remoteCI exception trace unavailable; bounded-pool reproduction establishes this resource defect, not a claim of inspected remote stack traces. Details: logs/Stu03ConcurrencyPoolFix.md.
+
 ## 2026-11-06 ? ADM-06 verified locally
 
 Strongest read-only verifier PASS at e85279e; no remaining application/security findings. Backend1169 PASS; browser512 PASS plus one collected-old timeout fixture failure, then corrected boundary case independently PASS: all513 covered passing across runs, not one entirely green full run. Independent focused77 ADM06+3historical backend and40 ADM06+companion browser PASS. RED evidence before implementation visibility:9308f15,77missing-feature failures/errors. One source correction round27cd224 (activation autoflush) andc4df076 (truthful authenticated badge/docs); full details logs/Adm06Implementation.md.
