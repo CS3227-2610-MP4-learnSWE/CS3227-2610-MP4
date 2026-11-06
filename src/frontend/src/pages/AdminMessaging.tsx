@@ -183,7 +183,7 @@ function Composer({
       <Panel className="messaging-panel">
         {read.loading && (
           <p role="status">
-            {responseId ? "Loading recipientâ€¦" : "Loading recipientsâ€¦"}
+            {responseId ? "Loading recipient…" : "Loading recipients…"}
           </p>
         )}
         {read.error && (
@@ -329,7 +329,7 @@ function Composer({
             disabled={mutation.pending}
           />
           {error && <p role="alert">{error}</p>}
-          {mutation.pending && <p role="status">Preparing reviewâ€¦</p>}
+          {mutation.pending && <p role="status">Preparing review…</p>}
           <Button
             type="submit"
             variant="contained"
@@ -389,7 +389,7 @@ function Review({
       },
     );
   };
-  if (read.loading) return <p role="status">Preparing reviewâ€¦</p>;
+  if (read.loading) return <p role="status">Preparing review…</p>;
   if (read.error)
     return (
       <Panel>
@@ -435,7 +435,7 @@ function Review({
           <h2>{preview.subject}</h2>
           <p className="messaging-text">{preview.body}</p>
           {error && <p role="alert">{error}</p>}
-          {mutation.pending && <p role="status">Sending messageâ€¦</p>}
+          {mutation.pending && <p role="status">Sending message…</p>}
           <div className="form-actions">
             <Button
               onClick={() => edit(fieldsFrom(preview))}
@@ -507,7 +507,7 @@ function MessagingRoute() {
 
 export default function AdminMessaging() {
   const { status, user } = useAuth();
-  if (status === "loading") return <p role="status">Loading your sessionâ€¦</p>;
+  if (status === "loading") return <p role="status">Loading your session…</p>;
   if (status !== "authenticated") return <Navigate to="/login" replace />;
   if (user?.role !== "admin")
     return <Navigate to={`/${user?.role}/overview`} replace />;

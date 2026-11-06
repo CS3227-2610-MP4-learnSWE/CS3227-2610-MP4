@@ -52,7 +52,7 @@ def text(value, subject=False):
 
 def account_ids(value):
     if type(value) is not list:
-        raise fail("INVALID_RECIPIENTS")
+        raise fail("INVALID_REQUEST")
     if any(type(i) is not str or not 1 <= len(i) <= 64 or i != i.strip() or not is_postgres_text(i) for i in value):
         raise fail("INVALID_REQUEST")
     ids = sorted(set(value))
