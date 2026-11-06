@@ -9,25 +9,25 @@ Let admins create fixed-role accounts and courses, manage account status and cou
 Admin navigation exposes /admin/users and /admin/courses. Accounts have enabled, disabled or archived status, with exactly one immutable role. Public signup remains student-only. Admin creation supports all three roles with password confirmation in the UI, no default passwords and no mandatory password-change flow. Course memberships grant student learning access or teacher management according to the account's fixed role; admin accounts cannot receive course assignments. Existing shared membership storage may be reused because immutable roles distinguish interpretation. Status and permission changes persist across process restarts.
 
 ## Acceptance criteria
-- [ ] AC1: I can inspect an account’s access status and explicitly change it.
-- [ ] AC2: Disabling access prevents subsequent protected requests and ends all sessions; re-enabling requires a fresh login.
-- [ ] AC3: Disabling preserves learning records and course assignments; admins can edit assignments while the account remains disabled.
-- [ ] AC4: Admins cannot disable themselves, and concurrent actions cannot remove the last enabled admin.
-- [ ] AC5: Only an authorised admin can create accounts with a selected supported role; public signup remains student-only.
-- [ ] AC6: Each account has exactly one immutable role; promotion, demotion and self-escalation are rejected.
-- [ ] AC7: The admin enters and confirms an initial password; existing shared password rules apply, passwords are stored only as hashes and never returned in account details.
-- [ ] AC8: Mandatory first-login password changes are deferred; guides include a validated test-only example password, never a default credential.
-- [ ] AC9: I can inspect and change course access for the selected user: student enrolments and teacher management assignments are distinct.
-- [ ] AC10: Revocation affects subsequent content and AI retrieval requests; access is checked again before releasing AI results, while other already-authorised requests may finish.
-- [ ] AC11: Repeated grants and revocations succeed harmlessly; concurrent opposite actions follow server processing order.
-- [ ] AC12: Revocation preserves learning and authorship records; granting access again restores visibility of retained records within existing feature rules.
-- [ ] AC13: Archiving ends all sessions, blocks login permanently and removes all course permissions, while retaining linked learning and authorship records.
-- [ ] AC14: Archived accounts cannot be restored and their emails remain reserved for both public signup and admin creation.
-- [ ] AC15: Admins cannot archive themselves, and concurrent actions cannot remove the last enabled admin.
-- [ ] AC16: I can create a course with a validated title and explicitly assign teachers using course-access management.
-- [ ] AC17: Teacher accounts begin without course assignments; teachers manage content and authorised learning results only in their assigned courses.
-- [ ] AC18: I can search accounts by name or email, filter by role and status, and browse paginated results including archived accounts through a status filter.
-- [ ] AC19: Disabling, archiving and removing course access require confirmation; creation and grants use explicit form buttons.
+- [ ] AC1: **Status management:** I can inspect an account’s access status and explicitly change it.
+- [ ] AC2: **Disable and re-enable:** Disabling access prevents subsequent protected requests and ends all sessions; re-enabling requires a fresh login.
+- [ ] AC3: **Retained records and assignments:** Disabling preserves learning records and course assignments; admins can edit assignments while the account remains disabled.
+- [ ] AC4: **Administrator protection:** Admins cannot disable themselves, and concurrent actions cannot remove the last enabled admin.
+- [ ] AC5: **Authorised account creation:** Only an authorised admin can create accounts with a selected supported role; public signup remains student-only.
+- [ ] AC6: **Fixed roles:** Each account has exactly one immutable role; promotion, demotion and self-escalation are rejected.
+- [ ] AC7: **Initial password:** The admin enters and confirms an initial password; existing shared password rules apply, passwords are stored only as hashes and never returned in account details.
+- [ ] AC8: **Password-change scope:** Mandatory first-login password changes are deferred; guides include a validated test-only example password, never a default credential.
+- [ ] AC9: **Access display and changes:** I can inspect and change course access for the selected user: student enrolments and teacher management assignments are distinct.
+- [ ] AC10: **Revocation enforcement:** Revocation affects subsequent content and AI retrieval requests; access is checked again before releasing AI results, while other already-authorised requests may finish.
+- [ ] AC11: **Repeated and concurrent changes:** Repeated grants and revocations succeed harmlessly; concurrent opposite actions follow server processing order.
+- [ ] AC12: **Retained history:** Revocation preserves learning and authorship records; granting access again restores visibility of retained records within existing feature rules.
+- [ ] AC13: **Permanent archive:** Archiving ends all sessions, blocks login permanently and removes all course permissions, while retaining linked learning and authorship records.
+- [ ] AC14: **Email reservation:** Archived accounts cannot be restored and their emails remain reserved for both public signup and admin creation.
+- [ ] AC15: **Administrator protection:** Admins cannot archive themselves, and concurrent actions cannot remove the last enabled admin.
+- [ ] AC16: **Course creation:** I can create a course with a validated title and explicitly assign teachers using course-access management.
+- [ ] AC17: **Teacher assignments:** Teacher accounts begin without course assignments; teachers manage content and authorised learning results only in their assigned courses.
+- [ ] AC18: **Account discovery:** I can search accounts by name or email, filter by role and status, and browse paginated results including archived accounts through a status filter.
+- [ ] AC19: **Confirmations:** Disabling, archiving and removing course access require confirmation; creation and grants use explicit form buttons.
 - [ ] AC20: Every admin endpoint rejects anonymous and non-admin callers; writes require shared CSRF and Origin checks, and no client identity header grants access.
 - [ ] AC21: Server validation rejects unknown fields, invalid identifiers, role changes, archived-account mutations and invalid role/course assignment combinations without changing records.
 - [ ] AC22: Existing feature suites, frontend typecheck and lint remain passing; guides describe implemented behaviour and reproducible manual tests.
