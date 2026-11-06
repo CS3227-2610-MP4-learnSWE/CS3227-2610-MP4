@@ -13,6 +13,7 @@ export const navigation: Record<
     { path: "overview", label: "Overview", icon: "overview" },
     { path: "materials", label: "Study materials", icon: "book" },
     { path: "practice", label: "Practice", icon: "code" },
+    { path: "progress", label: "Progress", icon: "overview" },
     { path: "inbox", label: "Inbox", icon: "inbox" },
   ],
   teacher: [

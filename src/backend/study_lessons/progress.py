@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 from auth.dependencies import AuthUser
 from study_lessons.access import get_visible_lesson
 from study_lessons.models import LessonCompletion, PublishedLesson
-from teacher_materials.models import CourseMembership
+from teacher_materials.models import Course, CourseMembership
 
 
 @dataclass(frozen=True)
@@ -27,6 +27,17 @@ class CompletedLesson:
     topic_id: UUID | None
     title: str
     completed_at: datetime
+
+
+def member_courses(db: Session, user_id: str) -> list[tuple[UUID, str]]:
+    """The user's member courses as (id, title), ordered by lower(title) then id."""
+    query = (
+        select(Course.id, Course.title)
+        .join(CourseMembership, CourseMembership.course_id == Course.id)
+        .where(CourseMembership.user_id == user_id)
+        .order_by(func.lower(Course.title), Course.id)
+    )
+    return [(cid, title) for cid, title in db.execute(query)]
 
 
 def completion_counts(db: Session, user_id: str, course_ids: Sequence[UUID] | None = None) -> dict[UUID, CourseCounts]:

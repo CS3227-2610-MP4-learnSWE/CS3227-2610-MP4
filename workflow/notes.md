@@ -2,6 +2,34 @@
 
 Newest entry first. Use `templates/handoff.md`. Older entries describe the state at the time; the newest entry supersedes their open/merged status. Keep the newest 10 entries here; older ones are in `notes-archive.md`. Feature state is in `STATUS.md`.
 
+## 2026-11-05: STU-04 built and verified locally (orchestrator, student-role owner)
+- Done: spec approved by the user (seven decisions plus default answers to the open questions), spec checker passes; developer and independent test-designer in parallel; verifier round 1 FAIL (6 developer defects, 4 test bugs, 3 stale old tests), round 2 FAIL (the logout fix remounted pages and a signed-in 401 sent a second `GET /api/progress`), then a user-authorised round 3 PASS at `6c4eaca`. Result: persistent practice attempts (`practice_attempt`, migration `20261105_stu04_practice_attempt`), `GET /api/progress`, Progress page at `/student/progress`, Overview with real figures (fake 82% and chart removed), sidebar "Progress" item.
+- Final checks (verifier, round 3): backend 149 of 149 (STU-04, STU-01 migration, TEA-01 materials; `test_shr01_sec_auth_12` skipped, it hangs on Windows), Playwright 178 of 178 on affected specs, typecheck and lint clean. The full Playwright suite was last run in round 2 (419 of 423). GitHub CI not yet run.
+- Open / known limits: (1) no cap on attempts per student; (2) question reuse after answers are seen undecided; (3) practice sets are not course-scoped; (4) in-memory attempts from before this change are lost, no backfill; (5) a mounted page whose user changes stays on its loading text (reachable by logout then an immediate Back; no data shown); (6) the Shell shows a "Demo · Sample data" pill to signed-in users (predates STU-04, user decision pending); (7) the cap of 2 revision rounds was exceeded by one user-authorised round.
+- Local databases: apply the new migration with `uv run alembic upgrade head`; it adds `practice_attempt` and a seed topic.
+- Evaluation data: `experiments/results/stu04-first-run.md`.
+- Merge with master (2026-11-05, PR 24 conflicted): master gained TEA-03 publication (`20261105_tea03_publications`), also chained after `20261104_stu01_lessons`, which made two Alembic heads. The STU-04 migration now has `down_revision = "20261105_tea03_publications"` (one head); `PREVIOUS_REVISION` in `test_stu04_migration.py` and the STU-04 spec, plan and shared contract were updated to match (a mechanical contract change, not a test weakening). Text conflicts in README, guides, styles, main.py and the no-store path list were resolved keeping both sides. The merged result has not been re-verified by the verifier.
+- Next: user decides on the PR; PR into `master` only after the user agrees to push.
+- Resource use:
+  - Tracker run: no
+  - Model: Sonnet 5.5 (main session and subagents)
+  - Total tokens: n/a (not measured; harness-reported subagent tokens about 167k spec-writer, 157k to 175k test-designer, 162k to 191k developer, 178k to 231k verifier, cumulative per resumed agent)
+  - Cost (USD): n/a (not measured)
+  - Retries and revision rounds: 3 (2 plus one user-authorised)
+
+## 2026-11-05: spec-writer on STU-04 (Progress dashboard)
+- Done: `workflow/specs/STU-04/spec.md`, `plan.md`, `tasks.md` drafted (status Draft, not approved). 20 acceptance criteria (AC1 to AC4 copied from US-STU-04-01/02, the rest derived and marked), the "UI states and copy" tables with exact messages (Progress page and Overview stats), and the plan contract: migration `20261105_stu04_practice_attempt` (table `practice_attempt`) behind the existing `AttemptStore` (`lock` becomes a context manager yielding a row-locked, freshly read attempt; new `submitted_summaries`), optional `Question.topic_id`, `progress_rules.py` (3 answers, 60%), one read-only `GET /api/progress`, the Progress page at `/student/progress`, and the Overview with real figures from the same call. The user's seven decisions of 2026-11-05 are recorded in the spec.
+- Next: human answers the open questions, then test-designer (tasks 1, 2, 7, 8) and developer (3 to 6, 9) start in parallel (Variant B).
+- Open questions (details in spec.md): (1) fixture topic mapping: all three questions go to one new seed topic "Software engineering basics" (`66666666-6666-4666-8666-666666666661`, added to `teacher_materials/seed.py`) because the rule needs 3 answers per topic; the alternative is the existing "Testing" topic; one fixture set can show only one topic. (2) practice sets are not course-scoped, so practice figures ignore membership. (3) wording for a course with no lessons. (4) Overview stats "Practice average" (mean of latest score per set, rounded down) and "Topics to revise" replace the fake stats, and the sidebar gets a "Progress" item. (5) listed decision "question reuse after answers have been seen" stays undecided. (6) no cap on attempts per student (STU-02 gap). (7) in-memory attempts are lost on deploy.
+- Checks: the spec checker was NOT run (this session had no shell tool); the three files were checked by hand against `registry.py` and `rules.py` (sections, filled UI table rows with 7 cells, the eleven labels, no placeholder text outside backticks). Run `python -m speccheck ..\..\specs\STU-04` from `workflow\tools\speccheck` before approval.
+- Files touched: `workflow/specs/STU-04/spec.md`, `plan.md`, `tasks.md`, `workflow/notes.md`. No code, nothing committed.
+- Resource use (all required; write "n/a" only with a reason):
+  - Tracker run: no
+  - Model: Sonnet 5.5 (spec-writer subagent)
+  - Total tokens: n/a (not measured; no tracker run)
+  - Cost (USD): n/a (not measured)
+  - Retries and revision rounds: 0
+
 
 
 ## 2026-11-05: Fix obsolete CI teacher-answer positive control (orchestrator)

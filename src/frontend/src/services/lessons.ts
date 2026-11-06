@@ -1,4 +1,5 @@
-import { ApiError, getSessionGeneration, request } from "./client";
+import { ApiError, request } from "./client";
+import { markWrite, readOnce } from "./readOnce";
 
 export type CourseSummary = {
   id: string;
@@ -44,21 +45,6 @@ const isNullableString = (v: unknown) => v === null || isString(v);
 const isCourseRef = (v: unknown) =>
   isObject(v) && isString(v.id) && isString(v.title);
 const seg = (id: string) => encodeURIComponent(id);
-
-// Identical GETs already in flight share one request (React StrictMode runs
-// effects twice in development); a finished request is never reused, and a
-// request started before a sign-in/out or a completion change is never shared
-// with a page opened after it.
-const inFlight = new Map<string, Promise<unknown>>();
-let writes = 0;
-function readOnce(path: string): Promise<unknown> {
-  const key = `${getSessionGeneration()}:${writes}:${path}`;
-  const pending = inFlight.get(key);
-  if (pending) return pending;
-  const started = request("GET", path).finally(() => inFlight.delete(key));
-  inFlight.set(key, started);
-  return started;
-}
 
 export async function listCourses(): Promise<{
   courses: CourseSummary[];
@@ -140,7 +126,7 @@ export async function setCompletion(
   lessonId: string,
   completed: boolean,
 ): Promise<CompletionResult> {
-  writes += 1;
+  markWrite();
   let data: unknown;
   try {
     data = await request(
@@ -149,7 +135,7 @@ export async function setCompletion(
       { completed },
     );
   } finally {
-    writes += 1;
+    markWrite();
   }
   if (
     !isObject(data) ||

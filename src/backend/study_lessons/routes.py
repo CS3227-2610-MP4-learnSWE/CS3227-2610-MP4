@@ -13,8 +13,8 @@ from errors import ApiError
 from study_lessons import schemas
 from study_lessons.access import get_visible_lesson, visible_lessons
 from study_lessons.models import LessonCompletion, PublishedLesson
-from study_lessons.progress import CourseCounts, completion_counts, set_completion
-from teacher_materials.models import Course, CourseMembership, Topic
+from study_lessons.progress import CourseCounts, completion_counts, member_courses, set_completion
+from teacher_materials.models import Course, Topic
 from timestamps import utc_timestamp
 
 MAX_LESSONS = 500
@@ -42,14 +42,8 @@ def _parse_completion(raw: bytes) -> schemas.CompletionRequest:
 @router.get("/courses")
 def list_courses(user: AuthUser = student, db: Session = Depends(get_session)) -> schemas.CourseListOut:
     counts = completion_counts(db, user.id)
-    courses = db.execute(
-        select(Course.id, Course.title)
-        .join(CourseMembership, CourseMembership.course_id == Course.id)
-        .where(CourseMembership.user_id == user.id)
-        .order_by(func.lower(Course.title), Course.id)
-    )
     items = []
-    for cid, title in courses:
+    for cid, title in member_courses(db, user.id):
         c = counts.get(cid, CourseCounts(0, 0))
         items.append(schemas.CourseSummary(id=str(cid), title=title, lesson_count=c.lesson_count, completed_count=c.completed_count))
     totals = schemas.CourseCountsOut(

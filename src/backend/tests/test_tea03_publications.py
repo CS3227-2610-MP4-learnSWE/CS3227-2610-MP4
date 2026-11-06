@@ -332,7 +332,7 @@ def test_tea03_publications_migration_preserves_legacy_and_guards_downgrade(tea0
             db.execute("INSERT INTO published_lesson(id,course_id,title,content,published_by) VALUES(%s,%s,'Legacy','Preserve me','demo-teacher')",(old,COURSE))
             db.execute("INSERT INTO lesson_completion(user_id,lesson_id,course_id,completed,completed_at) VALUES('demo-student',%s,%s,true,now())",(old,COURSE))
             completion=db.execute('SELECT user_id,lesson_id,course_id,completed,completed_at FROM lesson_completion').fetchall()
-            migrate('upgrade','head')
+            migrate('upgrade','20261105_tea03_publications')
             assert db.execute('SELECT user_id,lesson_id,course_id,completed,completed_at FROM lesson_completion').fetchall()==completion
             assert db.execute('SELECT version_num FROM alembic_version').fetchone()[0]=='20261105_tea03_publications'
             assert db.execute('SELECT content,source_version FROM published_lesson WHERE id=%s',(old,)).fetchone()==('Preserve me',None)
