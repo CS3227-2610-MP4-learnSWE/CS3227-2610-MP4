@@ -7,6 +7,9 @@ from stu01_helpers import (enroll, enrolled_student, make_course, make_lesson, p
 from stu04_helpers import (BASICS_TOPIC, EMPTY, EXPLANATIONS, FORBIDDEN_IN_BODY, QUESTION_TEXTS, SET_ID, SET_TITLE,
                            TOPIC_NAME, answers_with, body_of, insert_attempt, only_set, progress, save, start,
                            submit, submitted, topic_item)
+import pytest as _pytest
+
+pytestmark = _pytest.mark.usefixtures("fake_provider")
 
 UUID = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
 

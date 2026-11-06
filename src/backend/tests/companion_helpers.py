@@ -14,8 +14,9 @@ import llm_client
 from auth_helpers import call, new_student  # noqa: F401  (session login replaces X-Student-Id; SHR-01)
 from llm_client import LlmReply
 from main import app
+from fake_sets import FIXTURE_SET_ID
 
-SET_ID = "intro-se-1"
+SET_ID = FIXTURE_SET_ID
 URL = "/api/companion/messages"
 CANNED = (
     "I can't share or confirm answers while this practice set is open. "

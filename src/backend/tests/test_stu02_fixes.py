@@ -8,8 +8,12 @@ import time
 
 import practice_logic
 from auth_helpers import call, new_student  # session login replaces X-Student-Id (SHR-01)
+from fake_sets import FIXTURE_SET_ID  # noqa: F401
+import pytest as _pytest
 
-SET_ID = "intro-se-1"
+pytestmark = _pytest.mark.usefixtures("fake_provider")
+
+SET_ID = FIXTURE_SET_ID
 CORRECT = {"q1": "a", "q2": "b", "q3": "c"}
 
 

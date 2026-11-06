@@ -4,11 +4,10 @@ Written by the developer, NOT by the independent test-designer.
 Leak check forms the verifier found still passing, plus false-positive guards.
 """
 import pytest
-from companion_helpers import SET_ID
 from leak_check import find_leak
-from practice_data import PRACTICE_SETS
+from fake_sets import FIXTURE_SET
 
-QS = PRACTICE_SETS[SET_ID].questions  # answers q1 a, q2 b, q3 c
+QS = FIXTURE_SET.questions  # answers q1 a, q2 b, q3 c
 
 MUST_BLOCK = [
     "b is the answer",
