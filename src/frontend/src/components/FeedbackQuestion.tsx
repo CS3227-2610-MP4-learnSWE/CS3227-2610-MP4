@@ -44,7 +44,7 @@ export default function FeedbackQuestion({
           label={label}
           value={typeof value === "string" ? value : ""}
           onChange={(e) => change(e.target.value || null)}
-          slotProps={{ select: { native: true } }}
+          slotProps={{ select: { native: true }, inputLabel: { shrink: true } }}
           disabled={disabled}
         >
           <option value="">Choose an option</option>

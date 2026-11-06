@@ -57,7 +57,10 @@ function Questions({
             select
             label={`Question ${i + 1} type`}
             value={q.type}
-            slotProps={{ select: { native: true } }}
+            slotProps={{
+              select: { native: true },
+              inputLabel: { shrink: true },
+            }}
             onChange={(e) => {
               const type = e.target.value as QuestionType;
               update(i, {
@@ -375,7 +378,10 @@ export default function FeedbackDraftEditor({ initial }: { initial?: Form }) {
               select
               label="Association type"
               value={data.association?.kind ?? "none"}
-              slotProps={{ select: { native: true } }}
+              slotProps={{
+                select: { native: true },
+                inputLabel: { shrink: true },
+              }}
               onChange={(e) =>
                 change({
                   association:
@@ -397,7 +403,10 @@ export default function FeedbackDraftEditor({ initial }: { initial?: Form }) {
                 select
                 label="Feature"
                 value={data.association.id}
-                slotProps={{ select: { native: true } }}
+                slotProps={{
+                  select: { native: true },
+                  inputLabel: { shrink: true },
+                }}
                 onChange={(e) =>
                   change({
                     association: { kind: "feature", id: e.target.value },
@@ -417,7 +426,10 @@ export default function FeedbackDraftEditor({ initial }: { initial?: Form }) {
                 select
                 label="Lesson"
                 value={data.association.id}
-                slotProps={{ select: { native: true } }}
+                slotProps={{
+                  select: { native: true },
+                  inputLabel: { shrink: true },
+                }}
                 onChange={(e) =>
                   change({
                     association: { kind: "lesson", id: e.target.value },

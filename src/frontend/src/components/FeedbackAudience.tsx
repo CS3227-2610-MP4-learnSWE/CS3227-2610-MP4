@@ -124,7 +124,10 @@ export default function FeedbackAudience({
               select
               label="Audience role"
               value={role}
-              slotProps={{ select: { native: true } }}
+              slotProps={{
+                select: { native: true },
+                inputLabel: { shrink: true },
+              }}
               onChange={(e) => {
                 setRole(e.target.value as "student" | "teacher");
                 setSelected(new Map());
