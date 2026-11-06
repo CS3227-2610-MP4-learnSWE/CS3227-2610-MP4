@@ -483,3 +483,68 @@ test("adm05 mobile account list visibly identifies the account before management
     ),
   ).toBe(true);
 });
+
+test("adm05 late old-session 401 cannot sign out a newly authenticated admin", async ({
+  page,
+}) => {
+  await mockAdmin(page);
+  const auth = await mockAuthApi(page, { user: ADMIN });
+  const second = {
+    ...ADMIN,
+    id: "u-second-admin",
+    email: "second-admin@example.com",
+    display_name: "Second Admin",
+  };
+  auth.accounts.set(second.email!, {
+    user: second,
+    password: "second-admin-password-7391",
+  });
+  let release!: () => void;
+  let entered!: () => void;
+  const started = new Promise<void>((resolve) => {
+    entered = resolve;
+  });
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route("**/api/admin/accounts/u-adm05student", async (route) => {
+    entered();
+    await gate;
+    await route.fulfill({
+      status: 401,
+      json: {
+        detail: { code: "unauthenticated", message: "Sign in to continue." },
+      },
+    });
+  });
+  await page.goto("/admin/users");
+  await page
+    .getByRole("button", { name: "Manage account ADM05 Learner", exact: true })
+    .click();
+  await started;
+  await page.getByRole("button", { name: /log out/i }).click();
+  await expect(page).toHaveURL(/\/login$/);
+  await page.getByLabel(/^email/i).fill(second.email!);
+  await page.getByLabel(/^password/i).fill("second-admin-password-7391");
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
+  await expect(page).toHaveURL(/\/admin\/overview$/);
+  await expect(page.getByText("Second Admin", { exact: true })).toBeVisible();
+  const response = page.waitForResponse(
+    (r) =>
+      r.url().endsWith("/api/admin/accounts/u-adm05student") &&
+      r.status() === 401,
+  );
+  release();
+  await response;
+  await page.evaluate(
+    () =>
+      new Promise<void>((resolve) =>
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+      ),
+  );
+  await expect(page).toHaveURL(/\/admin\/overview$/);
+  await expect(page.getByText("Second Admin", { exact: true })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Account details", exact: true }),
+  ).toHaveCount(0);
+});
