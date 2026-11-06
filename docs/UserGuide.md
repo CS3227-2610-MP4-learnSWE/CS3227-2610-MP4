@@ -176,12 +176,48 @@ Failed publication preserves form input. Reload and review stale drafts before c
 
 ## Admin AI usage monitoring (ADM-06)
 
-Sign in as an enabled admin and open **AI usage** in the sidebar (`/admin/ai-usage`). The page starts with the last seven UTC calendar dates. Choose All features or one feature, edit Start date (UTC) and End date (UTC), then choose Apply filters. The inclusive range can span at most 31 days and cannot end in the future. Retry repeats the last applied selection; unsent edits stay in the fields. Refresh and Back/Forward reset this page to its default dates and fetch current data. Anonymous demo visitors see a sign-in notice rather than real counts.
+### Before testing
 
-Requests count actual SoC service-call attempts, including each transport retry. Failures are split into provider rate-limit failures and other transport/provider failures. Local validation, authentication and local quota rejections never dispatch a provider call and are excluded. A successful service response may still fail content validation or be withheld by a learning feature; those feature outcomes are outside this report. TEA-02 combines note and MCQ generation. ADM-03 remains unavailable until feedback analysis is implemented and instrumented.
+- Complete [ADM-06 local setup](DeveloperGuide.md#adm-06-local-setup).
+- Use an enabled admin account. Demo shortcuts do not sign you in.
+- Open **http://127.0.0.1:5173/login**.
 
-Input tokens, output tokens and total tokens appear only when that exact measurement was explicitly supplied for every call in the selected feature/period. Total tokens are not calculated from the other columns. Missing or malformed measurements, partial collection and interrupted calls show **Unavailable** with a visible reason. A complete covered period with no calls shows zero requests/failures and unavailable token measurements. No credentials, prompts, responses, user identities or per-user history are included.
+### Manual test checklist
 
-Collection is forward-only. An operator must migrate, restart all instrumented workers and activate collection as described in DeveloperGuide. The page shows when collection began; a range beginning before that instant is unavailable, including the first partial UTC day. Choose dates starting on the next fully covered UTC day to obtain complete daily totals. Existing calls are not backfilled. An interrupted pending record makes its affected period unavailable because the service cannot prove whether dispatch completed.
+| Step | Action | Expected result |
+|---|---|---|
+| 1 | Sign in as admin. Open **AI usage**. | Filters and feature rows. Default: All features, last seven UTC dates. |
+| 2 | Select **Student assistant (STU-03)**. Click **Apply filters**. | One student-assistant row. |
+| 3 | Select **Teacher generation (TEA-02)**. Apply. | One row combining notes and MCQ calls. |
+| 4 | Select **Feedback analysis (ADM-03)**. Apply. | **Unavailable**: collection is not enabled. |
+| 5 | Set Start date after End date. Apply. | Date-range error. Correct the dates and apply again. |
+| 6 | Try more than 31 days, then a future End date. | Both selections rejected. |
+| 7 | Change filters, refresh, then navigate away and Back. | Default filters and a fresh report each time. |
+| 8 | Log out. Sign in as student or teacher. Open `/admin/ai-usage`. | Redirect to your own role's home. No admin report. |
 
-Loading lasts at most 15 seconds. Errors distinguish invalid filters, missing access, report throttling, service outages, network failures, invalid responses and timeouts. Use Retry when offered, or correct filters and Apply filters. Session expiry returns you to sign-in with "Your session has expired. Sign in again."; actual logout clears the report. Students and teachers cannot access this admin report.
+### Check real request counts
+
+1. Configure SoC credentials for chat/generation. Real calls use SoC quota.
+2. After activation's next **00:00 UTC** (08:00 Singapore), set both dates to the current UTC date.
+3. Select STU-03 or TEA-02. Record its Requests value.
+4. In another browser profile, send one student chat message or generate teacher notes/MCQs.
+5. Return as admin. Click **Apply filters**.
+
+Expected results:
+
+- Requests increases by one per provider attempt. A retry adds another attempt.
+- Provider failures increase Failures. Provider 429s also increase Rate-limit failures.
+- Local validation/quota rejection does not increase counts.
+- Tokens appear only when that measurement was recorded for every call. Total tokens are never calculated from the other columns.
+- Complete coverage with no calls shows zero counts and unavailable tokens.
+- Earlier history, partial coverage and interrupted recording show **Unavailable** with a reason.
+- Credentials, prompts, replies and user identities are excluded.
+
+**Need results immediately?** Run the [ADM-06 automated tests](DeveloperGuide.md#adm-06-automated-tests). They use mocks: no waiting or live AI.
+
+### Recovery checks
+
+- Stop the backend with Ctrl+C. Apply filters. Expect an error with **Retry**.
+- Restart the backend. Click **Retry**. The last applied selection loads; unsent edits stay in the fields.
+- Requests time out after 15 seconds. No automatic retry.
+- Session expiry returns to sign-in with "Your session has expired. Sign in again." Logout clears the report.

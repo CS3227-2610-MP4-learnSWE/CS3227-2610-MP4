@@ -365,24 +365,169 @@ instead of relying only on a component unmount and remount.
 
 ## ADM-06 operational AI usage
 
-The approved contract is in `workflow/specs/ADM-06/`. `ai_usage` persists only allowlisted feature, timestamps, outcome and independently recorded integer token counters. `llm_client.SoclaasClient` observes each `httpx` attempt inside the existing bounded retry loop. Production `get_llm_client` injects `DatabaseAttemptObserver`; constructor-injected standalone clients may omit the observer for isolated transport tests. Do not create an unobserved production client. `usage_feature` scopes server-owned ContextVar attribution around companion calls (STU-03) and both teacher generators (TEA-02); it resets on return/error and does not change the existing complete/fake interface. ADM-03 is reserved and collection remains disabled.
+### ADM-06 local setup
 
-Provider JSON mapping is `usage.prompt_tokens` to input_tokens, `usage.completion_tokens` to output_tokens and `usage.total_tokens` to total_tokens. Only nonnegative signed-64-bit integers are accepted; booleans, strings, floats and missing values remain null. No tokeniser, addition of counters, forecast or cost estimate is used. A 2xx response is a successful service call even if its content/JSON later fails feature validation. 429 is rate_limit; other non-2xx responses and transport exceptions are other_failure. No live-provider measurement availability has been verified by this implementation.
+Prerequisites:
 
-Deploy through the existing GitHub Actions process. Before coverage activation, stop accepting old uninstrumented work, apply the additive migration, and restart **every** application worker on the instrumented release. Preserve existing `.env`, database and files. From the backend directory, the operator commands are:
+- Git, uv, Node/npm and Docker installed.
+- Existing `src/backend/.env` and an enabled admin account.
+- Keep your existing database and credentials.
+- First-time account? See [local admin setup](#local-admin-setup-and-password-reset-powershell).
+- Local HTTP: `SESSION_COOKIE_SECURE=false`; allow the frontend origin in `.env`.
+- Frontend `.env`: `API_PORT=8000`. If `API_PROXY_TARGET` exists, use `http://127.0.0.1:8000`.
+- SoC credentials are needed only for real chat/generation, not mocked tests.
+
+**1. Stop backend workers with Ctrl+C. Start PostgreSQL and migrate.**
+
+Windows — PowerShell:
+
+```powershell
+Set-Location (git rev-parse --show-toplevel)
+docker compose up -d --wait postgres
+Set-Location src\backend
+uv sync --frozen
+uv run --env-file .env alembic upgrade head
+```
+
+macOS/Linux — bash or zsh:
+
+```bash
+cd "$(git rev-parse --show-toplevel)"
+docker compose up -d --wait postgres
+cd src/backend
+uv sync --frozen
+uv run --env-file .env alembic upgrade head
+```
+
+**2. Start the updated backend. Leave this terminal running.**
+
+Windows:
 
 ```powershell
 Set-Location (git rev-parse --show-toplevel)
 Set-Location src\backend
-uv run --env-file .env alembic upgrade head
-# Restart every backend worker with the new release before running activation.
+uv run --env-file .env uvicorn main:app --host 127.0.0.1 --port 8000 --reload
+```
+
+macOS/Linux:
+
+```bash
+cd "$(git rev-parse --show-toplevel)/src/backend"
+uv run --env-file .env uvicorn main:app --host 127.0.0.1 --port 8000 --reload
+```
+
+**3. In a second terminal, activate collection.** Every backend worker must use the updated code first.
+
+Windows:
+
+```powershell
+Set-Location (git rev-parse --show-toplevel)
+Set-Location src\backend
 uv run --env-file .env python -m ai_usage.activate --feature STU-03 --feature TEA-02
 ```
 
-Activation is explicit and idempotent, preserves any previous coverage start/gap, and never backfills. Do not activate while any old worker can make unobserved calls; a mixed deployment cannot establish complete coverage. The first partial UTC day and all earlier ranges are unavailable. A coverage gap is sticky; do not manually clear or backdate it, prune records, or downgrade away telemetry to make reports look complete. This release has no reviewed gap-recovery/backfill or retention-deletion policy. Downgrading this migration removes usage metadata and is not a history-preserving rollback.
+macOS/Linux:
 
-Before dispatch, an independent transaction commits a pending reservation. If that write fails, no provider request is sent; the existing feature-safe upstream error is returned. Finalisation uses a separate atomic compare-and-set; identical replays are accepted, conflicting replays never overwrite, and finalisation failure leaves pending. A pending reservation could precede dispatch, so **all** affected totals are unavailable. Domain transaction rollback does not erase dispatched-attempt records. Quotas, maximum input/output, retry count and model configuration retain their existing values.
+```bash
+cd "$(git rev-parse --show-toplevel)/src/backend"
+uv run --env-file .env python -m ai_usage.activate --feature STU-03 --feature TEA-02
+```
 
-`GET /api/admin/ai-usage` uses current active-admin session checks, strict filters, a 30-request/60-second per-admin process-local report bucket and private/no-store/Vary: Cookie responses, including errors. A PostgreSQL REPEATABLE READ transaction aggregates indexed metadata with one UTC cutoff; finalisations after that cutoff remain pending for that snapshot. No user joins or provider calls occur. Complete periods with no attempts have zero counts; partial token aggregates are never presented as full totals. Values beyond JavaScript's safe integer range are unavailable. Browser data stays in component memory, clears on new requests/session/navigation, and uses the shared generation-aware HTTP client with a 15-second timeout and no automatic retries.
+Expected: `AI usage coverage activated; existing starts and gaps preserved.` Repeating activation preserves the original start.
 
-Run backend tests with the existing `TEA01_TEST_DATABASE_URL` unique-schema fixture (the documented disposable Docker PostgreSQL connection), never against a development schema. Mock provider transport/observer; no live quota is required. Frontend checks remain `npm run typecheck`, `npm run lint`, `npm run build` and `npm test`; isolate test-server ports from any user's running server. On Windows invoke `npm.cmd` if execution policy blocks npm.ps1.
+**4. In a third terminal, start the frontend.** Stop the old frontend first. Its proxy must point to backend port 8000.
+
+Windows:
+
+```powershell
+Set-Location (git rev-parse --show-toplevel)
+Set-Location src\frontend
+npm.cmd ci
+npm.cmd run dev
+```
+
+macOS/Linux:
+
+```bash
+cd "$(git rev-parse --show-toplevel)/src/frontend"
+npm ci
+npm run dev
+```
+
+Open **http://127.0.0.1:5173/login**. Follow the [ADM-06 manual checklist](UserGuide.md#manual-test-checklist).
+
+- Initial seven-day results can be **Unavailable**. No backfill.
+- For numeric totals, select dates starting after activation's next UTC midnight.
+- Do not backdate coverage or clear gaps to manufacture complete data.
+
+### ADM-06 automated tests
+
+Mocks and isolated data. No live AI. No wait for UTC midnight.
+
+**Backend — 77 ADM-06 cases.** Start Docker Desktop/the Docker daemon first. The connection below is for the repository's local Docker service. The fixture creates and removes a unique test schema. Do not add `--env-file .env` to these test commands.
+
+Windows:
+
+```powershell
+Set-Location (git rev-parse --show-toplevel)
+docker compose up -d --wait postgres
+Set-Location src\backend
+uv sync --frozen
+$env:TEA01_TEST_DATABASE_URL = 'postgresql+psycopg://learnswe:learnswe-local-only@127.0.0.1:5433/learnswe'
+$env:PGCONNECT_TIMEOUT = '2'
+uv run pytest -q tests/test_adm06_transport.py tests/test_adm06_usage.py tests/test_adm06_migration.py --basetemp .pytest_cache/adm06-guide
+```
+
+macOS/Linux:
+
+```bash
+cd "$(git rev-parse --show-toplevel)"
+docker compose up -d --wait postgres
+cd src/backend
+uv sync --frozen
+export TEA01_TEST_DATABASE_URL='postgresql+psycopg://learnswe:learnswe-local-only@127.0.0.1:5433/learnswe'
+export PGCONNECT_TIMEOUT=2
+uv run pytest -q tests/test_adm06_transport.py tests/test_adm06_usage.py tests/test_adm06_migration.py --basetemp .pytest_cache/adm06-guide
+```
+
+Expected: **77 passed**, with no skipped database tests. Covers attempts/retries, tokens, unavailable data, permissions, concurrency and migration. Use a fresh terminal for normal development afterward.
+
+**Browser — 40 ADM-06 cases.** Stop frontends on ports 5173 and 5174 first. Playwright starts its own servers. Backend not required.
+
+Windows:
+
+```powershell
+Set-Location (git rev-parse --show-toplevel)
+Set-Location src\frontend
+npm.cmd ci
+npx.cmd playwright install chromium
+npm.cmd test -- tests/adm06-usage.spec.ts --project=mocked --workers=2 --output=test-results/adm06-guide
+```
+
+macOS/Linux:
+
+```bash
+cd "$(git rev-parse --show-toplevel)/src/frontend"
+npm ci
+npx playwright install chromium
+npm test -- tests/adm06-usage.spec.ts --project=mocked --workers=2 --output=test-results/adm06-guide
+```
+
+Expected: **40 passed**. Covers filters, messages, retry, timeout, access, history, logout and mobile layout. Linux missing browser libraries? Run `npx playwright install --with-deps chromium`.
+
+### ADM-06 implementation notes
+
+- `ai_usage`: metadata only. No prompts, replies, credentials or user identifiers.
+- Production: `SoclaasClient` + `DatabaseAttemptObserver`. Each retry gets a record. Standalone test clients may omit the observer; production clients must not.
+- `usage_feature`: server-owned context; resets after each call. STU-03 and TEA-02 integrated; ADM-03 disabled.
+- Mapping: `usage.prompt_tokens` → input; `usage.completion_tokens` → output; `usage.total_tokens` → total. Independent recorded values only; live availability unverified.
+- Tokens: nonnegative signed-64-bit integers. Invalid/missing fields stay null; report totals above JavaScript's safe integer range become unavailable.
+- Provider 2xx = service success, even if feature validation later fails. 429 = rate-limit failure; other non-2xx/transport errors = other failure.
+- Reservation failure blocks dispatch. Finalisation failure leaves pending; all affected totals become unavailable. Domain rollback cannot erase attempts.
+- Atomic finalisation: identical replay accepted; conflicting replay cannot overwrite.
+- Report: active admins; strict filters; REPEATABLE READ cutoff; private/no-store and Vary: Cookie.
+- Limits unchanged. Report throttle: 30 requests/60 seconds/admin, process-local.
+- Browser: memory only; clears on session/navigation/new request; 15-second timeout; no automatic retry.
+- Coverage: forward-only. No backfill, retention deletion or gap-recovery tool. Downgrade removes usage metadata.
+- Production deployment: GitHub Actions; replace every worker before activation.
+- Full contract: [ADM-06 spec and plan](../workflow/specs/ADM-06/).
