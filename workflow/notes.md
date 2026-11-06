@@ -1,5 +1,9 @@
 # Handoff notes
 
+## 2026-11-07: orchestrator ADM-04 approved build
+- User approved spec/plan and proposed policies in chat. Resume run `2026-11-07-ADM04-01`; approved start commit is recorded in launch handoff. Developer and independent test-designer use separate worktrees; no live AI or developer DB/env changes. Approval precedes code.
+- Usage report will be regenerated at closeout: [report](usage/runs/2026-11-07-ADM04-01/report.md).
+
 ## 2026-11-07: orchestrator ADM-04 specification approval handoff
 - Done: reviewed draft contract against current ADM-02 survey/response routes, auth/CSRF, opaque 64-character account IDs, shared limiter and persistence. Added precise body/query bounds, new delivery table, preview recovery/edit request counts and exact error mappings. Spec checker PASS (1 checked, 0 failed, 0 waived); no application code or feature tests written.
 - Next: human approves [spec](specs/ADM-04/spec.md) and [plan](specs/ADM-04/plan.md), especially all-active/selected audience, 500-recipient cap, 15-minute review lifetime and retention reuse; then commit approved start contract and launch isolated developer/test-designer. Branch `feat/adm04-feedback-follow-up`; no live AI, env/database or user process changes.

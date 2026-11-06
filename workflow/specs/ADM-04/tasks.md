@@ -2,7 +2,7 @@
 
 | # | Task | Owner agent | Depends on | Status |
 |---|---|---|---|---|
-| 0 | Resolve source-aware inbox/auth/routes/error integration; human approves final spec and plan; pass speccheck; commit approved start contract | orchestrator | draft | todo |
+| 0 | Resolve source-aware inbox/auth/routes/error integration; human approves final spec and plan; pass speccheck; commit approved start contract | orchestrator | draft | done |
 | 1 | Independently design AC01-13 HTTP/browser and adversarial tests in isolated worktree reset to approved start commit; commit RED evidence | test-designer | 0 | todo |
 | 2 | Implement additive durable message/preview migration, authenticated service/router, atomic idempotent inbox delivery, admin compose/review and recipient rendering; update guides; existing checks; commit source | developer | 0 | todo |
 | 3 | Merge source into independent test worktree; run backend/browser suites and report contract mismatches separately; orchestrator merges tests | test-designer | 1, 2, 6, 7 | todo |

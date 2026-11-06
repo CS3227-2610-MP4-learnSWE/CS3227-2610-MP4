@@ -1,6 +1,6 @@
 # Spec: ADM-04 Feedback follow-up
 
-Status: Draft (human approval required)
+Status: Approved by user in chat, 2026-11-07.
 
 ## Goal
 Admins compose, review and confirm private feedback responses and targeted announcements. Delivery uses student and teacher in-app inboxes.
@@ -77,6 +77,7 @@ Preview expires after 15 minutes. Request bodies are limited to 128 KiB. Recipie
 - Normalisation: trim subject/body outer whitespace; normalise CRLF to LF; lengths are Unicode code points after normalisation. Reject NUL and control characters other than tab/newline in body; subject is single line. Account IDs are opaque case-sensitive strings (1-64 characters, without surrounding whitespace), never UUID-coerced or lowercased. Form/response/preview/message/delivery UUIDs are canonicalised and compared structurally; reject malformed IDs. Deduplicate recipient IDs before limits; sorted exact account IDs determine audience identity. Search is trimmed, case-insensitive, bounded to 100 characters; roles are exact enums.
 
 ## Open questions
+All ADM-04 policy proposals below were approved by the user in chat on 2026-11-07; no blocking open question remains.
 1. Approve proposed audience policy: one role, either all active accounts or explicit selected users, global admin scope (no implicit course filter), maximum 500 recipients. The stories do not fix audience granularity.
 2. Approve preview lifetime, request quotas, text limits and intentional repeat follow-ups using fresh previews.
 3. Identified feedback is required for a one-to-one response. Approve reuse of the approved ADM-02 identified-response policy and existing retention policy; anonymous or archived/missing respondents are unavailable. No new anonymity or deletion policy is introduced.
