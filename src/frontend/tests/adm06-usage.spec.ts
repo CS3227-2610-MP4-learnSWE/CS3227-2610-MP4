@@ -185,6 +185,9 @@ test("adm06 AC2/3/7/13 named controls, metadata, exact columns and recorded valu
     page.getByRole("heading", { level: 1, name: "AI usage", exact: true }),
   ).toBeVisible();
   await expect(
+    page.getByText("Demo · Sample data", { exact: true }),
+  ).toHaveCount(0);
+  await expect(
     page.getByRole("link", { name: "AI usage", exact: true }),
   ).toHaveAttribute("href", PATH);
   await expect(feature(page)).toBeVisible();
