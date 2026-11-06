@@ -585,7 +585,7 @@ As an admin, I want to create a course with a title and assign teachers so that 
 
 Acceptance criteria:
 
-- **Course creation:** I can create a course with a validated title and explicitly assign teachers using course-access management.
+- **Course creation:** I can create a course with a validated title and explicitly assign teachers using course-access management; each new course atomically receives a default General topic so assigned teachers can publish content through the existing workflow.
 - **Teacher assignments:** Teacher accounts begin without course assignments; teachers manage content and authorised learning results only in their assigned courses.
 
 #### US-ADM-05-06 — Find accounts and confirm access removal

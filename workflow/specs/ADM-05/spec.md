@@ -24,7 +24,7 @@ Admin navigation exposes /admin/users and /admin/courses. Accounts have enabled,
 - [ ] AC13: **Permanent archive:** Archiving ends all sessions, blocks login permanently and removes all course permissions, while retaining linked learning and authorship records.
 - [ ] AC14: **Email reservation:** Archived accounts cannot be restored and their emails remain reserved for both public signup and admin creation.
 - [ ] AC15: **Administrator protection:** Admins cannot archive themselves, and concurrent actions cannot remove the last enabled admin.
-- [ ] AC16: **Course creation:** I can create a course with a validated title and explicitly assign teachers using course-access management.
+- [ ] AC16: **Course creation:** I can create a course with a validated title and explicitly assign teachers using course-access management; each new course atomically receives a default General topic so assigned teachers can publish content through the existing workflow.
 - [ ] AC17: **Teacher assignments:** Teacher accounts begin without course assignments; teachers manage content and authorised learning results only in their assigned courses.
 - [ ] AC18: **Account discovery:** I can search accounts by name or email, filter by role and status, and browse paginated results including archived accounts through a status filter.
 - [ ] AC19: **Confirmations:** Disabling, archiving and removing course access require confirmation; creation and grants use explicit form buttons.
