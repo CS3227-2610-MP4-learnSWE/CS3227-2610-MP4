@@ -422,6 +422,12 @@ test("stu02ps AC15 a failed retry replaces the message and shows no list from an
   });
   await page.getByRole("link", { name: "Testing basics" }).click();
   await expect(page).toHaveURL(new RegExp(`/student/practice/${SET_ID}$`));
+  await expect(
+    page.getByRole("heading", {
+      level: 1,
+      name: "Put your knowledge to work.",
+    }),
+  ).toBeVisible();
   await page.goBack();
   await expect(alertWith(page, MSG.offline)).toBeVisible();
   await expect(page.getByRole("link", { name: "Testing basics" })).toHaveCount(
@@ -473,6 +479,12 @@ test("stu02ps AC15 a set link pushes a history entry; Back returns to the picker
   ).toBeVisible();
   expect(mock.count("catalog")).toBe(2);
   await page.goForward();
+  await expect(
+    page.getByRole("heading", {
+      level: 1,
+      name: "Put your knowledge to work.",
+    }),
+  ).toBeVisible();
   await page.goBack();
   await expect.poll(() => mock.count("catalog")).toBe(3);
 });

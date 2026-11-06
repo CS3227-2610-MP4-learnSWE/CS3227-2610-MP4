@@ -575,10 +575,16 @@ test("stu04 AC15 Back and Forward re-request the page (no client cache)", async 
   expect(api.count).toBe(1);
   await page.getByRole("link", { name: "Practice", exact: true }).click();
   await expect(page).toHaveURL(/\/student\/practice$/);
+  await expect(
+    page.getByRole("heading", { level: 1, name: "Choose a practice set" }),
+  ).toBeVisible();
   await page.goBack();
   await expect(region(page, "Lesson progress")).toBeVisible();
   await expect.poll(() => api.count).toBe(2);
   await page.goForward();
+  await expect(
+    page.getByRole("heading", { level: 1, name: "Choose a practice set" }),
+  ).toBeVisible();
   await page.goBack();
   await expect.poll(() => api.count).toBe(3);
 });
@@ -589,6 +595,9 @@ test("stu04 AC15 Go to practice pushes a history entry and Back returns to Progr
   await openProgress(page, emptyProgress());
   await page.getByRole("link", { name: "Go to practice" }).click();
   await expect(page).toHaveURL(/\/student\/practice$/);
+  await expect(
+    page.getByRole("heading", { level: 1, name: "Choose a practice set" }),
+  ).toBeVisible();
   await page.goBack();
   await expect(page).toHaveURL(/\/student\/progress$/);
 });
@@ -602,6 +611,7 @@ test("stu04 AC15 Open study materials pushes a history entry and Back returns to
   await openProgress(page, body);
   await page.getByRole("link", { name: "Open study materials" }).click();
   await expect(page).toHaveURL(/\/student\/materials$/);
+  await expect(h1(page)).toHaveCount(0);
   await page.goBack();
   await expect(page).toHaveURL(/\/student\/progress$/);
 });
@@ -614,6 +624,7 @@ test("stu04 AC15 a lesson link opens that lesson and Back returns to Progress", 
     .getByRole("link", { name: "Unit testing basics", exact: true })
     .click();
   await expect(page).toHaveURL(new RegExp(`/student/materials/${L_TESTING}$`));
+  await expect(h1(page)).toHaveCount(0);
   await page.goBack();
   await expect(page).toHaveURL(/\/student\/progress$/);
   await expect(h1(page)).toBeVisible();
@@ -649,6 +660,7 @@ test("stu04 AC16 demo mode: a 401 shows the sign-in notice with a Go to sign in 
   ).toHaveCount(0);
   await page.getByRole("link", { name: "Go to sign in" }).click();
   await expect(page).toHaveURL(/\/login$/);
+  await expect(alertWith(page, MSG.signIn)).toHaveCount(0);
   await page.goBack();
   await expect(page).toHaveURL(/\/student\/progress$/);
 });
