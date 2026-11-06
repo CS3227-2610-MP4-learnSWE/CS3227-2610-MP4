@@ -1,6 +1,6 @@
 # Spec: ADM-02 Targeted feedback forms
 
-Status: Draft (human approval required)
+Status: Approved by user in chat, 2026-11-07 (including respondent draft/resume amendment).
 
 ## Goal
 Admins prepare targeted surveys, publish private inbox requests, close collection and review preserved responses.
@@ -81,7 +81,9 @@ No SoC LLM calls occur. Feedback is plain untrusted text, rendered as text, neve
 - Normalisation: Form/question/option/response/inbox UUID identifiers parsed canonically; account IDs remain exact opaque strings of 1-64 characters; malformed IDs produce 404. Trim titles, prompts, options, labels and association values, reject blank values and duplicate options after casefold comparison. Preserve response-draft text exactly for restoration; trim final text-answer boundaries before required validation at submission. Do not alter inner whitespace or text case. Checkbox option IDs are unique and sorted by configured option order before storage. Unknown keys, foreign question/option IDs, wrong scalar types including boolean-as-integer, repeated question IDs and oversized bodies are rejected.
 
 ## Open questions
-1. Human approval required: use identified responses visible only to active admins, with immutable submitter ID and display-name snapshot? Recommended to support ADM-04 individual follow-up. Tell respondents `Once submitted, your name and feedback are visible to administrators. Your unfinished draft is private.`
-2. Human approval required: retain forms, inbox requests and responses without automatic expiry for this release, with no delete interface/API; account archival preserves links? A production retention/deletion policy remains a team decision before broader rollout.
-3. Human approval required for the proposed plan policies: one audience role per form, explicit individual selection (maximum 500), one submission per recipient, immutable publication, metadata-only lesson associations, and bounded question/scale settings.
+1. Approved 2026-11-07: use identified responses visible only to active admins, with immutable submitter ID and display-name snapshot? Recommended to support ADM-04 individual follow-up. Tell respondents `Once submitted, your name and feedback are visible to administrators. Your unfinished draft is private.`
+2. Approved 2026-11-07: retain forms, inbox requests and responses without automatic expiry for this release, with no delete interface/API; account archival preserves links? A production retention/deletion policy remains a team decision before broader rollout.
+3. Approved 2026-11-07 plan policies: one audience role per form, explicit individual selection (maximum 500), one submission per recipient, immutable publication, metadata-only lesson associations, and bounded question/scale settings.
 Initial subject/learner level and upload formats do not affect this feature. ADM-05 account/course decisions are reused. Practice scoring/answer release remains unchanged and protected content is excluded. SoC quota/model/measurement decisions are not applicable because ADM-02 makes no AI calls.
+
+Approval record: user replied `approve` after the respondent draft amendment. All proposed policies above are approved for this release; no blocking open questions remain. Future production retention policy remains outside this feature.

@@ -1,6 +1,6 @@
 # Plan: ADM-02 Targeted feedback forms
 
-Status: Draft (human approval required before build)
+Status: Approved by user in chat, 2026-11-07 (including respondent draft/resume amendment).
 
 ## Data model
 Use the existing relational persistence/transaction infrastructure with an additive migration and foreign keys, preserving existing account and lesson records. All timestamps are UTC ISO-8601 strings. Form, response and inbox IDs are server UUIDs. Existing account IDs are opaque strings, never UUIDs. Active admins share administration access.
@@ -142,8 +142,8 @@ Independent designer works from approved contract in an isolated worktree, with 
 Concurrency: two editors with same version produce one update and one C01; parallel publication yields one recipient set and no duplicate delivery; duplicate submissions yield one row/one success; close-vs-submit linearises correctly; publish-vs-update freezes exactly one revision; eligibility changes vs publish/submit cannot authorise a revoked user; failed inbox insert rolls back publication entirely. Test with real transactional persistence and a constrained pool, not only mocked sequential calls. Include restart persistence and raw snapshot immutability. Existing backend suite plus frontend tests, typecheck and lint are required before developer ready; independent integration and read-only verification follow. Record security results only in `workflow/security/test-log.md`, update both guides only when delivered.
 
 ## Decisions
-Proposed for human approval: identified admin-only responses; no expiry/deletion in this release; all active admins authorised; publication immutable; exactly one audience role, explicit IDs (1-500), one response per recipient; lesson association is metadata only and never grants lesson access. Closing retains requests as closed in inbox. No retrospective targeting of newly joined accounts. Association list cap is explicit and cannot silently imply completeness.
+Approved by user 2026-11-07: identified admin-only responses; no expiry/deletion in this release; all active admins authorised; publication immutable; exactly one audience role, explicit IDs (1-500), one response per recipient; lesson association is metadata only and never grants lesson access. Closing retains requests as closed in inbox. No retrospective targeting of newly joined accounts. Association list cap is explicit and cannot silently imply completeness.
 
-Blocking before build: human approval of spec and plan, of the concrete privacy/retention proposals. Source compatibility mapping above is supplied by the orchestrator; amend the plan before independent work starts if a further integration check changes the public contract.
+Build approval received in chat on 2026-11-07 for spec, plan and privacy/retention proposals. Source compatibility mapping above is supplied by the orchestrator; amend the plan before independent work starts if a further integration check changes the public contract.
 
-User decision 2026-11-07: unfinished student/teacher responses save as resumable private drafts; successful submission completes that recipient's form. This authorises the draft/completion scope amendment, not approval of the remaining draft contract or privacy/retention proposals. Add concurrent draft-save/save, draft-save/submit and draft-save/close cases, including two tabs and delayed requests, to the independent test design.
+User decision 2026-11-07: unfinished student/teacher responses save as resumable private drafts; successful submission completes that recipient's form. The subsequent user reply approve authorises the complete revised contract and privacy/retention proposals. Add concurrent draft-save/save, draft-save/submit and draft-save/close cases, including two tabs and delayed requests, to the independent test design.
