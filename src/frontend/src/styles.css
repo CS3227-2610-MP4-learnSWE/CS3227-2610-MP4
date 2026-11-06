@@ -3774,6 +3774,47 @@ td .MuiButton-root {
   border-bottom: 1px solid var(--border, #d8dfeb);
   overflow-wrap: anywhere;
 }
+.feedback-list article.feedback-list-entry-container {
+  padding: 0;
+}
+.feedback-list-entry {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  width: 100%;
+  min-height: 52px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  white-space: nowrap;
+  transition:
+    background-color 120ms ease,
+    color 120ms ease;
+}
+.feedback-list-entry-title {
+  min-width: 0;
+  overflow: hidden;
+  font-weight: 600;
+  text-overflow: ellipsis;
+}
+.feedback-list-entry-meta {
+  flex: 0 0 auto;
+  color: var(--muted);
+  font-size: 0.95em;
+}
+.feedback-list-entry:hover {
+  background-color: var(--blue-soft);
+  color: var(--blue);
+}
+.feedback-list-entry:hover .feedback-list-entry-meta {
+  color: inherit;
+}
+.feedback-list-entry:focus-visible {
+  outline: 3px solid var(--blue);
+  outline-offset: 2px;
+  position: relative;
+  z-index: 1;
+}
 .feedback-form,
 .feedback-editor-fields {
   display: grid;
@@ -3826,6 +3867,20 @@ td .MuiButton-root {
   white-space: pre-wrap;
 }
 @media (max-width: 600px) {
+  .feedback-list-entry {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 4px;
+    white-space: normal;
+  }
+  .feedback-list-entry-title {
+    overflow: visible;
+    text-overflow: clip;
+    overflow-wrap: anywhere;
+  }
+  .feedback-list-entry-meta {
+    overflow-wrap: anywhere;
+  }
   .feedback-question {
     padding: 14px;
   }

@@ -541,14 +541,14 @@ Expected: **40 passed**. Covers filters, messages, retry, timeout, access, histo
 
 Apply additive migration `20261107_adm02_feedback` before starting the updated application. It follows `20261106_adm06_ai_usage` and adds `feedback_forms`, `feedback_recipients`, `feedback_responses` and `feedback_response_drafts`. Existing account, course, lesson and AI data are preserved. Use your existing configured database; never point development commands at production.
 
-Windows (from a configured local checkout):
+Windows (from a configured local checkout; both commands load `.env` so migration and API use the same `DATABASE_URL`):
 
 ```powershell
 Set-Location (git rev-parse --show-toplevel)
 Set-Location src\backend
 uv sync --frozen
-uv run alembic upgrade head
-uv run uvicorn main:app --host 127.0.0.1 --port 8000 --reload
+uv run --env-file .env alembic upgrade head
+uv run --env-file .env uvicorn main:app --host 127.0.0.1 --port 8000 --reload
 ```
 
 macOS/Linux:
@@ -556,8 +556,8 @@ macOS/Linux:
 ```bash
 cd "$(git rev-parse --show-toplevel)/src/backend"
 uv sync --frozen
-uv run alembic upgrade head
-uv run uvicorn main:app --host 127.0.0.1 --port 8000 --reload
+uv run --env-file .env alembic upgrade head
+uv run --env-file .env uvicorn main:app --host 127.0.0.1 --port 8000 --reload
 ```
 
 Start the frontend with the existing setup instructions. Sign in as an enabled admin and open `/admin/feedback`; use separate student/teacher browser profiles to check targeted `/student/inbox` and `/teacher/inbox` delivery. Follow the [ADM-02 user walkthrough](UserGuide.md#adm-02-targeted-feedback-forms). No LLM configuration or calls are needed for this feature.

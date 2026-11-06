@@ -229,6 +229,10 @@ Expected results:
 
 Sign in with a real account to use feedback. Anonymous demo inbox messages remain labelled sample data and do not send or save feedback.
 
+Before the walkthrough, start PostgreSQL, apply the ADM-02 migration to your configured development database, and run the backend with `--env-file .env` as shown in the [ADM-02 developer setup](DeveloperGuide.md#adm-02-targeted-feedback-implementation). The migration and serving backend must use the same database. If the page reports `The feedback service is temporarily unavailable`, check the backend terminal, PostgreSQL, migration state and Vite proxy; ADM-02 is available once those dependencies are ready.
+
+In the admin form list, the title, state and response count form one clickable row. Open a form and choose **Review responses**; each response row combines its ID, respondent and submission time, and clicking anywhere in the row opens its details. Rows have a subtle hover and keyboard-focus highlight.
+
 ### Admin: prepare, publish and review
 
 1. Open **Feedback forms** (`/admin/feedback`), then **New feedback form**.

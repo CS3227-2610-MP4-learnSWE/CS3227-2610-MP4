@@ -59,19 +59,33 @@ function Forms() {
               <p>No feedback forms yet. Create a form to collect feedback.</p>
             )}
             <div className="feedback-list">
-              {read.data.items.map((form) => (
-                <article key={form.id}>
-                  <Link to={`/admin/feedback/${form.id}`}>{form.title}</Link>
-                  <p>
-                    {form.state === "draft"
-                      ? "Draft"
-                      : form.state === "open"
-                        ? "Open"
-                        : "Closed"}{" "}
-                    · Responses: {form.response_count}
-                  </p>
-                </article>
-              ))}
+              {read.data.items.map((form) => {
+                const state =
+                  form.state === "draft"
+                    ? "Draft"
+                    : form.state === "open"
+                      ? "Open"
+                      : "Closed";
+                return (
+                  <article
+                    key={form.id}
+                    className="feedback-list-entry-container"
+                  >
+                    <Link
+                      className="feedback-list-entry"
+                      to={`/admin/feedback/${form.id}`}
+                      aria-label={`${form.title} · ${state} · Responses: ${form.response_count}`}
+                    >
+                      <span className="feedback-list-entry-title">
+                        {form.title}
+                      </span>
+                      <span className="feedback-list-entry-meta">
+                        {state} · Responses: {form.response_count}
+                      </span>
+                    </Link>
+                  </article>
+                );
+              })}
             </div>
             {offset > 0 && (
               <Button onClick={() => setOffset(Math.max(0, offset - 20))}>
@@ -309,13 +323,23 @@ function Responses({ id }: { id: string }) {
             {!read.data.items.length && <p>No responses yet.</p>}
             <div className="feedback-list">
               {read.data.items.map((response) => (
-                <article key={response.id}>
-                  <Link to={`/admin/feedback/${id}/responses/${response.id}`}>
-                    Response {response.id}
+                <article
+                  key={response.id}
+                  className="feedback-list-entry-container"
+                >
+                  <Link
+                    className="feedback-list-entry"
+                    to={`/admin/feedback/${id}/responses/${response.id}`}
+                    aria-label={`Response ${response.id} · ${response.respondent.display_name} · ${response.submitted_at}`}
+                  >
+                    <span className="feedback-list-entry-title">
+                      Response {response.id}
+                    </span>
+                    <span className="feedback-list-entry-meta">
+                      {response.respondent.display_name} ·{" "}
+                      {response.submitted_at}
+                    </span>
                   </Link>
-                  <p>
-                    {response.respondent.display_name} · {response.submitted_at}
-                  </p>
                 </article>
               ))}
             </div>

@@ -696,6 +696,70 @@ test("ADM-02 AC18-20 response snapshot renders harmless text and exact original 
   expect(ctx.of("GET", RESPONSE_ID)).toHaveLength(1);
 });
 
+test("ADM-02 admin form and response rows are one-line, full-row links with hover feedback", async ({
+  page,
+}) => {
+  const ctx = await setup(page, ADMIN);
+  ctx.form.response_count = 1;
+  ctx.submitted = true;
+
+  await page.goto("/admin/feedback");
+  const formLink = page.getByRole("link", {
+    name: `${TITLE} · Open · Responses: 1`,
+    exact: true,
+  });
+  await expect(formLink).toBeVisible();
+  await expect(formLink).toHaveCSS("display", "flex");
+  await expect(formLink).toHaveCSS("min-height", "52px");
+  const formTextRows = await formLink
+    .locator("span")
+    .evaluateAll((nodes) =>
+      nodes.map((node) => node.getBoundingClientRect().top),
+    );
+  expect(Math.abs(formTextRows[0] - formTextRows[1])).toBeLessThan(2);
+  const formColor = await formLink.evaluate(
+    (node) => getComputedStyle(node).backgroundColor,
+  );
+  await formLink.hover();
+  await expect
+    .poll(() =>
+      formLink.evaluate((node) => getComputedStyle(node).backgroundColor),
+    )
+    .not.toBe(formColor);
+  await formLink.getByText("Open · Responses: 1", { exact: true }).click();
+  await expect(page).toHaveURL(new RegExp(`/admin/feedback/${FORM_ID}$`));
+
+  await page
+    .getByRole("link", { name: "Review responses", exact: true })
+    .click();
+  const responseLink = page.getByRole("link", {
+    name: `Response ${RESPONSE_ID} · ${STUDENT.display_name} · ${TIME}`,
+    exact: true,
+  });
+  await expect(responseLink).toBeVisible();
+  await expect(responseLink).toHaveCSS("display", "flex");
+  await expect(responseLink).toHaveCSS("min-height", "52px");
+  const responseTextRows = await responseLink
+    .locator("span")
+    .evaluateAll((nodes) =>
+      nodes.map((node) => node.getBoundingClientRect().top),
+    );
+  expect(Math.abs(responseTextRows[0] - responseTextRows[1])).toBeLessThan(2);
+  const responseColor = await responseLink.evaluate(
+    (node) => getComputedStyle(node).backgroundColor,
+  );
+  await responseLink.hover();
+  await expect
+    .poll(() =>
+      responseLink.evaluate((node) => getComputedStyle(node).backgroundColor),
+    )
+    .not.toBe(responseColor);
+  await responseLink.getByText(STUDENT.display_name, { exact: true }).click();
+  await expect(page).toHaveURL(
+    `/admin/feedback/${FORM_ID}/responses/${RESPONSE_ID}`,
+  );
+});
+
 test("ADM-02 admin empty response review distinguishes no submitted responses", async ({
   page,
 }) => {
