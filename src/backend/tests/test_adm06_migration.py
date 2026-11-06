@@ -29,9 +29,13 @@ def test_adm06_ac11_additive_upgrade_preserves_populated_user_and_attempt_histor
     isolated.seed_teacher()
     isolated.sql('INSERT INTO "user"(id,display_name,role,email,access_status) '
                  'VALUES (\'adm06-existing\',\'Preserve\',\'student\',\'adm06-keep@example.com\',\'disabled\')')
+    isolated.sql("INSERT INTO practice_attempt(id,student_id,set_id,status) "
+                 "VALUES ('adm06-preserved-attempt','adm06-existing','intro-se-1','in_progress')")
     before = isolated.sql('SELECT t::text FROM "user" t ORDER BY id')
+    attempts_before = isolated.sql("SELECT t::text FROM practice_attempt t ORDER BY id")
     isolated.migrate("upgrade", "head")
     assert isolated.sql('SELECT t::text FROM "user" t ORDER BY id') == before
+    assert isolated.sql("SELECT t::text FROM practice_attempt t ORDER BY id") == attempts_before
     assert isolated.sql("SELECT feature,enabled,covered_since,incomplete_since FROM ai_usage_coverage ORDER BY feature") == [
         ("ADM-03", False, None, None), ("STU-03", False, None, None), ("TEA-02", False, None, None)]
 
