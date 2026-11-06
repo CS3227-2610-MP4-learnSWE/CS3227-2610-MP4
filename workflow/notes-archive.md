@@ -504,3 +504,20 @@ Newest entry first. Use `templates/handoff.md`. Older entries describe the state
 - Fixed: exact accessible field names now explicitly label the input elements, and select display names no longer include selected option text. Visible labels and required validation remain intact. Independent browser report identified these contract mismatches; tests were not read or changed.
 - Validation: frontend typecheck/lint/build PASS. Independent designer previously reported backend 78 PASS and browser 8 PASS/4 FAIL before this correction; focused browser rerun remains designer-owned. Opaque account IDs already reject non-PostgreSQL text in the initial source commit.
 - Files: AdminAccounts.tsx, AdminCourses.tsx, this note and implementation log. Next: designer rerun and verifier. Revision rounds used 1/2. Resource attribution remains orchestrator-owned, inherited model/effort and exact tokens/cost unavailable.
+
+## 2026-11-06: spec-writer ADM-05 usable new-course integration
+- Done: extended the course-creation story criterion and matching spec AC16 to require an automatic same-course General topic, atomically created with each new course. Existing teacher publishing requires a topic, while topic creation is not otherwise exposed.
+- Contract: account and course API shapes and admin UI unchanged. Reuse Topic, do not alter existing courses, and create no publication automatically. Teacher workflow/guide integration should demonstrate General after teacher assignment; no topic-management feature added.
+- Next: developer implements atomic Course/Topic creation; independent designer regresses same-course topic visibility/publication compatibility and rollback. Orchestrator owns follow-up invocation/report.
+- Validation: ADM-05 speccheck and diff check PASS. Files: UserStories, ADM-05 spec/plan, this note and synchronization log. No app/tests/guides touched by spec-writer.
+- Resource use: inherited model/effort; exact tokens/cost unavailable; no retries or application correction rounds in this documentation invocation.
+
+## 2026-11-06: developer ADM-05 correction 1 integration follow-up
+- Fixed after approved General-topic amendment and independent RED regression: course creation now adds one General topic atomically, so assigned teachers can use existing publishing forms immediately. Guides updated. Existing courses unchanged.
+- Mobile account rows now stack identity, role/status and action within the viewport; clicking Manage no longer scrolls name/email out of the horizontal table. Original screenshot issue was action-induced internal scrolling, not a hidden-column CSS rule.
+- Validation: typecheck/lint/build and Python compilation PASS. Designer owns new regression/full rerun and fresh visual capture. Tests not inspected/edited. Same correction1 batch; no additional revision round. Resource attribution remains orchestrator-owned.
+
+## 2026-11-06: developer ADM-05 final correction round 2
+- Fixed verifier blocker after independent RED regression: generic client requests capture their originating session generation, and a delayed 401 only clears authentication when it still belongs to the active session. An account A response cannot log out newly signed-in account B.
+- Validation: frontend typecheck/lint/build PASS; existing auth-guard, STU-01 session isolation and teacher HTTP cache suites 32 PASS (40 seconds). Independent new regression and final full suites remain designer/verifier-owned. No tests inspected or edited.
+- Files: services/client.ts, this handoff and implementation log. Revision rounds used 2/2; additional blocking source findings must escalate. Resource attribution remains orchestrator-owned, exact model/effort/tokens/cost unavailable.

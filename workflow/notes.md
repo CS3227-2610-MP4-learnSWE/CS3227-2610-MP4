@@ -2,6 +2,26 @@
 
 Newest entry first. Older entries describe the state at the time; the newest entry supersedes their open/merged status. Keep the newest 10 entries here; older ones are in `notes-archive.md`. Feature state is in `STATUS.md`.
 
+## 2026-11-06: orchestrator ADM-06 verified and committed locally
+- Done: approved spec/source contract, independent tests and implemented metadata-only persistent SoC telemetry, attempt/retry/failure/token report, admin UI, migration/activation and both guides. Source3c603c1; one correction batch27cd224/c4df076. Strongest read-only verifier PASS at e85279e, no remaining defects.
+- Evidence: final full backend1169 PASS509.73s. Browser full512 PASS/1 old timeout-fixture FAIL383.73s, corrected boundary independently1PASS; all513cases covered passing across runs, not one entirelygreen fullrun. Independent final focused80backend/41browserPASS; desktop/mobile screenshots inspected. Type/lint/build/format/compile/CLI/spec8/0/12existingwaivers/diffPASS. Initial failures/recoveries distinguished in logs/Adm06Implementation.md.
+- Security: active-admin endpoint, metadata privacy, exact observed tokens/unavailable semantics, retries, failclosed reservation, atomic replay/activation, concurrent snapshot, strict filter/throttle, no-cache and session/history isolation. Cases in workflow/security/test-log.md. Provider mocked; live SoC field availability unverified. Limiter remains process-local.
+- Next: human follows DeveloperGuide migration, restarts all workers, explicitly activates STU-03/TEA-02. Earlier history and first partialUTC day unavailable. Review local branch/PR text workflow/specs/ADM-06/pr.md; no remote push/PR/deployment (GitHubCLI unavailable). User env/schema/data and original running processes preserved.
+- Files: feature/source/migration/independent tests/guides; status, tasks, retro, security/session/resource records. Unrelated .claude/worktrees/ untouched.
+- Invocations:2026-11-06-ADM06-01 records7starts/returns including developer correction continuation and designer integration; requested strongest gpt-6-astra/high; others inherited. Elapsed manifest governs (44min span includes approval wait, not continuous agent time). Tracker executed, report workflow/usage/runs/2026-11-06-ADM06-01/report.md; no local records matched, so totaltokens/cost unavailable and generatedzeros are not zero actualusage. One application correctionround used; tool/fixture recoveries in session log.
+
+## 2026-11-06: orchestrator ADM-06 developer ready / independent integration
+- Done: developer source3c603c1 implements durable aggregate telemetry, admin endpoint/UI, additive migration, activation CLI and guides. Independent test commit9308f15 predates implementation visibility:77 backend RED (29 fail/48 setup error due missing feature),40 browser cases compile/list. User approval/source amendment50cc4b4; empty-state clarificationed13821.
+- Checks: existing backend1089 PASS/3 historical migration-head assertion FAIL,354s. Classified historical fixture maintenance; designer pins old target/ancestry and retains populated data checks. Type/lint/build/8-file format/compile/CLIhelp PASS. No independent test weakening or developer test inspection.
+- Next: authorised designer merges source into isolated worktree, verifies full backend/browser on fresh5183/5184; then parent merges tests and launches strongest read-only verifier. Zero application correction rounds so far.
+- Invocation IDs: developer-01 returned; test-designer-01 returned; test-designer-02 integrating under2026-11-06-ADM06-01. Source IDs and elapsed in manifest; inherited model/effort; tokens/cost unavailable pending report, no zero usage claim. Report workflow/usage/runs/2026-11-06-ADM06-01/report.md. No live AI/developer env/schema changes; user servers untouched. Developer recovered cwd/UTF8/npm policy tooling issues.
+
+## 2026-11-06: orchestrator ADM-06 approved build started
+- Done: user approved spec/plan in chat; source-aware integration amendment fixes shared error envelope, token mapping, existing client protocol and ContextVar feature attribution. Speccheck 1/0/0 PASS. Approved start commit50cc4b4.
+- Next: developer in run folder and independent test-designer in sibling CS3227-ADM06-tests worktree; tests reset to exact start commit. Verification follows committed source/tests and integration. User dev processes on5173/8000 remain untouched; browser verification uses isolated ports.
+- Invocation IDs: 2026-11-06-ADM06-01-developer-01 and test-designer-01; inherited Codex model/effort, elapsed recorded in manifest; report workflow/usage/runs/2026-11-06-ADM06-01/report.md regenerated at close. Exact token/cost attribution pending/unavailable if unmatched; no zeros claimed.
+- Resources: tracking active; no live SoC calls or developer database/env changes. One spec-check command directory recovery; no application revision rounds yet. No approval blocker remains for approved contract.
+
 ## 2026-11-06: spec-writer ADM-06 draft contract
 - Done: drafted AI service-attempt reporting, privacy-safe persistent metadata and coverage, independent recorded-token availability and accessible admin UI contracts. No application code/tests/SoC calls; spec and plan remain Draft.
 - Next: human reviews UTC 31-day date range, grouped TEA-02 calls, forward-only coverage and fail-closed metadata reservation. Orchestrator resolves source-aware existing module/provider-field compatibility before independent designer/developer begin; no guessed provider availability.
@@ -52,20 +72,3 @@ Newest entry first. Older entries describe the state at the time; the newest ent
 - Files: feature/stories/spec/plan/tasks; admin backend/frontend and shared authentication; additive migration; independent tests and guides; status/security/session/resource records. Developer .env/schema/live AI and unrelated .claude/worktrees untouched.
 - Invocation IDs: 2026-11-06-ADM05-01 manifest has 12 invocations, including interrupted/resumed developer and spec resynchronisations. Parent gpt-6.1-sol observed; others inherited; requested verifier gpt-6-astra high. Elapsed intervals in report include interruption/idle time where observed.
 - Feature-run report: workflow/usage/runs/2026-11-06-ADM05-01/report.md. Tracker run yes; matched parent subtotal 543 requests, 598671 input, 59384448 cache-read, 137384 output (27251 reasoning subset), including prior advisory discussion. Child attribution and whole-run tokens/cost unavailable; zero usage is not claimed. Two correction rounds; environmental command recoveries listed in verification log.
-
-## 2026-11-06: developer ADM-05 final correction round 2
-- Fixed verifier blocker after independent RED regression: generic client requests capture their originating session generation, and a delayed 401 only clears authentication when it still belongs to the active session. An account A response cannot log out newly signed-in account B.
-- Validation: frontend typecheck/lint/build PASS; existing auth-guard, STU-01 session isolation and teacher HTTP cache suites 32 PASS (40 seconds). Independent new regression and final full suites remain designer/verifier-owned. No tests inspected or edited.
-- Files: services/client.ts, this handoff and implementation log. Revision rounds used 2/2; additional blocking source findings must escalate. Resource attribution remains orchestrator-owned, exact model/effort/tokens/cost unavailable.
-
-## 2026-11-06: developer ADM-05 correction 1 integration follow-up
-- Fixed after approved General-topic amendment and independent RED regression: course creation now adds one General topic atomically, so assigned teachers can use existing publishing forms immediately. Guides updated. Existing courses unchanged.
-- Mobile account rows now stack identity, role/status and action within the viewport; clicking Manage no longer scrolls name/email out of the horizontal table. Original screenshot issue was action-induced internal scrolling, not a hidden-column CSS rule.
-- Validation: typecheck/lint/build and Python compilation PASS. Designer owns new regression/full rerun and fresh visual capture. Tests not inspected/edited. Same correction1 batch; no additional revision round. Resource attribution remains orchestrator-owned.
-
-## 2026-11-06: spec-writer ADM-05 usable new-course integration
-- Done: extended the course-creation story criterion and matching spec AC16 to require an automatic same-course General topic, atomically created with each new course. Existing teacher publishing requires a topic, while topic creation is not otherwise exposed.
-- Contract: account and course API shapes and admin UI unchanged. Reuse Topic, do not alter existing courses, and create no publication automatically. Teacher workflow/guide integration should demonstrate General after teacher assignment; no topic-management feature added.
-- Next: developer implements atomic Course/Topic creation; independent designer regresses same-course topic visibility/publication compatibility and rollback. Orchestrator owns follow-up invocation/report.
-- Validation: ADM-05 speccheck and diff check PASS. Files: UserStories, ADM-05 spec/plan, this note and synchronization log. No app/tests/guides touched by spec-writer.
-- Resource use: inherited model/effort; exact tokens/cost unavailable; no retries or application correction rounds in this documentation invocation.

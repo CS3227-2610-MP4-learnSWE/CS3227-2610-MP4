@@ -1,2 +1,8 @@
-﻿"feature_run_id","invocation_id","role","effort","tool","session_id","agent_id","started_at","finished_at"
-"2026-11-06-ADM06-01","2026-11-06-ADM06-01-spec-writer-01","spec-writer","inherited","codex","01a1b002-09f9-7d50-8aaf-7b12499d0b9d","/root/adm06_spec","2026-11-06T16:37:57.8530513+08:00","2026-11-06T16:42:02.2663211+08:00"
+feature_run_id,invocation_id,role,effort,tool,session_id,agent_id,started_at,finished_at
+2026-11-06-ADM06-01,2026-11-06-ADM06-01-spec-writer-01,spec-writer,inherited,codex,01a1b002-09f9-7d50-8aaf-7b12499d0b9d,/root/adm06_spec,2026-11-06T16:37:57.8530513+08:00,2026-11-06T16:42:02.2663211+08:00
+2026-11-06-ADM06-01,2026-11-06-ADM06-01-developer-01,developer,inherited,codex,01a1b00e-df7c-7962-9cf7-0e910f152502,/root/adm06_developer,2026-11-06T16:51:58.5004023+08:00,2026-11-06T17:03:42.127964+08:00
+2026-11-06-ADM06-01,2026-11-06-ADM06-01-test-designer-01,test-designer,inherited,codex,01a1b00f-0375-7ce0-b868-95a0c32a92c1,/root/adm06_tests,2026-11-06T16:51:58.5004023+08:00,2026-11-06T17:01:38.599499+08:00
+2026-11-06-ADM06-01,2026-11-06-ADM06-01-test-designer-02,test-designer,inherited,codex,01a1b00f-0375-7ce0-b868-95a0c32a92c1,/root/adm06_tests,2026-11-06T17:03:42.127964+08:00,2026-11-06T17:17:34.647863+08:00
+2026-11-06-ADM06-01,2026-11-06-ADM06-01-developer-02,developer,inherited,codex,01a1b00e-df7c-7962-9cf7-0e910f152502,/root/adm06_developer,2026-11-06T17:05:50.7173800+08:00,2026-11-06T17:06:38.061252+08:00
+2026-11-06-ADM06-01,2026-11-06-ADM06-01-developer-03,developer,inherited,codex,01a1b00e-df7c-7962-9cf7-0e910f152502,/root/adm06_developer,2026-11-06T17:07:51.2065822+08:00,2026-11-06T17:08:57.493459+08:00
+2026-11-06-ADM06-01,2026-11-06-ADM06-01-verifier-01,verifier,high,codex,01a1b021-b988-7ef3-88a7-73421cbbfb3d,/root/adm06_verify,2026-11-06T17:12:21.6132062+08:00,2026-11-06T17:21:57.889209+08:00
