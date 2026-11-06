@@ -155,7 +155,7 @@ test("mobile navigation works without horizontal overflow", async ({
   await page.getByRole("button", { name: "Open navigation" }).click();
   await page.getByRole("link", { name: "Practice", exact: true }).click();
   await expect(
-    page.getByRole("heading", { name: "Put your knowledge to work." }),
+    page.getByRole("heading", { name: "Choose a practice set" }),
   ).toBeVisible();
   expect(
     await page.evaluate(

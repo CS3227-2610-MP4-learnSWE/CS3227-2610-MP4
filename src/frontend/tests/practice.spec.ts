@@ -664,7 +664,8 @@ test("stu02fe AC10 answers survive navigating away and back", async ({
   await pick(page, { q1: "b", q2: "b" });
   await page.getByRole("link", { name: "Overview", exact: true }).click();
   await expect(page).toHaveURL(/\/student\/overview$/);
-  await page.getByRole("link", { name: "Practice", exact: true }).click();
+  await page.goBack();
+  await expect(page).toHaveURL(new RegExp(`/student/practice/${SET_ID}$`));
   await expect(radio(page, "q1", "b")).toBeChecked();
   await expect(radio(page, "q2", "b")).toBeChecked();
   await expect(page.getByText("2 of 3 answered")).toBeVisible();
@@ -678,7 +679,8 @@ test("stu02fe AC10 results survive navigating away and back", async ({
   await submitCompleteSet(page, mock, TWO_OF_THREE);
   await page.getByRole("link", { name: "Overview", exact: true }).click();
   await expect(page).toHaveURL(/\/student\/overview$/);
-  await page.getByRole("link", { name: "Practice", exact: true }).click();
+  await page.goBack();
+  await expect(page).toHaveURL(new RegExp(`/student/practice/${SET_ID}$`));
   await expect(page.getByText(EXPLANATIONS[0]).first()).toBeVisible();
   await expect(page.getByText(scoreText(2)).first()).toBeVisible();
   await expect(radio(page, "q3", "a")).toBeChecked();
