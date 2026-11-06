@@ -3684,3 +3684,49 @@ td .MuiButton-root {
     font-size: 12px;
   }
 }
+
+/* ADM-06 controls remain visible while the wide aggregate table scrolls. */
+.ai-usage-panel {
+  min-width: 0;
+}
+.ai-usage-filters {
+  display: grid;
+  grid-template-columns: minmax(180px, 1.4fr) repeat(2, minmax(160px, 1fr)) auto;
+  gap: 16px;
+  align-items: start;
+  margin-bottom: 24px;
+}
+.ai-usage-filters > * {
+  min-width: 0;
+}
+.ai-usage-results {
+  max-width: 100%;
+}
+.ai-usage-results table {
+  min-width: 1050px;
+}
+.ai-usage-results caption {
+  padding: 12px 0;
+  text-align: left;
+}
+.ai-usage-results th[scope="row"] {
+  min-width: 200px;
+  text-align: left;
+}
+.ai-usage-reason {
+  display: block;
+  font-weight: 400;
+  line-height: 1.5;
+  margin-top: 6px;
+  max-width: 230px;
+}
+@media (max-width: 1000px) {
+  .ai-usage-filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 600px) {
+  .ai-usage-filters {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

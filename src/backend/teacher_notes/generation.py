@@ -4,7 +4,7 @@ from io import BytesIO
 from pypdf import PdfReader
 
 from errors import ApiError
-from llm_client import ChatMessage, LlmBadResponse, LlmClient, LlmError
+from llm_client import ChatMessage, LlmBadResponse, LlmClient, LlmError, usage_feature
 from llm_errors import generation_error
 from text_validation import is_postgres_text, normalise_newlines_and_trim
 
@@ -54,10 +54,11 @@ def extract_source(content: bytes, media_type: str) -> str:
 
 def generate_notes(llm: LlmClient, text: str, teacher_id: str) -> str:
     try:
-        reply = llm.complete(
-            [ChatMessage("system", SYSTEM_INSTRUCTION), ChatMessage("user", text)],
-            max_tokens=600, caller_id=f"teacher:{teacher_id}",
-        )
+        with usage_feature("TEA-02"):
+            reply = llm.complete(
+                [ChatMessage("system", SYSTEM_INSTRUCTION), ChatMessage("user", text)],
+                max_tokens=600, caller_id=f"teacher:{teacher_id}",
+            )
     except LlmError as exc:
         raise generation_error(exc) from None
     if (not isinstance(reply.text, str) or not reply.text.strip()

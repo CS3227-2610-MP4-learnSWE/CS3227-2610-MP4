@@ -361,3 +361,28 @@ depend on the router history-entry key as well as retry state, associating reads
 instead of relying only on a component unmount and remount.
 
 `Shell` owns per-role/account tip dismissal in memory (no browser storage); desktop/sidebar drawer share the same dismissed state until refresh/remount. The X control is labelled Dismiss sidebar tip. Explicit Log out opens Confirm logout, with Cancel and Log out. Opening/cancelling makes no request; confirm sends the existing cookie/CSRF request once. Pending state disables buttons and Escape/backdrop dismissal; network/5xx failure preserves the dialog/session for retry. A logout401 still clears locally, and expired sessions never wait for confirmation. Student, teacher and admin flows share this behaviour. Existing editor/chat/history safeguards run after completed logout, not when the dialog opens. Specs: SHR-01 shared-shell follow-up, ADM-05 AC23-27 and STU-01/STU-04 synchronisation notes.
+
+
+## ADM-06 operational AI usage
+
+The approved contract is in `workflow/specs/ADM-06/`. `ai_usage` persists only allowlisted feature, timestamps, outcome and independently recorded integer token counters. `llm_client.SoclaasClient` observes each `httpx` attempt inside the existing bounded retry loop. Production `get_llm_client` injects `DatabaseAttemptObserver`; constructor-injected standalone clients may omit the observer for isolated transport tests. Do not create an unobserved production client. `usage_feature` scopes server-owned ContextVar attribution around companion calls (STU-03) and both teacher generators (TEA-02); it resets on return/error and does not change the existing complete/fake interface. ADM-03 is reserved and collection remains disabled.
+
+Provider JSON mapping is `usage.prompt_tokens` to input_tokens, `usage.completion_tokens` to output_tokens and `usage.total_tokens` to total_tokens. Only nonnegative signed-64-bit integers are accepted; booleans, strings, floats and missing values remain null. No tokeniser, addition of counters, forecast or cost estimate is used. A 2xx response is a successful service call even if its content/JSON later fails feature validation. 429 is rate_limit; other non-2xx responses and transport exceptions are other_failure. No live-provider measurement availability has been verified by this implementation.
+
+Deploy through the existing GitHub Actions process. Before coverage activation, stop accepting old uninstrumented work, apply the additive migration, and restart **every** application worker on the instrumented release. Preserve existing `.env`, database and files. From the backend directory, the operator commands are:
+
+```powershell
+Set-Location (git rev-parse --show-toplevel)
+Set-Location src\backend
+uv run --env-file .env alembic upgrade head
+# Restart every backend worker with the new release before running activation.
+uv run --env-file .env python -m ai_usage.activate --feature STU-03 --feature TEA-02
+```
+
+Activation is explicit and idempotent, preserves any previous coverage start/gap, and never backfills. Do not activate while any old worker can make unobserved calls; a mixed deployment cannot establish complete coverage. The first partial UTC day and all earlier ranges are unavailable. A coverage gap is sticky; do not manually clear or backdate it, prune records, or downgrade away telemetry to make reports look complete. This release has no reviewed gap-recovery/backfill or retention-deletion policy. Downgrading this migration removes usage metadata and is not a history-preserving rollback.
+
+Before dispatch, an independent transaction commits a pending reservation. If that write fails, no provider request is sent; the existing feature-safe upstream error is returned. Finalisation uses a separate atomic compare-and-set; identical replays are accepted, conflicting replays never overwrite, and finalisation failure leaves pending. A pending reservation could precede dispatch, so **all** affected totals are unavailable. Domain transaction rollback does not erase dispatched-attempt records. Quotas, maximum input/output, retry count and model configuration retain their existing values.
+
+`GET /api/admin/ai-usage` uses current active-admin session checks, strict filters, a 30-request/60-second per-admin process-local report bucket and private/no-store/Vary: Cookie responses, including errors. A PostgreSQL REPEATABLE READ transaction aggregates indexed metadata with one UTC cutoff; finalisations after that cutoff remain pending for that snapshot. No user joins or provider calls occur. Complete periods with no attempts have zero counts; partial token aggregates are never presented as full totals. Values beyond JavaScript's safe integer range are unavailable. Browser data stays in component memory, clears on new requests/session/navigation, and uses the shared generation-aware HTTP client with a 15-second timeout and no automatic retries.
+
+Run backend tests with the existing `TEA01_TEST_DATABASE_URL` unique-schema fixture (the documented disposable Docker PostgreSQL connection), never against a development schema. Mock provider transport/observer; no live quota is required. Frontend checks remain `npm run typecheck`, `npm run lint`, `npm run build` and `npm test`; isolate test-server ports from any user's running server. On Windows invoke `npm.cmd` if execution policy blocks npm.ps1.
