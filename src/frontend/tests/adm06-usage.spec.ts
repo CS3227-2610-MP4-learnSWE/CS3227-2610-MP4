@@ -638,5 +638,35 @@ for (const width of [390, 1100]) {
     expect(
       await page.evaluate(() => document.documentElement.scrollWidth),
     ).toBeLessThanOrEqual(width);
+    const spacing = await page.locator(".ai-usage-panel").evaluate((panel) => {
+      const period = panel.querySelector("p")!;
+      return (
+        period.getBoundingClientRect().left - panel.getBoundingClientRect().left
+      );
+    });
+    expect(spacing).toBeGreaterThanOrEqual(16);
+    const reason = table(page).locator(".ai-usage-reason").last();
+    expect(
+      await reason.evaluate((el) => parseFloat(getComputedStyle(el).fontSize)),
+    ).toBeGreaterThanOrEqual(14);
+    expect(
+      await reason.evaluate((el) => el.scrollWidth <= el.clientWidth),
+    ).toBe(true);
+    const caption = table(page).locator("caption");
+    expect(
+      await caption.evaluate((el) => parseFloat(getComputedStyle(el).fontSize)),
+    ).toBeGreaterThanOrEqual(16);
+    const region = page.getByRole("region", {
+      name: "AI usage results",
+      exact: true,
+    });
+    const captionText = await caption.evaluate((el) => {
+      const range = document.createRange();
+      range.selectNodeContents(el);
+      return range.getBoundingClientRect().width;
+    });
+    expect(captionText).toBeLessThanOrEqual(
+      (await region.boundingBox())!.width + 1,
+    );
   });
 }

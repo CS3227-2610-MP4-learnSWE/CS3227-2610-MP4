@@ -106,3 +106,8 @@ Frontend reuse `services/client.ts` request/session-generation APIs, `auth/Requi
 
 
 Empty-state clarification (2026-11-06, orchestrator/designer): the global "No AI service calls in this period." status appears only when every selected row has an available request count of zero. Any selected disabled/incomplete/pending row suppresses this global claim; known zero sibling rows still display zero. This applies to All features as well as individual-feature filters.
+
+
+### User-approved readability follow-up (2026-11-06)
+
+Inset report content by24px (16px on mobile). Period/description/caption text is16px; table headers and reasons at least14px, metric text15px. Wrap long cell text within fixed columns; keep caption text within the visible report width while the table scrolls. Preserve all existing labels, request counts and behavior. User explicitly requested padding, larger fonts and wrapping; existing responsive tests gain geometry/readability assertions before CSS changes.
