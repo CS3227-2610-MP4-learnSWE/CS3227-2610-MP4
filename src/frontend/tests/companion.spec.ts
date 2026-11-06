@@ -72,7 +72,7 @@ function choiceText(questionId: string, choiceId: string) {
 }
 
 async function openPractice(page: Page) {
-  await page.goto("/student/practice");
+  await page.goto(`/student/practice/${SET_ID}`);
   await expect(
     page.getByRole("radio", { name: choiceText("q1", "a"), exact: true }),
   ).toBeVisible();

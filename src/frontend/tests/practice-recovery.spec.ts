@@ -1,10 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import {
-  FIXTURE_KEY,
-  TWO_OF_THREE,
-  apiError,
-  mockPracticeApi,
-} from "./practiceApi";
+import { FIXTURE_KEY, TWO_OF_THREE, apiError, mockPracticeApi, SET_ID } from "./practiceApi";
 import { STUDENT, mockAuthApi } from "./authApi";
 
 /** STU-02-frontend AC6: the attempt disappears on the server at the results step. */
@@ -20,7 +15,7 @@ test.beforeEach(async ({ page }) => {
 });
 
 async function fillAndSubmit(page: Page) {
-  await page.goto("/student/practice");
+  await page.goto(`/student/practice/${SET_ID}`);
   await page
     .getByRole("radio", { name: "A single, focused responsibility" })
     .check();
