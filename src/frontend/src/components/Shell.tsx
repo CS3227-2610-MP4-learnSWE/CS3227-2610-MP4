@@ -104,6 +104,7 @@ export default function Shell({
   const liveFeedback =
     !demoMode &&
     (section === "feedback" ||
+      (role === "admin" && section === "announcements") ||
       ((role === "student" || role === "teacher") && section === "inbox"));
   const current =
     navigation[role].find((item) => item.path === section)?.label ||
@@ -132,7 +133,11 @@ export default function Shell({
           const item =
             !demoMode && role === "admin" && original.path === "forms"
               ? { ...original, path: "feedback" }
-              : original;
+              : !demoMode &&
+                  role === "admin" &&
+                  original.path === "announcements"
+                ? { ...original, path: "announcements/new" }
+                : original;
           return (
             <NavLink
               key={item.path}

@@ -1,9 +1,11 @@
-import { Link } from "react-router";
+import { Link, useLocation } from "react-router";
 import { Button } from "@mui/material";
 import { PageHeading, Panel } from "../components/ui";
 import { useState } from "react";
 import { useAuth } from "../auth/AuthContext";
 import { useFeedbackRead } from "../hooks/useFeedbackRead";
+import MessagesInbox from "../components/MessagesInbox";
+import { getSessionGeneration } from "../services/client";
 
 const labels = {
   not_started: "Not started",
@@ -13,6 +15,7 @@ const labels = {
 };
 export default function FeedbackInbox() {
   const { user } = useAuth();
+  const location = useLocation();
   const [offset, setOffset] = useState(0);
   const read = useFeedbackRead(
     `/api/feedback/inbox?limit=20&offset=${offset}`,
@@ -63,6 +66,7 @@ export default function FeedbackInbox() {
           </>
         )}
       </Panel>
+      <MessagesInbox key={`${location.key}:${getSessionGeneration()}`} />
     </>
   );
 }
