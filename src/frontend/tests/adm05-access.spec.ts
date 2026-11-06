@@ -464,3 +464,22 @@ test("adm05 session expiry clears selected account and entered password", async 
     .evaluateAll((nodes) => nodes.map((n) => (n as HTMLInputElement).value));
   expect(passwords).not.toContain(PASSWORD);
 });
+
+test("adm05 mobile account list visibly identifies the account before management", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await mockAdmin(page);
+  await page.goto("/admin/users");
+  await expect(
+    page.getByRole("cell", { name: "ADM05 Learner adm05-learner@example.com" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Manage account ADM05 Learner" }),
+  ).toBeVisible();
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= window.innerWidth,
+    ),
+  ).toBe(true);
+});
