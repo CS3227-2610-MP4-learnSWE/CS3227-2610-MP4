@@ -10,7 +10,7 @@ The Student, Teacher and Admin tabs on the login page only choose which demo sho
 
 Separately, the **Demo shortcut (development)** buttons under the form open sample-data screens with no account and no session. In that demo mode the sidebar says "Demo (not signed in)", and you can switch roles using the header selector or return to the login page using the footer link. Demo mode cannot use live teacher materials/drafts, practice or the study companion. Teacher data pages show "Sign in to manage teacher materials and drafts."; student practice and the companion show "Sign in to use live practice and the study companion". A signed-in user does not see the role selector.
 
-The sun/moon button toggles light/dark mode. The initial theme follows your operating-system preference. Theme and other local state reset on refresh. On narrow screens, open the navigation drawer with the menu button. Close a sidebar guidance card (including "Listen. Learn. Improve.") with its **Dismiss sidebar tip** X button. It stays hidden as you navigate the workspace; refresh or a new account/workspace restores it.
+The sun/moon button toggles light/dark mode. The initial theme follows your operating-system preference. Theme and other local state reset on refresh. On narrow screens, open the navigation drawer with the menu button. The sidebar guidance card and its Open companion shortcut remain available in short windows; scroll the navigation list to reach other pages. Close a sidebar guidance card (including "Listen. Learn. Improve.") with its **Dismiss sidebar tip** X button. It stays hidden as you navigate the workspace; refresh or a new account/workspace restores it.
 
 ## Student
 

@@ -2,6 +2,13 @@
 
 Newest entry first. Older entries describe the state at the time; the newest entry supersedes their open/merged status. Keep the newest 10 entries here; older ones are in `notes-archive.md`. Feature state is in `STATUS.md`.
 
+## 2026-11-06: developer frontend CI maintenance
+- Done: restored sidebar tip/companion shortcut in short viewports; Progress reads now depend on the router history-entry key as well as retry state. Existing approved shell/STU-04 contracts and all test assertions retained; both guides updated.
+- Validation: isolated full browser suite 473/473 PASS (4.5 minutes, no retries); first reused-local-server run 472 PASS/1 unrelated backend-interference failure; 40 repeated reported cases PASS (20 each), types/lint/build and LF-normalized formatting of 108 frontend files PASS. Raw format check reports existing Windows CRLF warnings. Historical Progress flake not reproduced before source hardening; no proven original flake mechanism claimed.
+- Next: review local commit and rerun remote frontend CI after push (not performed here). No backend or deployment changes.
+- Files: styles.css, Progress.tsx, both guides, logs/FrontendCiFix.md and workflow records.
+- Resources: single-session small-fix exemption; no agents/invocation manifest/report/tracker. Inherited Codex model/effort; exact tokens/cost/elapsed attribution unavailable. Diagnostic/configuration recoveries and profile warning; no new feature correction rounds. See session log for run timing caveats.
+
 ## 2026-11-06: developer shared sidebar/logout confirmation and spec synchronisation
 - Done: dismissible sidebar guidance card and Confirm logout dialog for every signed-in role; cancellation makes no request, pending prevents duplicate/dismissal, failure keeps session/dialog for retry, expiry stays immediate. Dismissal is in-memory per role/account until refresh/remount. Prior toast/reset/details-overlay/sidebar fixes remain.
 - Specs: SHR-01 original logout AC/current transport and follow-up spec/plan; ADM-05 AC23-27; STU-01/STU-04 inherited logout semantics; guides synchronised. RED five tests and contracts committedf1c9268 before source.
@@ -59,10 +66,3 @@ Newest entry first. Older entries describe the state at the time; the newest ent
 - Fixed: exact accessible field names now explicitly label the input elements, and select display names no longer include selected option text. Visible labels and required validation remain intact. Independent browser report identified these contract mismatches; tests were not read or changed.
 - Validation: frontend typecheck/lint/build PASS. Independent designer previously reported backend 78 PASS and browser 8 PASS/4 FAIL before this correction; focused browser rerun remains designer-owned. Opaque account IDs already reject non-PostgreSQL text in the initial source commit.
 - Files: AdminAccounts.tsx, AdminCourses.tsx, this note and implementation log. Next: designer rerun and verifier. Revision rounds used 1/2. Resource attribution remains orchestrator-owned, inherited model/effort and exact tokens/cost unavailable.
-
-## 2026-11-06: developer ADM-05 implementation ready for independent verification
-- Done: live Users/Courses pages, strict admin APIs, additive lifecycle migration, fixed-role account creation, disable/re-enable/archive/session invalidation, course creation and role-scoped memberships. Shared auth rejects inactive accounts; companion output rechecks fresh session/account. Guides include migration/manual walkthrough and validated public test-only password example. No tests changed/read from independent worktree.
-- Validation: frontend typecheck/lint/build PASS; existing browser suite 376 PASS, 1 obsolete anonymous-admin route heading assertion FAIL (app.spec.ts:120). Existing SHR-01 historical seed migration tests 22 PASS after seeds were made independent of newer lifecycle columns; TEA-03 MCQ cleanup 36 PASS. Earlier full backend run was stopped at >89% because it began before the seed correction and retained imported old code; independent clean full rerun is required.
-- Next: test-designer merges source and runs new/existing suites; orchestrator merges tests, then read-only verifier. Obsolete preview-only UI assertion belongs to test-designer; developer did not weaken it. No developer database migration, .env reads, live AI, push or deployment.
-- Files: src/backend/admin_access, migration/auth lifecycle/session/login/seed/teacher access/companion integration; frontend admin pages/client/read hook/navigation/styles; UserGuide and DeveloperGuide.
-- Invocation: adm05-developer-01; inherited model/effort, tokens/cost/session IDs unavailable; orchestrator owns run report under workflow/usage/runs/2026-11-06-ADM05-01. No application revision rounds yet. See logs/Adm05Implementation.md.

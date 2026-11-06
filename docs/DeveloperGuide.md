@@ -355,4 +355,9 @@ The additive no-op merge revision `20261106_merge_adm05_stu04` joins both histor
 
 ## Shared shell confirmation and tip dismissal
 
+Sidebar tips remain available in short windows, including the mobile Open companion shortcut;
+the navigation list scrolls while the account/logout footer stays in the viewport. Progress loads
+depend on the router history-entry key as well as retry state, associating reads with navigation
+instead of relying only on a component unmount and remount.
+
 `Shell` owns per-role/account tip dismissal in memory (no browser storage); desktop/sidebar drawer share the same dismissed state until refresh/remount. The X control is labelled Dismiss sidebar tip. Explicit Log out opens Confirm logout, with Cancel and Log out. Opening/cancelling makes no request; confirm sends the existing cookie/CSRF request once. Pending state disables buttons and Escape/backdrop dismissal; network/5xx failure preserves the dialog/session for retry. A logout401 still clears locally, and expired sessions never wait for confirmation. Student, teacher and admin flows share this behaviour. Existing editor/chat/history safeguards run after completed logout, not when the dialog opens. Specs: SHR-01 shared-shell follow-up, ADM-05 AC23-27 and STU-01/STU-04 synchronisation notes.

@@ -1029,11 +1029,6 @@ button:focus-visible {
   height: 100dvh;
   overflow: hidden;
 }
-@media (max-height: 720px) {
-  .sidebar-tip {
-    display: none;
-  }
-}
 /* Overview */
 .student-hero {
   border: 1px solid #e1e9fc;

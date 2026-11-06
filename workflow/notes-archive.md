@@ -2,6 +2,12 @@
 
 Entries moved unchanged from `notes.md` on 2026-11-03 and 2026-11-05, newest first. They describe the state at the time; `notes.md` and `STATUS.md` supersede them.
 
+## 2026-11-06: developer ADM-05 implementation ready for independent verification
+- Done: live Users/Courses pages, strict admin APIs, additive lifecycle migration, fixed-role account creation, disable/re-enable/archive/session invalidation, course creation and role-scoped memberships. Shared auth rejects inactive accounts; companion output rechecks fresh session/account. Guides include migration/manual walkthrough and validated public test-only password example. No tests changed/read from independent worktree.
+- Validation: frontend typecheck/lint/build PASS; existing browser suite 376 PASS, 1 obsolete anonymous-admin route heading assertion FAIL (app.spec.ts:120). Existing SHR-01 historical seed migration tests 22 PASS after seeds were made independent of newer lifecycle columns; TEA-03 MCQ cleanup 36 PASS. Earlier full backend run was stopped at >89% because it began before the seed correction and retained imported old code; independent clean full rerun is required.
+- Next: test-designer merges source and runs new/existing suites; orchestrator merges tests, then read-only verifier. Obsolete preview-only UI assertion belongs to test-designer; developer did not weaken it. No developer database migration, .env reads, live AI, push or deployment.
+- Files: src/backend/admin_access, migration/auth lifecycle/session/login/seed/teacher access/companion integration; frontend admin pages/client/read hook/navigation/styles; UserGuide and DeveloperGuide.
+- Invocation: adm05-developer-01; inherited model/effort, tokens/cost/session IDs unavailable; orchestrator owns run report under workflow/usage/runs/2026-11-06-ADM05-01. No application revision rounds yet. See logs/Adm05Implementation.md.
 ## 2026-11-06: spec-writer resynchronised expanded admin stories
 - Done: preserved the user's newly expanded ADM-01 to ADM-04 and ADM-06 text exactly; reconciled only ADM-05 to the agreed six fixed-role stories, with labelled criteria and explicit scope boundaries. FeatureList ADM-01 to ADM-06 summaries now match the expanded stories.
 - Contract: no endpoint, schema, UI, AC numbering or test mapping changes. Copied ADM-05 story criteria verbatim into spec AC1-19; derived AC20-22 unchanged. Teacher learning-results reporting remains TEA-05, outside ADM-05 implementation. Course joining/teacher approval decision was already resolved and remains so.
