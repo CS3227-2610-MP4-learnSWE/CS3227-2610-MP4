@@ -2,6 +2,14 @@
 
 Newest entry first. Older entries describe the state at the time; the newest entry supersedes their open/merged status. Keep the newest 10 entries here; older ones are in `notes-archive.md`. Feature state is in `STATUS.md`.
 
+## 2026-11-06: developer ADM-05 UI and fresh-browser login follow-up
+- Done: green creation toast, clear name/email/passwords while retaining role, immediate Account details modal with close/confirmation/focus behaviour, and visible aligned logout in short desktop/mobile windows. User-approved spec/plan and RED tests committed99c3c23 before source; no authentication-code/password changes.
+- Login: recent saved student/teacher records enabled with hashes. Isolated real form creation/fresh browser login+reload PASS for both roles; user subsequently confirmed their own login works. Set ignored local development SESSION_COOKIE_SECURE=false for plain HTTP and user restarted. Initial credential401 cause not reproduced; do not conflate it with cookie loss after login.
+- Validation: 227 backend PASS, 82 auth/admin browser PASS, four follow-up desktop/mobile cases PASS, two no-mock real-browser cases PASS; types/lint/build/format/spec7/0/12existingwaivers/diff PASS. Screenshots inspected. Details/recoveries: logs/Adm05UiFollowup.md.
+- Files: AdminAccounts/styles, independent cookie/browser regressions and opt-in real E2E, approved contract/guides and workflow records. No user database writes/resets, production config changes, live AI, push or deployment.
+- Next: refresh frontend; use Account details overlay and creation toast. Login works per user confirmation. Local commit only.
+- Resource use: single-session scoped maintenance after feature closure; no agents/tracker/manifest. Inherited model/effort and per-task tokens/cost unavailable. Harness/test-interaction recoveries in session log, no extension of original feature correction rounds.
+
 ## 2026-11-06: developer resolved master/STU-04 merge into ADM-05
 - Done: merged master eccc8f0 into ADM-05, preserving both routers, both private-cache protections and both guide/handoff histories. Added no-op20261106_merge_adm05_stu04 joining both unchanged historical heads; populated upgrade tests cover retained disabled accounts and saved attempts. Feature migration tests pin their own revisions; auth/progress browser helpers isolate unrelated API requests from a running local backend.
 - Validation: 209 focused backend PASS, 173 focused browser PASS; types/lint/build/line-ending-aware formatting/diff/conflict checks PASS; speccheck7/0/12existingwaivers. No complete post-merge suite or independent verifier pass claimed. Exact recoveries in logs/Adm05Stu04MasterMerge.md.
@@ -59,11 +67,3 @@ Newest entry first. Older entries describe the state at the time; the newest ent
 - Next: developer/test-designer continue against unchanged contract; orchestrator records invocation/report and verifies implementation.
 - Files: docs/FeatureList.md, docs/UserStories.md, workflow/specs/ADM-05/spec.md and plan.md, this note and logs/Adm05AdminStorySynchronization.md.
 - Resource use: follow-up spec-writer invocation; inherited model/effort, exact tokens/cost unavailable; tracker/report owned by orchestrator; no retries or application revision rounds.
-
-## 2026-11-06: spec-writer ADM-05 agreed scope and approved contract
-- Done: revised FeatureList/UserStories for fixed roles, admin-created accounts/courses, disable/archive lifecycle and course access; wrote ADM-05 spec, API/UI plan and ordered tasks. Approved functional decisions and implementation instruction supplied by user in conversation; no redundant approval gate inferred.
-- Next: orchestrator starts independent developer/test-designer from this commit, then merged read-only verifier; no application code written by spec-writer.
-- Files touched: docs/FeatureList.md, docs/UserStories.md, workflow/specs/ADM-05/{spec,plan,tasks}.md, workflow/notes.md.
-- Decisions: immutable role; shared CourseMembership interpreted by role; no compulsory password change; archived email retained; serialised admin writes and fresh actor checks. AI recheck covers actual authorised context; no invented course mapping for legacy fixtures.
-- Blocking findings: none. speccheck ADM-05 PASS; git diff --check PASS. Parent validated test-only example password using shared validator.
-- Invocation ID: adm05-spec-01; model/effort inherited and exact provider IDs/tokens/cost unavailable; elapsed about 10 minutes; tracker owned by orchestrator at workflow/usage/runs/2026-11-06-ADM05-01; no retries or correction rounds.

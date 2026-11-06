@@ -62,30 +62,41 @@ test("adm05 follow-up Manage opens a focused overlay and Escape returns focus", 
   await expect(manage).toBeFocused();
 });
 
-test("adm05 follow-up logout stays inside a short sidebar with a long account name", async ({
-  page,
-}) => {
-  await mockAuthApi(page, {
-    user: {
-      ...ADMIN,
-      display_name: "Administrator with a deliberately long display name",
-    },
+for (const width of [1100, 390]) {
+  test(`adm05 follow-up logout stays inside a short sidebar at ${width}px`, async ({
+    page,
+  }) => {
+    await mockAuthApi(page, {
+      user: {
+        ...ADMIN,
+        display_name: "Administrator with a deliberately long display name",
+      },
+    });
+    await page.setViewportSize({ width, height: 500 });
+    await page.goto("/admin/overview");
+    if (width < 760)
+      await page
+        .getByRole("button", { name: "Open navigation", exact: true })
+        .click();
+    const sidebar = page.locator(
+      width < 760 ? ".mobile-sidebar" : "aside.sidebar",
+    );
+    const logout = sidebar.getByRole("button", {
+      name: "Log out",
+      exact: true,
+    });
+    await expect(logout).toBeVisible();
+    const bounds = await logout.boundingBox();
+    const shell = await sidebar.boundingBox();
+    expect(bounds).not.toBeNull();
+    expect(shell).not.toBeNull();
+    expect(bounds!.y + bounds!.height).toBeLessThanOrEqual(500);
+    expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(
+      shell!.x + shell!.width,
+    );
+    expect(bounds!.height).toBeLessThanOrEqual(48);
   });
-  await page.setViewportSize({ width: 1100, height: 500 });
-  await page.goto("/admin/overview");
-  const sidebar = page.locator("aside.sidebar");
-  const logout = sidebar.getByRole("button", { name: "Log out", exact: true });
-  await expect(logout).toBeVisible();
-  const bounds = await logout.boundingBox();
-  const shell = await sidebar.boundingBox();
-  expect(bounds).not.toBeNull();
-  expect(shell).not.toBeNull();
-  expect(bounds!.y + bounds!.height).toBeLessThanOrEqual(500);
-  expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(
-    shell!.x + shell!.width,
-  );
-  expect(bounds!.height).toBeLessThanOrEqual(48);
-});
+}
 
 const PASSWORD = "ExampleOnly!7Qm#42vL";
 const learner = {
@@ -608,6 +619,10 @@ test("adm05 late old-session 401 cannot sign out a newly authenticated admin", a
     .getByRole("button", { name: "Manage account ADM05 Learner", exact: true })
     .click();
   await started;
+  // Close the modal before using the sidebar; the old detail GET stays pending.
+  await page
+    .getByRole("button", { name: "Close account details", exact: true })
+    .click();
   await page.getByRole("button", { name: /log out/i }).click();
   await expect(page).toHaveURL(/\/login$/);
   await page.getByLabel(/^email/i).fill(second.email!);

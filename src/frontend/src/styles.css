@@ -741,8 +741,11 @@ button:focus-visible {
   z-index: 20;
   display: flex;
   flex-direction: column;
+  height: 100dvh;
+  overflow: hidden;
 }
 .sidebar-brand {
+  flex-shrink: 0;
   padding: 31px 25px 36px;
   display: flex;
   align-items: center;
@@ -759,6 +762,7 @@ button:focus-visible {
   border-radius: 10px;
 }
 .workspace-label {
+  flex-shrink: 0;
   font-size: 8px;
   letter-spacing: 0.13em;
   font-weight: 650;
@@ -771,6 +775,9 @@ button:focus-visible {
   flex-direction: column;
   gap: 6px;
   padding: 0 15px;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
 }
 .nav-item {
   display: flex;
@@ -814,6 +821,7 @@ button:focus-visible {
 }
 .sidebar-bottom {
   margin-top: auto;
+  flex-shrink: 0;
 }
 .sidebar-tip {
   margin: 30px 20px 22px;
@@ -852,19 +860,38 @@ button:focus-visible {
   align-items: center;
   gap: 10px;
   padding: 18px 19px;
+  flex-wrap: wrap;
 }
 .sidebar-user > div:nth-child(2) {
   flex: 1;
+  min-width: 0;
+}
+.sidebar-user > .MuiAvatar-root {
+  flex-shrink: 0;
+}
+.sidebar-user > .MuiButton-root {
+  flex: 0 0 100%;
+  justify-content: flex-start;
+  white-space: nowrap;
+}
+.sidebar-user > [role="alert"] {
+  flex: 0 0 100%;
 }
 .sidebar-user strong {
   display: block;
   font-size: 11px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .sidebar-user small {
   display: block;
   font-size: 9px;
   color: var(--muted);
   margin-top: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .app-main {
   margin-left: 238px;
@@ -993,6 +1020,13 @@ button:focus-visible {
   width: 260px;
   display: flex;
   flex-direction: column;
+  height: 100dvh;
+  overflow: hidden;
+}
+@media (max-height: 720px) {
+  .sidebar-tip {
+    display: none;
+  }
 }
 /* Overview */
 .student-hero {

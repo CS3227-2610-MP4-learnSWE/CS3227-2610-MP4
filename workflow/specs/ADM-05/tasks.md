@@ -13,3 +13,11 @@
 | 9 | Record security outcomes, feature status, handoffs, session log and usage report; local commits only | orchestrator | verification | done |
 
 Tasks 1, 2, 6 and 7 run in parallel in separate worktrees. No live LLM or deployment. User has requested local commit and testing instructions; do not push or open a remote PR.
+
+## User-requested maintenance follow-up (2026-11-06)
+
+- [x] Amend UI contract for green toast, cleared form retaining role, modal details and visible logout.
+- [x] Commit RED UI regressions and independent cookie-jar login tests before source.
+- [x] Implement scoped UI fixes; preserve failure state and nested confirmations.
+- [x] Verify desktop/mobile layout and real form-created student/teacher login in fresh isolated browser contexts.
+- [x] Update guides/handoff/resource/security evidence; user confirms login working.

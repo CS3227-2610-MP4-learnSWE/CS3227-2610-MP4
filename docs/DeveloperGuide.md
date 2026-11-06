@@ -189,6 +189,10 @@ Notes use existing student Materials/completion APIs unchanged. Published MCQs m
 
 The live admin screens are `/admin/users` and `/admin/courses`. All `/api/admin/*` routes use cookie authentication, the admin role, shared CSRF/Origin checks and `Cache-Control: no-store`. `admin_access/routes.py` owns strict input/API handling; `admin_access/service.py` owns account lifecycle and membership transactions. Creating a course also inserts exactly one General topic in the same transaction so existing teacher publication forms can select it. Existing courses are unchanged. The approved exact API/UI contract is in `workflow/specs/ADM-05/plan.md`.
 
+Account creation success uses a green, dismissible six-second toast; all text/password inputs reset while Account role retains its selection (initially Student). Details open immediately in a scrollable modal, including loading/error states, with nested destructive confirmations and Close/Escape/backdrop dismissal when no write is pending. The shared sidebar keeps its logout footer inside the viewport; navigation scrolls on short windows and long names cannot push logout out. Fresh-context login regressions exercise the saved form password rather than seed credentials.
+
+`tests/real-backend.spec.ts` also has opt-in admin-created student/teacher login checks using independent browser contexts, a real API/database and no API mocks. Run only with an isolated test database and administrator: the real-backend project additionally requires `E2E_ALLOW_ADMIN_ACCOUNT_CREATION=1`, `E2E_ADMIN_EMAIL` and `E2E_ADMIN_PASSWORD` for these cases. They create disposable accounts, verify fresh login and reload, and capture overlay screenshots. Normal mocked runs exclude this file; existing real-backend CI does not create accounts unless explicitly opted in. Never point these creation checks at production data.
+
 ### Local admin setup and password reset (PowerShell)
 
 Prerequisites: Git, uv, Node/npm and Docker Desktop as in [README](../README.md). Run commands from inside this checkout. Existing env/database settings must be preserved; no default admin credentials are shipped. Public signup creates students only. No SoC credentials are needed for ADM-05 or mocked tests.
@@ -289,6 +293,7 @@ npm.cmd run dev
 | Login 200 and admin workspace | Configured account authenticated successfully. |
 | Login 401 `invalid_credentials` | Wrong credentials or inactive account; deliberately indistinguishable. Check seed output/reset flag and account status. |
 | Login 403 `csrf_failed` | Origin mismatch. Allow the exact frontend scheme/host/port and restart API. Login validates Origin; it does not need a pre-existing session CSRF token. |
+| Login 200 followed by `/api/auth/me` 401 | Inspect cookie retention. Local plain HTTP needs `SESSION_COOKIE_SECURE=false` and a full API restart; production HTTPS keeps Secure enabled. This does not explain an initial login 401. |
 | Protected request 403 `forbidden` | Wrong role; selecting the Admin demo tab does not alter the account role. |
 | Protected write 403 `csrf_failed` | Invalid session CSRF token or disallowed Origin. Sign in again and check settings. |
 | Login 429 `rate_limited` | Wait for retry time. Defaults are 5 failures/email or 20/IP in 900 seconds. The limiter is process-local, so a local restart clears it. |

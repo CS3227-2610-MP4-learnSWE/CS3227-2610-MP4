@@ -7,6 +7,7 @@ import {
   DialogContent,
   DialogTitle,
   MenuItem,
+  Snackbar,
   TextField,
 } from "@mui/material";
 import { PageHeading, Panel } from "../components/ui";
@@ -44,6 +45,8 @@ function CreateAccount({ created }: { created: () => Promise<void> }) {
     setBusy(true);
     try {
       await api.createAccount({ display_name: name, email, password, role });
+      setName("");
+      setEmail("");
       setPassword("");
       setConfirmation("");
       setSuccess(true);
@@ -130,7 +133,23 @@ function CreateAccount({ created }: { created: () => Promise<void> }) {
       </form>
       {busy && <p role="status">Creating account...</p>}
       {error && <Alert severity="error">{error}</Alert>}
-      {success && <p role="status">Account created.</p>}
+      <Snackbar
+        open={success}
+        autoHideDuration={6000}
+        onClose={(_, reason) => {
+          if (reason !== "clickaway") setSuccess(false);
+        }}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      >
+        <Alert
+          severity="success"
+          variant="filled"
+          role="status"
+          onClose={() => setSuccess(false)}
+        >
+          Account created.
+        </Alert>
+      </Snackbar>
     </Panel>
   );
 }
@@ -143,10 +162,12 @@ function AccountDetails({
   id,
   courses,
   refreshAccounts,
+  onClose,
 }: {
   id: string;
   courses: api.Course[];
   refreshAccounts: () => Promise<void>;
+  onClose: () => void;
 }) {
   const load = useCallback(() => api.getAccount(id), [id]);
   const detail = useAdminRead(load);
@@ -202,117 +223,143 @@ function AccountDetails({
     }
   }
   return (
-    <Panel className="admin-access-panel">
-      <h2>Account details</h2>
-      {detail.loading && <p role="status">Loading account...</p>}
-      <ReadError message={detail.error} retry={() => void detail.reload()} />
-      {account && (
-        <>
-          <h3>{account.display_name}</h3>
-          <p>{account.email ?? "No email"}</p>
-          <p>
-            Role: {account.role} · Status: {account.status}
-          </p>
-          {account.status === "archived" ? (
-            <p>This account is permanently archived.</p>
-          ) : (
-            <div className="admin-access-actions">
-              {account.status === "enabled" ? (
-                <Button
-                  disabled={busy}
-                  onClick={() => {
-                    setError("");
-                    setConfirmation({ kind: "disable" });
-                  }}
-                >
-                  Disable account
-                </Button>
-              ) : (
-                <Button disabled={busy} onClick={() => void change("enable")}>
-                  Enable account
-                </Button>
-              )}
-              <Button
-                color="error"
-                disabled={busy}
-                onClick={() => {
-                  setError("");
-                  setConfirmation({ kind: "archive" });
-                }}
-              >
-                Archive account
-              </Button>
-            </div>
-          )}
-          {account.role === "admin" ? (
-            <p>Administrators do not receive course assignments.</p>
-          ) : (
+    <>
+      <Dialog
+        open
+        fullWidth
+        maxWidth="sm"
+        aria-labelledby="admin-account-details-title"
+        onClose={() => {
+          if (!busy) onClose();
+        }}
+        scroll="paper"
+      >
+        <DialogTitle id="admin-account-details-title">
+          Account details
+        </DialogTitle>
+        <DialogContent dividers>
+          {detail.loading && <p role="status">Loading account...</p>}
+          <ReadError
+            message={detail.error}
+            retry={() => void detail.reload()}
+          />
+          {account && (
             <>
-              <h3>
-                {account.role === "teacher"
-                  ? "Teacher management assignments"
-                  : "Student enrolments"}
-              </h3>
-              {!detail.data?.courses.length && <p>No course access.</p>}
-              <ul className="admin-course-list">
-                {detail.data?.courses.map((course) => (
-                  <li key={course.id}>
-                    <span>{course.title}</span>
-                    {account.status !== "archived" && (
-                      <Button
-                        aria-label={`Remove course access ${course.title}`}
-                        disabled={busy}
-                        onClick={() => {
-                          setError("");
-                          setConfirmation({ kind: "removal", course });
-                        }}
-                      >
-                        Remove course access
-                      </Button>
-                    )}
-                  </li>
-                ))}
-              </ul>
-              {account.status !== "archived" && (
-                <div className="admin-access-form">
-                  <TextField
-                    select
-                    label="Course"
-                    slotProps={{
-                      select: {
-                        SelectDisplayProps: {
-                          "aria-label": "Course",
-                          "aria-labelledby": undefined,
-                        },
-                      },
-                    }}
-                    value={courseId}
-                    disabled={busy}
-                    onChange={(event) => setCourseId(event.target.value)}
-                  >
-                    <MenuItem value="">Select a course</MenuItem>
-                    {courses.map((course) => (
-                      <MenuItem key={course.id} value={course.id}>
-                        {course.title}
-                      </MenuItem>
-                    ))}
-                  </TextField>
+              <h3>{account.display_name}</h3>
+              <p>{account.email ?? "No email"}</p>
+              <p>
+                Role: {account.role} · Status: {account.status}
+              </p>
+              {account.status === "archived" ? (
+                <p>This account is permanently archived.</p>
+              ) : (
+                <div className="admin-access-actions">
+                  {account.status === "enabled" ? (
+                    <Button
+                      disabled={busy}
+                      onClick={() => {
+                        setError("");
+                        setConfirmation({ kind: "disable" });
+                      }}
+                    >
+                      Disable account
+                    </Button>
+                  ) : (
+                    <Button
+                      disabled={busy}
+                      onClick={() => void change("enable")}
+                    >
+                      Enable account
+                    </Button>
+                  )}
                   <Button
-                    variant="outlined"
-                    disabled={busy || !courseId}
-                    onClick={() => void change("grant")}
+                    color="error"
+                    disabled={busy}
+                    onClick={() => {
+                      setError("");
+                      setConfirmation({ kind: "archive" });
+                    }}
                   >
-                    Grant course access
+                    Archive account
                   </Button>
                 </div>
               )}
+              {account.role === "admin" ? (
+                <p>Administrators do not receive course assignments.</p>
+              ) : (
+                <>
+                  <h3>
+                    {account.role === "teacher"
+                      ? "Teacher management assignments"
+                      : "Student enrolments"}
+                  </h3>
+                  {!detail.data?.courses.length && <p>No course access.</p>}
+                  <ul className="admin-course-list">
+                    {detail.data?.courses.map((course) => (
+                      <li key={course.id}>
+                        <span>{course.title}</span>
+                        {account.status !== "archived" && (
+                          <Button
+                            aria-label={`Remove course access ${course.title}`}
+                            disabled={busy}
+                            onClick={() => {
+                              setError("");
+                              setConfirmation({ kind: "removal", course });
+                            }}
+                          >
+                            Remove course access
+                          </Button>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                  {account.status !== "archived" && (
+                    <div className="admin-access-form">
+                      <TextField
+                        select
+                        label="Course"
+                        slotProps={{
+                          select: {
+                            SelectDisplayProps: {
+                              "aria-label": "Course",
+                              "aria-labelledby": undefined,
+                            },
+                          },
+                        }}
+                        value={courseId}
+                        disabled={busy}
+                        onChange={(event) => setCourseId(event.target.value)}
+                      >
+                        <MenuItem value="">Select a course</MenuItem>
+                        {courses.map((course) => (
+                          <MenuItem key={course.id} value={course.id}>
+                            {course.title}
+                          </MenuItem>
+                        ))}
+                      </TextField>
+                      <Button
+                        variant="outlined"
+                        disabled={busy || !courseId}
+                        onClick={() => void change("grant")}
+                      >
+                        Grant course access
+                      </Button>
+                    </div>
+                  )}
+                </>
+              )}
             </>
           )}
-        </>
-      )}
-      {busy && <p role="status">Saving changes...</p>}
-      {error && !confirmation && <Alert severity="error">{error}</Alert>}
-      {success && <p role="status">{success}</p>}
+          {busy && <p role="status">Saving changes...</p>}
+          {error && !confirmation && <Alert severity="error">{error}</Alert>}
+          {success && <p role="status">{success}</p>}
+        </DialogContent>
+        <DialogActions>
+          <Button disabled={busy} onClick={onClose}>
+            Close account details
+          </Button>
+        </DialogActions>
+      </Dialog>
       <Dialog
         open={!!confirmation}
         onClose={() => {
@@ -349,7 +396,7 @@ function AccountDetails({
           </Button>
         </DialogActions>
       </Dialog>
-    </Panel>
+    </>
   );
 }
 
@@ -509,6 +556,7 @@ function AccountsContent() {
           id={selected}
           courses={courses.data?.courses ?? []}
           refreshAccounts={list.reload}
+          onClose={() => setSelected(null)}
         />
       )}
       <CreateAccount created={list.reload} />
