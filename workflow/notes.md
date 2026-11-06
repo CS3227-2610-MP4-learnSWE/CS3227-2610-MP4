@@ -1,5 +1,19 @@
 # Handoff notes
 
+## 2026-11-07: orchestrator ADM-04 specification approval handoff
+- Done: reviewed draft contract against current ADM-02 survey/response routes, auth/CSRF, opaque 64-character account IDs, shared limiter and persistence. Added precise body/query bounds, new delivery table, preview recovery/edit request counts and exact error mappings. Spec checker PASS (1 checked, 0 failed, 0 waived); no application code or feature tests written.
+- Next: human approves [spec](specs/ADM-04/spec.md) and [plan](specs/ADM-04/plan.md), especially all-active/selected audience, 500-recipient cap, 15-minute review lifetime and retention reuse; then commit approved start contract and launch isolated developer/test-designer. Branch `feat/adm04-feedback-follow-up`; no live AI, env/database or user process changes.
+- Usage closeout: [report](usage/runs/2026-11-07-ADM04-01/report.md) generated and inspected: orchestrator + spec-writer rows and run-total row, one Token usage column. Actual session IDs resolved from local metadata. Parent usage matched; child usage unmatched despite exact ID, so whole-run tokens/cost unavailable. No zero-use claim. Session summary: `logs/Adm04Specification.md`.
+- Invocations: `2026-11-07-ADM04-01-orchestrator-01`, `2026-11-07-ADM04-01-spec-writer-01`; effort inherited, observed parent model gpt-6.1-sol, child model unavailable. Manifest timestamps govern elapsed; includes closeout, not continuous generation. No feature revision rounds; tracker/checker command recoveries recorded in session summary.
+
+## 2026-11-07: spec-writer ADM-04 draft contract
+- Done: wrote draft spec/plan/tasks covering copied AC01-10 plus auth/robustness criteria, recipient-derived feedback replies, targeted role announcements, immutable review and durable replay-safe all-or-nothing inbox delivery. Incorporated orchestrator-provided integration facts without reading application source; existing survey API remains unchanged with a separate Messages section.
+- Next: orchestrator reviews contract and runs speccheck; human approves spec and plan before developer/test-designer start. Proposed audience, limits, preview lifetime and retention reuse are explicit approval questions.
+- Files touched: workflow/specs/ADM-04/spec.md, plan.md, tasks.md; workflow/notes.md.
+- Invocation: 2026-11-07-ADM04-01-spec-writer-01; source session 01a1b257-d8c5-7bb2-b8ab-68e8818691eb (resolved by orchestrator). Model/effort inherited; exact elapsed and measured tokens/cost are orchestrator/tracker-owned, unavailable in this handoff. No retries or application revision rounds, no tests/application code/commits/live AI.
+- Report: workflow/usage/runs/2026-11-07-ADM04-01/report.md (orchestrator generates and links at closeout). Tracker not run by spec-writer.
+- Blocking: required human approval; no implementation authorization inferred from draft. Complete public HTTP contract; internal function names remain implementation-owned.
+
 ## 2026-11-07: ADM-02 admin review row interaction
 - Done: admin form and submitted-response list entries now use a single full-row link. Form title/status/count and response ID/respondent/time align on one line at desktop widths; hover color and visible keyboard focus are added; narrow layouts stack content to avoid clipping. Updated approved ADM-02 UI contract and user guide; regression coverage added before component/style change.
 - Validation: frontend typecheck, lint, Prettier, ADM-02 speccheck and `git diff --check` pass. Playwright not run; live browser inspection was blocked because the Windows browser access host could not confidently identify the active page URL. Database currently contains one submitted response for one form; existing backend process was not changed.
