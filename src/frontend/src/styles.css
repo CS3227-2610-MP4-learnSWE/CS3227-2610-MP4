@@ -3889,3 +3889,61 @@ td .MuiButton-root {
     width: 100%;
   }
 }
+
+/* Reviewed private messages share the survey page's simple panel layout. */
+.messaging-panel {
+  margin-top: 24px;
+  padding: 24px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.messaging-panel form,
+.messaging-recipients,
+.messaging-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.messaging-panel fieldset {
+  border: 0;
+  padding: 0;
+  margin: 0 0 16px;
+  min-width: 0;
+}
+.messaging-panel legend {
+  font-weight: 600;
+}
+.messaging-panel h1,
+.messaging-panel h2,
+.messaging-panel h3 {
+  overflow-wrap: anywhere;
+}
+.messaging-recipients {
+  max-height: 360px;
+  overflow: auto;
+  margin: 16px 0;
+}
+.messaging-recipients p {
+  margin: 0;
+}
+.messaging-text {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.messaging-list article {
+  padding: 16px 0;
+  border-top: 1px solid var(--border);
+}
+.messaging-panel .form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+@media (max-width: 600px) {
+  .messaging-panel {
+    padding: 16px;
+  }
+  .messaging-panel .MuiFormControlLabel-root {
+    margin-right: 8px;
+  }
+}

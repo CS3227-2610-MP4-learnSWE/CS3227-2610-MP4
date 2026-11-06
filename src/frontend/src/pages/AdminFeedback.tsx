@@ -389,6 +389,12 @@ function Response({ id, responseId }: { id: string; responseId: string }) {
       />
       <Panel>
         <p>Respondent: {response.respondent.display_name}</p>
+        <Button
+          component={Link}
+          to={`/admin/feedback/${id}/responses/${responseId}/reply`}
+        >
+          Respond to feedback
+        </Button>
         <p>{response.submitted_at}</p>
         <p>{response.form_snapshot.description}</p>
         {response.form_snapshot.questions.map((q) => (

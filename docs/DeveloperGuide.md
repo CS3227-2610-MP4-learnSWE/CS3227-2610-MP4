@@ -582,10 +582,30 @@ Start the frontend with the existing setup instructions. Sign in as an enabled a
 
 `useResponseDraft` owns the one-second autosave debounce, one in-flight write, coalesced later edits, explicit retry/conflict handling and navigation flushing. Hydration produces no write. Submission cancels debounce, waits for a pending save, then posts once with final answers. A saved draft is recovered server-side after reload or another device; answers never enter localStorage/sessionStorage. Beforeunload warns for unacknowledged edits. Session exit clears the view immediately and does not wait for autosave. Native abrupt termination can lose edits that never reached the server.
 
-Signed-in student/teacher inboxes use persistent request data, with no sample rows or sample unread badge. The inbox shows the real unread count. Anonymous demo previews remain explicitly sample-only. Admin sidebar feedback navigation points to the live form manager; unrelated analytics/announcement previews retain their existing labels.
+Signed-in student/teacher inboxes use persistent request data, with no sample rows or sample unread badge. The inbox shows the real unread count. Anonymous demo previews remain explicitly sample-only. Admin sidebar feedback navigation points to the live form manager; unrelated analytics previews retain their existing labels; authenticated Announcements uses ADM-04 and removes the sample label.
 
 ### Verification
 
 Run the existing backend suite with `uv run pytest -q`, plus the frontend `npm run typecheck`, `npm run lint` and `npm test`. Tests need the documented disposable PostgreSQL schema harness. Set process-local `PGCONNECT_TIMEOUT=3` when running the historical unavailable-database test on Windows if a refused port otherwise waits indefinitely; this bounds the test process's libpq connection attempts without changing application configuration. Use `pytest -k adm02` and Playwright `--grep ADM-02` for the independent feature cases after their integration. No live AI calls are required.
 
 Manual checks: save/reopen all six question types; publish to selected student and teacher accounts separately; verify an unselected account cannot open the URL; save partial required answers, navigate away/return and resume; submit once and see Completed; close collection and verify further saves/submits fail; review preserved submitted snapshots as admin. Test two tabs saving the same draft, close racing submission, failure/retry, session change and mobile keyboard access. Deployment remains through the team's GitHub Actions process.
+
+
+## ADM-04: reviewed private feedback follow-up
+
+ADM-04 adds `messaging.py`, `messaging_store.py`, `messaging_validation.py`, `messaging_models.py` and fixed `messaging_errors.py`. Admin endpoints under `/api/admin/messaging` derive a feedback respondent from a submitted ADM-02 response or resolve one role's selected/all-active accounts. Review creates an immutable 15-minute preview; sending uses only that preview ID. The shared account-change advisory transaction lock rechecks the signed-in actor after acquiring the lock and serializes audience validation with account changes. A unique preview/message constraint and unique message/recipient delivery constraint preserve one durable delivery across concurrent sends, retries and process restarts. Sending is all-or-nothing; replay returns the original receipt without resetting read status. No model calls or external delivery occur.
+
+Migration `20261107_adm04_messaging` adds three message tables after ADM-02; it preserves all surveys and existing records. From `src/backend`, apply it only to your intended local database, then start the API with the same environment:
+
+```powershell
+uv run --env-file .env alembic upgrade head
+uv run --env-file .env uvicorn main:app --host 127.0.0.1 --port 8000 --reload
+```
+
+The equivalent shell commands on macOS/Linux are identical. A serving process must load the intended `.env`; a 503 indicates temporary storage/configuration failure, including an unapplied migration. The implementation session did not migrate the developer database or restart user servers.
+
+`AdminMessaging` connects the submitted-response `Respond to feedback` action and admin `Announcements` navigation. The `?review=<UUID>` URL recovers only the current admin's preview or original sent receipt. Review POST uses its returned data directly; refresh/history performs one recovery GET, never an automatic send. Edit restores reviewed fields and reloads eligibility once. Private drafts are not put in browser storage. `MessagesInbox` appears beneath the unchanged survey section for authenticated students/teachers. New recipient APIs are GET `/api/messaging/inbox?limit=20&offset=0` and POST `/api/messaging/inbox/{delivery_id}/read`; full literal content is inline, so no separate detail endpoint exposes feedback references or audience identities.
+
+Text limits are 120 subject/5000 body Unicode code points, 500 distinct recipients, 128 KiB request bodies and 15 seconds per browser request. Admin quotas per minute: 20 recipient/recovery reads, 10 previews and 5 first-time sends; successful replay is exempt from send quota. Inbox reads and mark-read share 60 requests/minute/account. The reused limiter is process-local; durable uniqueness and access remain database-enforced. Delivery and previews have no automatic retention deletion. No sent-message edit/recall or sent-history browser is included.
+
+Manual verification: sign in as admin, open a submitted response, compose/review/confirm a response, then sign in as its respondent and find exactly one unread Feedback response under Messages. Mark it read and refresh; it stays read. Send a selected-student announcement and check that a different user cannot read its delivery ID. Refresh a review URL before confirming and verify that recovery itself sends nothing. Existing feedback requests, autosave and completion continue independently.

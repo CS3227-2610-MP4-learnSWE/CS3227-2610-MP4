@@ -1,5 +1,11 @@
 # Handoff notes
 
+## 2026-11-07: developer ADM-04 source implemented / existing checks running
+- Done: additive durable preview/message/delivery migration; server-derived respondent, reviewed role audiences, cross-process account-lock reauthentication, atomic replay-safe fanout and owned inbox/read APIs. Added admin compose/review/recovery, separate recipient Messages section, literal rendering and exact error/timeout/history states. Preserved anonymous announcement preview and existing surveys. Both guides updated.
+- Validation so far: typecheck/lint/build/compile/diff PASS; mocked compose-review-edit-send and 320px no-overflow PASS, desktop/mobile screenshots inspected by orchestrator. Existing browser full 566 PASS/1 historical anonymous-preview timing failure while route was being corrected; unchanged targeted case rerun pending. Existing backend full run still active, no readiness claim until results. No independent feature tests read or edited.
+- Next: finish existing checks, report source-ready commit to orchestrator, then independent integration and read-only verification. No live AI, developer database/environment changes or user process restarts. Test schema is disposable; browser ports5193/5194 owned by checks.
+- Invocation: 2026-11-07-ADM04-01-developer-01; inherited model/effort, exact elapsed/token/cost orchestrator-owned and unavailable here. Source IDs/usage in [run report](usage/runs/2026-11-07-ADM04-01/report.md). No application revision rounds yet. Source/guide files only; no tests authored.
+
 ## 2026-11-07: orchestrator ADM-04 approved build
 - User approved spec/plan and proposed policies in chat. Resume run `2026-11-07-ADM04-01`; approved start commit is recorded in launch handoff. Developer and independent test-designer use separate worktrees; no live AI or developer DB/env changes. Approval precedes code.
 - Usage report will be regenerated at closeout: [report](usage/runs/2026-11-07-ADM04-01/report.md).
