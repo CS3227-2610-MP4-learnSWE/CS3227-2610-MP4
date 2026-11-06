@@ -435,16 +435,21 @@ for (const bad of ["network", "json", "shape"] as const) {
 test("adm06 AC13 timeout is bounded to 15 seconds with no automatic retry", async ({
   page,
 }) => {
-  await page.clock.install({ time: new Date("2026-11-06T12:00:00Z") });
-  await page.clock.pauseAt(new Date("2026-11-06T12:00:01Z"));
-  const ctx = await setup(page, { hold: true });
-  await page.goto(PATH);
+  // Let lazy routing/Suspense finish before freezing timers. Only the measured
+  // held Apply request runs under the paused clock; the initial read has finished.
+  const ctx = await ready(page);
+  const now = new Date();
+  await page.clock.install({ time: now });
+  await page.clock.pauseAt(new Date(now.getTime() + 1000));
+  ctx.steps.push({ hold: true });
+  await apply(page).click();
+  await expect.poll(() => ctx.requests.length).toBe(2);
   await expect(apply(page)).toBeDisabled();
   await page.clock.fastForward(14999);
   await expect(alert(page, MSG.timeout)).toHaveCount(0);
   await page.clock.fastForward(2);
   await expect(alert(page, MSG.timeout)).toBeVisible();
-  expect(ctx.requests).toHaveLength(1);
+  expect(ctx.requests).toHaveLength(2);
   ctx.release();
 });
 
