@@ -3542,3 +3542,39 @@ td .MuiButton-root {
 .publication-viewer > h2 {
   margin-top: 0;
 }
+:root .admin-access-panel {
+  padding: 24px;
+  margin-bottom: 24px;
+  min-width: 0;
+}
+.admin-access-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+  margin: 20px 0;
+}
+.admin-access-form > .MuiFormControl-root {
+  flex: 1 1 200px;
+  min-width: 0;
+}
+.admin-access-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-top: 16px;
+}
+.admin-course-list {
+  list-style: none;
+  padding: 0;
+}
+.admin-course-list li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 0;
+  overflow-wrap: anywhere;
+}

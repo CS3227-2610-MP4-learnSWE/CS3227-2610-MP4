@@ -176,7 +176,7 @@ PR17 merged authenticated teacher editing/deletion. Teacher publishing now imple
 
 ## Teacher publication implementation
 
-Run existing Alembic setup through head (`20261105_tea03_publications`). The migration preserves lessons/completion rows, adds nullable lesson `source_version`, adds batch `(id,course_id)` uniqueness, and creates immutable practice-set/question tables. Downgrade refuses while published sets or nonnull lesson publication provenance exist; it never silently deletes them. Use isolated databases for migration tests.
+The publication migration is `20261105_tea03_publications`, followed by the ADM-05 migration `20261106_adm05_access`; run the full chain through head. The migration preserves lessons/completion rows, adds nullable lesson `source_version`, adds batch `(id,course_id)` uniqueness, and creates immutable practice-set/question tables. Downgrade refuses while published sets or nonnull lesson publication provenance exist; it never silently deletes them. Use isolated databases for migration tests.
 
 `teacher_publications.routes` exposes teacher POST publication, per-course catalogue and snapshot detail APIs plus safe student set list/detail reads. It reuses cookie sessions, CSRF, course checks, READ COMMITTED and no-store responses. Origin row locks serialize publish/edit/delete; publication checks existing snapshots before comparing the current draft version. Exactly matching version/title/topic retries return 200; first writes return 201, stale unpublished versions return 409 `draft_conflict`, and different or ambiguous/legacy prior publication returns 409 `already_published`. Both POSTs accept exactly `{version,title,topic_id}`. Titles use trimmed Unicode length 1–200, strict positive integer versions and a required same-course topic. Copies and provenance commit atomically, without inference.
 
@@ -185,3 +185,39 @@ Run existing Alembic setup through head (`20261105_tea03_publications`). The mig
 Teacher GETs share only identical in-flight reads keyed by session generation, mutation epoch, URL, response mode and timeout. Epochs advance before and after mutations; completed reads are not cached. Selection lifetimes invalidate pending sharing before new read effects, so an abandoned A selection cannot rejoin its old request on A→B→A; StrictMode effect replay retains its unchanged lifetime. The studio separately loads publication status and topics; successful POSTs update status locally. Default publication requests use 10 seconds, generation retains 45 seconds, and unsafe requests never retry automatically. Account-owned views, route epochs and effect cleanup ignore stale results. Existing editor blockers continue protecting unsaved work; publishing introduces no additional blocker.
 
 Notes use existing student Materials/completion APIs unchanged. Published MCQs map answer indices to choice IDs a–d and omit keys, explanations and private provenance from student DTOs. Student practice still uses fixed `intro-se-1`, in-memory attempts and existing companion lookup. New set IDs deliberately do not enter that flow until discovery/grading/companion integration. No student UI or existing attempt behavior changes in this increment. Product help text is in `companion_help.py`.
+## ADM-05 account lifecycle and course management
+
+The live admin screens are `/admin/users` and `/admin/courses`. All `/api/admin/*` routes use cookie authentication, the admin role, shared CSRF/Origin checks and `Cache-Control: no-store`. `admin_access/routes.py` owns strict input/API handling; `admin_access/service.py` owns account lifecycle and membership transactions. The approved exact API/UI contract is in `workflow/specs/ADM-05/plan.md`.
+
+Apply the additive `20261106_adm05_access` migration before starting the updated backend. Existing users default to enabled; `User.access_status` is enabled/disabled/archived and `archived_at` records irreversible archival. Downgrade refuses while any disabled/archived account exists, rather than silently granting access. Do not edit old migrations. Run from the repository root in PowerShell:
+
+```powershell
+Set-Location (git rev-parse --show-toplevel)
+docker compose up -d postgres
+Set-Location src\backend
+uv sync --frozen
+uv run --env-file .env alembic upgrade head
+uv run --env-file .env python -m teacher_materials.seed
+uv run --env-file .env python -m auth.seed
+uv run --env-file .env uvicorn main:app --host 127.0.0.1 --port 8000 --reload
+```
+
+Use the existing ignored `.env` settings and `SEED_ADMIN_EMAIL`/`SEED_ADMIN_PASSWORD` to provision the first administrator; never commit credentials. Seeds are explicit development/setup commands. Admin creation handles later student/teacher/admin accounts; public signup stays student-only. Roles cannot change through the admin API. No password reset or compulsory-change flow is added. The password `ExampleOnly!7Qm#42vL` passes the shared validator for `adm05-test@example.com`; it is a public, test-only example, never a seed/default/production credential.
+
+In another terminal, start the frontend with `Set-Location src\frontend` from the root, then `npm.cmd ci` and `npm.cmd run dev`. Follow the ADM-05 walkthrough in UserGuide. Account creation sends the password once and confirms it only on the client; responses never return password/hash/session metadata. Password fields clear on success or unmount and are never stored in browser storage.
+
+Admin writes and login issuance share a transaction advisory lock so concurrent lifecycle changes cannot reactivate/archive users inconsistently or issue sessions after disable commits. The acting admin is rechecked after lock acquisition. Session rows are deleted before account updates, respecting teacher writes' existing session-then-user lock order. Every subsequent protected request rejects inactive users. The same `course_membership` composite key stores student enrolment and teacher management; immutable roles give each row its meaning. Revocation deletes memberships without deleting completion or authorship. Archive retains the user/email/history and deletes sessions/memberships atomically. Repeated grants/removals are idempotent; opposite actions follow transaction lock processing order. Self-disable/archive and removal of the last enabled administrator are rejected.
+
+Teacher generation already closes its initial transaction before the model call and rechecks session/account/course access before saving results. The student companion now rechecks its session/account in a fresh transaction before releasing generated text. Its static practice fixtures do not have course mappings; ADM-05 does not introduce course-grounded retrieval. Any future course context must enforce membership on retrieval and again before output. No live model calls are needed for tests.
+
+For automated backend testing, set `TEA01_TEST_DATABASE_URL` to a disposable PostgreSQL service/database; the existing fixture creates and removes a unique schema. Never point `DATABASE_URL` directly at a developer schema for tests. On Windows use `PGCONNECT_TIMEOUT=2` so the existing unavailable-database test does not wait indefinitely. Example for the repository's documented local Docker service:
+
+```powershell
+Set-Location (git rev-parse --show-toplevel)
+Set-Location src\backend
+$env:TEA01_TEST_DATABASE_URL = 'postgresql+psycopg://learnswe:learnswe-local-only@127.0.0.1:5433/learnswe'
+$env:PGCONNECT_TIMEOUT = '2'
+uv run pytest -q
+```
+
+Frontend checks, from `src\frontend`: `npm.cmd run typecheck`, `npm.cmd run lint`, `npm.cmd run build`, and `npm.cmd test -- --workers=2`. API checks should include anonymous/student/teacher rejection, missing CSRF/disallowed Origin, all fixed-role account creation, disable while logged in, fresh-login re-enable, archive/email reservation, teacher/student cross-course denial, repeated/concurrent assignment actions, last-admin races and withholding AI results after session/account revocation. Mock the SoC client; keep database fixtures isolated.
