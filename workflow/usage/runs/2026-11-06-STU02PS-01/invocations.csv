@@ -7,3 +7,4 @@ feature_run_id,invocation_id,role,effort,tool,session_id,agent_id,started_at,fin
 2026-11-06-STU02PS-01,2026-11-06-STU02PS-01-developer-02,developer,default,claude-code,62d8daea-6c3d-4036-8996-ec5e64384cbd,ad9ebf1fab0926d24,2026-11-06T17:08:58+08:00,2026-11-06T17:25:26+08:00
 2026-11-06-STU02PS-01,2026-11-06-STU02PS-01-test-designer-02,test-designer,default,claude-code,62d8daea-6c3d-4036-8996-ec5e64384cbd,a9d8473d20fa65e66,2026-11-06T17:08:58+08:00,2026-11-06T17:13:04+08:00
 2026-11-06-STU02PS-01,2026-11-06-STU02PS-01-test-designer-03,test-designer,default,claude-code,62d8daea-6c3d-4036-8996-ec5e64384cbd,a9d8473d20fa65e66,2026-11-06T18:08:07+08:00,2026-11-06T18:13:56+08:00
+2026-11-06-STU02PS-01,2026-11-06-STU02PS-01-verifier-01,verifier,default,claude-code,62d8daea-6c3d-4036-8996-ec5e64384cbd,,2026-11-06T18:13:57+08:00,
