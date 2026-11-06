@@ -57,10 +57,12 @@ def activate_coverage(features: list[str]) -> None:
             db.execute(insert(UsageCoverage).values(feature=feature, enabled=False).on_conflict_do_nothing())
             row = db.scalar(select(UsageCoverage).where(UsageCoverage.feature == feature).with_for_update())
             if not row.enabled:
-                row.enabled = True
                 # An existing historical start or gap must never be erased.
+                # Obtain the timestamp before making the row dirty: a SELECT can
+                # autoflush, and enabled coverage must already have a start.
                 if row.covered_since is None:
                     row.covered_since = db.scalar(select(func.clock_timestamp()))
+                row.enabled = True
 
 
 def _timestamp(value: datetime | None) -> str | None:
