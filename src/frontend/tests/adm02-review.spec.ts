@@ -1,0 +1,136 @@
+import { expect, test } from "@playwright/test";
+import { ADMIN, STUDENT } from "./authApi";
+import {
+  FORM_ID,
+  MSG,
+  TIME,
+  setup,
+  questions,
+  alert,
+  status,
+  firstAnswer,
+} from "./adm02Api";
+
+test("ADM-02 uncertain publication cannot be replayed by cancelling and reopening audience", async ({
+  page,
+}) => {
+  const ctx = await setup(page, ADMIN);
+  ctx.form.state = "draft";
+  ctx.form.version = 1;
+  await page.goto(`/admin/feedback/${FORM_ID}`);
+  const open = page.getByRole("button", {
+    name: "Review audience",
+    exact: true,
+  });
+  const dialog = page.getByRole("dialog", {
+    name: "Review audience",
+    exact: true,
+  });
+  await open.click();
+  await dialog
+    .getByRole("checkbox", {
+      name: `${STUDENT.display_name} (${STUDENT.id})`,
+      exact: true,
+    })
+    .check();
+  await dialog
+    .getByRole("button", { name: "Review selected recipients", exact: true })
+    .click();
+  ctx.steps.push({ method: "POST", path: "/publish", abort: true });
+  await dialog
+    .getByRole("button", { name: "Publish form", exact: true })
+    .click();
+  await expect(alert(page, MSG.network)).toBeVisible();
+  expect(ctx.of("POST", "/publish")).toHaveLength(1);
+  await dialog.getByRole("button", { name: "Cancel", exact: true }).click();
+  await expect(dialog).toHaveCount(0);
+  if (await open.isEnabled()) {
+    await open.click();
+    const selection = dialog.getByRole("checkbox", {
+      name: `${STUDENT.display_name} (${STUDENT.id})`,
+      exact: true,
+    });
+    if (await selection.isVisible()) {
+      await selection.check();
+      await dialog
+        .getByRole("button", {
+          name: "Review selected recipients",
+          exact: true,
+        })
+        .click();
+    }
+    await expect(
+      dialog.getByRole("button", { name: "Publish form", exact: true }),
+    ).toBeDisabled();
+  }
+  const reload = page.getByRole("button", {
+    name: "Reload saved form",
+    exact: true,
+  });
+  await expect(reload).toBeVisible();
+  expect(ctx.of("GET", FORM_ID)).toHaveLength(1);
+  await reload.click();
+  await expect.poll(() => ctx.of("GET", FORM_ID).length).toBe(2);
+  expect(ctx.of("POST", "/publish")).toHaveLength(1);
+});
+
+test("ADM-02 successful create hands off its response to detail without a follow-up GET", async ({
+  page,
+}) => {
+  const ctx = await setup(page, ADMIN);
+  await page.goto("/admin/feedback/new");
+  await page
+    .getByRole("textbox", { name: "Form title", exact: true })
+    .fill("Response handoff form");
+  await page.getByRole("button", { name: "Add question", exact: true }).click();
+  await page
+    .getByRole("textbox", { name: "Question 1 prompt", exact: true })
+    .fill("Your feedback?");
+  await page.getByRole("button", { name: "Save draft", exact: true }).click();
+  await expect(page).toHaveURL(new RegExp(`/admin/feedback/${FORM_ID}$`));
+  await expect(status(page, "Draft saved.")).toBeVisible();
+  await expect(
+    page.getByRole("heading", {
+      level: 1,
+      name: "Response handoff form",
+      exact: true,
+    }),
+  ).toBeVisible();
+  expect(ctx.of("POST")).toHaveLength(1);
+  expect(ctx.of("GET", FORM_ID)).toHaveLength(0);
+});
+
+test("ADM-02 transient submit failure on an unchanged saved draft recovers without extra editing", async ({
+  page,
+}) => {
+  const ctx = await setup(page);
+  ctx.draft = {
+    version: 1,
+    answers: [
+      { question_id: questions()[0].id, value: "Already saved answer" },
+    ],
+    updated_at: TIME,
+  };
+  await page.goto(`/student/feedback/${FORM_ID}`);
+  await expect(firstAnswer(page)).toHaveValue("Already saved answer");
+  ctx.steps.push({
+    method: "POST",
+    path: "/responses",
+    status: 429,
+    code: "feedback_rate_limited",
+  });
+  const submit = page.getByRole("button", {
+    name: "Submit feedback",
+    exact: true,
+  });
+  await submit.click();
+  await expect(alert(page, MSG.limited)).toBeVisible();
+  await page
+    .getByRole("button", { name: "Retry saving draft", exact: true })
+    .click();
+  await expect(submit).toBeEnabled();
+  await expect(firstAnswer(page)).toHaveValue("Already saved answer");
+  await submit.click();
+  await expect(status(page, "Feedback submitted. Thank you.")).toBeVisible();
+  expect(ctx.of("POST", "/responses")).toHaveLength(2);
+});
