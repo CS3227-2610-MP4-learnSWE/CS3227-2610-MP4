@@ -326,7 +326,7 @@ test("stu02fe AC6 404 set_not_found shows the not-available panel without raw de
   const text = await pageText(page);
   expect(text).not.toContain("set_not_found");
   expect(text).not.toContain("Server says");
-  expect(text).not.toMatch(/404/);
+  expect(text.includes(" 404")).toBe(false);
   expect(mock.count("getSet")).toBe(1);
 });
 

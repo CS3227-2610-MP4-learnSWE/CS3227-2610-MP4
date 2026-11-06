@@ -54,7 +54,10 @@ function twoCourses(): Catalog {
           catalogSet({
             id: SET_B,
             title: "Sorting drill",
-            topic: { id: "33333333-3333-4333-8333-333333333333", name: "Sorting" },
+            topic: {
+              id: "33333333-3333-4333-8333-333333333333",
+              name: "Sorting",
+            },
             best: { correct: 2, total: 3 },
           }),
         ],
@@ -64,7 +67,10 @@ function twoCourses(): Catalog {
         catalogSet({
           id: SET_ID,
           title: "Testing basics",
-          topic: { id: "44444444-4444-4444-8444-444444444444", name: "Testing" },
+          topic: {
+            id: "44444444-4444-4444-8444-444444444444",
+            name: "Testing",
+          },
           best: { correct: 3, total: 3 },
         }),
         catalogSet({ id: SET_C, title: "Never tried", best: null }),
@@ -107,7 +113,9 @@ test("stu02ps AC15 heading level 1, eyebrow, description and the sidebar link Pr
   await expect(h1(page)).toBeVisible();
   await expect(page.getByText("UNDERSTAND IT. THEN TRY IT.")).toBeVisible();
   await expect(
-    page.getByText("Pick a set your teacher has published for one of your courses."),
+    page.getByText(
+      "Pick a set your teacher has published for one of your courses.",
+    ),
   ).toBeVisible();
   const link = page
     .getByRole("navigation", { name: "student navigation" })
@@ -124,24 +132,40 @@ test("stu02ps AC15 courses are regions with a level 2 heading, sets are links in
   await expect(
     algo.getByRole("heading", { level: 2, name: "Algorithms", exact: true }),
   ).toBeVisible();
-  const se = page.getByRole("region", { name: "Software Engineering", exact: true });
+  const se = page.getByRole("region", {
+    name: "Software Engineering",
+    exact: true,
+  });
   await expect(
-    se.getByRole("heading", { level: 2, name: "Software Engineering", exact: true }),
+    se.getByRole("heading", {
+      level: 2,
+      name: "Software Engineering",
+      exact: true,
+    }),
   ).toBeVisible();
-  const list = se.getByRole("list", { name: "Practice sets in Software Engineering" });
+  const list = se.getByRole("list", {
+    name: "Practice sets in Software Engineering",
+  });
   await expect(list.getByRole("listitem")).toHaveCount(2);
   const first = list.getByRole("listitem").nth(0);
   await expect(
-    first.getByRole("heading", { level: 3 }).getByRole("link", { name: "Testing basics", exact: true }),
+    first
+      .getByRole("heading", { level: 3 })
+      .getByRole("link", { name: "Testing basics", exact: true }),
   ).toHaveAttribute("href", `/student/practice/${SET_ID}`);
-  await expect(first.getByText("Topic: Testing", { exact: true })).toBeVisible();
-  await expect(first.getByText("Best score: 3 / 3", { exact: true })).toBeVisible();
+  await expect(
+    first.getByText("Topic: Testing", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    first.getByText("Best score: 3 / 3", { exact: true }),
+  ).toBeVisible();
   const second = list.getByRole("listitem").nth(1);
-  await expect(second.getByRole("link", { name: "Never tried", exact: true })).toHaveAttribute(
-    "href",
-    `/student/practice/${SET_C}`,
-  );
-  await expect(second.getByText("No attempts yet", { exact: true })).toBeVisible();
+  await expect(
+    second.getByRole("link", { name: "Never tried", exact: true }),
+  ).toHaveAttribute("href", `/student/practice/${SET_C}`);
+  await expect(
+    second.getByText("No attempts yet", { exact: true }),
+  ).toBeVisible();
   await expect(
     algo.getByText("Best score: 2 / 3", { exact: true }),
   ).toBeVisible();
@@ -151,9 +175,13 @@ test("stu02ps AC15 courses and sets appear in the order the server sent them", a
   page,
 }) => {
   await openPicker(page, { catalog: twoCourses() });
-  const headings = await page.getByRole("heading", { level: 2 }).allInnerTexts();
+  const headings = await page
+    .getByRole("heading", { level: 2 })
+    .allInnerTexts();
   expect(headings.indexOf("Algorithms")).toBeGreaterThan(-1);
-  expect(headings.indexOf("Algorithms")).toBeLessThan(headings.indexOf("Software Engineering"));
+  expect(headings.indexOf("Algorithms")).toBeLessThan(
+    headings.indexOf("Software Engineering"),
+  );
   const links = await page
     .getByRole("region", { name: "Software Engineering" })
     .getByRole("link")
@@ -167,7 +195,10 @@ test("stu02ps AC15 a member course with no sets shows the empty text and no list
   await openPicker(page, {
     catalog: { courses: [catalogCourse("Empty course", [], COURSE_2)] },
   });
-  const region = page.getByRole("region", { name: "Empty course", exact: true });
+  const region = page.getByRole("region", {
+    name: "Empty course",
+    exact: true,
+  });
   await expect(region.getByText(MSG.noSets, { exact: true })).toBeVisible();
   await expect(region.getByRole("list")).toHaveCount(0);
   await expect(region.getByRole("link")).toHaveCount(0);
@@ -176,7 +207,9 @@ test("stu02ps AC15 a member course with no sets shows the empty text and no list
 test("stu02ps AC15 no courses: the join heading and text", async ({ page }) => {
   await openPicker(page, { catalog: { courses: [] } });
   await expect(h1(page)).toBeVisible();
-  await expect(page.getByRole("heading", { level: 3, name: MSG.joinHeading })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { level: 3, name: MSG.joinHeading }),
+  ).toBeVisible();
   await expect(page.getByText(MSG.joinText, { exact: true })).toBeVisible();
   await expect(page.getByRole("region")).toHaveCount(0);
 });
@@ -191,11 +224,19 @@ test("stu02ps AC15 loading: the status shows with the heading and no list, then 
     replies: { catalog: [{ passThrough: true, delayMs: 800 }] },
   });
   await page.goto("/student/practice");
-  await expect(page.getByRole("status").filter({ hasText: MSG.loading })).toBeVisible();
+  await expect(
+    page.getByRole("status").filter({ hasText: MSG.loading }),
+  ).toBeVisible();
   await expect(h1(page)).toBeVisible();
-  await expect(page.getByRole("link", { name: "Testing basics" })).toHaveCount(0);
-  await expect(page.getByRole("link", { name: "Testing basics" })).toBeVisible();
-  await expect(page.getByRole("status").filter({ hasText: MSG.loading })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "Testing basics" })).toHaveCount(
+    0,
+  );
+  await expect(
+    page.getByRole("link", { name: "Testing basics" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("status").filter({ hasText: MSG.loading }),
+  ).toHaveCount(0);
   expect(mock.count("catalog")).toBe(1);
 });
 
@@ -205,9 +246,13 @@ test("stu02ps AC15 one GET /api/practice-sets on load and nothing else (no study
 }) => {
   const seen = recordApi(page);
   const { mock } = await openPicker(page, { catalog: twoCourses() });
-  await expect(page.getByRole("link", { name: "Testing basics" })).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "Testing basics" }),
+  ).toBeVisible();
   await page.waitForLoadState("networkidle");
-  expect(seen.filter((s) => s.includes("/api/practice-sets"))).toEqual(["GET /api/practice-sets"]);
+  expect(seen.filter((s) => s.includes("/api/practice-sets"))).toEqual([
+    "GET /api/practice-sets",
+  ]);
   expect(seen).toEqual(["GET /api/practice-sets"]);
   expect(mock.count("catalog")).toBe(1);
 });
@@ -232,9 +277,13 @@ test("stu02ps AC15 backend unreachable: offline message in an alert with Try aga
   });
   await expect(alertWith(page, MSG.offline)).toBeVisible();
   await expect(h1(page)).toBeVisible();
-  await expect(page.getByRole("link", { name: "Testing basics" })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "Testing basics" })).toHaveCount(
+    0,
+  );
   await page.getByRole("button", { name: "Try again" }).click();
-  await expect(page.getByRole("link", { name: "Testing basics" })).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "Testing basics" }),
+  ).toBeVisible();
   await expect(page.getByRole("alert")).toHaveCount(0);
   expect(mock.count("catalog")).toBe(2);
   await expect(page).toHaveURL(/\/student\/practice$/);
@@ -244,7 +293,10 @@ test("stu02ps AC15 timeout: no error before 10 seconds, the offline message afte
   page,
 }) => {
   const auth = await mockAuthApi(page, { user: STUDENT });
-  const mock = await mockPracticeApi(page, { auth, replies: { catalog: [{ hang: true }] } });
+  const mock = await mockPracticeApi(page, {
+    auth,
+    replies: { catalog: [{ hang: true }] },
+  });
   await page.clock.install();
   await page.goto("/student/practice");
   await expect.poll(() => mock.count("catalog")).toBe(1);
@@ -263,7 +315,14 @@ for (const status of [500, 503]) {
   }) => {
     const body =
       status === 503
-        ? { json: { detail: { code: "service_unavailable", message: "The service is unavailable." } } }
+        ? {
+            json: {
+              detail: {
+                code: "service_unavailable",
+                message: "The service is unavailable.",
+              },
+            },
+          }
         : { body: "Traceback SECRET_TRACE_MARKER" };
     await openPicker(page, { replies: { catalog: [{ status, ...body }] } });
     await expect(alertWith(page, MSG.unavailable)).toBeVisible();
@@ -278,8 +337,22 @@ for (const status of [500, 503]) {
 
 for (const [label, json] of [
   ["courses is not a list", { courses: "nope" }],
-  ["a set has no title", { courses: [catalogCourse("C", [{ ...catalogSet(), title: undefined } as never])] }],
-  ["best has the wrong shape", { courses: [catalogCourse("C", [{ ...catalogSet(), best: "2/3" } as never])] }],
+  [
+    "a set has no title",
+    {
+      courses: [
+        catalogCourse("C", [{ ...catalogSet(), title: undefined } as never]),
+      ],
+    },
+  ],
+  [
+    "best has the wrong shape",
+    {
+      courses: [
+        catalogCourse("C", [{ ...catalogSet(), best: "2/3" } as never]),
+      ],
+    },
+  ],
   ["a bare array", [catalogCourse("C", [catalogSet()])]],
   ["null", null],
 ] as const) {
@@ -293,15 +366,21 @@ for (const [label, json] of [
   });
 }
 
-test("stu02ps AC15 403 forbidden: the access message and no Try again", async ({ page }) => {
-  await openPicker(page, { replies: { catalog: [apiError(403, "forbidden")] } });
+test("stu02ps AC15 403 forbidden: the access message and no Try again", async ({
+  page,
+}) => {
+  await openPicker(page, {
+    replies: { catalog: [apiError(403, "forbidden")] },
+  });
   await expect(alertWith(page, MSG.forbidden)).toBeVisible();
   await expect(page.getByRole("button", { name: "Try again" })).toHaveCount(0);
   const text = await page.locator("body").innerText();
   expect(text).not.toContain("Server says");
 });
 
-test("stu02ps AC15 401 while signed in goes to /login and shows no message", async ({ page }) => {
+test("stu02ps AC15 401 while signed in goes to /login and shows no message", async ({
+  page,
+}) => {
   const auth = await mockAuthApi(page, { user: STUDENT });
   await mockPracticeApi(page, { auth, catalog: twoCourses() });
   auth.script("me", { json: { user: STUDENT, csrf_token: auth.csrf } });
@@ -316,7 +395,9 @@ test("stu02ps AC15 401 in demo mode: the sign-in notice with a Go to sign in lin
 }) => {
   const { mock } = await openPicker(page, { catalog: twoCourses() }, null);
   await expect(page.getByText(MSG.signIn).first()).toBeVisible();
-  await expect(page.getByRole("link", { name: "Go to sign in" }).first()).toHaveAttribute("href", "/login");
+  await expect(
+    page.getByRole("link", { name: "Go to sign in" }).first(),
+  ).toHaveAttribute("href", "/login");
   await expect(page).toHaveURL(/\/student\/practice$/);
   await expect(page.getByText("Testing basics")).toHaveCount(0);
   expect(mock.count("catalog")).toBe(1);
@@ -328,13 +409,21 @@ test("stu02ps AC15 a failed retry replaces the message and shows no list from an
 }) => {
   const { mock } = await openPicker(page, {
     catalog: twoCourses(),
-    replies: { catalog: [{ passThrough: true }, { abort: true }, { status: 503, json: {} }] },
+    replies: {
+      catalog: [
+        { passThrough: true },
+        { abort: true },
+        { status: 503, json: {} },
+      ],
+    },
   });
   await page.getByRole("link", { name: "Testing basics" }).click();
   await expect(page).toHaveURL(new RegExp(`/student/practice/${SET_ID}$`));
   await page.goBack();
   await expect(alertWith(page, MSG.offline)).toBeVisible();
-  await expect(page.getByRole("link", { name: "Testing basics" })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "Testing basics" })).toHaveCount(
+    0,
+  );
   await page.getByRole("button", { name: "Try again" }).click();
   await expect(alertWith(page, MSG.unavailable)).toBeVisible();
   await expect(page.getByText(MSG.offline)).toHaveCount(0);
@@ -368,25 +457,40 @@ test("stu02ps AC15 a set link pushes a history entry; Back returns to the picker
   const { mock } = await openPicker(page, { catalog: twoCourses() });
   await page.getByRole("link", { name: "Testing basics" }).click();
   await expect(page).toHaveURL(new RegExp(`/student/practice/${SET_ID}$`));
-  await expect(page.getByRole("heading", { level: 1, name: "Put your knowledge to work." })).toBeVisible();
+  await expect(
+    page.getByRole("heading", {
+      level: 1,
+      name: "Put your knowledge to work.",
+    }),
+  ).toBeVisible();
   await page.goBack();
   await expect(page).toHaveURL(/\/student\/practice$/);
-  await expect(page.getByRole("link", { name: "Testing basics" })).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "Testing basics" }),
+  ).toBeVisible();
   expect(mock.count("catalog")).toBe(2);
   await page.goForward();
   await page.goBack();
   await expect.poll(() => mock.count("catalog")).toBe(3);
 });
 
-test("stu02ps AC15 refresh reloads the picker from the server", async ({ page }) => {
+test("stu02ps AC15 refresh reloads the picker from the server", async ({
+  page,
+}) => {
   const { mock } = await openPicker(page, { catalog: twoCourses() });
-  await expect(page.getByRole("link", { name: "Testing basics" })).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "Testing basics" }),
+  ).toBeVisible();
   await page.reload();
-  await expect(page.getByRole("link", { name: "Testing basics" })).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "Testing basics" }),
+  ).toBeVisible();
   expect(mock.count("catalog")).toBe(2);
 });
 
-test("stu02ps AC15 Try again with the keyboard: Tab to the button and Enter", async ({ page }) => {
+test("stu02ps AC15 Try again with the keyboard: Tab to the button and Enter", async ({
+  page,
+}) => {
   const { mock } = await openPicker(page, {
     catalog: twoCourses(),
     replies: { catalog: [{ abort: true }] },
@@ -396,13 +500,19 @@ test("stu02ps AC15 Try again with the keyboard: Tab to the button and Enter", as
   await retry.focus();
   await expect(retry).toBeFocused();
   await page.keyboard.press("Enter");
-  await expect(page.getByRole("link", { name: "Testing basics" })).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "Testing basics" }),
+  ).toBeVisible();
   expect(mock.count("catalog")).toBe(2);
 });
 
-test("stu02ps AC15 after the session ends, Back shows no practice data", async ({ page }) => {
+test("stu02ps AC15 after the session ends, Back shows no practice data", async ({
+  page,
+}) => {
   const { auth, mock } = await openPicker(page, { catalog: twoCourses() });
-  await expect(page.getByRole("link", { name: "Testing basics" })).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "Testing basics" }),
+  ).toBeVisible();
   await page.getByRole("link", { name: "Testing basics" }).click();
   auth.expire();
   await page.goBack();
@@ -412,25 +522,42 @@ test("stu02ps AC15 after the session ends, Back shows no practice data", async (
 });
 
 // ------------------------------------------------------------------ safe rendering, storage, companion, layout
-test("stu02ps AC15 titles, topics and course names are plain text, not HTML", async ({ page }) => {
-  const evil = '<img src=x onerror="window.__xss=1"> <b>bold</b> https://example.com/x';
+test("stu02ps AC15 titles, topics and course names are plain text, not HTML", async ({
+  page,
+}) => {
+  const evil =
+    '<img src=x onerror="window.__xss=1"> <b>bold</b> https://example.com/x';
   await openPicker(page, {
     catalog: {
       courses: [
-        catalogCourse(evil, [catalogSet({ title: evil, topic: { id: "t", name: evil } })]),
+        catalogCourse(evil, [
+          catalogSet({ title: evil, topic: { id: "t", name: evil } }),
+        ]),
       ],
     },
   });
-  await expect(page.getByRole("link", { name: evil, exact: true })).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: evil, exact: true }),
+  ).toBeVisible();
   await expect(page.locator("main img, main b")).toHaveCount(0);
-  expect(await page.evaluate(() => (window as unknown as { __xss?: number }).__xss)).toBeUndefined();
+  expect(
+    await page.evaluate(() => (window as unknown as { __xss?: number }).__xss),
+  ).toBeUndefined();
 });
 
-test("stu02ps AC15 nothing of the list is kept in browser storage", async ({ page }) => {
+test("stu02ps AC15 nothing of the list is kept in browser storage", async ({
+  page,
+}) => {
   await openPicker(page, { catalog: twoCourses() });
-  await expect(page.getByRole("link", { name: "Testing basics" })).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "Testing basics" }),
+  ).toBeVisible();
   const stored = await page.evaluate(() =>
-    JSON.stringify([Object.entries(localStorage), Object.entries(sessionStorage), document.cookie]),
+    JSON.stringify([
+      Object.entries(localStorage),
+      Object.entries(sessionStorage),
+      document.cookie,
+    ]),
   );
   expect(stored).not.toContain("Testing basics");
   expect(stored).not.toContain(SET_ID);
@@ -441,9 +568,13 @@ test("stu02ps AC15 the companion on the picker reports page other with no set or
 }) => {
   const companion = await mockCompanionApi(page);
   await openPicker(page, { catalog: twoCourses() });
-  await expect(page.getByRole("link", { name: "Testing basics" })).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "Testing basics" }),
+  ).toBeVisible();
   await page.getByRole("button", { name: "Open study companion" }).click();
-  await page.getByLabel("Message your study companion").fill("What is a unit test?");
+  await page
+    .getByLabel("Message your study companion")
+    .fill("What is a unit test?");
   await page.getByRole("button", { name: "Send question" }).click();
   await expect.poll(() => companion.count).toBe(1);
   const ctx = companion.requests[0].body.context;
@@ -454,20 +585,28 @@ test("stu02ps AC15 the companion on the picker reports page other with no set or
 
 for (const width of [390, 1440]) {
   for (const theme of ["light", "dark"] as const) {
-    test(`stu02ps AC15 the picker fits ${width}px wide in ${theme} theme`, async ({ page }) => {
+    test(`stu02ps AC15 the picker fits ${width}px wide in ${theme} theme`, async ({
+      page,
+    }) => {
       await page.setViewportSize({ width, height: 900 });
       await page.emulateMedia({ colorScheme: theme });
-      const long = "A very long practice set title that must wrap inside the panel and not widen the page at all";
+      const long =
+        "A very long practice set title that must wrap inside the panel and not widen the page at all";
       await openPicker(page, {
         catalog: {
           courses: [
             catalogCourse("Course " + long, [
-              catalogSet({ title: long, topic: { id: "t", name: "Topic " + long } }),
+              catalogSet({
+                title: long,
+                topic: { id: "t", name: "Topic " + long },
+              }),
             ]),
           ],
         },
       });
-      await expect(page.getByRole("link", { name: long, exact: true })).toBeVisible();
+      await expect(
+        page.getByRole("link", { name: long, exact: true }),
+      ).toBeVisible();
       const m = await page.evaluate(() => ({
         scroll: document.documentElement.scrollWidth,
         width: innerWidth,
