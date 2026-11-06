@@ -97,6 +97,12 @@ Our own question was that one multi-agent feature build takes too long and too m
 - Give every arm the same environment. The H arms ran with a real database and A did not, which makes the cost comparison unfair.
 - Do not use revision rounds as a quality proxy: H1 and H3 needed one and passed; A needed none and failed one test.
 
+### STU-03: independent agents left the same resource assumption untested
+
+The ADM-06 verifier recorded **1,169 backend tests passing**, yet the existing 30-request companion test later returned 503 in CI. A required post-AI session check opened another database connection while the initial authentication transaction still held one. The security checks were individually valid, but their combined connection ownership could exhaust the pool. This was an implementation and in-scope review miss, rather than an ambiguous API contract. [Earlier verification](../logs/Adm06Implementation.md), [failure investigation](../logs/Stu03ConcurrencyPoolFix.md).
+
+**The useful change was to constrain capacity, not add more threads.** Two new tests used a one-connection pool: both failed before the fix (`f66d647`). Releasing the initial connection (`6e8f63a`) made them pass while preserving the post-AI security check. They also require **zero connections held during the model call**. The original concurrency test then passed 20 repetitions (600 requests), and the full suite passed 1,171 tests. Independent authorship had not challenged this resource assumption; the bounded-pool test did. Future changes that add a second session should test connection ownership across the existing request path. [Regression assertions](../src/backend/tests/test_stu03_connection_lifetime.py), [results and limits](../logs/Stu03ConcurrencyPoolFix.md).
+
 ## Context Engineering and Resource-aware Use
 
 ### Measured observations so far

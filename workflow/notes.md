@@ -2,6 +2,11 @@
 
 Newest entry first. Older entries describe the state at the time; the newest entry supersedes their open/merged status. Keep the newest 10 entries here; older ones are in `notes-archive.md`. Feature state is in `STATUS.md`.
 
+## 2026-11-06: developer STU-03 failure reflection
+- Done: added one concise evidence-linked reflection on connection ownership, independent-review blind spots and deterministic constrained-pool testing. Preserved other reflection content; no generic model/context claims.
+- Validation: evidence links/commit records/diffPASS; docs only, no runtime tests or app/env/DB changes. Log: logs/Stu03FailureReflection.md.
+- Resources: single-session docs exemption, no agents/tracker/report; inherited model/effort, tokens/cost unavailable, zero new feature rounds. Next: human reads docs/Reflections.md STU-03 resource-assumption section.
+
 ## 2026-11-06: developer STU-03 companion concurrency 503 fix
 - Done: reproduced help/practice503 with one-connection pool, tests/maintenance contract committedf66d647 before source. Companion returns initial read-only auth connection before nested store/model work; fresh post-model session/account check retained. No pool expansion/retry/CI/original concurrency assertion changes. Both guides updated.
 - Validation: new2RED before source;6targetedGREEN;20original30parallel runsPASS (600requests); final full backend1171PASS348.43s. Compile/spec8/0/12existingwaivers/diffPASS. No frontend changes/browser rerun or independent verifier claim. RemoteCI underlying SQLAlchemy trace unavailable; deterministic local resource defect reproduced with same public503.
@@ -63,10 +68,3 @@ Newest entry first. Older entries describe the state at the time; the newest ent
 - Files: AdminAccounts/styles, independent cookie/browser regressions and opt-in real E2E, approved contract/guides and workflow records. No user database writes/resets, production config changes, live AI, push or deployment.
 - Next: refresh frontend; use Account details overlay and creation toast. Login works per user confirmation. Local commit only.
 - Resource use: single-session scoped maintenance after feature closure; no agents/tracker/manifest. Inherited model/effort and per-task tokens/cost unavailable. Harness/test-interaction recoveries in session log, no extension of original feature correction rounds.
-
-## 2026-11-06: developer resolved master/STU-04 merge into ADM-05
-- Done: merged master eccc8f0 into ADM-05, preserving both routers, both private-cache protections and both guide/handoff histories. Added no-op20261106_merge_adm05_stu04 joining both unchanged historical heads; populated upgrade tests cover retained disabled accounts and saved attempts. Feature migration tests pin their own revisions; auth/progress browser helpers isolate unrelated API requests from a running local backend.
-- Validation: 209 focused backend PASS, 173 focused browser PASS; types/lint/build/line-ending-aware formatting/diff/conflict checks PASS; speccheck7/0/12existingwaivers. No complete post-merge suite or independent verifier pass claimed. Exact recoveries in logs/Adm05Stu04MasterMerge.md.
-- Next: user applies uv run --env-file .env alembic upgrade head, restarts backend and starts frontend in a second terminal; sign in with their own configured admin credentials and follow Users/Courses smoke checks. Local merge only, no push.
-- Files: five conflict resolutions, additive merge migration/regression, pinned feature migration tests, browser fixture isolation and workflow/session records. No agent changes to developer env/database/seeds/live AI/unrelated worktrees.
-- Resources: single-session merge-maintenance exemption, no agents/manifest/tracker; inherited model/effort, exact per-task tokens/cost unavailable. One incomplete broad run, fixture recoveries and redundant diagnostic backend rerun recorded; no new feature correction rounds.
