@@ -98,6 +98,7 @@ export default function Shell({
   const displayName = user?.display_name ?? "";
   const unread = messages[role].filter((message) => message.unread).length;
   const section = location.pathname.split("/")[2];
+  const liveUsage = !demoMode && role === "admin" && section === "ai-usage";
   const current =
     navigation[role].find((item) => item.path === section)?.label ||
     (section === "feedback" ? "Feedback" : "Workspace");
@@ -266,9 +267,11 @@ export default function Shell({
             <strong>{current}</strong>
           </div>
           <div className="topbar-actions">
-            <span className="demo-pill">
-              <span /> Demo · Sample data
-            </span>
+            {!liveUsage && (
+              <span className="demo-pill">
+                <span /> Demo · Sample data
+              </span>
+            )}
             {demoMode && (
               <div className="role-select">
                 <Select
