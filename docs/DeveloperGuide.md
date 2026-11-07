@@ -643,3 +643,15 @@ The scoped rules in `styles.css` define neutral panels, outlined MUI fields, rea
 `LocalTime.tsx` renders recorded instants with the browser's locale/time zone and preserves the ISO value in `time[datetime]` and the title. Report date filters remain UTC. Response link accessible names retain their exact identifiers and original timestamps, while visible rows lead with human names. Existing endpoints, fetch cadence, error mappings, session clearing and security checks are unchanged; no background requests or live AI are added.
 
 Regression coverage is in `tests/admin-ui.spec.ts`, alongside existing ADM-02/04/05/06 suites. The existing row-layout and timestamp assertions were adapted to the documented taller cards and semantic local dates, retaining full-row navigation, hover, request-count and exact-record assertions. Use isolated Playwright ports when a developer server is running. Check desktop/mobile, both themes, visible input/focus outlines, long content, retained input on failure and keyboard-reachable report scrolling.
+
+
+### Frontend CI: recipient debounce and shell request counts
+
+The announcement composer schedules its 300ms search debounce only when the trimmed input differs from the applied query. An unchanged initial search must not reset recipient pagination. Debounce browser tests install the Playwright clock before navigation so existing native timers cannot overlap the simulated clock; exact request-count and stale-response assertions remain in place.
+
+The practice picker still loads its catalog once. Its signed-in student shell also makes one metadata-only `GET /api/messaging/unread-count` for the Inbox badge. Integration request assertions explicitly allow those two reads and reject extra catalog, study/course/progress or message-body calls; they must not classify the shell summary as a picker duplicate.
+
+
+Browser history tests wait for the destination's exact page heading before issuing Back; a URL change plus any visible heading can still describe the previous React screen. Recovered-message tests wait for the expected recipient lookup before asserting its exact count, since the composer input can render before its read effect dispatches. These waits preserve the existing request-count requirements instead of adding sleeps or retries.
+
+When a history test counts completed report loads, wait for the report data on each page before navigating again. The shared reader intentionally coalesces identical requests that are still in flight, so counting one new request per completed visit is different from switching pages while the previous read is pending.

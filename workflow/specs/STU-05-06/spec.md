@@ -31,7 +31,7 @@ Copied from `docs/UserStories.md`; IDs added for test mapping.
 - [ ] AC10 (US-STU-06-03) Email and push delivery are outside the MVP.
 - [ ] AC11 (slice) The sidebar badge on the student `Inbox` link equals survey unread plus message unread (the `unread_count` of the count endpoint), the page keeps the two section counts, and the badge is absent at zero.
 - [ ] AC12 (slice) The badge drops after the student opens a survey request's form and after the student marks a message read.
-- [ ] AC14 (slice) After PR 31 merges, student pages send one extra `GET /api/messaging/unread-count` from the shell badge. The existing STU-02 picker request-count test (`stu02ps-picker.spec.ts`, AC15 "one GET /api/practice-sets on load and nothing else") must still express its intent (the picker itself sends exactly one GET `/api/practice-sets`) and no longer fail because of the shell's count request. Only that assertion changes; no picker behaviour changes.
+- [x] AC14 (slice, fixed upstream by master commit 09a77ce, which made the picker test expect exactly the picker request plus the shell's count request; our own edit was dropped in the merge) After PR 31 merges, student pages send one extra `GET /api/messaging/unread-count` from the shell badge. The existing STU-02 picker request-count test (`stu02ps-picker.spec.ts`, AC15 "one GET /api/practice-sets on load and nothing else") must still express its intent (the picker itself sends exactly one GET `/api/practice-sets`) and no longer fail because of the shell's count request. Only that assertion changes; no picker behaviour changes.
 - [ ] AC13 (slice) A failure of one count source does not hide the other section's count or list, and no failure shows a generic message.
 
 ## UI states and copy

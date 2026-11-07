@@ -244,7 +244,7 @@ test("stu02ps AC15 loading: the status shows with the heading and no list, then 
 });
 
 // ------------------------------------------------------------------ requests
-test("stu02ps AC15 one GET /api/practice-sets on load and nothing else (no study courses, no progress)", async ({
+test("stu02ps AC15 one catalog read plus shell unread summary (no study courses, no progress)", async ({
   page,
 }) => {
   const seen = recordApi(page);
@@ -256,11 +256,10 @@ test("stu02ps AC15 one GET /api/practice-sets on load and nothing else (no study
   expect(seen.filter((s) => s.includes("/api/practice-sets"))).toEqual([
     "GET /api/practice-sets",
   ]);
-  // The shell's inbox badge (ADM-04) adds one GET /api/messaging/unread-count; the picker itself
-  // sends exactly one request and nothing else.
-  expect(
-    seen.filter((s) => !s.includes("/api/messaging/unread-count")),
-  ).toEqual(["GET /api/practice-sets"]);
+  expect([...seen].sort()).toEqual([
+    "GET /api/messaging/unread-count",
+    "GET /api/practice-sets",
+  ]);
   expect(mock.count("catalog")).toBe(1);
 });
 

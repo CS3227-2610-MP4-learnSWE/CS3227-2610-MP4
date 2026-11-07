@@ -119,12 +119,15 @@ function Composer({
   const subjectRef = useRef<HTMLInputElement>(null);
   const bodyRef = useRef<HTMLInputElement>(null);
   useEffect(() => {
+    // Only a changed query needs a debounce. An initial no-op timer can reset
+    // a fast page change and survive a test clock installed after mounting.
+    if (search.trim() === debounced) return;
     const timer = setTimeout(() => {
       setDebounced(search.trim());
       setPage(1);
     }, 300);
     return () => clearTimeout(timer);
-  }, [search]);
+  }, [search, debounced]);
   const path = responseId
     ? `${messagingBase}/feedback-responses/${encodeURIComponent(responseId)}/recipient`
     : `${messagingBase}/recipients?role=${fields.role}&search=${encodeURIComponent(debounced)}&page=${page}&page_size=50`;

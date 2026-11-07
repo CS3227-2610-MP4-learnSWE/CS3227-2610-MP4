@@ -278,9 +278,9 @@ A review remains valid for 15 minutes. Refreshing its URL recovers the review or
 ### Student inbox: what you see and what is not available
 
 - **Feedback requests** lists each published form sent to you with its title, a Read or Unread label and a status chip: **Not started**, **Draft**, **Completed** or **Closed**. Lists show 20 at a time with **Previous page** and **Next page**. Selecting a request opens its form. A closed form shows "This form is closed." and accepts no changes.
-- **Messages** lists announcements and feedback replies. Each card shows its type, an Unread or Read chip, the subject, the text, the sent time and **From: Administrator**. Replies and announcements are not sent from individual named admins, so the sender is always shown as Administrator.
+- **Messages** lists announcements and feedback replies. Each card shows its type, an Unread or Read chip, the subject, the text, the sent time and **From: Administrator**. The inbox does not show which administrator sent a message, so the sender is always shown as Administrator.
 - The form page states: once submitted, your name and feedback are visible to administrators; your unfinished draft is private.
-- A form is sent to named recipients chosen by an admin. Targeting a student group or class is not available. Email and push notifications are not available; new items appear after the sidebar badge or the lists refresh (see the badge description above).
+- A form is sent to named recipients chosen by an admin. Targeting a student group or class is not available. Email and push notifications are not available; the sidebar badge updates every minute and when you return to the window; reopen the Inbox to see new items (see the badge description above).
 
 
 ### ADM-04: redesigned inbox and composer
@@ -299,3 +299,6 @@ Feedback forms, Users, Courses and AI usage follow the shared admin design: outl
 - **AI usage:** Report filters are separate from the Service-call report. The reporting range is still UTC; collection timestamps display in local time. Wide results scroll within their own keyboard-focusable area. Missing measurements remain explicitly unavailable.
 
 Analytics and the legacy feedback-analysis, form and usage demos retain their sample-only notices. This visual update does not activate live analytics or AI feedback analysis. ADM-04's composer and recipient Inbox retain their existing design.
+
+
+When choosing announcement recipients, moving to another result page keeps that page selected until you change the search or audience role. Search updates after a short pause in typing; selected recipients remain selected across pages and searches.
