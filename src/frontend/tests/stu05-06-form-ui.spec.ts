@@ -363,6 +363,8 @@ test("stu05 AC16 at 390px the labels keep minimum left and maximum right", async
   const mid = g.x + g.width / 2;
   expect(low.x + low.width / 2).toBeLessThan(mid);
   expect(high.x + high.width / 2).toBeGreaterThan(mid);
+  // Restored by the orchestrator: the minimum label lines up with the first radio's edge once wrapped.
+  expect(low.x).toBeLessThanOrEqual(first.x + 2);
   // Labels sit on the row or below it, never above it.
   expect(low.y + low.height).toBeGreaterThan(first.y);
   expect(high.y + high.height).toBeGreaterThan(first.y);
