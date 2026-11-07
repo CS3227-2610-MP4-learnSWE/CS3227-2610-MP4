@@ -421,4 +421,3 @@ def test_adm04_ac12_persisted_preview_and_sent_receipt_survive_fresh_python_proc
     env['PYTHONPATH'] = str(Path(__file__).parent.resolve())
     reply = subprocess.run([sys.executable,'-c',script], env=env, capture_output=True, text=True, timeout=30)
     assert reply.returncode == 0, reply.stdout+reply.stderr
-
