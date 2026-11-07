@@ -652,3 +652,110 @@ for (const state of ["closed", "already completed", "just submitted"] as const)
           expect(Math.abs(gaps[0] - gaps[1])).toBeLessThanOrEqual(10);
         expect(await noOverflow(page)).toBe(true);
       });
+
+// ---------------------------------------------------------------- round 1 verifier findings
+
+const twoRequired = () => [
+  q(1, "short_answer", "First point", true),
+  q(2, "short_answer", "Second point", true),
+];
+const first = (page: Page) =>
+  page.getByRole("textbox", { name: "1. First point", exact: true });
+const second = (page: Page) =>
+  page.getByRole("textbox", { name: "2. Second point", exact: true });
+
+test("stu05 AC17 real key-by-key typing in the first marked question keeps focus there", async ({
+  page,
+}) => {
+  const ctx = await open(page, twoRequired());
+  failSubmit(ctx);
+  await submit(page);
+  await expect(page.getByText(REQUIRED, { exact: true })).toHaveCount(2);
+  await expect(first(page)).toBeFocused();
+  await page.keyboard.type("abc", { delay: 80 });
+  await expect(first(page)).toHaveValue("abc");
+  await expect(first(page)).toBeFocused();
+  await expect(second(page)).toHaveValue("");
+});
+
+test("stu05 AC17 real key-by-key typing in the second marked question keeps focus there", async ({
+  page,
+}) => {
+  const ctx = await open(page, twoRequired());
+  failSubmit(ctx);
+  await submit(page);
+  await expect(page.getByText(REQUIRED, { exact: true })).toHaveCount(2);
+  await second(page).click();
+  await page.keyboard.type("abc", { delay: 80 });
+  await expect(second(page)).toHaveValue("abc");
+  await expect(second(page)).toBeFocused();
+  await expect(first(page)).toHaveValue("");
+});
+
+test("stu05 AC17 a focused marked control looks different from the unfocused marked state", async ({
+  page,
+}) => {
+  const ctx = await open(page, [
+    q(1, "short_answer", "Short", true),
+    q(2, "paragraph", "Long", true),
+    q(3, "dropdown", "Topic", true),
+  ]);
+  failSubmit(ctx);
+  await submit(page);
+  await expect(page.getByText(REQUIRED, { exact: true })).toHaveCount(3);
+  const look = (l: Locator) =>
+    l.evaluate((el) => {
+      const root = el.closest(".MuiOutlinedInput-root");
+      const outline = root?.querySelector(".MuiOutlinedInput-notchedOutline");
+      return [el, root, outline]
+        .map((n) => {
+          if (!n) return "none";
+          const s = getComputedStyle(n);
+          return [
+            s.outlineStyle,
+            s.outlineWidth,
+            s.outlineColor,
+            s.boxShadow,
+            s.borderTopWidth,
+            s.borderTopColor,
+          ].join("|");
+        })
+        .join("##");
+    });
+  for (const control of [
+    page.getByRole("textbox", { name: "1. Short", exact: true }),
+    page.getByRole("textbox", { name: "2. Long", exact: true }),
+    page.getByRole("combobox", { name: "3. Topic", exact: true }),
+  ]) {
+    await page.getByRole("heading", { level: 1, name: TITLE }).click();
+    await expect(control).not.toBeFocused();
+    expect((await marking(control)).marked).toBe(true);
+    const rest = await look(control);
+    await control.focus();
+    await expect(control).toBeFocused();
+    await expect.poll(() => look(control)).not.toBe(rest);
+  }
+});
+
+for (const width of [1280, 390])
+  test(`stu05 AC15 question cards and the submit button do not touch (${width}px)`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width, height: 900 });
+    await open(page, markerQuestions());
+    const cards = page.locator(".feedback-form .feedback-question");
+    const n = await cards.count();
+    expect(n).toBeGreaterThanOrEqual(8);
+    const boxes = [];
+    for (let i = 0; i < n; i++) boxes.push(await box(cards.nth(i)));
+    for (let i = 1; i < n; i++)
+      expect(
+        boxes[i].y - (boxes[i - 1].y + boxes[i - 1].height),
+        `gap before card ${i + 1}`,
+      ).toBeGreaterThanOrEqual(12);
+    const last = boxes[n - 1];
+    const button = await box(
+      page.getByRole("button", { name: "Submit feedback", exact: true }),
+    );
+    expect(button.y - (last.y + last.height)).toBeGreaterThanOrEqual(12);
+  });
