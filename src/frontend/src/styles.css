@@ -3987,6 +3987,7 @@ td .MuiButton-root {
   .feedback-form .feedback-scale-min {
     grid-column: 1;
     grid-row: 2;
+    margin-left: -11px;
   }
   .feedback-form .feedback-scale-max {
     grid-column: 2;
