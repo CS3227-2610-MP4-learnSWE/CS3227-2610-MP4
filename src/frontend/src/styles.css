@@ -3921,6 +3921,10 @@ td .MuiButton-root {
 .feedback-form .feedback-form-fields {
   display: grid;
   gap: 16px;
+  justify-items: start;
+}
+.feedback-form .feedback-form-fields > .feedback-question {
+  justify-self: stretch;
 }
 .feedback-form
   .MuiOutlinedInput-root:not(.Mui-disabled):hover
