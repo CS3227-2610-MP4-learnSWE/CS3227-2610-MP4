@@ -1,6 +1,6 @@
 # Spec: STU-05-06 Student feedback and inbox (verification slice)
 
-Status: Draft (awaiting user approval). Sender label: option A chosen by the user on 2026-11-07, built after PR 31 merges. Labels checked against PR 31 code on 2026-11-07. AC15-AC18 (student form presentation) were added on 2026-11-07 from user feedback after trying the app, approved by the user; awaiting spec-writer's speccheck (run by the orchestrator, not yet run).
+Status: Approved by the user in chat on 2026-11-07 (AC01-AC14); AC15-AC18 added from the user's feedback on 2026-11-07 and approved by the user to start; built and verified locally (verifier PASS, round 2 for AC15-AC18). Sender label: option A chosen by the user, built after PR 31 merged. Labels checked against PR 31 code on 2026-11-07.
 
 ## Goal
 From the user stories: a student completes open feedback forms intended for them (US-STU-05-01) and reads admin follow-up in an in-app inbox, opens survey requests and tracks unread items (US-STU-06-01 to 06-03). ADM-02 and ADM-04 (PR 31) already build almost all of it; this slice proves every STU-05/STU-06 criterion against that behaviour, adds student-focused tests for the gaps, and closes the sender gap.
@@ -77,7 +77,7 @@ No SoC LLM call is made or changed; feedback and messages never enter AI context
 
 ## Open questions
 1. Sender gap (resolved 2026-11-07, user chose A). The ADM-04 inbox item has no sender, but US-STU-06-01 requires sender and sent time. A fixed `From: Administrator` label is added in `MessagesInbox.tsx` after PR 31 merges (no conflict with the ADM-04 owner's file); no backend change. A fixed label does not distinguish between admins; accepted. Options B (sender field in ADM-04's backend) and C (known deviation) were not chosen.
-2. Group targeting (user view: recommended acceptance, pending final confirmation). Forms target named recipients only (ADM-02), so "or my student group" is met by named targeting. Record as a known limit in `docs/UserGuide.md`.
+2. Group targeting (accepted by the user in chat on 2026-11-07). Forms target named recipients only (ADM-02), so "or my student group" is met by named targeting. Record as a known limit in `docs/UserGuide.md`.
 3. Badge failure behaviour (checked against PR 31): a failed count read is ignored and the badge keeps its last value, or is absent if it never loaded. Opening a form forces an immediate refresh, with no throttle delay.
 4. "One source fails" (checked): the count comes from one aggregated endpoint, so the tests fail the survey list read or the message list read while the other section still shows.
 5. Labels (checked): see the Messages row. Still to confirm during test design: that a 403 on the student inbox redirects to the student's own area, because PR 31's `forbidden` text is the admin-only `Only admins can send messages.`.

@@ -51,7 +51,7 @@ Not applicable: no SoC LLM call is added or changed; inbox and feedback content 
 ## Test plan
 Tests only, by the independent test-designer from this spec and the ADM-02 and ADM-04 plans; backend names `test_stu05_...` / `test_stu06_...`, frontend names start `STU-05` / `STU-06`; SoC LLM not involved. First pass: the matrix below says what exists; the developer's PR 31 and ADM-02 tests are cited by file once the test-designer can see the test folders.
 
-| Criterion | Existing evidence (to confirm in test folders) | Gap test to write (student view) |
+| Criterion | Existing evidence (confirmed against the test folders in the build run) | Gap test to write (student view) |
 |---|---|---|
 | AC01 | ADM-02 publish and inbox delivery tests (`test_adm02_...`) | `stu05` student sees only requests addressed to them; named targeting only |
 | AC02 | ADM-02 V10 and required-field tests, submit confirmation | `stu05` student submits with a required answer missing and sees V10 copy, then submits and sees `Feedback submitted. Thank you.` |
@@ -63,8 +63,8 @@ Tests only, by the independent test-designer from this spec and the ADM-02 and A
 | AC08 | ADM-04 mark-read tests | `stu06` new message is `Unread`, becomes `Read` after opening, for that student only |
 | AC09 | ADM-04 unread-count tests | `stu06` after logout and sign-in the message and the request stay read and counts match |
 | AC10 | none | `stu06` no email or push control or endpoint is exposed (UI scan only) |
-| AC11 | ADM-04 badge test (to confirm) | `stu06` badge equals survey unread plus message unread, absent at 0, `99+` over 99 |
-| AC12 | ADM-04 refresh test (to confirm) | `stu06` badge drops by one after opening a form and after reading a message |
+| AC11 | ADM-04 badge tests (`adm04-inbox.spec.ts`, `adm04-redesign.spec.ts`) | `stu06` badge equals survey unread plus message unread, absent at 0, `99+` over 99 |
+| AC12 | ADM-04 refresh tests (`adm04-inbox.spec.ts`) | `stu06` badge drops by one after opening a form and after reading a message |
 | AC15 | none | browser `stu05_form_prompt_shown_once`: for each of the six types the prompt text appears once (`getByText` strict match count 1), no floating label (no `label` element with the prompt), no `placeholder` equal to the prompt, `Required`/`Optional` tag right of the prompt on desktop and below it at 390px; accessible role and name `{n}. {prompt}` still resolve (`group`, `radiogroup`, `textbox`, `combobox`); dropdown first entry `Choose an option`; computed prompt colour is `--ink`, font size 16-18px and weight at least 600; input has a visible non-zero border and a changed focus style; request counts unchanged |
 | AC16 | none | browser `stu05_linear_scale_endpoints`: min label left of the first radio and max label right of the last radio (bounding boxes) on desktop; missing min or max leaves the end empty; radiogroup and radio names unchanged; at 390px labels keep left/right order |
 | AC17 | none | browser `stu05_required_markers_after_failed_submit`: mock POST responding 422 `invalid_feedback_answers`; no markers before submit or while typing; after submit every blank required question (including whitespace-only text, empty checkbox set) shows `This question is required.`, `aria-invalid=true`, `aria-describedby` resolving to that text and a non-default border; page alert V10 copy unchanged; focus on the first marked control with an earlier text question present; answered optional questions are not marked; answering one clears only its marker; exactly one POST for the submit; success removes all markers |
