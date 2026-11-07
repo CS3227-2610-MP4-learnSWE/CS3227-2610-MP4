@@ -3962,7 +3962,7 @@ td .MuiButton-root {
 .feedback-form .feedback-control-invalid,
 .feedback-form
   [data-invalid]
-  .MuiOutlinedInput-root
+  .MuiOutlinedInput-root.MuiInputBase-root
   .MuiOutlinedInput-notchedOutline {
   border: 2px solid var(--red);
 }
