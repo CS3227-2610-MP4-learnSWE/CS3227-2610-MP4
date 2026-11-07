@@ -1,5 +1,9 @@
 # Handoff notes
 
+## 2026-11-08: Progress page and practice picker presentation fix (orchestrator, student-role owner)
+- Done: user feedback that the Progress page (and, found on checking, the practice set cards) had no inner padding and tiny type. CSS only, scoped to `.progress-sections` and `.practice-set-row`; no copy, request or backend change. Spec notes added to `workflow/specs/STU-04/spec.md` and `workflow/specs/STU-02-published-sets/spec.md` (speccheck passes). New tests `stu04-progress-layout.spec.ts` (9) and `stu02ps-picker-layout.spec.ts` (4): 7 of 9 and 3 of 4 failed on the old code, all pass now. Study materials was checked and needs no change.
+- Checked: typecheck, lint, Prettier; focused browser run (both layout files, the progress, overview and picker specs, `app.spec.ts`): the new and related tests pass; known flakes `stu04-progress.spec.ts:571` (click-then-Back race) and two `app.spec.ts:122` route tests that pass alone. Light path as agreed with the user: no independent test-designer or verifier; no tracker run, so no measured cost. Dark-theme screenshots were checked by eye through the app's own theme toggle. Not run: backend suite (untouched), full browser suite (GitHub CI).
+
 ## 2026-11-07: STU-05/06 merged (orchestrator, student-role owner)
 - Done: PR 32 merged into `master` (merge commit `d0f2323`); all 6 GitHub checks passed on its final commits. STATUS rows for STU-05 and STU-06 set to merged. Student features STU-01 to STU-06 are all merged.
 - Open: dark-theme inputs lighter than their card (needs a new dark-only colour, user decision); ADM-02 owner to show what is missing when an admin saves an incomplete draft; real-backend Playwright and the end-to-end run with docs are still to do (11 Nov), reflections and website 12 Nov.
