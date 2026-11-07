@@ -13,7 +13,7 @@ import {
 } from "./authApi";
 import { companionOk, mockCompanionApi } from "./companionApi";
 import { signedInStudy } from "./lessonsApi";
-import { mockPracticeApi } from "./practiceApi";
+import { mockPracticeApi, SET_ID } from "./practiceApi";
 
 /**
  * SHR-01 AC23 (CSRF header, no X-Student-Id, no secrets in browser storage, CSRF token only in
@@ -45,7 +45,7 @@ test("shr01 AC23 signing in and practising leaves no password, token or session 
   const practice = await mockPracticeApi(page, { auth });
   await signInThroughForm(page, STUDENT.email!);
   await expect(page).toHaveURL(/\/student\/overview$/);
-  await page.goto("/student/practice");
+  await page.goto(`/student/practice/${SET_ID}`);
   await answerAll(page);
   await page.getByRole("button", { name: "Submit practice set" }).click();
   await expect(page.getByText("Correct answer:").first()).toBeVisible();
@@ -77,7 +77,7 @@ test("shr01 AC23 the CSRF token lives in memory only and is re-fetched from /api
   const before = auth.csrf;
   auth.csrf = "csrf-token-after-reload";
   expect(auth.csrf).not.toBe(before);
-  await page.goto("/student/practice"); // full page load: all in-memory state is gone
+  await page.goto(`/student/practice/${SET_ID}`); // full page load: all in-memory state is gone
   await answerAll(page);
   await page.getByRole("button", { name: "Submit practice set" }).click();
   await expect(page.getByText("Correct answer:").first()).toBeVisible();
@@ -127,7 +127,7 @@ test("shr01 AC23 API calls send the browser's cookies (same-origin credentials)"
     cookieHeader = (await route.request().allHeaders())["cookie"] ?? "";
     await route.fallback();
   });
-  await page.goto("/student/practice");
+  await page.goto(`/student/practice/${SET_ID}`);
   await expect(page.getByRole("radio", { name: R1 })).toBeVisible();
   expect(cookieHeader).toContain("probe=1");
 });
@@ -138,7 +138,7 @@ test("shr01 AC22 a 401 on practice while signed in clears the session and return
 }) => {
   const auth = await mockAuthApi(page, { user: STUDENT });
   await mockPracticeApi(page, { auth });
-  await page.goto("/student/practice");
+  await page.goto(`/student/practice/${SET_ID}`);
   await answerAll(page);
   auth.expire(); // the session expired or was revoked on the server
   await page.getByRole("button", { name: "Submit practice set" }).click();
@@ -172,7 +172,7 @@ test("shr01 AC22 a 401 on the first practice request while signed in returns to 
   auth.expire();
   // me() is answered before expiry only if it ran first; script it as still valid, then expire.
   auth.script("me", { json: { user: STUDENT, csrf_token: auth.csrf } });
-  await page.goto("/student/practice");
+  await page.goto(`/student/practice/${SET_ID}`);
   await expect(page).toHaveURL(/\/login$/);
 });
 
@@ -196,9 +196,9 @@ test("shr01 AC25 demo mode: a 401 on practice shows the sign-in notice and does 
 }) => {
   const auth = await mockAuthApi(page, { user: null });
   await mockPracticeApi(page, { auth });
-  await page.goto("/student/practice");
+  await page.goto(`/student/practice/${SET_ID}`);
   await expect(page.getByText(NOTICE).first()).toBeVisible();
-  await expect(page).toHaveURL(/\/student\/practice$/);
+  await expect(page).toHaveURL(new RegExp(`/student/practice/${SET_ID}$`));
   await expect(page.locator('a[href="/login"]').first()).toBeVisible();
   await expect(page.getByText("Demo (not signed in)").first()).toBeVisible();
   await expect(page.getByText("Correct answer:")).toHaveCount(0);

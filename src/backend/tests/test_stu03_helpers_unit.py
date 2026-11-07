@@ -1,15 +1,15 @@
 """STU-03 pure helpers: question_match.find_match and leak_check.find_leak.
 
-Uses the real fixture set intro-se-1 through practice_data.get_set (the plan names
+Uses the test fixture set (fake_sets.FIXTURE_SET; the plan names
 PracticeSet and Question as the existing types). Attribute names text, code, id and
 choices[].text are the ones the read API exposes (STU-02 AC1).
 """
-import practice_data
+from fake_sets import FIXTURE_SET
 import pytest
 from leak_check import find_leak
 from question_match import find_match
 
-SET = practice_data.get_set("intro-se-1")
+SET = FIXTURE_SET
 SETS = [SET]
 Q1, Q2, Q3 = SET.questions
 

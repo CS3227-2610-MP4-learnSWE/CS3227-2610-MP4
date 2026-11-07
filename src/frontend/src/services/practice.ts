@@ -1,4 +1,5 @@
 import { ApiError, request } from "./client";
+import { readOnce } from "./readOnce";
 
 export type Choice = { id: string; text: string };
 export type Question = {
@@ -18,6 +19,20 @@ export type QuestionResult = {
 export type Results = {
   score: { correct: number; total: number };
   questions: QuestionResult[];
+};
+
+export type PracticeCatalogSet = {
+  id: string;
+  title: string;
+  topic: { id: string; name: string };
+  published_at: string;
+  question_count: number;
+  best: { correct: number; total: number } | null;
+};
+export type PracticeCatalogCourse = {
+  id: string;
+  title: string;
+  sets: PracticeCatalogSet[];
 };
 
 const bad = () => new ApiError(0, "bad_response");
@@ -70,6 +85,45 @@ function parseResults(data: unknown): Results {
   )
     throw bad();
   return data as Results;
+}
+
+const isCount = (v: unknown): v is number =>
+  Number.isInteger(v) && (v as number) >= 0;
+
+function isCatalogSet(s: unknown): boolean {
+  if (
+    !isObject(s) ||
+    !isString(s.id) ||
+    !isString(s.title) ||
+    !isObject(s.topic) ||
+    !isString(s.topic.id) ||
+    !isString(s.topic.name) ||
+    !isString(s.published_at) ||
+    !isCount(s.question_count)
+  )
+    return false;
+  return (
+    s.best === null ||
+    (isObject(s.best) && isCount(s.best.correct) && isCount(s.best.total))
+  );
+}
+
+export async function listPracticeSets(): Promise<PracticeCatalogCourse[]> {
+  const data = await readOnce("/api/practice-sets");
+  if (
+    !isObject(data) ||
+    !Array.isArray(data.courses) ||
+    !data.courses.every(
+      (c) =>
+        isObject(c) &&
+        isString(c.id) &&
+        isString(c.title) &&
+        Array.isArray(c.sets) &&
+        c.sets.every(isCatalogSet),
+    )
+  )
+    throw bad();
+  return data.courses as PracticeCatalogCourse[];
 }
 
 export async function getSet(setId: string): Promise<PracticeSet> {

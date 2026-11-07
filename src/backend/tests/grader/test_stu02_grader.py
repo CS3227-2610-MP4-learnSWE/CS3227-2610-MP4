@@ -6,8 +6,12 @@ tests only the HTTP contract in workflow/specs/STU-02/plan.md.
 import json
 
 from auth_helpers import call, code_of, new_student  # session login replaces X-Student-Id (SHR-01)
+from fake_sets import FIXTURE_SET_ID, UNKNOWN_SET_ID  # noqa: F401
+import pytest as _pytest
 
-SET = "/api/practice-sets/intro-se-1"
+pytestmark = _pytest.mark.usefixtures("fake_provider")
+
+SET = "/api/practice-sets/a0000000-0000-4000-8000-000000000001"
 KEY = {"q1": "a", "q2": "b", "q3": "c"}
 EXPLANATIONS = {
     "q1": "One focused responsibility makes a function easier to understand, test and change.",
@@ -36,7 +40,7 @@ def test_g01_set_has_questions_without_answers():
     response = call("GET", SET, new_student())
     assert response.status_code == 200
     data = response.json()
-    assert data["id"] == "intro-se-1" and data["title"]
+    assert data["id"] == FIXTURE_SET_ID and data["title"]
     assert [q["id"] for q in data["questions"]] == ["q1", "q2", "q3"]
     for q in data["questions"]:
         assert set(q) >= {"id", "text", "code", "choices"}
@@ -46,9 +50,9 @@ def test_g01_set_has_questions_without_answers():
 
 
 def test_g02_unknown_set_is_404():
-    response = call("GET", "/api/practice-sets/nope", new_student())
+    response = call("GET", f"/api/practice-sets/{UNKNOWN_SET_ID}", new_student())
     assert response.status_code == 404 and code_of(response) == "set_not_found"
-    response = call("POST", "/api/practice-sets/nope/attempts", new_student())
+    response = call("POST", f"/api/practice-sets/{UNKNOWN_SET_ID}/attempts", new_student())
     assert response.status_code == 404 and code_of(response) == "set_not_found"
 
 
@@ -62,7 +66,7 @@ def test_g04_start_creates_empty_in_progress_attempt():
     response = call("POST", f"{SET}/attempts", new_student())
     assert response.status_code == 201
     data = response.json()
-    assert data["status"] == "in_progress" and data["answers"] == {} and data["set_id"] == "intro-se-1"
+    assert data["status"] == "in_progress" and data["answers"] == {} and data["set_id"] == FIXTURE_SET_ID
     assert isinstance(data["attempt_id"], str) and len(data["attempt_id"]) >= 8
 
 
@@ -163,7 +167,7 @@ def test_g13_results_after_submission_are_complete():
     assert response.status_code == 200
     data = response.json()
     assert data["key_version"] == "v1" and data["score"] == {"correct": 2, "total": 3}
-    assert data["answers"] == answers and data["set_id"] == "intro-se-1"
+    assert data["answers"] == answers and data["set_id"] == FIXTURE_SET_ID
     assert [q["id"] for q in data["questions"]] == ["q1", "q2", "q3"]
     for q in data["questions"]:
         assert q["selected"] == answers[q["id"]]

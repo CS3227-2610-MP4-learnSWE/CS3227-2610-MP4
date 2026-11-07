@@ -10,9 +10,13 @@ import pytest
 from companion_helpers import CANNED, SET_ID, ask, new_student
 from leak_check import find_leak
 from llm_client import ChatMessage, Limits, LlmBusy, Settings, SoclaasClient
-from practice_data import PRACTICE_SETS, PracticeSet, Question
+from fake_sets import FIXTURE_SET
+from practice_data import PracticeSet, Question
+import pytest as _pytest
 
-QS = PRACTICE_SETS[SET_ID].questions  # answers q1 a, q2 b, q3 c
+pytestmark = _pytest.mark.usefixtures("fake_provider")
+
+QS = FIXTURE_SET.questions  # answers q1 a, q2 b, q3 c
 
 MUST_BLOCK = [
     "the answer is **b**",
@@ -57,7 +61,7 @@ def test_stu03_fix1_leak_check_passes_benign(reply):
     assert find_leak(reply, QS) is None
 
 
-def test_stu03_fix3_pasted_question_from_another_set_is_leak_checked(fake, monkeypatch):
+def test_stu03_fix3_pasted_question_from_another_set_is_leak_checked(fake, fake_provider):
     other = Question(
         "z1",
         "Which structure gives first in first out ordering for a print queue?",
@@ -66,9 +70,7 @@ def test_stu03_fix3_pasted_question_from_another_set_is_leak_checked(fake, monke
         "b",
         "Queues are first in first out.",
     )
-    sets = dict(PRACTICE_SETS)
-    sets["other-set"] = PracticeSet("other-set", "Other", (other,))
-    monkeypatch.setattr("practice_data.PRACTICE_SETS", sets)
+    fake_provider.add(PracticeSet("c0000000-0000-4000-8000-000000000002", "Other", (other,)))
     fake.reply = "You want a queue with enqueue at the tail."
     r = ask(new_student(), other.text, page="practice", set_id=SET_ID)
     assert r.status_code == 200, r.text
@@ -78,14 +80,12 @@ def test_stu03_fix3_pasted_question_from_another_set_is_leak_checked(fake, monke
     assert body["reply"] == CANNED
 
 
-def test_stu03_fix3_other_set_leak_scope_is_not_added_to_context(fake, monkeypatch):
+def test_stu03_fix3_other_set_leak_scope_is_not_added_to_context(fake, fake_provider):
     other = Question(
         "z1", "Which structure gives first in first out ordering for a print queue?", None,
         (("a", "A stack"), ("b", "A queue with enqueue at the tail")), "b", "Queues are FIFO.",
     )
-    sets = dict(PRACTICE_SETS)
-    sets["other-set"] = PracticeSet("other-set", "Other", (other,))
-    monkeypatch.setattr("practice_data.PRACTICE_SETS", sets)
+    fake_provider.add(PracticeSet("c0000000-0000-4000-8000-000000000002", "Other", (other,)))
     ask(new_student(), other.text, page="practice", set_id=SET_ID)
     assert other.text not in fake.last.all_text.split("Student message:")[0]
 

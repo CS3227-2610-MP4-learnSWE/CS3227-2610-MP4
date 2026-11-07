@@ -8,9 +8,10 @@ import json
 import uuid
 
 from auth_helpers import call
+from fake_sets import FIXTURE_SET_ID
 from stu01_helpers import sql
 
-SET_ID = "intro-se-1"
+SET_ID = FIXTURE_SET_ID
 SET_TITLE = "Software engineering basics"
 BASICS_TOPIC = "66666666-6666-4666-8666-666666666661"
 TOPIC_NAME = "Software engineering basics"

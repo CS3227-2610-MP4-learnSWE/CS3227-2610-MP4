@@ -3,6 +3,9 @@ from auth_helpers import call, code_of, new_student, seeded
 from stu01_helpers import enroll, enrolled_student, make_course, make_lesson, put_completion
 from stu04_helpers import (EMPTY, answers_with, attempt_rows, body_of, only_set, progress, save, start, submit,
                            submitted, topic_item)
+import pytest as _pytest
+
+pytestmark = _pytest.mark.usefixtures("fake_provider")
 
 NOT_FOUND = {"detail": {"code": "attempt_not_found", "message": "Attempt not found."}}
 

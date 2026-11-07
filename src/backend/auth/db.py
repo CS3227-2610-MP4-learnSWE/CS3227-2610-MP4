@@ -23,3 +23,8 @@ def get_session() -> Iterator[Session]:
     settings = load_settings()
     with Session(engine_for(settings.database_url), expire_on_commit=False) as session:
         yield session
+
+
+def open_session() -> Session:
+    """A short-lived session for code that manages its own transactions (attempt store, set provider)."""
+    return Session(engine_for(load_settings().database_url), expire_on_commit=False)

@@ -70,8 +70,8 @@ jobs:
           pattern="Tests protect expected behaviour|len returns the number of items|One focused responsibility makes"
           chunks=$(ls dist/assets/*.js)
           [ -n "$chunks" ] || { echo "No bundles found to scan"; exit 1; }
-          # Positive control: match the real server-side answer fixture.
-          grep -Eq "$pattern" ../backend/practice_data.py || { echo "Control failed: backend fixture has no explanation text"; exit 1; }
+          # Positive control: match the real server-side answer text (the dev seed).
+          grep -Eq "$pattern" ../backend/teacher_publications/seed.py || { echo "Control failed: backend seed has no explanation text"; exit 1; }
           if grep -El "$pattern" $chunks; then
             echo "Answer key text found in a student-reachable bundle"
             exit 1
@@ -140,6 +140,7 @@ jobs:
           uv run python -m teacher_materials.seed
           uv run python -m auth.seed
           uv run python -m study_lessons.seed
+          uv run python -m teacher_publications.seed
       - name: Start backend
         working-directory: src/backend
         run: |

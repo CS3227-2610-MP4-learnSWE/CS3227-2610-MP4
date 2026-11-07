@@ -120,9 +120,16 @@ def test_tea03_publications_student_set_reads_are_allowlisted_and_old_attempt_fl
     listed=student_call(app,'GET',f'/api/study/courses/{COURSE}/practice-sets')
     assert listed.status_code==200 and listed.headers.get('cache-control')=='no-store'
     item=next(x for x in listed.json() if x['id']==saved['id']);assert set(item)==META|{'question_count'};assert_private_free(item)
-    old=student_call(app,'GET','/api/practice-sets/intro-se-1');assert old.status_code==200
-    error(student_call(app,'GET',f"/api/practice-sets/{saved['id']}"),404,'set_not_found')
-    error(student_call(app,'POST',f"/api/practice-sets/{saved['id']}/attempts"),404,'set_not_found')
+    # STU-02-published-sets reverses the old assertions: the code fixture is gone (not a UUID: 422) and a
+    # published set is served to a member by the practice routes, with the same answer-free body.
+    error(student_call(app,'GET','/api/practice-sets/intro-se-1'),422,'validation_error')
+    served=student_call(app,'GET',f"/api/practice-sets/{saved['id']}");assert served.status_code==200,served.text
+    assert served.json()==r.json();assert_private_free(served.json())
+    started=student_call(app,'POST',f"/api/practice-sets/{saved['id']}/attempts");assert started.status_code==201,started.text
+    assert started.json()['set_id']==saved['id'] and started.json()['answers']=={}
+    # a teacher action (reading the teacher catalogue) does not change the student's view
+    call(app,'GET',f'{BASE}/courses/{COURSE}/publications')
+    assert student_call(app,'GET',f"/api/practice-sets/{saved['id']}").json()==served.json()
 
 
 @pytest.mark.parametrize('kind',['note','practice_set'])

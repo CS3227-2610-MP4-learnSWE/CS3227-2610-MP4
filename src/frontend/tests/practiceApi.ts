@@ -2,12 +2,54 @@ import type { Page, Route } from "@playwright/test";
 import type { AuthApiMock } from "./authApi";
 
 /**
- * Mock of the STU-02 practice API (contract: workflow/specs/STU-02/plan.md).
+ * Mock of the STU-02 practice API (contract: workflow/specs/STU-02/plan.md) and, since
+ * STU-02-published-sets, of the practice set picker (`GET /api/practice-sets`) and of sets
+ * addressed by UUID in the URL (contract: workflow/specs/STU-02-published-sets/plan.md).
  * Acts as a small stateful fake server so a normal flow works without any
  * overrides, records every request, and lets a test script failures per step.
  */
 
-export const SET_ID = "intro-se-1";
+export const SET_ID = "a0000000-0000-4000-8000-000000000001";
+/** A valid UUID that is no set (404 `set_not_found` from the fake server). */
+export const UNKNOWN_SET_ID = "b0000000-0000-4000-8000-0000000000ff";
+export const COURSE_ID = "11111111-1111-4111-8111-111111111111";
+export const TOPIC_ID = "66666666-6666-4666-8666-666666666661";
+
+export interface CatalogSet {
+  id: string;
+  title: string;
+  topic: { id: string; name: string };
+  published_at: string;
+  question_count: number;
+  best: { correct: number; total: number } | null;
+}
+export interface CatalogCourse {
+  id: string;
+  title: string;
+  sets: CatalogSet[];
+}
+export interface Catalog {
+  courses: CatalogCourse[];
+}
+
+export function catalogSet(over: Partial<CatalogSet> = {}): CatalogSet {
+  return {
+    id: SET_ID,
+    title: "Software engineering basics",
+    topic: { id: TOPIC_ID, name: "Software engineering basics" },
+    published_at: "2026-11-01T10:00:00Z",
+    question_count: 3,
+    best: null,
+    ...over,
+  };
+}
+export function catalogCourse(
+  title: string,
+  sets: CatalogSet[],
+  id = COURSE_ID,
+): CatalogCourse {
+  return { id, title, sets };
+}
 
 export interface FixtureQuestion {
   id: string;
@@ -94,7 +136,7 @@ export const TWO_OF_THREE: Record<string, string> = {
 };
 
 export type Step =
-  "getSet" | "start" | "getAttempt" | "save" | "submit" | "results";
+  "catalog" | "getSet" | "start" | "getAttempt" | "save" | "submit" | "results";
 
 /** One scripted reply. Without `json`/`body` the default fake server answers. */
 export interface Reply {
@@ -114,6 +156,8 @@ export interface Reply {
 
 export interface MockOptions {
   set?: FixtureSet | unknown;
+  /** Body of `GET /api/practice-sets` (default: one course holding the fixture set). */
+  catalog?: Catalog | unknown;
   key?: Record<string, KeyEntry>;
   /** Replies consumed in order, one per request of that step. */
   replies?: Partial<Record<Step, Reply[]>>;
@@ -194,6 +238,9 @@ export class PracticeApiMock {
     readonly key: Record<string, KeyEntry>,
     replies: Partial<Record<Step, Reply[]>>,
     readonly auth?: AuthApiMock,
+    readonly catalog: Catalog | unknown = {
+      courses: [catalogCourse("Software Engineering", [catalogSet()])],
+    },
   ) {
     this.replies = replies;
   }
@@ -227,6 +274,7 @@ export class PracticeApiMock {
     const method = request.method();
     const path = url.pathname;
     const classified = this.classify(method, path);
+    const setInPath = path.match(/^\/api\/practice-sets\/([^/]+)/)?.[1] ?? null;
     if (!classified) {
       await route.fulfill({
         status: 404,
@@ -279,7 +327,13 @@ export class PracticeApiMock {
       await route.fulfill({ status: denied.status, json: denied.json });
       return;
     }
-    const reply = this.defaultReply(step, attemptId, SESSION_STUDENT, body);
+    const reply = this.defaultReply(
+      step,
+      attemptId,
+      SESSION_STUDENT,
+      body,
+      setInPath ? decodeURIComponent(setInPath) : null,
+    );
     await route.fulfill({ status: reply.status, json: reply.json });
   }
 
@@ -287,6 +341,8 @@ export class PracticeApiMock {
     method: string,
     path: string,
   ): { step: Step; attemptId: string | null } | null {
+    if (path === "/api/practice-sets" && method === "GET")
+      return { step: "catalog", attemptId: null };
     const set = path.match(/^\/api\/practice-sets\/([^/]+)$/);
     if (set && method === "GET") return { step: "getSet", attemptId: null };
     const start = path.match(/^\/api\/practice-sets\/([^/]+)\/attempts$/);
@@ -327,11 +383,21 @@ export class PracticeApiMock {
     attemptId: string | null,
     student: string,
     body: unknown,
+    setId: string | null = null,
   ): { status: number; json: unknown } {
     const err = (status: number, code: string, extra = {}) => ({
       status,
       json: { detail: { code, message: code, ...extra } },
     });
+    if (step === "catalog") return { status: 200, json: this.catalog };
+    if (step === "getSet" || step === "start") {
+      // Same rules as the server: a non-UUID id is 422, an unknown or foreign set is 404.
+      const uuid =
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (!setId || !uuid.test(setId)) return err(422, "validation_error");
+      const known = (this.set as FixtureSet | null)?.id ?? SET_ID;
+      if (setId.toLowerCase() !== known) return err(404, "set_not_found");
+    }
     if (step === "getSet") return { status: 200, json: this.set };
     if (step === "start") {
       const id = `attempt-${String(++this.counter).padStart(4, "0")}`;
@@ -344,7 +410,7 @@ export class PracticeApiMock {
         status: 201,
         json: {
           attempt_id: id,
-          set_id: SET_ID,
+          set_id: setId,
           status: "in_progress",
           answers: {},
         },
@@ -359,7 +425,7 @@ export class PracticeApiMock {
         status: 200,
         json: {
           attempt_id: attemptId,
-          set_id: SET_ID,
+          set_id: (this.set as FixtureSet).id ?? SET_ID,
           status: attempt.status,
           answers: attempt.answers,
         },
@@ -427,6 +493,7 @@ export async function mockPracticeApi(
       Object.entries(options.replies ?? {}).map(([k, v]) => [k, [...v]]),
     ),
     options.auth,
+    options.catalog,
   );
   await page.route(
     (url) =>

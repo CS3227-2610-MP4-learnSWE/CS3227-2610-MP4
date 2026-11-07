@@ -28,6 +28,9 @@ from auth_helpers import (
     unique_email,
     unique_password,
 )
+import pytest as _pytest
+
+pytestmark = _pytest.mark.usefixtures("fake_provider")
 
 
 def user_rows(email):
@@ -486,7 +489,7 @@ def test_shr01_ac11_me_with_and_without_session():
 def test_shr01_sec_auth_04_forged_cookie_is_401(cookie):
     r = call("GET", "/api/auth/me", headers={"Cookie": cookie})
     assert r.status_code == 401 and code_of(r) == "unauthenticated"
-    r = call("POST", "/api/practice-sets/intro-se-1/attempts", headers={"Cookie": cookie})
+    r = call("POST", "/api/practice-sets/a0000000-0000-4000-8000-000000000001/attempts", headers={"Cookie": cookie})
     assert r.status_code == 401 and code_of(r) == "unauthenticated"
 
 
@@ -504,7 +507,7 @@ def test_shr01_sec_auth_04_expired_session_rejected_and_row_deleted():
     r = call("GET", "/api/auth/me", s)
     assert r.status_code == 401 and code_of(r) == "unauthenticated"
     assert sql("SELECT count(*) FROM auth_session WHERE token_hash = %s", (digest,))[0][0] == 0
-    r = call("POST", "/api/practice-sets/intro-se-1/attempts", s)
+    r = call("POST", "/api/practice-sets/a0000000-0000-4000-8000-000000000001/attempts", s)
     assert r.status_code == 401
 
 
@@ -529,7 +532,7 @@ def test_shr01_ac11_logout_revokes_session_and_clears_cookie():
     assert attrs["max-age"] == "0" and attrs["path"] == "/" and "httponly" in attrs
     assert sql("SELECT count(*) FROM auth_session WHERE token_hash = %s", (digest,))[0][0] == 0
     assert call("GET", "/api/auth/me", s).status_code == 401
-    assert call("POST", "/api/practice-sets/intro-se-1/attempts", s).status_code == 401
+    assert call("POST", "/api/practice-sets/a0000000-0000-4000-8000-000000000001/attempts", s).status_code == 401
 
 
 def test_shr01_ac11_logout_without_session_is_harmless():

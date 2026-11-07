@@ -20,6 +20,7 @@ import { progressStatDetail } from "../services/progressMessages";
 import Lesson from "./Lesson";
 import Materials from "./Materials";
 import Practice from "./Practice";
+import PracticePicker from "./PracticePicker";
 import Progress from "./Progress";
 
 type StatsLoad =
@@ -176,7 +177,11 @@ export default function Student() {
     case "materials":
       return path[3] ? <Lesson key={path[3]} id={path[3]} /> : <Materials />;
     case "practice":
-      return <Practice />;
+      return path[3] ? (
+        <Practice key={path[3]} setId={path[3]} />
+      ) : (
+        <PracticePicker />
+      );
     case "progress":
       return <Progress />;
     case "assistant":
