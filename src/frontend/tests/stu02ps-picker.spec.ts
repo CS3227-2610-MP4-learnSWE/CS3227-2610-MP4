@@ -256,7 +256,11 @@ test("stu02ps AC15 one GET /api/practice-sets on load and nothing else (no study
   expect(seen.filter((s) => s.includes("/api/practice-sets"))).toEqual([
     "GET /api/practice-sets",
   ]);
-  expect(seen).toEqual(["GET /api/practice-sets"]);
+  // The shell's inbox badge (ADM-04) adds one GET /api/messaging/unread-count; the picker itself
+  // sends exactly one request and nothing else.
+  expect(
+    seen.filter((s) => !s.includes("/api/messaging/unread-count")),
+  ).toEqual(["GET /api/practice-sets"]);
   expect(mock.count("catalog")).toBe(1);
 });
 
