@@ -14,6 +14,7 @@ import { useFeedbackRead } from "../hooks/useFeedbackRead";
 import { useResponseDraft } from "../hooks/useResponseDraft";
 import {
   isBlankAnswer,
+  type Answer,
   recipientBase,
   type RecipientForm,
 } from "../services/feedbackApi";
@@ -24,20 +25,28 @@ function Editor({ initial }: { initial: RecipientForm }) {
   const draft = useResponseDraft(initial);
   const formElement = useRef<HTMLFormElement>(null);
   const [attempted, setAttempted] = useState(false);
-  const blank = (q: RecipientForm["questions"][number]) =>
+  const focused = useRef(false);
+  const blank = (q: RecipientForm["questions"][number], answers: Answer[]) =>
     q.required &&
-    isBlankAnswer(draft.answers.find((a) => a.question_id === q.id)?.value);
+    isBlankAnswer(answers.find((a) => a.question_id === q.id)?.value);
   useEffect(() => {
-    if (draft.code !== "invalid_feedback_answers" || draft.submitting) return;
-    const index = draft.form.questions.findIndex(blank);
+    if (draft.code !== "invalid_feedback_answers") {
+      focused.current = false;
+      return;
+    }
+    if (draft.submitting || focused.current) return;
+    const index = draft.form.questions.findIndex((q) =>
+      blank(q, draft.answers),
+    );
     if (index < 0) return;
+    // Move focus once per failed submit, never while the user types.
+    focused.current = true;
     setAttempted(true);
     formElement.current
       ?.querySelectorAll("[data-feedback-question]")
       .item(index)
       ?.querySelector<HTMLElement>("input,textarea,select")
       ?.focus();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [draft.code, draft.submitting, draft.form.questions, draft.answers]);
   const terminal =
     draft.unavailable || draft.form.submitted || draft.form.state === "closed";
@@ -95,6 +104,7 @@ function Editor({ initial }: { initial: RecipientForm }) {
               </p>
             )}
             <form
+              className="feedback-form-fields"
               ref={formElement}
               onSubmit={(e) => {
                 e.preventDefault();
@@ -111,7 +121,7 @@ function Editor({ initial }: { initial: RecipientForm }) {
                     null
                   }
                   disabled={locked}
-                  marked={attempted && blank(q)}
+                  marked={attempted && blank(q, draft.answers)}
                   change={(v) => draft.change(q.id, v)}
                 />
               ))}
@@ -157,7 +167,12 @@ function Editor({ initial }: { initial: RecipientForm }) {
         </DialogContent>
         <DialogActions>
           <Button onClick={draft.cancelReload}>Keep editing</Button>
-          <Button onClick={() => void draft.confirmReload()}>
+          <Button
+            onClick={() => {
+              setAttempted(false);
+              void draft.confirmReload();
+            }}
+          >
             Reload draft
           </Button>
         </DialogActions>
