@@ -1,5 +1,5 @@
 import { useLocation, Link } from "react-router";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Button,
   Dialog,
@@ -12,28 +12,32 @@ import { PageHeading, Panel } from "../components/ui";
 import FeedbackQuestion from "../components/FeedbackQuestion";
 import { useFeedbackRead } from "../hooks/useFeedbackRead";
 import { useResponseDraft } from "../hooks/useResponseDraft";
-import { recipientBase, type RecipientForm } from "../services/feedbackApi";
+import {
+  isBlankAnswer,
+  recipientBase,
+  type RecipientForm,
+} from "../services/feedbackApi";
 import { refreshInboxUnread } from "../hooks/useInboxUnread";
 
 function Editor({ initial }: { initial: RecipientForm }) {
   const { user } = useAuth();
   const draft = useResponseDraft(initial);
   const formElement = useRef<HTMLFormElement>(null);
+  const [attempted, setAttempted] = useState(false);
+  const blank = (q: RecipientForm["questions"][number]) =>
+    q.required &&
+    isBlankAnswer(draft.answers.find((a) => a.question_id === q.id)?.value);
   useEffect(() => {
     if (draft.code !== "invalid_feedback_answers" || draft.submitting) return;
-    const index = draft.form.questions.findIndex((q) => {
-      const value = draft.answers.find((a) => a.question_id === q.id)?.value;
-      return (
-        q.required &&
-        (value === null ||
-          value === undefined ||
-          (typeof value === "string" && !value.trim()) ||
-          (Array.isArray(value) && !value.length))
-      );
-    });
-    const field = formElement.current?.querySelectorAll("fieldset").item(index);
-    if (index >= 0)
-      field?.querySelector<HTMLElement>("input,textarea,select")?.focus();
+    const index = draft.form.questions.findIndex(blank);
+    if (index < 0) return;
+    setAttempted(true);
+    formElement.current
+      ?.querySelectorAll("[data-feedback-question]")
+      .item(index)
+      ?.querySelector<HTMLElement>("input,textarea,select")
+      ?.focus();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [draft.code, draft.submitting, draft.form.questions, draft.answers]);
   const terminal =
     draft.unavailable || draft.form.submitted || draft.form.state === "closed";
@@ -107,6 +111,7 @@ function Editor({ initial }: { initial: RecipientForm }) {
                     null
                   }
                   disabled={locked}
+                  marked={attempted && blank(q)}
                   change={(v) => draft.change(q.id, v)}
                 />
               ))}

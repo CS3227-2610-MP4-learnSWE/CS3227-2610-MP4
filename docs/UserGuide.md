@@ -253,6 +253,8 @@ All active admins can manage the forms and review submitted responses. Feedback 
 3. Return to the request to continue from the saved answers, including after refresh or a later sign-in on another device. Normal navigation inside the app waits for pending draft changes to save. Browser termination or offline navigation cannot recover edits the server never received.
 4. Click **Submit feedback** when finished. Required fields and answer types are validated. Successful submission shows **Completed** and **Feedback submitted. Thank you.** Submitted responses cannot be edited or submitted again.
 
+Each question shows its prompt once, with a **Required** or **Optional** tag beside it, above a plain outlined field. A linear scale shows its low label at the left end and its high label at the right end of the numbers. After a failed submit, each unanswered required question gets a red border and the text **This question is required.**; the marker clears when you answer it. The completed and closed pages are padded, with **Back to inbox** aligned to the left.
+
 Only you can read your unfinished draft. Once submitted, your name and feedback are visible to administrators. Closing collection stops saving and submission; it does not convert an unfinished draft into a submitted response.
 
 ### Recovering from a feedback error

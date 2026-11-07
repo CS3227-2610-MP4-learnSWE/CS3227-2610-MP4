@@ -12,28 +12,51 @@ export default function FeedbackQuestion({
   index,
   value,
   disabled,
+  marked,
   change,
 }: {
   question: Question;
   index: number;
   value: Answer["value"];
   disabled: boolean;
+  marked: boolean;
   change: (value: Answer["value"]) => void;
 }) {
-  const label = `${index + 1}. ${q.prompt}`;
+  const promptId = `feedback-q-${q.id}-prompt`;
+  const errorId = `feedback-q-${q.id}-error`;
+  const labelled = {
+    "aria-labelledby": promptId,
+    "aria-describedby": marked ? errorId : undefined,
+    "aria-invalid": marked ? true : undefined,
+  } as const;
+  const groupClass = marked ? "feedback-control-invalid" : undefined;
   return (
-    <fieldset className="feedback-question" disabled={disabled}>
-      <legend>{label}</legend>
-      <p className="muted">{q.required ? "Required" : "Optional"}</p>
+    <fieldset
+      className="feedback-question"
+      data-feedback-question=""
+      data-invalid={marked ? "" : undefined}
+      aria-labelledby={promptId}
+      disabled={disabled}
+    >
+      <div className="feedback-question-head">
+        <span className="feedback-question-prompt" id={promptId}>
+          {index + 1}. {q.prompt}
+        </span>
+        <span className="feedback-question-tag">
+          {q.required ? "Required" : "Optional"}
+        </span>
+      </div>
       {(q.type === "short_answer" || q.type === "paragraph") && (
         <TextField
-          label={label}
           value={typeof value === "string" ? value : ""}
           onChange={(e) => change(e.target.value)}
           multiline={q.type === "paragraph"}
           minRows={q.type === "paragraph" ? 4 : undefined}
           slotProps={{
-            htmlInput: { maxLength: q.type === "paragraph" ? 5000 : 500 },
+            htmlInput: {
+              maxLength: q.type === "paragraph" ? 5000 : 500,
+              ...labelled,
+            },
           }}
           disabled={disabled}
         />
@@ -41,10 +64,12 @@ export default function FeedbackQuestion({
       {q.type === "dropdown" && (
         <TextField
           select
-          label={label}
           value={typeof value === "string" ? value : ""}
           onChange={(e) => change(e.target.value || null)}
-          slotProps={{ select: { native: true }, inputLabel: { shrink: true } }}
+          slotProps={{
+            select: { native: true },
+            htmlInput: labelled,
+          }}
           disabled={disabled}
         >
           <option value="">Choose an option</option>
@@ -57,7 +82,8 @@ export default function FeedbackQuestion({
       )}
       {q.type === "multiple_choice" && (
         <RadioGroup
-          aria-label={label}
+          {...labelled}
+          className={groupClass}
           value={value ?? ""}
           onChange={(e) => change(e.target.value)}
         >
@@ -72,7 +98,7 @@ export default function FeedbackQuestion({
         </RadioGroup>
       )}
       {q.type === "checkbox" && (
-        <div role="group" aria-label={label}>
+        <div role="group" className={groupClass} {...labelled}>
           {q.options.map((o) => (
             <FormControlLabel
               key={o.id}
@@ -97,12 +123,11 @@ export default function FeedbackQuestion({
         </div>
       )}
       {q.type === "linear_scale" && q.scale && (
-        <>
-          <p>
-            {q.scale.min_label} {q.scale.max_label && `— ${q.scale.max_label}`}
-          </p>
+        <div className="feedback-scale">
+          <span className="feedback-scale-min">{q.scale.min_label}</span>
           <RadioGroup
-            aria-label={label}
+            {...labelled}
+            className={groupClass}
             value={value ?? ""}
             onChange={(e) => change(Number(e.target.value))}
             row
@@ -119,7 +144,13 @@ export default function FeedbackQuestion({
               />
             ))}
           </RadioGroup>
-        </>
+          <span className="feedback-scale-max">{q.scale.max_label}</span>
+        </div>
+      )}
+      {marked && (
+        <p className="feedback-question-error" id={errorId}>
+          This question is required.
+        </p>
       )}
     </fieldset>
   );
