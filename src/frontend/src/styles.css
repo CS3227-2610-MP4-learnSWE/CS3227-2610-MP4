@@ -3890,7 +3890,7 @@ td .MuiButton-root {
   }
 }
 
-/* Reviewed private messages share the survey page's simple panel layout. */
+/* ADM-04: scoped Material-style surfaces, editable fields and inbox hierarchy. */
 .messaging-panel {
   margin-top: 24px;
   padding: 24px;
@@ -3904,13 +3904,13 @@ td .MuiButton-root {
   flex-direction: column;
   gap: 16px;
 }
-.messaging-panel fieldset {
+.messaging-panel fieldset:not(.MuiOutlinedInput-notchedOutline) {
   border: 0;
   padding: 0;
   margin: 0 0 16px;
   min-width: 0;
 }
-.messaging-panel legend {
+.messaging-panel fieldset:not(.MuiOutlinedInput-notchedOutline) > legend {
   font-weight: 600;
 }
 .messaging-panel h1,
@@ -3925,6 +3925,23 @@ td .MuiButton-root {
 }
 .messaging-recipients p {
   margin: 0;
+}
+.messaging-recipients > p,
+.recipient-label {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+.messaging-recipients strong {
+  font-size: 13px;
+  font-weight: 600;
+}
+.messaging-recipients small {
+  display: block;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--muted);
+  overflow-wrap: anywhere;
 }
 .messaging-text {
   white-space: pre-wrap;
@@ -3945,5 +3962,451 @@ td .MuiButton-root {
   }
   .messaging-panel .MuiFormControlLabel-root {
     margin-right: 8px;
+  }
+}
+
+.messaging-page {
+  --message-outline: #8793a5;
+  --message-input: #fbfcff;
+  max-width: 1180px;
+  margin-inline: auto;
+}
+:root[data-theme="dark"] .messaging-page,
+:root[data-theme="dark"] .message-review {
+  --message-outline: #65748b;
+  --message-input: #131b28;
+}
+.messaging-page .page-heading h1 {
+  font-size: clamp(28px, 3vw, 36px);
+  line-height: 1.2;
+}
+.messaging-page .page-heading p {
+  max-width: 700px;
+  font-size: 15px;
+  line-height: 1.6;
+}
+.compose-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  gap: 24px;
+  align-items: start;
+}
+.compose-layout .messaging-panel {
+  margin-top: 0;
+  padding: 28px;
+}
+.compose-audience {
+  grid-column: 2;
+  grid-row: 1;
+}
+.compose-message {
+  grid-column: 1;
+  grid-row: 1;
+}
+.compose-section-heading,
+.inbox-section-heading {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 28px;
+}
+.compose-section-heading h2,
+.inbox-section-heading h2 {
+  margin: 0;
+  font-size: 19px;
+  font-weight: 650;
+  letter-spacing: -0.025em;
+}
+.compose-section-heading p,
+.inbox-section-heading p {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.section-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 42px;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: var(--blue-soft);
+  color: var(--blue);
+}
+.compose-audience .compose-section-heading {
+  align-items: start;
+}
+.compose-audience .MuiTextField-root {
+  margin-bottom: 24px;
+}
+.compose-audience fieldset:not(.MuiOutlinedInput-notchedOutline) {
+  margin-bottom: 20px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--line);
+}
+.compose-audience fieldset:not(.MuiOutlinedInput-notchedOutline) > legend {
+  margin-bottom: 10px;
+  font-size: 12px;
+  color: var(--muted);
+  letter-spacing: 0.025em;
+}
+.compose-audience .MuiFormControlLabel-label {
+  font-size: 13px;
+}
+.compose-audience .MuiRadio-root,
+.compose-audience .MuiCheckbox-root {
+  padding: 8px;
+}
+.compose-audience .messaging-recipients {
+  gap: 4px;
+  max-height: 260px;
+  padding: 0 4px;
+  margin: 8px 0 16px;
+}
+.messaging-recipients > p {
+  padding: 10px 8px;
+  font-size: 13px;
+  line-height: 1.6;
+  border-radius: 8px;
+  background: var(--bg);
+}
+.messaging-recipients .MuiFormControlLabel-root {
+  align-items: start;
+  margin-inline: -6px 0;
+  padding: 3px 0;
+}
+.messaging-recipients .MuiFormControlLabel-label {
+  padding-top: 8px;
+  overflow-wrap: anywhere;
+}
+.selection-summary {
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--blue);
+  background: var(--blue-soft);
+}
+.messaging-panel .MuiOutlinedInput-root {
+  background: var(--message-input, var(--bg));
+  border-radius: 10px;
+  font-size: 15px;
+}
+.messaging-panel .MuiOutlinedInput-notchedOutline {
+  border: 1px solid var(--message-outline, #8793a5);
+  margin: 0;
+  padding: 0 8px;
+}
+.messaging-panel .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline {
+  border-color: var(--ink);
+}
+.messaging-panel
+  .MuiOutlinedInput-root.Mui-focused
+  .MuiOutlinedInput-notchedOutline {
+  border: 2px solid var(--blue);
+}
+.messaging-panel .MuiInputLabel-root {
+  color: var(--muted);
+  font-size: 14px;
+}
+.messaging-panel .MuiInputLabel-root.Mui-focused {
+  color: var(--blue);
+}
+.messaging-panel .MuiFormHelperText-root {
+  margin: 8px 2px 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+.compose-message form {
+  gap: 28px;
+}
+.compose-message .MuiInputBase-multiline {
+  align-items: start;
+  padding: 15px;
+  min-height: 220px;
+}
+.compose-message .MuiInputBase-input {
+  line-height: 1.65;
+}
+.compose-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+  padding-top: 20px;
+  border-top: 1px solid var(--line);
+}
+.compose-actions > span {
+  max-width: 200px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.compose-actions .MuiButton-root {
+  min-height: 44px;
+  padding-inline: 22px;
+  white-space: nowrap;
+}
+.inbox-page .messaging-panel {
+  padding: 24px;
+  margin-top: 24px;
+}
+.inbox-section-heading {
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+.inbox-requests > [role="status"],
+.inbox-messages > [role="status"] {
+  color: var(--muted);
+  font-size: 13px;
+  margin: 0 0 18px;
+}
+.inbox-requests .feedback-list {
+  gap: 10px;
+}
+.inbox-requests .feedback-list .request-entry {
+  padding: 0;
+  border: 0;
+}
+.inbox-request-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  transition: background-color 0.15s;
+}
+.inbox-request-row:hover {
+  background: var(--blue-soft);
+}
+.inbox-request-row:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 3px;
+}
+.request-row-icon {
+  display: flex;
+  color: var(--blue);
+}
+.request-row-content {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  gap: 8px;
+}
+.request-row-content strong {
+  font-size: 15px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.request-row-state {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.inbox-chip {
+  display: inline-block;
+  border-radius: 20px;
+  padding: 4px 9px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.4;
+  background: var(--bg);
+  color: var(--muted);
+}
+.inbox-chip.unread {
+  background: var(--blue-soft);
+  color: var(--blue);
+}
+.messaging-list {
+  gap: 14px;
+}
+.messaging-list .message-card {
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--paper);
+}
+.messaging-list .message-card.is-unread {
+  border-inline-start: 3px solid var(--blue);
+  background: color-mix(in srgb, var(--blue-soft) 28%, var(--paper));
+}
+.message-card-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.message-kind {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 500;
+}
+.message-card h3 {
+  margin: 0 0 12px;
+  font-size: 18px;
+  font-weight: 650;
+  line-height: 1.45;
+}
+.message-card .messaging-text {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.8;
+}
+.message-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding-top: 18px;
+  margin-top: 20px;
+  border-top: 1px solid var(--line);
+}
+.message-card-footer time {
+  color: var(--muted);
+  font-size: 12px;
+}
+.message-card-footer .MuiButton-root {
+  font-size: 12px;
+  min-height: 36px;
+  padding-inline: 14px;
+}
+.nav-count {
+  min-width: 23px;
+  min-height: 23px;
+  padding: 3px 7px;
+  border-radius: 14px;
+  background: var(--blue);
+  color: var(--paper);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 17px;
+  text-align: center;
+}
+:root[data-theme="dark"] .nav-count {
+  color: #112744;
+}
+.message-review {
+  max-width: 860px;
+  margin-inline: auto;
+  padding: 32px;
+}
+.message-review h1 {
+  font-size: 28px;
+  margin: 20px 0 24px;
+}
+.message-review .success {
+  color: var(--green);
+  background: var(--green-soft);
+}
+.review-audience {
+  padding: 18px 20px;
+  border-radius: 12px;
+  background: var(--bg);
+  font-size: 13px;
+}
+.review-audience p {
+  margin: 0 0 8px;
+}
+.review-audience ul {
+  padding-inline-start: 20px;
+  margin: 12px 0 0;
+  max-height: 240px;
+  overflow: auto;
+  line-height: 1.8;
+}
+.review-content {
+  margin: 24px 0;
+  padding: 24px 0;
+  border-block: 1px solid var(--line);
+}
+.field-caption {
+  font-size: 11px;
+  color: var(--muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  margin: 0 0 16px;
+}
+.review-content h2 {
+  font-size: 21px;
+  margin: 0 0 16px;
+}
+.review-content .messaging-text {
+  font-size: 15px;
+  line-height: 1.8;
+  margin: 0;
+}
+.message-review .form-actions {
+  justify-content: flex-end;
+}
+.message-review .form-actions .MuiButton-root {
+  min-height: 44px;
+  padding-inline: 20px;
+}
+@media (max-width: 1050px) {
+  .compose-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .compose-message,
+  .compose-audience {
+    grid-column: auto;
+    grid-row: auto;
+  }
+  .compose-audience {
+    order: -1;
+  }
+}
+@media (max-width: 600px) {
+  .compose-layout {
+    gap: 16px;
+  }
+  .compose-layout .messaging-panel,
+  .inbox-page .messaging-panel,
+  .message-review {
+    padding: 20px 16px;
+  }
+  .compose-section-heading,
+  .inbox-section-heading {
+    gap: 10px;
+  }
+  .compose-actions,
+  .message-card-footer {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .compose-actions > span {
+    max-width: none;
+  }
+  .compose-actions .MuiButton-root {
+    width: 100%;
+  }
+  .messaging-list .message-card {
+    padding: 16px;
+  }
+  .message-card-footer .MuiButton-root {
+    align-self: start;
+  }
+  .inbox-request-row {
+    padding: 14px 10px;
+    gap: 10px;
+  }
+  .message-review .form-actions {
+    justify-content: stretch;
+  }
+  .message-review .form-actions .MuiButton-root {
+    flex: 1;
+    padding-inline: 12px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .inbox-request-row {
+    transition: none;
   }
 }

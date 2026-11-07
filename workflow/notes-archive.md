@@ -1,5 +1,11 @@
 # Handoff notes archive
 
+## 2026-11-07: ADM-02 local runtime prerequisite clarification
+- Done: clarified in the approved spec/plan and guides that local manual testing requires the `20261107_adm02_feedback` migration and that Uvicorn must load the same `src/backend/.env` with `uv run --env-file .env`; 503 is transient dependency failure, not an ADM-02 feature-off state. This corrected the earlier walkthrough startup command that omitted `--env-file`.
+- Database: applied `uv run --env-file .env alembic upgrade head` to the configured local database; verified Alembic head `20261107_adm02_feedback`. Existing backend process had been started without the env-file flag; it was left running for the user to restart explicitly.
+- No source, tests, credentials, app process, frontend proxy or other data changed. Documentation-only closeout; exact model usage/cost unavailable. Summary: `logs/Adm02LocalRuntimePrerequisite.md`.
+
+
 ## 2026-11-06: TRK-03 Codex invocation attribution
 - Done: clarified that existing `run-report` supports Codex per-invocation tokens/model/cost when exact source IDs and time windows are in the manifest; detailed `invocations-from-logs` metrics remain Claude-only. Multi-agent run close now requires Codex session IDs and report generation for completed and stopped runs. Missing attribution is explicitly unavailable, not zero.
 - Reported this Codex session: `workflow/usage/runs/2026-11-06-TRK03-CODEX-01/report.md` (35 requests; 120,468 input, 3,022,464 cache read, 18,582 output, 5,959 reasoning; cost unavailable). Report command path example corrected from three parent traversals to two.

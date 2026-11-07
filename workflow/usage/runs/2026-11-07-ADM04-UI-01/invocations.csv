@@ -1,0 +1,2 @@
+feature_run_id,invocation_id,role,effort,tool,session_id,agent_id,started_at,finished_at
+2026-11-07-ADM04-UI-01,2026-11-07-ADM04-UI-01-developer-01,developer,inherited,codex,01a1b257-6cef-7872-b74d-3c8017e7ff9c,,2026-11-07T09:10:38.541000+00:00,2026-11-07T17:44:29.233141+08:00

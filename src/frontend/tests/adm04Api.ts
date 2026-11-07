@@ -222,7 +222,14 @@ export async function setup(page: Page, user: User | null = ADMIN) {
       return;
     }
     let json: unknown;
-    if (path === API + "/recipients") {
+    if (path === "/api/messaging/unread-count") {
+      const unread = ctx.messages.filter((m) => !m.read_at).length;
+      json = {
+        unread_count: unread,
+        unread_messages: unread,
+        unread_requests: 0,
+      };
+    } else if (path === API + "/recipients") {
       const role = url.searchParams.get("role") ?? "student",
         search = (url.searchParams.get("search") ?? "").trim().toLowerCase(),
         current = Number(url.searchParams.get("page") ?? 1);

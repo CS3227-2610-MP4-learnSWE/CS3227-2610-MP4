@@ -8,7 +8,7 @@ from auth.dependencies import current_user, session_context
 from auth.lifecycle import lock_account_changes
 from auth.rate_limit import admit
 from errors import ApiError
-from feedback_models import FeedbackResponse
+from feedback_models import FeedbackForm, FeedbackRecipient, FeedbackResponse
 from messaging_errors import fail
 from messaging_models import AdminMessage, MessageDelivery, MessagePreview
 import messaging_validation as valid
@@ -143,3 +143,15 @@ def inbox(db, actor, offset):
     unread = db.scalar(select(func.count()).select_from(MessageDelivery).where(MessageDelivery.recipient_id == actor.id, MessageDelivery.read_at.is_(None)))
     return {"items": [{"id": str(d.id), "kind": m.kind, "subject": m.subject, "body": m.body, "sent_at": utc_timestamp(m.sent_at),
         "read_at": utc_timestamp(d.read_at) if d.read_at else None} for d, m in rows[:20]], "next_offset": offset + 20 if len(rows) > 20 else None, "unread_count": unread}
+
+
+def unread_summary(db, actor):
+    # One statement: both components describe the same database snapshot.
+    messages = select(func.count()).select_from(MessageDelivery).where(
+        MessageDelivery.recipient_id == actor.id, MessageDelivery.read_at.is_(None)).scalar_subquery()
+    requests = select(func.count()).select_from(FeedbackRecipient).join(FeedbackForm).where(
+        FeedbackRecipient.user_id == actor.id, FeedbackRecipient.role_snapshot == actor.role,
+        FeedbackRecipient.read_at.is_(None), FeedbackForm.state != "draft").scalar_subquery()
+    message_count, request_count = db.execute(select(messages, requests)).one()
+    return {"unread_count": message_count + request_count,
+            "unread_messages": message_count, "unread_requests": request_count}

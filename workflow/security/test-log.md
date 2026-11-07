@@ -297,3 +297,7 @@ Independent focused integration on corrected source `30d663b` and fixture-only `
 Initial independent source defects (error taxonomy and corrupted loading ellipses) fixed in `30d663b`, correction round1. Two designer fixture repairs retained existing privacy/migration/mobile assertions. No contract test weakened.
 
 Strongest read-only verifier PASS at `7f1ff5e` after full1358backendPASS733.97s and615browserPASS468.165s, zero failures/errors/skips; browser zero retries/flaky. AllAC01?13 implemented/test-covered; no blocking auth/privacy/concurrency/robustness/code-quality/docs findings. Optional composer filtered-count wording follow-up is outside delivery/access correctness. Exact final evidence and interruption limitations: `logs/Adm04Implementation.md`; usage table: `workflow/usage/runs/2026-11-07-ADM04-01/report.md`.
+
+
+## 2026-11-07 — ADM-04 unread navigation follow-up
+Metadata count endpoint enforces shared active student/teacher cookie authorization, rejects query identity/extra input, returns only own aggregate components from one SQL snapshot and carries no-store. Student/teacher ownership, other-account exclusion and read updates tested; anonymous401/admin403 and strict422 tested.121focused backendPASS; full622browserPASS includes stale-summary protection, outage retention, exact99+ accessible count, existing logout/expiry/session isolation and UI literal rendering. Existing delivery security tests unchanged; no model calls, new schema or developer data changes. See logs/Adm04UiRedesign.md and UI usage report.

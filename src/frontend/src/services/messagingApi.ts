@@ -153,6 +153,14 @@ function receipt(value: unknown) {
 function validResponse(path: string, value: unknown): boolean {
   if (!object(value)) return false;
   const pathname = path.split("?")[0];
+  if (pathname === "/api/messaging/unread-count")
+    return (
+      count(value.unread_count) &&
+      count(value.unread_messages) &&
+      count(value.unread_requests) &&
+      value.unread_count ===
+        Number(value.unread_messages) + Number(value.unread_requests)
+    );
   if (pathname.endsWith("/recipient"))
     return string(value.response_id) && recipient(value.recipient);
   if (pathname.endsWith("/recipients"))

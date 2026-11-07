@@ -13,3 +13,5 @@
 | 8 | Record security outcomes, notes/status/session summary and resource use; generate and link complete invocation report; prepare PR for human review | orchestrator | 4, 5 | done |
 
 Tasks 1, 2, 6 and 7 run in parallel with developer and test-designer isolated. Records are read and written, so concurrency and cross-user tasks are mandatory. Do not implement before approval or weaken independent tests.
+
+UI follow-up (user request2026-11-07): developer completed visual/notification amendment, regression-first metadata and layout checks, scoped design, full622browser/121focused backend verification, guides/spec and tracked closeout. No new delegated feature run.

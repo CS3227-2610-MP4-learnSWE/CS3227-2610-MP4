@@ -126,6 +126,12 @@ def inbox(request: Request, actor: AuthUser = Depends(recipient), db: Session = 
     return committed(db, store.inbox(db, actor, valid.integer(q.get("offset", "0"))))
 
 
+@router.get("/api/messaging/unread-count")
+def unread_count(request: Request, actor: AuthUser = Depends(recipient), db: Session = Depends(get_session)):
+    valid.query(request)
+    return committed(db, store.unread_summary(db, actor))
+
+
 @router.post("/api/messaging/inbox/{delivery_id}/read")
 def read(delivery_id: str, request: Request, body: dict = Depends(recipient_body), actor: AuthUser = Depends(recipient), db: Session = Depends(get_session)):
     valid.query(request)

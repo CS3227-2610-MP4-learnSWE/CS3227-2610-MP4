@@ -12,6 +12,18 @@ import {
   type MessagePage,
 } from "../services/messagingApi";
 import { Panel } from "./ui";
+import { Mail } from "lucide-react";
+import { publishInboxCount } from "../hooks/useInboxUnread";
+
+function displayTime(value: string) {
+  const date = new Date(value);
+  return Number.isNaN(date.getTime())
+    ? "Date unavailable"
+    : new Intl.DateTimeFormat(undefined, {
+        dateStyle: "medium",
+        timeStyle: "short",
+      }).format(date);
+}
 
 export default function MessagesInbox() {
   const [offset, setOffset] = useState(0);
@@ -46,6 +58,7 @@ export default function MessagesInbox() {
           ],
     );
     setUnread(data.unread_count);
+    publishInboxCount("messages", data.unread_count);
   }, [read.data, offset]);
   const mark = async (id: string) => {
     if (inFlight.current) return;
@@ -65,6 +78,7 @@ export default function MessagesInbox() {
         old.map((i) => (i.id === id ? { ...i, read_at: result.read_at } : i)),
       );
       setUnread((n) => Math.max(0, n - 1));
+      publishInboxCount("messages", Math.max(0, unread - 1));
     } catch (error) {
       if (
         !alive.current ||
@@ -83,8 +97,16 @@ export default function MessagesInbox() {
     }
   };
   return (
-    <Panel className="messaging-panel">
-      <h2>Messages</h2>
+    <Panel className="messaging-panel inbox-messages">
+      <div className="inbox-section-heading">
+        <div>
+          <h2>Messages</h2>
+          <p>Announcements and personal replies from your administrators.</p>
+        </div>
+        <span className="section-icon" aria-hidden="true">
+          <Mail size={22} />
+        </span>
+      </div>
       {read.loading && <p role="status">Loading messages…</p>}
       {read.error && (
         <div>
@@ -103,24 +125,37 @@ export default function MessagesInbox() {
       {read.data && !items.length && <p>No messages yet.</p>}
       <div className="messaging-list">
         {items.map((item) => (
-          <article aria-label={item.subject} key={item.id}>
-            <p>
-              {item.kind === "announcement"
-                ? "Announcement"
-                : "Feedback response"}{" "}
-              · {item.read_at ? "Read" : "Unread"}
-            </p>
+          <article
+            className={item.read_at ? "message-card" : "message-card is-unread"}
+            aria-label={item.subject}
+            key={item.id}
+          >
+            <div className="message-card-meta">
+              <span className="message-kind">
+                {item.kind === "announcement"
+                  ? "Announcement"
+                  : "Feedback response"}{" "}
+              </span>
+              <span className={`inbox-chip ${item.read_at ? "" : "unread"}`}>
+                {item.read_at ? "Read" : "Unread"}
+              </span>
+            </div>
             <h3>{item.subject}</h3>
             <p className="messaging-text">{item.body}</p>
-            <p>{item.sent_at}</p>
-            {!item.read_at && (
-              <Button
-                onClick={() => void mark(item.id)}
-                disabled={pending !== null || read.loading}
-              >
-                Mark as read
-              </Button>
-            )}
+            <div className="message-card-footer">
+              <time dateTime={item.sent_at} title={item.sent_at}>
+                {displayTime(item.sent_at)}
+              </time>
+              {!item.read_at && (
+                <Button
+                  variant="outlined"
+                  onClick={() => void mark(item.id)}
+                  disabled={pending !== null || read.loading}
+                >
+                  Mark as read
+                </Button>
+              )}
+            </div>
             {errors[item.id] && <p role="alert">{errors[item.id]}</p>}
           </article>
         ))}

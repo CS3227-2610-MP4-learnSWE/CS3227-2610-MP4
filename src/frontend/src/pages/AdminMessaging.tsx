@@ -8,6 +8,7 @@ import {
   RadioGroup,
   TextField,
 } from "@mui/material";
+import { MessageSquare, Users, Send, CheckCircle2 } from "lucide-react";
 import { useAuth } from "../auth/AuthContext";
 import { PageHeading, Panel } from "../components/ui";
 import { useMessagingRead } from "../hooks/useMessagingRead";
@@ -174,172 +175,223 @@ function Composer({
     );
   };
   return (
-    <>
+    <div className="messaging-page">
       <PageHeading
         eyebrow="LISTEN AND IMPROVE"
         title={responseId ? "Respond to feedback" : "New announcement"}
         description="Write a message, review its recipients and confirm delivery."
       />
-      <Panel className="messaging-panel">
-        {read.loading && (
-          <p role="status">
-            {responseId ? "Loading recipient…" : "Loading recipients…"}
-          </p>
-        )}
-        {read.error && (
-          <div>
-            <p role="alert">{read.error}</p>
-            <Button onClick={read.reload}>Retry</Button>
+      <div className="compose-layout">
+        <Panel className="messaging-panel compose-message">
+          <div className="compose-section-heading">
+            <span className="section-icon">
+              <MessageSquare size={21} aria-hidden="true" />
+            </span>
+            <div>
+              <h2>Message details</h2>
+              <p>Make your update clear, helpful and personal.</p>
+            </div>
           </div>
-        )}
-        {responseId && read.data?.recipient && (
-          <p>
-            Recipient: {read.data.recipient.display_name} (
-            {read.data.recipient.role})
-          </p>
-        )}
-        {!responseId && (
-          <>
-            <fieldset disabled={mutation.pending}>
-              <legend>Audience role</legend>
-              <RadioGroup
-                row
-                value={fields.role}
-                onChange={(e) => {
-                  update({ role: e.target.value as Fields["role"], ids: [] });
-                  setPage(1);
-                }}
-              >
-                <FormControlLabel
-                  value="student"
-                  control={<Radio />}
-                  label="Students"
-                />
-                <FormControlLabel
-                  value="teacher"
-                  control={<Radio />}
-                  label="Teachers"
-                />
-              </RadioGroup>
-            </fieldset>
-            <fieldset disabled={mutation.pending}>
-              <legend>Audience selection</legend>
-              <RadioGroup
-                row
-                value={fields.mode}
-                onChange={(e) =>
-                  update({ mode: e.target.value as Fields["mode"] })
-                }
-              >
-                <FormControlLabel
-                  value="all_active"
-                  control={<Radio />}
-                  label="All active users"
-                />
-                <FormControlLabel
-                  value="selected"
-                  control={<Radio />}
-                  label="Selected users"
-                />
-              </RadioGroup>
-            </fieldset>
-            <TextField
-              label="Search recipients"
-              disabled={mutation.pending}
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-            {read.data && (
-              <>
-                {!read.data.items.length && (
-                  <p>
-                    {debounced
-                      ? "No matching recipients."
-                      : "No eligible recipients."}
-                  </p>
-                )}
-                <div className="messaging-recipients">
-                  {read.data.items.map((r) =>
-                    fields.mode === "selected" ? (
-                      <FormControlLabel
-                        key={r.id}
-                        control={
-                          <Checkbox
-                            checked={fields.ids.includes(r.id)}
-                            onChange={(e) =>
-                              update({
-                                ids: e.target.checked
-                                  ? [...fields.ids, r.id]
-                                  : fields.ids.filter((id) => id !== r.id),
-                              })
-                            }
-                          />
-                        }
-                        label={`${r.display_name} (${r.id})`}
-                      />
-                    ) : (
-                      <p key={r.id}>
-                        {r.display_name} ({r.id})
-                      </p>
-                    ),
-                  )}
-                </div>
-                <p>
-                  {fields.mode === "selected"
-                    ? fields.ids.length
-                    : read.data.total}{" "}
-                  selected
-                </p>
-                <div className="form-actions">
-                  {page > 1 && (
-                    <Button onClick={() => setPage((p) => p - 1)}>
-                      Previous page
-                    </Button>
-                  )}
-                  {page * 50 < read.data.total && (
-                    <Button onClick={() => setPage((p) => p + 1)}>
-                      Next page
-                    </Button>
-                  )}
-                </div>
-              </>
-            )}
-          </>
-        )}
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            submit();
-          }}
-        >
-          <TextField
-            label="Subject"
-            inputRef={subjectRef}
-            value={fields.subject}
-            onChange={(e) => update({ subject: e.target.value })}
-            disabled={mutation.pending}
-          />
-          <TextField
-            label="Message"
-            inputRef={bodyRef}
-            multiline
-            minRows={5}
-            value={fields.body}
-            onChange={(e) => update({ body: e.target.value })}
-            disabled={mutation.pending}
-          />
-          {error && <p role="alert">{error}</p>}
-          {mutation.pending && <p role="status">Preparing review…</p>}
-          <Button
-            type="submit"
-            variant="contained"
-            disabled={mutation.pending || read.loading || !read.data}
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              submit();
+            }}
           >
-            Review message
-          </Button>
-        </form>
-      </Panel>
-    </>
+            <TextField
+              label="Subject"
+              variant="outlined"
+              size="medium"
+              slotProps={{ inputLabel: { shrink: true } }}
+              helperText="A clear title. Up to 120 characters."
+              inputRef={subjectRef}
+              value={fields.subject}
+              onChange={(e) => update({ subject: e.target.value })}
+              disabled={mutation.pending}
+            />
+            <TextField
+              label="Message"
+              variant="outlined"
+              slotProps={{ inputLabel: { shrink: true } }}
+              helperText="Write your message in plain text. Up to 5000 characters."
+              inputRef={bodyRef}
+              multiline
+              minRows={5}
+              value={fields.body}
+              onChange={(e) => update({ body: e.target.value })}
+              disabled={mutation.pending}
+            />
+            {error && <p role="alert">{error}</p>}
+            {mutation.pending && <p role="status">Preparing review…</p>}
+            <div className="compose-actions">
+              <span>You can check everything before sending.</span>
+              <Button
+                type="submit"
+                variant="contained"
+                disabled={mutation.pending || read.loading || !read.data}
+              >
+                Review message
+              </Button>
+            </div>
+          </form>
+        </Panel>
+        <Panel className="messaging-panel compose-audience">
+          <div className="compose-section-heading">
+            <span className="section-icon">
+              <Users size={21} aria-hidden="true" />
+            </span>
+            <div>
+              <h2>Recipients</h2>
+              <p>Choose who will receive this message.</p>
+            </div>
+          </div>
+
+          {read.loading && (
+            <p role="status">
+              {responseId ? "Loading recipient…" : "Loading recipients…"}
+            </p>
+          )}
+          {read.error && (
+            <div>
+              <p role="alert">{read.error}</p>
+              <Button onClick={read.reload}>Retry</Button>
+            </div>
+          )}
+          {responseId && read.data?.recipient && (
+            <p>
+              Recipient: {read.data.recipient.display_name} (
+              {read.data.recipient.role})
+            </p>
+          )}
+          {!responseId && (
+            <>
+              <TextField
+                label="Search recipients"
+                variant="outlined"
+                slotProps={{ inputLabel: { shrink: true } }}
+                placeholder="Find a person by name"
+                disabled={mutation.pending}
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+              <fieldset disabled={mutation.pending}>
+                <legend>Audience role</legend>
+                <RadioGroup
+                  row
+                  value={fields.role}
+                  onChange={(e) => {
+                    update({ role: e.target.value as Fields["role"], ids: [] });
+                    setPage(1);
+                  }}
+                >
+                  <FormControlLabel
+                    value="student"
+                    control={<Radio />}
+                    label="Students"
+                  />
+                  <FormControlLabel
+                    value="teacher"
+                    control={<Radio />}
+                    label="Teachers"
+                  />
+                </RadioGroup>
+              </fieldset>
+              <fieldset disabled={mutation.pending}>
+                <legend>Audience selection</legend>
+                <RadioGroup
+                  row
+                  value={fields.mode}
+                  onChange={(e) =>
+                    update({ mode: e.target.value as Fields["mode"] })
+                  }
+                >
+                  <FormControlLabel
+                    value="all_active"
+                    control={<Radio />}
+                    label="All active users"
+                  />
+                  <FormControlLabel
+                    value="selected"
+                    control={<Radio />}
+                    label="Selected users"
+                  />
+                </RadioGroup>
+              </fieldset>
+
+              {read.data && (
+                <>
+                  {!read.data.items.length && (
+                    <p>
+                      {debounced
+                        ? "No matching recipients."
+                        : "No eligible recipients."}
+                    </p>
+                  )}
+                  <div className="messaging-recipients">
+                    {read.data.items.map((r) =>
+                      fields.mode === "selected" ? (
+                        <FormControlLabel
+                          key={r.id}
+                          control={
+                            <Checkbox
+                              inputProps={{
+                                "aria-label": `${r.display_name} (${r.id})`,
+                              }}
+                              checked={fields.ids.includes(r.id)}
+                              onChange={(e) =>
+                                update({
+                                  ids: e.target.checked
+                                    ? [...fields.ids, r.id]
+                                    : fields.ids.filter((id) => id !== r.id),
+                                })
+                              }
+                            />
+                          }
+                          label={
+                            <span className="recipient-label">
+                              <strong>{r.display_name}</strong>
+                              <small>{r.id}</small>
+                            </span>
+                          }
+                        />
+                      ) : (
+                        <p key={r.id}>
+                          <strong>{r.display_name}</strong>
+                          <small>{r.id}</small>
+                        </p>
+                      ),
+                    )}
+                  </div>
+                  <p className="selection-summary">
+                    {fields.mode === "selected"
+                      ? `${fields.ids.length} selected`
+                      : `All active ${fields.role === "student" ? "students" : "teachers"} selected`}
+                  </p>
+                  {fields.mode === "all_active" && debounced && (
+                    <p className="muted">
+                      {read.data.total} matching recipients · Search only
+                      filters this list.
+                    </p>
+                  )}
+                  <div className="form-actions">
+                    {page > 1 && (
+                      <Button onClick={() => setPage((p) => p - 1)}>
+                        Previous page
+                      </Button>
+                    )}
+                    {page * 50 < read.data.total && (
+                      <Button onClick={() => setPage((p) => p + 1)}>
+                        Next page
+                      </Button>
+                    )}
+                  </div>
+                </>
+              )}
+            </>
+          )}
+        </Panel>
+      </div>
+    </div>
   );
 }
 
@@ -403,7 +455,13 @@ function Review({
     );
   if (!preview) return null;
   return (
-    <Panel className="messaging-panel">
+    <Panel className="messaging-panel message-review">
+      <span
+        className={`section-icon ${sent ? "success" : ""}`}
+        aria-hidden="true"
+      >
+        {sent ? <CheckCircle2 size={24} /> : <Send size={24} />}
+      </span>
       <h1 ref={heading} tabIndex={-1}>
         {sent ? "Message sent" : "Review message"}
       </h1>
@@ -420,20 +478,25 @@ function Review({
         </>
       ) : (
         <>
-          <p>
-            Audience:{" "}
-            {preview.audience_role === "student" ? "Students" : "Teachers"}
-          </p>
-          <p>Recipients: {preview.recipient_count}</p>
-          <ul aria-label="Recipients">
-            {preview.recipients.map((r) => (
-              <li key={r.id}>
-                {r.display_name} ({r.id})
-              </li>
-            ))}
-          </ul>
-          <h2>{preview.subject}</h2>
-          <p className="messaging-text">{preview.body}</p>
+          <div className="review-audience">
+            <p>
+              Audience:{" "}
+              {preview.audience_role === "student" ? "Students" : "Teachers"}
+            </p>
+            <p>Recipients: {preview.recipient_count}</p>
+            <ul aria-label="Recipients">
+              {preview.recipients.map((r) => (
+                <li key={r.id}>
+                  {r.display_name} ({r.id})
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div className="review-content">
+            <p className="field-caption">Message preview</p>
+            <h2>{preview.subject}</h2>
+            <p className="messaging-text">{preview.body}</p>
+          </div>
           {error && <p role="alert">{error}</p>}
           {mutation.pending && <p role="status">Sending message…</p>}
           <div className="form-actions">
