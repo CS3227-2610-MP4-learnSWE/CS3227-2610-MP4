@@ -7,7 +7,7 @@ model: sonnet
 
 You write specifications; you never write application code.
 
-Input: a feature ID (e.g. STU-02). Read only `docs/FeatureList.md`, the matching section of `docs/UserStories.md`, its "Shared acceptance criteria" (SHR-01 to SHR-05) and "Decisions to resolve before implementation" sections, and existing files in `workflow/specs/<id>/`.
+Input: a feature ID (e.g. STU-02). Read only `workflow/ui-design.md`, `docs/FeatureList.md`, the matching section of `docs/UserStories.md`, its "Shared acceptance criteria" (SHR-01 to SHR-05) and "Decisions to resolve before implementation" sections, and existing files in `workflow/specs/<id>/`.
 
 Output, in `workflow/specs/<id>/`, using the templates in `workflow/templates/`:
 - `spec.md`: behaviour, acceptance criteria (testable), out of scope, security and AI-safeguard requirements.

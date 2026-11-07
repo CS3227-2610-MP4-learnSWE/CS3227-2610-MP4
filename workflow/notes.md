@@ -1,5 +1,10 @@
 # Handoff notes
 
+## 2026-11-07: developer shared UI design baseline saved
+- Saved user-approved ADM-04 patterns in workflow/ui-design.md: hierarchy/panels, persistent outlined fields, theme/surface/spacing/type defaults, responsive/accessible lists and notifications, metadata-only badge lifecycle, MUI fieldset pitfall and visual/spec checklist.
+- Linked from workflow index and spec/plan templates; shared AGENTS rule requires future screen work to read it. Spec-writer allowed-read lists in AGENTS.md and .claude/agents/spec-writer.md include the guide. No existing feature behavior or application code changed.
+- Docs-only maintenance; no agents, runtime suites, new workflow invocation or usage manifest. Model/effort inherited; exact task tokens/cost unavailable. Links/required text/diff and existing spec checker validated. Local commit only, per user; no push. Summary logs/SharedUiDesignPrinciples.md.
+
 ## 2026-11-07: developer ADM-04 inbox/composer redesign
 - Done: Material-style outlined inputs and distinct surfaces/headers; separate recipient search panel; readable local dates, padded request/message cards and unread chips; responsive dark/light desktop/mobile; exact all-active audience wording fixed. Combined owner-only unread navigation badge on student/teacher pages, 99+ visual cap/exact accessible count, visible-minute/focus refresh, local read updates and stale/session guards. Spec/plan and both guides amended under user request.
 - Validation: final full622browserPASS370.746s, zero failures/errors/skips/flaky/retries; focused121backendPASS56.55s. Types/lint/build/scoped format/spec/diff PASS. Six desktop/mobile light/dark screenshots captured and inspected. Initial new-route404 and missing-heading RED; final regression green. First full621PASS/1auth-fixtureFAIL traced unmocked summary GET401; additive neutral summary fallback retains all auth assertions, final622PASS. Test unread fixture explicitly opens its completed form; no weakened checks.
@@ -50,8 +55,3 @@
 - Invocation: 2026-11-07-ADM04-01-spec-writer-01; source session 01a1b257-d8c5-7bb2-b8ab-68e8818691eb (resolved by orchestrator). Model/effort inherited; exact elapsed and measured tokens/cost are orchestrator/tracker-owned, unavailable in this handoff. No retries or application revision rounds, no tests/application code/commits/live AI.
 - Report: workflow/usage/runs/2026-11-07-ADM04-01/report.md (orchestrator generates and links at closeout). Tracker not run by spec-writer.
 - Blocking: required human approval; no implementation authorization inferred from draft. Complete public HTTP contract; internal function names remain implementation-owned.
-
-## 2026-11-07: ADM-02 admin review row interaction
-- Done: admin form and submitted-response list entries now use a single full-row link. Form title/status/count and response ID/respondent/time align on one line at desktop widths; hover color and visible keyboard focus are added; narrow layouts stack content to avoid clipping. Updated approved ADM-02 UI contract and user guide; regression coverage added before component/style change.
-- Validation: frontend typecheck, lint, Prettier, ADM-02 speccheck and `git diff --check` pass. Playwright not run; live browser inspection was blocked because the Windows browser access host could not confidently identify the active page URL. Database currently contains one submitted response for one form; existing backend process was not changed.
-- No backend/data changes, new agents, or live AI. Exact model usage/cost unavailable. Summary: `logs/Adm02AdminReviewRowInteraction.md`.

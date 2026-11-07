@@ -1,5 +1,11 @@
 # Handoff notes archive
 
+## 2026-11-07: ADM-02 admin review row interaction
+- Done: admin form and submitted-response list entries now use a single full-row link. Form title/status/count and response ID/respondent/time align on one line at desktop widths; hover color and visible keyboard focus are added; narrow layouts stack content to avoid clipping. Updated approved ADM-02 UI contract and user guide; regression coverage added before component/style change.
+- Validation: frontend typecheck, lint, Prettier, ADM-02 speccheck and `git diff --check` pass. Playwright not run; live browser inspection was blocked because the Windows browser access host could not confidently identify the active page URL. Database currently contains one submitted response for one form; existing backend process was not changed.
+- No backend/data changes, new agents, or live AI. Exact model usage/cost unavailable. Summary: `logs/Adm02AdminReviewRowInteraction.md`.
+
+
 ## 2026-11-07: ADM-02 local runtime prerequisite clarification
 - Done: clarified in the approved spec/plan and guides that local manual testing requires the `20261107_adm02_feedback` migration and that Uvicorn must load the same `src/backend/.env` with `uv run --env-file .env`; 503 is transient dependency failure, not an ADM-02 feature-off state. This corrected the earlier walkthrough startup command that omitted `--env-file`.
 - Database: applied `uv run --env-file .env alembic upgrade head` to the configured local database; verified Alembic head `20261107_adm02_feedback`. Existing backend process had been started without the env-file flag; it was left running for the user to restart explicitly.

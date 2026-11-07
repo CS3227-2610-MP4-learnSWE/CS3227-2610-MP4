@@ -12,6 +12,8 @@ What the user can do and sees.
 - [ ] AC1 (testable)
 
 ## UI states and copy
+Read [the shared UI design guide](../ui-design.md) before specifying a screen (from a generated feature spec, use `../../ui-design.md`). Record the concrete hierarchy/panels, outlined field treatment, primary/secondary actions, responsive light/dark behavior, keyboard/focus and notification/count semantics. Use the guide's final checklist; exact feature behavior and copy must still be specified below.
+
 For any feature with a screen. The test-designer cannot see the code, so every state a user can see is written here, not left to the developer. Write "not applicable" for a row that does not apply.
 
 | Screen or action | Control (button, tab, link, field) and its exact label | Loading | Success | Empty | Each failure that can happen (wrong input, 401, 403, 404, 409, 422, 429, network, timeout) and the exact message | After a failed action (what stays, what is retried) |
