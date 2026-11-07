@@ -1,0 +1,16 @@
+# Tasks: STU-05-06 Student feedback and inbox (verification slice)
+
+| # | Task | Owner agent | Depends on | Status |
+|---|---|---|---|---|
+| 0 | Merge PR 31 branch into this branch; confirm the PR 31 labels listed in spec Open question 5 and write them into plan.md | orchestrator | spec + plan approved, sender decision | todo |
+| 1 | Design tests (stu05_/stu06_) for the gaps in the plan's matrix; confirm the existing evidence column from test folders (no src/ access) | test-designer | 0 | todo |
+| 2 | Add `From: Administrator` beside the sent time in `MessagesInbox.tsx` (only if option A approved) | developer | 0 | todo |
+| 3 | Correct the student inbox and feedback sections of `docs/UserGuide.md` and `docs/DeveloperGuide.md` to match the product | developer | 0 | todo |
+| 4 | Run suite; report pass/fail per test | test-designer | 1, 2, 6, 7 | todo |
+| 5 | Verify: code, docs and security review; re-run suite | verifier | 4 | todo |
+| 6 | Concurrent-request test: simultaneous mark-read on one delivery and simultaneous submit of one form leave one consistent result | test-designer | spec + plan approved | todo |
+| 7 | Cross-user test: a second student, a teacher and a student without a recipient row cannot read or change the first student's form, response, draft or delivery | test-designer | spec + plan approved | todo |
+| 8 | Fix defects (max 2 rounds), verifier re-checks | developer, verifier | 5 | todo |
+| 9 | Record the first-run browser failures, security results and resource log, and close the run report | orchestrator | 8 | todo |
+
+Tasks 1, 2, 3, 6 and 7 run in parallel after task 0. If the user rejects option A, task 2 is dropped and task 3 records the sender gap as a known deviation.

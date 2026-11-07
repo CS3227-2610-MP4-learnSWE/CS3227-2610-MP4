@@ -17,6 +17,12 @@
 
 Newest entry first. Older entries describe the state at the time; the newest entry supersedes their open/merged status. Keep the newest 10 entries here; older ones are in `notes-archive.md`. Feature state is in `STATUS.md`.
 
+## 2026-11-07: STU-05/06 spec drafted (orchestrator, student-role owner)
+- Done: STATUS rows corrected (commit 0b01258). Spec, plan, tasks in `workflow/specs/STU-05-06/`; `python -m speccheck workflow/specs/STU-05-06` passes. Thin slice: ADM-02 (merged) already delivers the student form flow and PR 31 (ADM-04, open) the Messages inbox and the combined unread badge, so STU-05/06 is verification, gap tests, docs and a sender-label decision. Build starts from a branch containing PR 31; the STU PR stays stacked on it.
+- Next: user approves spec and decides the sender label (fixed `From: Administrator` vs a field in ADM-04). Then test-designer (worktree) and developer in parallel, verifier, docs.
+- Decisions / open questions: see `Open questions` in spec.md. Group targeting not available (named recipients only).
+- Feature-run report: `workflow/usage/runs/2026-11-07-STU0506-01/report.md` (2 invocations; run incomplete, awaiting approval).
+
 ## 2026-11-06: STU-02-published-sets built and verified locally (orchestrator, student-role owner)
 - Done: spec approved by the user (six decisions, recommended answers to questions 1 to 11, question 12 resolved as 422 on every set-id route); speccheck passes; developer and test-designer in parallel; verifier round 1 FAIL (2 blocking defects: CI answer-key control pointed at the deleted fixture; companion rejected a submitted attempt when the URL spelled the set id differently), round 2 PASS at `2a4b5e4`. Student practice, progress and the companion's set lookup now read published sets through `set_provider.py` (course membership, uniform 404 `set_not_found`, 422 for malformed ids); picker `/student/practice`; set page `/student/practice/<set id>`; dev seed `teacher_publications/seed.py`.
 - Final checks (verifier, round 2): backend 1123 passed, 1 failed (`test_tea03_mcqs_concurrent_saves_and_edit_delete`, a load flake that passed 5 of 5 alone, file untouched), 9 hang-prone tests deselected; Playwright mocked 507 of 510, the 3 failures passed 8 of 8 alone (picker `:410` and `stu04-progress.spec.ts:571` are click-then-immediate-Back races in the tests; `teacher-edit-notes.spec.ts:307` unrelated load flake); typecheck and lint clean; one Alembic head `20261105_stu04_practice_attempt`. Not run: real-backend Playwright, GitHub CI.
