@@ -319,3 +319,30 @@ Fixes: B1 CI control now greps `teacher_publications/seed.py`; B2 companion comp
 ## 2026-11-06 ? Shared-shell logout confirmation
 
 Client-only confirmation preserves existing CSRF/session safeguards. 111 targeted browser tests PASS including zero POST on cancellation, one POST on confirm/pending protection, network/503 failure keeping session/dialog for retry,401 completion, Back/history/chat clearing and late-response isolation. Expiry never waits for confirmation; server endpoints unchanged. Spec/test commitf1c9268 preceded source, visual checks PASS. Details logs/SharedShellConfirmationFollowup.md.
+
+
+## 2026-11-07 ? ADM-04 private messaging
+
+Independent focused integration on corrected source `30d663b` and fixture-only `318d568`: 116 backend and 48 browser cases PASS, zero browser retries. Independent commits `4ce8c3d`/`83be154` preceded implementation visibility. Full regression and strongest verifier outcomes are recorded in `logs/Adm04Implementation.md` when complete; focused results do not imply full-suite sign-off.
+
+- Auth/access: `test_adm04_ac11_all_admin_endpoints_cookie_role_and_no_store`, `test_adm04_ac11_every_mutation_requires_csrf_and_origin`, `test_adm04_ac11_revoked_admin_cannot_send_or_recover_existing_review`, `test_adm04_ac09_11_recipient_read_ownership_and_no_admin_delivery_bypass` cover session-only identity, wrong roles, CSRF/Origin, no-store and direct delivery ownership.
+- Privacy/untrusted text: server derives one-to-one respondent; override rejection, narrow inbox DTOs and cross-role audiences prevent automatic raw feedback/recipient disclosure. `test_adm04_ac13_normalisation_unicode_boundaries_xss_literal_and_no_ai` checks safe literal data, no AI invocation and content-free errors/logs; browser cases check literal rendering and previous-session isolation.
+- Durable/concurrent mutations: eight simultaneous sends share one receipt/delivery; concurrent read/replay preserves first-read state; second-delivery DB-trigger failure rolls back entire fan-out; same preview then safely recovers; revocation ordered before waiting send blocks actor/recipient; one-connection pool does not nest checkouts. Cases are in `test_adm04_concurrency.py`.
+- Recovery/audience: fresh Python-process preview/receipt recovery, expiry, intentional new previews, all-active membership/display-name changes and selected-user eligibility require exact reviewed audience. Recipient roles/course membership cannot expand direct delivery access.
+- Bounds: 120/5000 Unicode text limits, 128 KiB request body cap, strict schema/query/UUID/account-ID validation, 500/501 recipient boundary, admin and recipient request quotas, persistent unread count/read state and pagination tested. Limiter remains process-local as documented; uniqueness is database-enforced.
+- Not applicable: model prompts/retrieval, SoC quotas, learning answer release and email/push transport. This feature has no model call, learning-context retrieval or external delivery. No live AI, developer database migration, environment or user-process changes during tests.
+
+Initial independent source defects (error taxonomy and corrupted loading ellipses) fixed in `30d663b`, correction round1. Two designer fixture repairs retained existing privacy/migration/mobile assertions. No contract test weakened.
+
+Strongest read-only verifier PASS at `7f1ff5e` after full1358backendPASS733.97s and615browserPASS468.165s, zero failures/errors/skips; browser zero retries/flaky. AllAC01?13 implemented/test-covered; no blocking auth/privacy/concurrency/robustness/code-quality/docs findings. Optional composer filtered-count wording follow-up is outside delivery/access correctness. Exact final evidence and interruption limitations: `logs/Adm04Implementation.md`; usage table: `workflow/usage/runs/2026-11-07-ADM04-01/report.md`.
+
+
+## 2026-11-07 — ADM-04 unread navigation follow-up
+Metadata count endpoint enforces shared active student/teacher cookie authorization, rejects query identity/extra input, returns only own aggregate components from one SQL snapshot and carries no-store. Student/teacher ownership, other-account exclusion and read updates tested; anonymous401/admin403 and strict422 tested.121focused backendPASS; full622browserPASS includes stale-summary protection, outage retention, exact99+ accessible count, existing logout/expiry/session isolation and UI literal rendering. Existing delivery security tests unchanged; no model calls, new schema or developer data changes. See logs/Adm04UiRedesign.md and UI usage report.
+
+
+## 2026-11-07: remaining admin screen UI maintenance
+- Frontend-only presentation changes for ADM-02/05/06 and existing admin previews; no server endpoints, authorisation, data model, AI client or retrieval changes.
+- Existing browser tests passed for wrong-role zero feature reads, expired-session cleanup, stale old-session responses, safe literal feedback snapshots, uncertain publication/closure recovery, confirmation cancellation, password clearing after account creation and preservation on definite failure. Exact request-count assertions retained.
+- Final relevant ADM-02/05/06/design/app regression run: 146/146 PASS, no retries. Typecheck/lint/build and spec validation recorded in logs/AdminUiBaselineRollout.md. No live AI or developer database operations; backend security suite was not rerun for this presentation-only task.
+- Separate existing ADM-04 pagination/debounce failure documented in the session handoff; ADM-04 source and tests were not changed.

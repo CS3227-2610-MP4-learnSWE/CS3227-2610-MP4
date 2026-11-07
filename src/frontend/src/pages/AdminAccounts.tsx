@@ -65,7 +65,7 @@ function CreateAccount({ created }: { created: () => Promise<void> }) {
         with its owner.
       </p>
       <form
-        className="admin-access-form"
+        className="admin-access-form admin-create-form"
         onSubmit={(event) => void submit(event)}
       >
         <TextField
@@ -109,6 +109,7 @@ function CreateAccount({ created }: { created: () => Promise<void> }) {
         </TextField>
         <TextField
           label="Password"
+          helperText="Use 10–128 characters; avoid common passwords and the email address."
           slotProps={{ htmlInput: { "aria-label": "Password" } }}
           type="password"
           autoComplete="new-password"
@@ -233,6 +234,7 @@ function AccountDetails({
           if (!busy) onClose();
         }}
         scroll="paper"
+        className="admin-dialog"
       >
         <DialogTitle id="admin-account-details-title">
           Account details
@@ -361,6 +363,7 @@ function AccountDetails({
         </DialogActions>
       </Dialog>
       <Dialog
+        className="admin-dialog"
         open={!!confirmation}
         onClose={() => {
           if (!busy) setConfirmation(null);
@@ -419,147 +422,159 @@ function AccountsContent() {
         title="User and access management"
         description="Create accounts, manage access and preserve learning history."
       />
-      <Panel className="admin-access-panel">
-        <form
-          className="admin-access-form"
-          onSubmit={(event) => {
-            event.preventDefault();
-            setFilter({ search: search.trim() });
-          }}
-        >
-          <TextField
-            label="Search accounts"
-            slotProps={{ htmlInput: { "aria-label": "Search accounts" } }}
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-          />
-          <Button type="submit" variant="outlined">
-            Search
-          </Button>
-          <TextField
-            select
-            label="Role filter"
-            slotProps={{
-              select: {
-                SelectDisplayProps: {
-                  "aria-label": "Role filter",
-                  "aria-labelledby": undefined,
-                },
-              },
+      <div className="admin-workspace">
+        <Panel className="admin-access-panel">
+          <h2>Find accounts</h2>
+          <p className="muted">
+            Search by name or email, then narrow by role and access status.
+          </p>
+          <form
+            className="admin-access-form"
+            onSubmit={(event) => {
+              event.preventDefault();
+              setFilter({ search: search.trim() });
             }}
-            value={query.role ?? ""}
-            onChange={(event) =>
-              setFilter({
-                role: (event.target.value || undefined) as
-                  api.AccountRole | undefined,
-              })
-            }
           >
-            <MenuItem value="">All roles</MenuItem>
-            <MenuItem value="student">Student</MenuItem>
-            <MenuItem value="teacher">Teacher</MenuItem>
-            <MenuItem value="admin">Admin</MenuItem>
-          </TextField>
-          <TextField
-            select
-            label="Status filter"
-            slotProps={{
-              select: {
-                SelectDisplayProps: {
-                  "aria-label": "Status filter",
-                  "aria-labelledby": undefined,
+            <TextField
+              label="Search accounts"
+              slotProps={{ htmlInput: { "aria-label": "Search accounts" } }}
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+            />
+            <Button type="submit" variant="outlined">
+              Search
+            </Button>
+            <TextField
+              select
+              label="Role filter"
+              slotProps={{
+                select: {
+                  SelectDisplayProps: {
+                    "aria-label": "Role filter",
+                    "aria-labelledby": undefined,
+                  },
                 },
-              },
-            }}
-            value={query.status ?? "enabled"}
-            onChange={(event) =>
-              setFilter({
-                status: event.target.value as api.AccountStatus | "all",
-              })
-            }
-          >
-            <MenuItem value="enabled">Enabled</MenuItem>
-            <MenuItem value="disabled">Disabled</MenuItem>
-            <MenuItem value="archived">Archived</MenuItem>
-            <MenuItem value="all">All statuses</MenuItem>
-          </TextField>
-        </form>
-        {list.loading && <p role="status">Loading accounts...</p>}
-        <ReadError message={list.error} retry={() => void list.reload()} />
-        {list.data && (
-          <>
-            {!list.data.accounts.length ? (
-              <p>No accounts found.</p>
-            ) : (
-              <div className="table-scroll">
-                <table className="admin-accounts-table">
-                  <thead>
-                    <tr>
-                      <th>Account</th>
-                      <th>Role</th>
-                      <th>Status</th>
-                      <th>Action</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {list.data.accounts.map((account) => (
-                      <tr key={account.id}>
-                        <td>
-                          <div>
-                            <strong>{account.display_name}</strong>
-                            <small>{account.email ?? "No email"}</small>
-                          </div>
-                        </td>
-                        <td data-label="Role">{account.role}</td>
-                        <td data-label="Status">{account.status}</td>
-                        <td>
-                          <Button
-                            aria-label={`Manage account ${account.display_name}`}
-                            onClick={() => setSelected(account.id)}
-                          >
-                            Manage account
-                          </Button>
-                        </td>
+              }}
+              value={query.role ?? ""}
+              onChange={(event) =>
+                setFilter({
+                  role: (event.target.value || undefined) as
+                    api.AccountRole | undefined,
+                })
+              }
+            >
+              <MenuItem value="">All roles</MenuItem>
+              <MenuItem value="student">Student</MenuItem>
+              <MenuItem value="teacher">Teacher</MenuItem>
+              <MenuItem value="admin">Admin</MenuItem>
+            </TextField>
+            <TextField
+              select
+              label="Status filter"
+              slotProps={{
+                select: {
+                  SelectDisplayProps: {
+                    "aria-label": "Status filter",
+                    "aria-labelledby": undefined,
+                  },
+                },
+              }}
+              value={query.status ?? "enabled"}
+              onChange={(event) =>
+                setFilter({
+                  status: event.target.value as api.AccountStatus | "all",
+                })
+              }
+            >
+              <MenuItem value="enabled">Enabled</MenuItem>
+              <MenuItem value="disabled">Disabled</MenuItem>
+              <MenuItem value="archived">Archived</MenuItem>
+              <MenuItem value="all">All statuses</MenuItem>
+            </TextField>
+          </form>
+          {list.loading && <p role="status">Loading accounts...</p>}
+          <ReadError message={list.error} retry={() => void list.reload()} />
+          {list.data && (
+            <>
+              {!list.data.accounts.length ? (
+                <p>No accounts found.</p>
+              ) : (
+                <div className="table-scroll">
+                  <table className="admin-accounts-table">
+                    <thead>
+                      <tr>
+                        <th>Account</th>
+                        <th>Role</th>
+                        <th>Status</th>
+                        <th>Action</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {list.data.accounts.map((account) => (
+                        <tr key={account.id}>
+                          <td>
+                            <div>
+                              <strong>{account.display_name}</strong>
+                              <small>{account.email ?? "No email"}</small>
+                            </div>
+                          </td>
+                          <td data-label="Role">{account.role}</td>
+                          <td data-label="Status">{account.status}</td>
+                          <td>
+                            <Button
+                              aria-label={`Manage account ${account.display_name}`}
+                              onClick={() => setSelected(account.id)}
+                            >
+                              Manage account
+                            </Button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+              <div className="admin-access-actions">
+                <Button
+                  disabled={list.loading || page <= 1}
+                  onClick={() => setQuery({ ...query, page: page - 1 })}
+                >
+                  Previous
+                </Button>
+                <span>
+                  Page {list.data.page} · {list.data.total} accounts
+                </span>
+                <Button
+                  disabled={
+                    list.loading ||
+                    page * list.data.page_size >= list.data.total
+                  }
+                  onClick={() => setQuery({ ...query, page: page + 1 })}
+                >
+                  Next
+                </Button>
               </div>
-            )}
-            <div className="admin-access-actions">
-              <Button
-                disabled={list.loading || page <= 1}
-                onClick={() => setQuery({ ...query, page: page - 1 })}
-              >
-                Previous
-              </Button>
-              <span>
-                Page {list.data.page} · {list.data.total} accounts
-              </span>
-              <Button
-                disabled={
-                  list.loading || page * list.data.page_size >= list.data.total
-                }
-                onClick={() => setQuery({ ...query, page: page + 1 })}
-              >
-                Next
-              </Button>
-            </div>
-          </>
-        )}
-      </Panel>
-      {courses.loading && <p role="status">Loading courses...</p>}
-      <ReadError message={courses.error} retry={() => void courses.reload()} />
-      {selected && (
-        <AccountDetails
-          key={selected}
-          id={selected}
-          courses={courses.data?.courses ?? []}
-          refreshAccounts={list.reload}
-          onClose={() => setSelected(null)}
-        />
-      )}
-      <CreateAccount created={list.reload} />
+            </>
+          )}
+        </Panel>
+        <div className="admin-course-read-state">
+          {courses.loading && <p role="status">Loading courses...</p>}
+          <ReadError
+            message={courses.error}
+            retry={() => void courses.reload()}
+          />
+          {selected && (
+            <AccountDetails
+              key={selected}
+              id={selected}
+              courses={courses.data?.courses ?? []}
+              refreshAccounts={list.reload}
+              onClose={() => setSelected(null)}
+            />
+          )}
+        </div>
+        <CreateAccount created={list.reload} />
+      </div>
     </>
   );
 }

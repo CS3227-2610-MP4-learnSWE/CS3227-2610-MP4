@@ -193,6 +193,22 @@ export async function mockAuthApi(
   options: { user?: User | null; csrf?: string } = {},
 ): Promise<AuthApiMock> {
   const mock = new AuthApiMock(options.user ?? null, options.csrf);
+  // Navigation now reads metadata independently of the current page. Auth-only
+  // tests must not forward fixture sessions to a real developer API (401).
+  // Inbox-specific tests register their stateful summary handler after this.
+  await page.route(
+    (url) => url.pathname === "/api/messaging/unread-count",
+    (route) =>
+      route.fulfill({
+        status: 503,
+        json: {
+          detail: {
+            code: "MESSAGING_UNAVAILABLE",
+            message: "Test inbox count is unavailable.",
+          },
+        },
+      }),
+  );
   // STU-04 loads progress on the student home page. Auth-only fixtures must
   // not send that request to a developer's real API and receive its 401.
   // Progress tests register their own route after this neutral fallback.

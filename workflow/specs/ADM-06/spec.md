@@ -68,3 +68,15 @@ Empty-state clarification (2026-11-06, orchestrator/designer): the global "No AI
 ### User-approved readability follow-up (2026-11-06)
 
 Inset report content by24px (16px on mobile). Period/description/caption text is16px; table headers and reasons at least14px, metric text15px. Wrap long cell text within fixed columns; keep caption text within the visible report width while the table scrolls. Preserve all existing labels, request counts and behavior. User explicitly requested padding, larger fonts and wrapping; existing responsive tests gain geometry/readability assertions before CSS changes.
+
+
+## Admin UI baseline amendment - 2026-11-07
+
+Authorised by the user's request to apply `workflow/ui-design.md` to the remaining admin screens. Presentation maintenance of the approved feature; existing acceptance criteria, API schemas, access checks, request counts, history/session behavior, timeouts and exact failure/recovery copy remain binding. No additional reads, polling, writes or AI calls are introduced.
+
+- Use a single page heading, descriptive section headings, padded neutral panels and outlined fields with persistent labels. Reuse theme tokens, 24px desktop/16px mobile padding, visible focus and readable secondary text in both themes.
+- Desktop groups related tools separately from results/editors; mobile stacks in DOM/keyboard order at 320-390px. Long names, IDs and content wrap. Wide report tables scroll in their labelled keyboard-focusable region, never the whole page.
+- Keep loading/status and error roles and exact messages from the existing UI states table. Recoverable failures retain inputs, selection and existing recovery controls. Success remains explicit and pending mutations retain duplicate-submit guards.
+- Wrong role; Expired session or logout; Backend down; Longest wait before an error; No generic failure message: unchanged from the existing approved UI contract. Requests per load and per retry; Link history: push or replace; Refresh; Back and Forward: unchanged. Styling must not add requests or alter navigation.
+- Separate "Report filters" panel from "Service-call report" results. Helper: "Choose a feature and an inclusive UTC date range of up to 31 days ending today or earlier." Keep Feature, Start date (UTC), End date (UTC) and Apply filters accessible names, UTC semantics, explicit unavailable reasons and loading/error copy.
+- Results remain a labelled scroll region with a semantic table. Collection timestamps use local human-readable time elements with original ISO datetime and explicit "Collection started:" context; reporting dates stay UTC. No private content or inferred values.

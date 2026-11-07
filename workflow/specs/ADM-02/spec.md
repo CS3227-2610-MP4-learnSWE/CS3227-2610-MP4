@@ -90,3 +90,16 @@ No SoC LLM calls occur. Feedback is plain untrusted text, rendered as text, neve
 Initial subject/learner level and upload formats do not affect this feature. ADM-05 account/course decisions are reused. Practice scoring/answer release remains unchanged and protected content is excluded. SoC quota/model/measurement decisions are not applicable because ADM-02 makes no AI calls.
 
 Approval record: user replied `approve` after the respondent draft amendment. All proposed policies above are approved for this release; no blocking open questions remain. Future production retention policy remains outside this feature.
+
+
+## Admin UI baseline amendment - 2026-11-07
+
+Authorised by the user's request to apply `workflow/ui-design.md` to the remaining admin screens. Presentation maintenance of the approved feature; existing acceptance criteria, API schemas, access checks, request counts, history/session behavior, timeouts and exact failure/recovery copy remain binding. No additional reads, polling, writes or AI calls are introduced.
+
+- Use a single page heading, descriptive section headings, padded neutral panels and outlined fields with persistent labels. Reuse theme tokens, 24px desktop/16px mobile padding, visible focus and readable secondary text in both themes.
+- Desktop groups related tools separately from results/editors; mobile stacks in DOM/keyboard order at 320-390px. Long names, IDs and content wrap. Wide report tables scroll in their labelled keyboard-focusable region, never the whole page.
+- Keep loading/status and error roles and exact messages from the existing UI states table. Recoverable failures retain inputs, selection and existing recovery controls. Success remains explicit and pending mutations retain duplicate-submit guards.
+- Wrong role; Expired session or logout; Backend down; Longest wait before an error; No generic failure message: unchanged from the existing approved UI contract. Requests per load and per retry; Link history: push or replace; Refresh; Back and Forward: unchanged. Styling must not add requests or alter navigation.
+- Form list panel heading: "Saved forms". Detail uses "Form overview" and "Questions"; editor groups "Form details", "Association" and "Questions" with helper copy "Add 1 to 30 questions. Required answers are checked on submission." Existing field/button accessible names remain unchanged.
+- Recipient dialog uses "Find recipients" and "Selected recipients" sections; show "N selected" independently of search results, retain selected IDs across search/pages, constrain lists to 280px. Review shows exact recipients with names first and IDs secondary; no editable controls in review. No changed selection or publication semantics.
+- Responses list heading: "Submitted responses"; respondent name is primary and response ID secondary. Show local date/time in semantic time elements preserving the ISO datetime and existing accessible link names. Detail heading is "Feedback response"; its response ID is separate secondary text ("Response {response_id}"). Reply navigation stays unchanged. The current publication/closure step uses a contained primary action; edit/navigation actions remain secondary.

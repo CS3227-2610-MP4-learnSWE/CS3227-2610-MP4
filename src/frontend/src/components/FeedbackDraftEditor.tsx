@@ -371,113 +371,133 @@ export default function FeedbackDraftEditor({
           }}
         >
           <fieldset disabled={saving} className="feedback-editor-fields">
-            <TextField
-              label="Form title"
-              value={data.title}
-              onChange={(e) => change({ title: e.target.value })}
-            />
-            <TextField
-              label="Description"
-              multiline
-              minRows={3}
-              value={data.description}
-              onChange={(e) => change({ description: e.target.value })}
-            />
-            <TextField
-              select
-              label="Association type"
-              value={data.association?.kind ?? "none"}
-              slotProps={{
-                select: { native: true },
-                inputLabel: { shrink: true },
-              }}
-              onChange={(e) =>
-                change({
-                  association:
-                    e.target.value === "none"
-                      ? null
-                      : {
-                          kind: e.target.value as "feature" | "lesson",
-                          id: "",
-                        },
-                })
-              }
-            >
-              <option value="none">None</option>
-              <option value="feature">Feature</option>
-              <option value="lesson">Lesson</option>
-            </TextField>
-            {data.association?.kind === "feature" && (
+            <section className="admin-editor-section">
+              <h2>Form details</h2>
               <TextField
-                select
-                label="Feature"
-                value={data.association.id}
-                slotProps={{
-                  select: { native: true },
-                  inputLabel: { shrink: true },
-                }}
-                onChange={(e) =>
-                  change({
-                    association: { kind: "feature", id: e.target.value },
-                  })
-                }
-              >
-                <option value="">Choose a feature</option>
-                {associations.data?.features.map((f) => (
-                  <option value={f.id} key={f.id}>
-                    {f.label}
-                  </option>
-                ))}
-              </TextField>
-            )}
-            {data.association?.kind === "lesson" && (
+                label="Form title"
+                helperText="Use a clear title, up to 160 characters."
+                value={data.title}
+                onChange={(e) => change({ title: e.target.value })}
+              />
               <TextField
-                select
-                label="Lesson"
-                value={data.association.id}
-                slotProps={{
-                  select: { native: true },
-                  inputLabel: { shrink: true },
-                }}
-                onChange={(e) =>
-                  change({
-                    association: { kind: "lesson", id: e.target.value },
-                  })
-                }
-              >
-                <option value="">Choose a lesson</option>
-                {associations.data?.lessons.map((f) => (
-                  <option value={f.id} key={f.id}>
-                    {f.title}
-                  </option>
-                ))}
-              </TextField>
-            )}
-            {associations.data?.truncated && (
-              <p>
-                More associations exist. Use a feature association or leave this
-                form unassociated.
+                label="Description"
+                multiline
+                minRows={3}
+                value={data.description}
+                onChange={(e) => change({ description: e.target.value })}
+              />
+            </section>
+            <section className="admin-editor-section">
+              <h2>Association</h2>
+              <p className="muted">
+                Optionally link this form to a feature or published lesson.
               </p>
-            )}
-            <Questions
-              questions={data.questions}
-              change={(questions) => change({ questions })}
-            />
-            <Button
-              type="submit"
-              variant="contained"
-              disabled={
-                code === "feedback_version_conflict" ||
-                code === "uncertain_mutation"
-              }
-            >
-              {saving ? "Saving draft..." : "Save draft"}
-            </Button>
-            {saving && <p role="status">Saving draft...</p>}
+              <TextField
+                select
+                label="Association type"
+                value={data.association?.kind ?? "none"}
+                slotProps={{
+                  select: { native: true },
+                  inputLabel: { shrink: true },
+                }}
+                onChange={(e) =>
+                  change({
+                    association:
+                      e.target.value === "none"
+                        ? null
+                        : {
+                            kind: e.target.value as "feature" | "lesson",
+                            id: "",
+                          },
+                  })
+                }
+              >
+                <option value="none">None</option>
+                <option value="feature">Feature</option>
+                <option value="lesson">Lesson</option>
+              </TextField>
+              {data.association?.kind === "feature" && (
+                <TextField
+                  select
+                  label="Feature"
+                  value={data.association.id}
+                  slotProps={{
+                    select: { native: true },
+                    inputLabel: { shrink: true },
+                  }}
+                  onChange={(e) =>
+                    change({
+                      association: { kind: "feature", id: e.target.value },
+                    })
+                  }
+                >
+                  <option value="">Choose a feature</option>
+                  {associations.data?.features.map((f) => (
+                    <option value={f.id} key={f.id}>
+                      {f.label}
+                    </option>
+                  ))}
+                </TextField>
+              )}
+              {data.association?.kind === "lesson" && (
+                <TextField
+                  select
+                  label="Lesson"
+                  value={data.association.id}
+                  slotProps={{
+                    select: { native: true },
+                    inputLabel: { shrink: true },
+                  }}
+                  onChange={(e) =>
+                    change({
+                      association: { kind: "lesson", id: e.target.value },
+                    })
+                  }
+                >
+                  <option value="">Choose a lesson</option>
+                  {associations.data?.lessons.map((f) => (
+                    <option value={f.id} key={f.id}>
+                      {f.title}
+                    </option>
+                  ))}
+                </TextField>
+              )}
+              {associations.data?.truncated && (
+                <p>
+                  More associations exist. Use a feature association or leave
+                  this form unassociated.
+                </p>
+              )}
+            </section>
+            <section className="admin-editor-section">
+              <h2>Questions</h2>
+              <p className="muted">
+                Add 1 to 30 questions. Required answers are checked on
+                submission.
+              </p>
+              <Questions
+                questions={data.questions}
+                change={(questions) => change({ questions })}
+              />
+            </section>
+            <div className="admin-action-bar">
+              <Button
+                type="submit"
+                variant="contained"
+                disabled={
+                  code === "feedback_version_conflict" ||
+                  code === "uncertain_mutation"
+                }
+              >
+                {saving ? "Saving draft..." : "Save draft"}
+              </Button>
+              {saving && <p role="status">Saving draft...</p>}
+            </div>
           </fieldset>
         </form>
       </Panel>
       <Dialog
+        className="admin-dialog"
         open={blocker.state === "blocked"}
         onClose={() => blocker.state === "blocked" && blocker.reset()}
         aria-labelledby="feedback-discard-title"

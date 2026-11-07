@@ -8,6 +8,7 @@ import {
   DialogTitle,
 } from "@mui/material";
 import { PageHeading, Panel } from "../components/ui";
+import LocalTime from "../components/LocalTime";
 import FeedbackDraftEditor from "../components/FeedbackDraftEditor";
 import FeedbackAudience from "../components/FeedbackAudience";
 import { useFeedbackRead } from "../hooks/useFeedbackRead";
@@ -51,6 +52,7 @@ function Forms() {
         }
       />
       <Panel>
+        <h2>Saved forms</h2>
         {read.loading && <p role="status">Loading feedback forms...</p>}
         {read.error && <ReadError error={read.error} retry={read.reload} />}
         {read.data && (
@@ -207,6 +209,7 @@ function Detail({ id, initial }: { id: string; initial?: Form }) {
         description={form.description}
       />
       <Panel>
+        <h2>Form overview</h2>
         {notice && <p role="status">{notice}</p>}
         {error && !closeDialog && (
           <p role="alert">
@@ -221,26 +224,36 @@ function Detail({ id, initial }: { id: string; initial?: Form }) {
               ? "Open"
               : "Closed"}
         </p>
-        <p>Responses: {form.response_count}</p>
-        {form.state === "draft" && (
-          <>
-            <Button
-              component={Link}
-              to={`/admin/feedback/${id}/edit`}
-              disabled={reconcile}
-            >
-              Edit draft
+        <p className="admin-summary">Responses: {form.response_count}</p>
+        <div className="admin-action-bar">
+          {form.state === "draft" && (
+            <>
+              <Button
+                component={Link}
+                variant="outlined"
+                to={`/admin/feedback/${id}/edit`}
+                disabled={reconcile}
+              >
+                Edit draft
+              </Button>
+              <Button variant="contained" onClick={() => setAudience(true)}>
+                Review audience
+              </Button>
+            </>
+          )}
+          {form.state === "open" && (
+            <Button variant="contained" onClick={() => setCloseDialog(true)}>
+              Close collection
             </Button>
-            <Button onClick={() => setAudience(true)}>Review audience</Button>
-          </>
-        )}
-        {form.state === "open" && (
-          <Button onClick={() => setCloseDialog(true)}>Close collection</Button>
-        )}
-        <Button component={Link} to={`/admin/feedback/${id}/responses`}>
-          Review responses
-        </Button>
-        <ol>
+          )}
+          <Button component={Link} to={`/admin/feedback/${id}/responses`}>
+            Review responses
+          </Button>
+        </div>
+      </Panel>
+      <Panel>
+        <h2>Questions</h2>
+        <ol className="admin-question-summary">
           {form.questions.map((q) => (
             <li key={q.id}>
               <strong>{q.prompt}</strong>
@@ -261,6 +274,7 @@ function Detail({ id, initial }: { id: string; initial?: Form }) {
         />
       )}
       <Dialog
+        className="admin-dialog"
         open={closeDialog}
         onClose={pending ? undefined : () => setCloseDialog(false)}
         aria-labelledby="feedback-close-title"
@@ -316,6 +330,7 @@ function Responses({ id }: { id: string }) {
         description="Only submitted responses are available for review."
       />
       <Panel>
+        <h2>Submitted responses</h2>
         {read.loading && <p role="status">Loading responses...</p>}
         {read.error && <ReadError error={read.error} retry={read.reload} />}
         {read.data && (
@@ -333,11 +348,11 @@ function Responses({ id }: { id: string }) {
                     aria-label={`Response ${response.id} · ${response.respondent.display_name} · ${response.submitted_at}`}
                   >
                     <span className="feedback-list-entry-title">
-                      Response {response.id}
+                      {response.respondent.display_name}
                     </span>
                     <span className="feedback-list-entry-meta">
-                      {response.respondent.display_name} ·{" "}
-                      {response.submitted_at}
+                      <LocalTime value={response.submitted_at} />
+                      <small>Response {response.id}</small>
                     </span>
                   </Link>
                 </article>
@@ -384,12 +399,21 @@ function Response({ id, responseId }: { id: string; responseId: string }) {
     <>
       <PageHeading
         eyebrow="SUBMITTED FEEDBACK"
-        title={`Response ${response.id}`}
+        title="Feedback response"
         description={response.form_snapshot.title}
       />
       <Panel>
+        <p className="admin-metadata">Response {response.id}</p>
         <p>Respondent: {response.respondent.display_name}</p>
-        <p>{response.submitted_at}</p>
+        <Button
+          component={Link}
+          to={`/admin/feedback/${id}/responses/${responseId}/reply`}
+        >
+          Respond to feedback
+        </Button>
+        <p className="admin-metadata">
+          <LocalTime value={response.submitted_at} />
+        </p>
         <p>{response.form_snapshot.description}</p>
         {response.form_snapshot.questions.map((q) => (
           <section key={q.id} className="feedback-answer">
@@ -411,7 +435,7 @@ function Response({ id, responseId }: { id: string; responseId: string }) {
   );
 }
 
-export default function AdminFeedback() {
+function AdminFeedbackContent() {
   const location = useLocation();
   const [, , , id, action, responseId] = location.pathname.split("/");
   const generation = getSessionGeneration();
@@ -453,5 +477,13 @@ export default function AdminFeedback() {
       id={id}
       initial={createdForm}
     />
+  );
+}
+
+export default function AdminFeedback() {
+  return (
+    <div className="admin-surface admin-feedback">
+      <AdminFeedbackContent />
+    </div>
   );
 }

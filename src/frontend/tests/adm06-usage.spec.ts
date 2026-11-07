@@ -215,7 +215,7 @@ test("adm06 AC2/3/7/13 named controls, metadata, exact columns and recorded valu
   await expect(row).toContainText("731");
   await expect(row).toContainText("99");
   await expect(
-    page.getByText("Collection started: 2020-01-01T00:00:00Z", { exact: true }),
+    page.locator('time[datetime="2020-01-01T00:00:00Z"]'),
   ).toHaveCount(2);
   expect(await table(page).innerText()).not.toContain("%");
   expect(ctx.requests).toHaveLength(1);
@@ -638,12 +638,21 @@ for (const width of [390, 1100]) {
     expect(
       await page.evaluate(() => document.documentElement.scrollWidth),
     ).toBeLessThanOrEqual(width);
-    const spacing = await page.locator(".ai-usage-panel").evaluate((panel) => {
-      const period = panel.querySelector("p")!;
-      return (
-        period.getBoundingClientRect().left - panel.getBoundingClientRect().left
-      );
-    });
+    const spacing = await page
+      .locator(".ai-usage-panel")
+      .filter({
+        has: page.getByRole("heading", {
+          name: "Service-call report",
+          exact: true,
+        }),
+      })
+      .evaluate((panel) => {
+        const period = panel.querySelector("p")!;
+        return (
+          period.getBoundingClientRect().left -
+          panel.getBoundingClientRect().left
+        );
+      });
     expect(spacing).toBeGreaterThanOrEqual(16);
     const reason = table(page).locator(".ai-usage-reason").last();
     expect(

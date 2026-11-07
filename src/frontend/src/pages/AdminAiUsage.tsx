@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Alert, Button, MenuItem, TextField } from "@mui/material";
 import { useLocation } from "react-router";
 import { useAuth } from "../auth/AuthContext";
+import LocalTime from "../components/LocalTime";
 import SignInNotice from "../auth/SignInNotice";
 import { PageHeading, Panel } from "../components/ui";
 import { ApiError, getSessionGeneration } from "../services/client";
@@ -100,6 +101,11 @@ function UsageReport() {
         description="Inspect service-call attempts and recorded resource measurements."
       />
       <Panel className="ai-usage-panel">
+        <h2>Report filters</h2>
+        <p className="muted">
+          Choose a feature and an inclusive UTC date range of up to 31 days
+          ending today or earlier.
+        </p>
         <form onSubmit={submit} noValidate className="ai-usage-filters">
           <TextField
             select
@@ -155,6 +161,9 @@ function UsageReport() {
             Apply filters
           </Button>
         </form>
+      </Panel>
+      <Panel className="ai-usage-panel">
+        <h2>Service-call report</h2>
         {view.loading && <p role="status">Loading AI usage…</p>}
         {view.error && (
           <Alert
@@ -215,9 +224,14 @@ function UsageReport() {
                       <th scope="row">
                         {api.FEATURE_LABELS[row.feature]}
                         <small className="ai-usage-reason">
-                          {row.coverage_start
-                            ? `Collection started: ${row.coverage_start}`
-                            : "Collection is not enabled for this feature."}
+                          {row.coverage_start ? (
+                            <>
+                              Collection started:{" "}
+                              <LocalTime value={row.coverage_start} />
+                            </>
+                          ) : (
+                            "Collection is not enabled for this feature."
+                          )}
                         </small>
                       </th>
                       {(Object.keys(api.METRIC_LABELS) as api.MetricKey[]).map(

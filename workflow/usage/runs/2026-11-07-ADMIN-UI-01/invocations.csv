@@ -1,0 +1,2 @@
+feature_run_id,invocation_id,role,effort,tool,session_id,agent_id,started_at,finished_at
+2026-11-07-ADMIN-UI-01,2026-11-07-ADMIN-UI-01-developer-01,developer,inherited,codex,01a1b56e-a4e8-7782-9b4d-58574b5fe303,,2026-11-07T09:58:29.080284+00:00,2026-11-07T10:14:35.192297+00:00
