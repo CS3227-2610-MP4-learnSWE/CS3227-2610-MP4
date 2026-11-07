@@ -127,3 +127,12 @@ These need a human answer; the plan states the default used if none is given.
 ## Shared-shell synchronisation ? 2026-11-06
 
 User-initiated logout follows SHR-01 Confirm logout: Cancel/Escape/backdrop preserves session/page/unsaved state with no request; only confirmation submits. Existing logout/history/clear-data criteria refer to completed logout. Expiry/revocation still clears immediately without confirmation. Sidebar tips are dismissible until workspace reload/remount. No student API or progress/completion contract changes.
+
+## Presentation amendment 2026-11-08 (user feedback, presentation only)
+The user found the Progress page hard to read: the three section cards had no inner padding, so headings and text touched the card border; body, table and empty-state text were very small (9 to 12px) and unevenly sized; the lesson progress bar was a thin grey line; the two links looked like plain text. Amendment, CSS only under `.progress-sections` (no change to copy, regions, requests or any other screen; the same rules apply to the signed-in states with data and to the empty states):
+- Each section card has 24 to 28px inner padding at desktop width and 16 to 20px at 390px, with about 20px between cards.
+- Section headings (level 2) are 20px; body text, list items and table cells are at least 14px, table headers at least 12px; secondary text uses the muted colour.
+- The lesson progress bar is at least 8px high and uses the blue accent.
+- Links inside the sections are blue and underlined on hover and focus.
+- Empty states keep their text and icon with smaller vertical padding.
+Test: `stu04-progress-layout.spec.ts` (padding, font sizes, bar height, both widths, with data and empty). This amendment was approved by the user in chat on 2026-11-08 on a light path (no independent test-designer or verifier).
