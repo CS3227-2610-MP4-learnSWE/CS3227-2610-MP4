@@ -3662,9 +3662,25 @@ td .MuiButton-root {
   display: grid;
   gap: 12px;
 }
-.practice-set-row h3,
+/* STU-02 published sets presentation amendment 2026-11-08: scoped to the set cards. */
+.practice-set-row.MuiPaper-root {
+  padding: 22px 24px;
+}
+.practice-set-row h3 {
+  margin: 0 0 8px;
+}
+.practice-set-row .text-link {
+  font-size: 17px;
+}
 .practice-set-row p {
-  margin: 4px 0;
+  margin: 2px 0;
+  font-size: 14px;
+  color: var(--muted);
+}
+@media (max-width: 600px) {
+  .practice-set-row.MuiPaper-root {
+    padding: 16px;
+  }
 }
 :root .admin-access-panel {
   padding: 24px;

@@ -133,3 +133,10 @@ Each has a recommended answer that the plan uses until a human decides.
 4. Companion: only the set lookup moves to the provider (same access rules); no other companion change.
 5. Retakes are unlimited and shown as best and latest. Known limit recorded: repeats can inflate scores; question reuse stays undecided.
 6. The weak-topic rule is unchanged; a published set has one topic, and progress uses it for all of the set's questions.
+
+## Presentation amendment 2026-11-08 (user feedback, presentation only)
+On the practice set picker, each set card had no inner padding, so the set title, topic line and best-score line touched the card edge, and the set title link was much smaller (12px) than the lines under it. Amendment, CSS only, scoped to `.practice-set-row` (no change to copy, links, requests, order or any other screen):
+- Each set card has 20 to 28px inner padding at desktop width and 16 to 20px at 390px, with at least 12px between cards.
+- The set title link is at least 16px; the topic and score lines are at least 14px in the muted colour.
+- The set title link stays blue and the whole page does not scroll horizontally at 390px.
+Test: `stu02ps-picker-layout.spec.ts`. Approved by the user in chat on 2026-11-08 on a light path (no independent test-designer or verifier).
