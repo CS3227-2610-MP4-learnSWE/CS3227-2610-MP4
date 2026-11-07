@@ -885,6 +885,8 @@ test("ADM-02 admin failed draft save preserves editor fields and retries explici
   expect(ctx.of("PUT")).toHaveLength(2);
 });
 
+// STU-05-06 AC15 supersedes the floating label this test used to pin: the prompt is now one
+// visible element above the control. Intent kept: no overlap between prompt and selected text.
 test("ADM-02 mobile empty dropdown keeps its label above the selected placeholder", async ({
   page,
 }) => {
@@ -894,18 +896,29 @@ test("ADM-02 mobile empty dropdown keeps its label above the selected placeholde
     name: "4. Pick a topic",
     exact: true,
   });
-  const geometry = await dropdown.evaluate((element) => {
+  const prompt = page.getByText("4. Pick a topic", { exact: true });
+  await expect(prompt).toHaveCount(1);
+  await expect(dropdown.locator("option").first()).toHaveText(
+    "Choose an option",
+  );
+  await expect(dropdown).toHaveValue("");
+  const geometry = await dropdown.evaluate((element, promptText) => {
     const select = element as HTMLSelectElement;
-    const label = select.labels?.[0];
-    if (!label) return null;
-    const labelRect = label.getBoundingClientRect();
+    const promptEl = Array.from(document.querySelectorAll("*")).find(
+      (el) => el.children.length === 0 && el.textContent === promptText,
+    );
+    if (!promptEl) return null;
+    const promptRect = promptEl.getBoundingClientRect();
     const selectRect = select.getBoundingClientRect();
     return {
-      labelBottom: labelRect.bottom,
+      promptBottom: promptRect.bottom,
+      promptRight: promptRect.right,
+      viewport: window.innerWidth,
       textTop:
         selectRect.top + Number.parseFloat(getComputedStyle(select).paddingTop),
     };
-  });
+  }, "4. Pick a topic");
   expect(geometry).not.toBeNull();
-  expect(geometry!.labelBottom).toBeLessThanOrEqual(geometry!.textTop + 1);
+  expect(geometry!.promptBottom).toBeLessThanOrEqual(geometry!.textTop + 1);
+  expect(geometry!.promptRight).toBeLessThanOrEqual(geometry!.viewport);
 });
