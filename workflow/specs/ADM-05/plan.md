@@ -69,3 +69,17 @@ User requests green Account created. Snackbar/Alert success toast (role status, 
 ## Shared shell synchronisation ? 2026-11-06
 
 Apply SHR-01 shared-shell spec/plan follow-up: dismissible sidebar card, Confirm logout/Cancel/Log out dialog, one request only after confirmation, pending protection and retry without signing out on failure. Update existing logout journeys to confirm, preserving all session/CSRF/history/editor/chat assertions. Prior toast/reset/modal/sidebar changes remain binding. No server API changes.
+
+
+## Admin UI baseline amendment - 2026-11-07
+
+Authorised by the user's request to apply `workflow/ui-design.md` to the remaining admin screens. Presentation maintenance of the approved feature; existing acceptance criteria, API schemas, access checks, request counts, history/session behavior, timeouts and exact failure/recovery copy remain binding. No additional reads, polling, writes or AI calls are introduced.
+
+- Use a single page heading, descriptive section headings, padded neutral panels and outlined fields with persistent labels. Reuse theme tokens, 24px desktop/16px mobile padding, visible focus and readable secondary text in both themes.
+- Desktop groups related tools separately from results/editors; mobile stacks in DOM/keyboard order at 320-390px. Long names, IDs and content wrap. Wide report tables scroll in their labelled keyboard-focusable region, never the whole page.
+- Keep loading/status and error roles and exact messages from the existing UI states table. Recoverable failures retain inputs, selection and existing recovery controls. Success remains explicit and pending mutations retain duplicate-submit guards.
+- Wrong role; Expired session or logout; Backend down; Longest wait before an error; No generic failure message: unchanged from the existing approved UI contract. Requests per load and per retry; Link history: push or replace; Refresh; Back and Forward: unchanged. Styling must not add requests or alter navigation.
+- Users desktop: "Find accounts" panel for search, filters and paginated results beside a bounded 360px "Create account" panel; mobile results precede creation. Existing button/combobox names and all confirmation copy remain unchanged. Creation fields form a vertical stack with one primary action and password guidance before submit.
+- Courses separates "Create course" (helper: "Use a clear title, up to 200 characters.") from "Available courses" and its list/management link. Account details and confirmation dialogs use the same outlined-field and wrapping baseline; Escape/focus return and saving guards stay unchanged.
+
+Validation: add browser regression coverage before implementation for visible field outlines, section grouping, selection counts, semantic timestamps and mobile overflow in light/dark themes. Run existing ADM-02/05/06 and ADM-04 regression suites, typecheck, lint and build. Inspect desktop/mobile screenshots. No server or data-model change.

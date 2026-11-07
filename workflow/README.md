@@ -5,6 +5,7 @@ Everything about how this project is built. The default agent definitions live i
 | Path | Purpose |
 |---|---|
 | `coordination.md` | Coordination pattern: generator-verifier with an independent test designer; triggers, isolation, handoffs, revision caps, conflict resolution, verification. |
+| `ui-design.md` | Shared, user-approved UI principles for future screen specs and redesigns: hierarchy, outlined inputs, colours, responsive layouts, accessible notifications and visual checks. |
 | `variants/` | Workflow variants under comparison (A split verification, B merged verification, single-session baseline) and how to switch between them. |
 | `STATUS.md` | One row per feature: stage, branch, PR, open items. |
 | `notes.md` | Live handoff log between agents/sessions. Newest 10 entries, newest first. |

@@ -642,7 +642,7 @@ function Usage() {
     </>
   );
 }
-export default function Admin() {
+function AdminContent() {
   const section = useLocation().pathname.split("/")[2];
   switch (section) {
     case "overview":
@@ -668,4 +668,14 @@ export default function Admin() {
         </EmptyState>
       );
   }
+}
+
+export default function Admin() {
+  const section = useLocation().pathname.split("/")[2];
+  const preview = ["overview", "forms", "responses", "usage"].includes(section);
+  return (
+    <div className={`admin-surface${preview ? " admin-preview" : ""}`}>
+      <AdminContent />
+    </div>
+  );
 }

@@ -13,6 +13,7 @@ import FeedbackQuestion from "../components/FeedbackQuestion";
 import { useFeedbackRead } from "../hooks/useFeedbackRead";
 import { useResponseDraft } from "../hooks/useResponseDraft";
 import { recipientBase, type RecipientForm } from "../services/feedbackApi";
+import { refreshInboxUnread } from "../hooks/useInboxUnread";
 
 function Editor({ initial }: { initial: RecipientForm }) {
   const { user } = useAuth();
@@ -167,6 +168,13 @@ export default function RecipientFeedback() {
     `${recipientBase}/${encodeURIComponent(id ?? "")}`,
     "recipient",
   );
+  const notified = useRef(false);
+  useEffect(() => {
+    if (read.data && !notified.current) {
+      notified.current = true;
+      refreshInboxUnread();
+    }
+  }, [read.data]);
   if (read.loading) return <p role="status">Loading feedback form...</p>;
   if (read.error)
     return (

@@ -22,7 +22,7 @@ Stages: not started, spec, build, verified (local), merged.
 | ADM-01 | not started | | | |
 | ADM-02 | merged | `feat/adm02-targeted-feedback-forms` | 30 | Revised spec/plan approved 2026-11-07 at 629f708; independent developer/test-designer started. Includes persistent private respondent autosave/resume and Completed state. Verification pending. |
 | ADM-03 | not started | | | |
-| ADM-04 | PR open | `feat/adm04-feedback-follow-up` | 31 | Stage inside the PR not verified here; reviewed private feedback replies and announcements. |
+| ADM-04 | verified (local) | `feat/adm04-feedback-follow-up` | [31](https://github.com/CS3227-2610-MP4-learnSWE/CS3227-2610-MP4/pull/31) | Core strongest PASS; UI redesign/nav badge follow-up121backend/622browserPASS. Prior count-label finding fixed. [UI usage](usage/runs/2026-11-07-ADM04-UI-01/report.md); logs/Adm04UiRedesign.md. Remote CI/team review pending. |
 | ADM-05 | merged | `feat/adm05-user-and-access-management` | 26 | Fixed-role account creation/lifecycle, courses with General topic, teacher/student assignments. Source `07deb57`; strongest verifier PASS; 391 browser tests, 968 backend cases covered across full/focused runs. Local commits only; apply migration before use. Evidence: `logs/Adm05Verification.md`. |
 | ADM-06 | merged | `feat/adm06-ai-usage-monitoring` | 27 | Source c4df076; strongest verifier PASS at e85279e. Backend1169 PASS; all513 browser cases covered across full+focused recovery. Migration/restart/activation required; local only, human PR pending. [Retro](specs/ADM-06/retro.md), logs/Adm06Implementation.md. |
 | SHR-01 | merged | `feat/shr01-auth-spec`, `feat/tea03-edit-mcqs-delete-drafts` | 16, 17 | Teacher session integration merged; deployment settings remain separate. |

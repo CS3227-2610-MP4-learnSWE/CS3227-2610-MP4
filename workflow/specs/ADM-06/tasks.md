@@ -14,3 +14,9 @@
 | 10 | Record security/session/resource evidence; generate run usage report; human reviews PR into master | orchestrator, human | 6, 7 | records done; remote PR/human review pending |
 
 Tasks 2, 3, 4, 8 and 9 run in parallel in the prescribed developer/test-designer worktree separation; tasks 3/4 are owned by the same developer. No application code until task 1 approval gate. No live AI calls.
+
+
+## Shared admin UI baseline maintenance (2026-11-07)
+- [x] developer: amend the approved presentation contract under the user's scoped redesign request, retaining functional/security behavior.
+- [x] developer: add browser checks before implementation; apply scoped panels, outlined controls, responsive layout and metadata hierarchy.
+- [x] developer: complete regression and visual checks, update guides and record the session/usage handoff (see workflow/notes.md).

@@ -27,6 +27,7 @@ import { navigation, names, roles, type Role } from "../data";
 import { useDemo } from "../state";
 import { useAuth } from "../auth/AuthContext";
 import StudyCompanion, { CompanionTrigger } from "./StudyCompanion";
+import { useInboxUnread } from "../hooks/useInboxUnread";
 
 function Health() {
   const [status, setStatus] = useState("Checking backend");
@@ -75,6 +76,7 @@ export default function Shell({
   const [open, setOpen] = useState(false);
   const { messages } = useDemo();
   const { status, user, logout } = useAuth();
+  const inboxUnread = useInboxUnread();
   const [logoutFailed, setLogoutFailed] = useState(false);
   const [logoutConfirm, setLogoutConfirm] = useState(false);
   const [logoutPending, setLogoutPending] = useState(false);
@@ -98,12 +100,13 @@ export default function Shell({
   const displayName = user?.display_name ?? "";
   const unread = demoMode
     ? messages[role].filter((message) => message.unread).length
-    : 0;
+    : (inboxUnread ?? 0);
   const section = location.pathname.split("/")[2];
   const liveUsage = !demoMode && role === "admin" && section === "ai-usage";
   const liveFeedback =
     !demoMode &&
     (section === "feedback" ||
+      (role === "admin" && section === "announcements") ||
       ((role === "student" || role === "teacher") && section === "inbox"));
   const current =
     navigation[role].find((item) => item.path === section)?.label ||
@@ -132,7 +135,11 @@ export default function Shell({
           const item =
             !demoMode && role === "admin" && original.path === "forms"
               ? { ...original, path: "feedback" }
-              : original;
+              : !demoMode &&
+                  role === "admin" &&
+                  original.path === "announcements"
+                ? { ...original, path: "announcements/new" }
+                : original;
           return (
             <NavLink
               key={item.path}
@@ -141,11 +148,25 @@ export default function Shell({
                 `nav-item ${isActive ? "active" : ""}`
               }
               onClick={() => setOpen(false)}
+              aria-label={item.path === "inbox" ? "Inbox" : undefined}
+              aria-description={
+                item.path === "inbox" && unread > 0
+                  ? `${unread} unread inbox items`
+                  : undefined
+              }
             >
               <Icon name={item.icon} />
               <span>{item.label}</span>
               {item.path === "inbox" && unread > 0 && (
-                <span className="nav-count">{unread}</span>
+                <span
+                  className="nav-count"
+                  role="status"
+                  aria-label={`${unread} unread inbox items`}
+                  aria-live="polite"
+                  aria-atomic="true"
+                >
+                  {unread > 99 ? "99+" : unread}
+                </span>
               )}
               {item.path === "generate" && <span className="nav-ai">AI</span>}
             </NavLink>

@@ -677,7 +677,7 @@ test("ADM-02 AC18-20 response snapshot renders harmless text and exact original 
   ];
   await page.goto(`/admin/feedback/${FORM_ID}/responses/${RESPONSE_ID}`);
   await expect(
-    page.getByRole("heading", { name: `Response ${RESPONSE_ID}`, exact: true }),
+    page.getByRole("heading", { name: "Feedback response", exact: true }),
   ).toBeVisible();
   await expect(
     page.getByText(`Respondent: ${STUDENT.display_name}`, { exact: true }),
@@ -710,7 +710,7 @@ test("ADM-02 admin form and response rows are one-line, full-row links with hove
   });
   await expect(formLink).toBeVisible();
   await expect(formLink).toHaveCSS("display", "flex");
-  await expect(formLink).toHaveCSS("min-height", "52px");
+  await expect(formLink).toHaveCSS("min-height", "80px");
   const formTextRows = await formLink
     .locator("span")
     .evaluateAll((nodes) =>
@@ -738,7 +738,7 @@ test("ADM-02 admin form and response rows are one-line, full-row links with hove
   });
   await expect(responseLink).toBeVisible();
   await expect(responseLink).toHaveCSS("display", "flex");
-  await expect(responseLink).toHaveCSS("min-height", "52px");
+  await expect(responseLink).toHaveCSS("min-height", "80px");
   const responseTextRows = await responseLink
     .locator("span")
     .evaluateAll((nodes) =>
@@ -754,9 +754,7 @@ test("ADM-02 admin form and response rows are one-line, full-row links with hove
       responseLink.evaluate((node) => getComputedStyle(node).backgroundColor),
     )
     .not.toBe(responseColor);
-  await responseLink
-    .getByText(`${STUDENT.display_name} · ${TIME}`, { exact: true })
-    .click();
+  await responseLink.locator(`time[datetime="${TIME}"]`).click();
   await expect(page).toHaveURL(
     `/admin/feedback/${FORM_ID}/responses/${RESPONSE_ID}`,
   );
@@ -849,7 +847,7 @@ for (const width of [1365, 390]) {
     await page.goto(`/admin/feedback/${FORM_ID}/responses/${RESPONSE_ID}`);
     await expect(
       page.getByRole("heading", {
-        name: `Response ${RESPONSE_ID}`,
+        name: "Feedback response",
         exact: true,
       }),
     ).toBeVisible();

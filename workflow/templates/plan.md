@@ -9,6 +9,8 @@ Method, path, roles allowed, request/response, errors.
 New and reused (shared modules named explicitly).
 
 ## UI contract
+Apply [the shared UI design guide](../ui-design.md) (generated feature plan link: `../../ui-design.md`). Name reused components/theme tokens, panel layout and field boundaries, mobile stacking/long-content rules, keyboard/focus behavior and visual regression cases. For badges/background reads, fix the endpoint/schema, request cadence, count meaning, stale-response/failure/session behavior. Do not leave these implementation choices implicit.
+
 For each screen: the accessible role and name of every control and message the tests will use (for example button "Create account"), the timeouts, and the copy from the spec's "UI states and copy" table. The test-designer uses only these names. Also fix, per screen, as labelled entries (one list item per label, written `Label: text`; `Label: not applicable: reason` when one does not apply):
 - Requests per load and per retry: the number of requests on load and on each retry.
 - Wrong role: the behaviour (redirect or message, and whether a request is sent).

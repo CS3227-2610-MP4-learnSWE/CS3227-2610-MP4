@@ -593,10 +593,49 @@ Start the frontend with the existing setup instructions. Sign in as an enabled a
 
 `useResponseDraft` owns the one-second autosave debounce, one in-flight write, coalesced later edits, explicit retry/conflict handling and navigation flushing. Hydration produces no write. Submission cancels debounce, waits for a pending save, then posts once with final answers. A saved draft is recovered server-side after reload or another device; answers never enter localStorage/sessionStorage. Beforeunload warns for unacknowledged edits. Session exit clears the view immediately and does not wait for autosave. Native abrupt termination can lose edits that never reached the server.
 
-Signed-in student/teacher inboxes use persistent request data, with no sample rows or sample unread badge. The inbox shows the real unread count. Anonymous demo previews remain explicitly sample-only. Admin sidebar feedback navigation points to the live form manager; unrelated analytics/announcement previews retain their existing labels.
+Signed-in student/teacher inboxes use persistent request data, with no sample rows or sample unread badge. The inbox shows the real unread count. Anonymous demo previews remain explicitly sample-only. Admin sidebar feedback navigation points to the live form manager; unrelated analytics previews retain their existing labels; authenticated Announcements uses ADM-04 and removes the sample label.
 
 ### Verification
 
 Run the existing backend suite with `uv run pytest -q`, plus the frontend `npm run typecheck`, `npm run lint` and `npm test`. Tests need the documented disposable PostgreSQL schema harness. Set process-local `PGCONNECT_TIMEOUT=3` when running the historical unavailable-database test on Windows if a refused port otherwise waits indefinitely; this bounds the test process's libpq connection attempts without changing application configuration. Use `pytest -k adm02` and Playwright `--grep ADM-02` for the independent feature cases after their integration. No live AI calls are required.
 
 Manual checks: save/reopen all six question types; publish to selected student and teacher accounts separately; verify an unselected account cannot open the URL; save partial required answers, navigate away/return and resume; submit once and see Completed; close collection and verify further saves/submits fail; review preserved submitted snapshots as admin. Test two tabs saving the same draft, close racing submission, failure/retry, session change and mobile keyboard access. Deployment remains through the team's GitHub Actions process.
+
+
+## ADM-04: reviewed private feedback follow-up
+
+ADM-04 adds `messaging.py`, `messaging_store.py`, `messaging_validation.py`, `messaging_models.py` and fixed `messaging_errors.py`. Admin endpoints under `/api/admin/messaging` derive a feedback respondent from a submitted ADM-02 response or resolve one role's selected/all-active accounts. Review creates an immutable 15-minute preview; sending uses only that preview ID. The shared account-change advisory transaction lock rechecks the signed-in actor after acquiring the lock and serializes audience validation with account changes. A unique preview/message constraint and unique message/recipient delivery constraint preserve one durable delivery across concurrent sends, retries and process restarts. Sending is all-or-nothing; replay returns the original receipt without resetting read status. No model calls or external delivery occur.
+
+Migration `20261107_adm04_messaging` adds three message tables after ADM-02; it preserves all surveys and existing records. From `src/backend`, apply it only to your intended local database, then start the API with the same environment:
+
+```powershell
+uv run --env-file .env alembic upgrade head
+uv run --env-file .env uvicorn main:app --host 127.0.0.1 --port 8000 --reload
+```
+
+The equivalent shell commands on macOS/Linux are identical. A serving process must load the intended `.env`; a 503 indicates temporary storage/configuration failure, including an unapplied migration. The implementation session did not migrate the developer database or restart user servers.
+
+`AdminMessaging` connects the submitted-response `Respond to feedback` action and admin `Announcements` navigation. The `?review=<UUID>` URL recovers only the current admin's preview or original sent receipt. Review POST uses its returned data directly; refresh/history performs one recovery GET, never an automatic send. Edit restores reviewed fields and reloads eligibility once. Private drafts are not put in browser storage. `MessagesInbox` appears beneath the unchanged survey section for authenticated students/teachers. New recipient APIs are GET `/api/messaging/inbox?limit=20&offset=0` and POST `/api/messaging/inbox/{delivery_id}/read`; full literal content is inline, so no separate detail endpoint exposes feedback references or audience identities.
+
+Text limits are 120 subject/5000 body Unicode code points, 500 distinct recipients, 128 KiB request bodies and 15 seconds per browser request. Admin quotas per minute: 20 recipient/recovery reads, 10 previews and 5 first-time sends; successful replay is exempt from send quota. Inbox reads and mark-read share 60 requests/minute/account. The reused limiter is process-local; durable uniqueness and access remain database-enforced. Delivery and previews have no automatic retention deletion. No sent-message edit/recall or sent-history browser is included.
+
+Manual verification: sign in as admin, open a submitted response, compose/review/confirm a response, then sign in as its respondent and find exactly one unread Feedback response under Messages. Mark it read and refresh; it stays read. Send a selected-student announcement and check that a different user cannot read its delivery ID. Refresh a review URL before confirming and verify that recovery itself sends nothing. Existing feedback requests, autosave and completion continue independently.
+
+
+### ADM-04: unread navigation and scoped UI
+`GET /api/messaging/unread-count` is an authenticated student/teacher metadata-only endpoint returning `unread_count`, `unread_messages` and `unread_requests`. One aggregate SQL statement counts only the actor's unread deliveries and published/non-draft survey requests matching their role. It reuses the shared session/role/transaction checks, no-store policy and 60/minute recipient quota. No schema migration is needed for this UI follow-up.
+
+`useInboxUnread` loads the summary once per authenticated recipient shell, deduplicates StrictMode reads, refreshes each visible minute and on window focus/visibility return (minimum five seconds apart), and stops when hidden/unmounted or signed out. List loads publish section counts; successful mark-read changes the badge locally. First successful survey-detail read requests a summary refresh. Revisions prevent an older summary from overwriting a more recent local count; in-flight invalidations coalesce into one follow-up. Background failures retain known data and recover on the next refresh without interrupting the current page. No message bodies are polled. Session-generation checks prevent previous-account badge data.
+
+The ADM-04 styles scope input outlines and surfaces to messaging/inbox. Do not reset all nested fieldsets: MUI uses a fieldset for outlined inputs. Header/input contrast, semantic dates, recipient search separation and responsive light/dark screenshots are covered by `tests/adm04-redesign.spec.ts`; private summary semantics by `tests/test_adm04_unread.py`.
+
+
+### Admin screen design baseline
+
+`workflow/ui-design.md` governs the remaining admin surfaces as well as ADM-04. `Admin.tsx` scopes the live access/course/usage pages and legacy previews with `.admin-surface`; `AdminFeedback.tsx` independently scopes the form routes. Portal dialogs opt into `.admin-dialog`, so input styling also applies outside the page DOM. Do not apply these classes to the ADM-04 composer or recipient inbox.
+
+The scoped rules in `styles.css` define neutral panels, outlined MUI fields, readable metadata and responsive layouts. MUI notched-outline fieldsets receive an explicit border, margin and padding so the global fieldset reset cannot erase them. Account discovery/results precede creation in DOM order and stack below 1100px; recipient lists scroll within 280px. Feedback editor sections retain the native disabled fieldset and existing submission/navigation guards.
+
+`LocalTime.tsx` renders recorded instants with the browser's locale/time zone and preserves the ISO value in `time[datetime]` and the title. Report date filters remain UTC. Response link accessible names retain their exact identifiers and original timestamps, while visible rows lead with human names. Existing endpoints, fetch cadence, error mappings, session clearing and security checks are unchanged; no background requests or live AI are added.
+
+Regression coverage is in `tests/admin-ui.spec.ts`, alongside existing ADM-02/04/05/06 suites. The existing row-layout and timestamp assertions were adapted to the documented taller cards and semantic local dates, retaining full-row navigation, hover, request-count and exact-record assertions. Use isolated Playwright ports when a developer server is running. Check desktop/mobile, both themes, visible input/focus outlines, long content, retained input on failure and keyboard-reachable report scrolling.

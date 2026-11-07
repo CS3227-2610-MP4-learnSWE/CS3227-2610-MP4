@@ -1,0 +1,12 @@
+# ADM-04 specification session — 2026-11-07
+
+- User requested implementation of ADM-04. Orchestrator read workflow rules, feature stories, current handoff state and integration contracts. Existing branch `feat/adm04-feedback-follow-up` starts at `f1d7e3e` (ADM-02 merged).
+- ADM-04 has no existing spec or approved plan. The explicit AGENTS.md spec approval gate applies before feature code. Started tracked run `2026-11-07-ADM04-01` and delegated the spec-writer role after creating its manifest.
+- Spec-writer is restricted to requirements/templates. Orchestrator checked existing survey inbox, response-detail, shared auth and transport contracts and supplied compatibility facts. No application code, tests, environment, database or user process changes.
+- Draft contract, validation and final usage closeout are recorded below when complete. Exact usage comes only from the generated report; unknown values remain unavailable.
+
+- Draft complete: `workflow/specs/ADM-04/{spec,plan,tasks}.md`. Orchestrator corrected CSRF wording, account-ID limits, dedicated delivery persistence, body/query bounds and durable review/edit recovery. Proposed policies remain Draft for human approval.
+- Validation: ADM-04 speccheck PASS (1 checked, 0 failed, 0 waived); diff whitespace checked. No runtime suites needed for specification-only changes.
+- Usage: `workflow/usage/runs/2026-11-07-ADM04-01/report.md` generated and inspected, two invocations plus run total. Exact session IDs resolved from session_meta. Parent matched; child unmatched, whole-run tokens/cost unavailable. Metadata start timestamps used to encompass provider usage emitted before initial manifest creation; no fake source IDs or estimated token counts. Report captures observed usage through closeout, later handoff work may not yet be emitted.
+- Tool recoveries: first checker invocation used wrong working directory; corrected. Checker treated adjacent comparison operators as a placeholder; replaced with prose, passed. Initial report rejected unfinished invocations; completed manifest. Attribution then rejected pre-manifest parent usage; metadata session-start bound corrected and regeneration passed. No application correction rounds.
+- Required approval comes from AGENTS.md / workflow/coordination.md: spec and plan must be approved by the human team before developer and independent test-designer start. Feature remains incomplete at that gate. No external messages, remote push, PR or deployment.

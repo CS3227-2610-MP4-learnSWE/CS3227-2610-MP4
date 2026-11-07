@@ -29,3 +29,9 @@ Tasks 1, 2, 6 and 7 run in parallel in separate worktrees. No live LLM or deploy
 - [x] Implement shared dismissal and confirmation; preserve auth failure/expiry behaviour.
 - [x] Adapt existing logout journeys to confirm with no assertion weakening;111 browser checks PASS.
 - [x] Update guides/handoff/security/resource records; inspect visual artifacts.
+
+
+## Shared admin UI baseline maintenance (2026-11-07)
+- [x] developer: amend the approved presentation contract under the user's scoped redesign request, retaining functional/security behavior.
+- [x] developer: add browser checks before implementation; apply scoped panels, outlined controls, responsive layout and metadata hierarchy.
+- [x] developer: complete regression and visual checks, update guides and record the session/usage handoff (see workflow/notes.md).

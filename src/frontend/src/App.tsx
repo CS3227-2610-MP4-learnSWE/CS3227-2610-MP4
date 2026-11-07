@@ -20,6 +20,7 @@ import InboxPage, { FeedbackForm } from "./pages/Inbox";
 import FeedbackInbox from "./pages/FeedbackInbox";
 import RecipientFeedback from "./pages/RecipientFeedback";
 import AdminFeedback from "./pages/AdminFeedback";
+import AdminMessaging from "./pages/AdminMessaging";
 
 // Loaded on demand so the student pages never download the teacher demo data.
 const Teacher = lazy(() => import("./pages/Teacher"));
@@ -38,6 +39,17 @@ function LiveFeedback({ admin = false }: { admin?: boolean }) {
   const { status } = useAuth();
   if (status !== "authenticated") return <Navigate to="/login" replace />;
   return admin ? <AdminFeedback /> : <RecipientFeedback />;
+}
+
+function Announcements() {
+  const { status } = useAuth();
+  return status === "authenticated" ? (
+    <AdminMessaging />
+  ) : (
+    <Suspense fallback={<p role="status">Loading…</p>}>
+      <Admin />
+    </Suspense>
+  );
 }
 
 export default function App() {
@@ -157,6 +169,12 @@ export default function App() {
             >
               <Route index element={<Navigate to="overview" replace />} />
               <Route path="feedback/*" element={<LiveFeedback admin />} />
+              <Route path="announcements" element={<Announcements />} />
+              <Route path="announcements/new" element={<AdminMessaging />} />
+              <Route
+                path="feedback/:formId/responses/:responseId/reply"
+                element={<AdminMessaging />}
+              />
               <Route
                 path="*"
                 element={
