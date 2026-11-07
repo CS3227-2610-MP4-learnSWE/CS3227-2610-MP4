@@ -31,6 +31,11 @@ from companion_helpers import (
     submit,
     submitted_attempt,
 )
+import pytest as _pytest
+
+from fake_sets import UNKNOWN_SET_ID
+
+pytestmark = _pytest.mark.usefixtures("fake_provider")
 
 KEY_VERSION = re.compile(r"\bv1\b")
 
@@ -702,7 +707,7 @@ def test_stu03_ac25_session_user_is_the_identity_and_header_is_ignored(fake):
 
 
 def test_stu03_ac26_unknown_set_is_404(fake):
-    r = ask(new_student(), "hi", page="practice", set_id="no-such-set")
+    r = ask(new_student(), "hi", page="practice", set_id=UNKNOWN_SET_ID)
     assert r.status_code == 404 and code_of(r) == "set_not_found"
     assert fake.calls == []
 

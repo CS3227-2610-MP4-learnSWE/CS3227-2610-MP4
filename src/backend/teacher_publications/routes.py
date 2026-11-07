@@ -10,9 +10,10 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.orm import Session
 
-from auth.db import get_session
-from auth.dependencies import AuthUser, current_user, require_course_member
+from auth.dependencies import AuthUser, current_user
 from errors import ApiError
+from practice_schemas import public_set
+from set_provider import SetProvider, get_set_provider
 from study_lessons.models import PublishedLesson
 from study_lessons.publish import publish_lesson
 from teacher_access import parse_uuid, require_managed_course, teacher_session
@@ -210,19 +211,20 @@ def read_set(request: Request, publication_id: str):
 
 
 @router.get("/api/study/courses/{course_id}/practice-sets")
-def student_sets(course_id: str, user: AuthUser = Depends(current_user(role="student")), db: Session = Depends(get_session)):
+def student_sets(course_id: str, user: AuthUser = Depends(current_user(role="student")), provider: SetProvider = Depends(get_set_provider)):
     with publication_errors():
-        course = require_course_member(db, user, parse_uuid(course_id))
-        rows = db.scalars(select(PublishedPracticeSet).where(PublishedPracticeSet.course_id == course.id).order_by(PublishedPracticeSet.published_at.desc(), PublishedPracticeSet.id.desc())).all()
-        return [metadata(db, row, "practice_set", teacher=False) for row in rows]
+        catalog = provider.catalog_for_student(user.id, course_id=parse_uuid(course_id))
+        if not catalog:
+            raise ApiError(404, "not_found", "Course not found.")
+        course = catalog[0]
+        return [dict(id=s.id, kind="practice_set", course_id=course.id, topic_id=s.topic_id, topic_name=s.topic_name, title=s.title,
+                     published_at=utc_timestamp(s.published_at), question_count=s.question_count) for s in course.sets]
 
 
 @router.get("/api/study/practice-sets/{set_id}")
-def student_set(set_id: str, user: AuthUser = Depends(current_user(role="student")), db: Session = Depends(get_session)):
+def student_set(set_id: str, user: AuthUser = Depends(current_user(role="student")), provider: SetProvider = Depends(get_set_provider)):
     with publication_errors():
-        row = db.scalar(select(PublishedPracticeSet).join(CourseMembership, CourseMembership.course_id == PublishedPracticeSet.course_id)
-                        .where(PublishedPracticeSet.id == parse_uuid(set_id), CourseMembership.user_id == user.id))
-        if row is None:
+        practice_set = provider.get_for_student(str(parse_uuid(set_id)), user.id)
+        if practice_set is None:
             raise ApiError(404, "not_found", "Publication not found.")
-        return dict(id=str(row.id), title=row.title, questions=[dict(id=str(q.id), text=q.question, code=None,
-                    choices=[dict(id=chr(97 + i), text=value) for i, value in enumerate(q.choices)]) for q in questions(db, row.id)])
+        return public_set(practice_set)

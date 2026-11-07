@@ -33,3 +33,7 @@ Final verification: 14 Playwright tests passed; 3 backend tests passed. TypeScri
 - Change the last free-text sample question to MCQ and show choices/correct-choice selection in teacher previews.
 
 Follow-up verification: 18 browser tests and 3 backend tests passed, with TypeScript, lint, formatting and production build passing. Mobile drawer-to-chat regression was reproduced and fixed. New tests cover draft/history retention, clear, login and role-switch resets, current-page label, Escape focus return and mobile sizing. Dark mobile widget screenshot inspected. No backend functionality added.
+
+
+## Admin preview UI maintenance - 2026-11-07
+User-requested application of workflow/ui-design.md: wrap the existing admin analytics, legacy form, feedback-analysis and usage previews in scoped admin styling. Retain existing labels, sample values, preview-only dialogs/actions and no-AI/no-save notices. Use readable panels, persistent outlined labels, wrapped long content, visible focus and responsive stacking in both themes. Do not imply ADM-01 or ADM-03 has a live implementation. Announcements/ADM-04 live composer and recipient inbox are outside this amendment. Verify representative preview routes at desktop and 320px alongside live ADM-02/05/06 flows.

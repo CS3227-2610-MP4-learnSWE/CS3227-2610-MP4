@@ -4,6 +4,7 @@ import {
   TWO_OF_THREE,
   apiError,
   mockPracticeApi,
+  SET_ID,
 } from "./practiceApi";
 import { STUDENT, mockAuthApi } from "./authApi";
 
@@ -20,7 +21,7 @@ test.beforeEach(async ({ page }) => {
 });
 
 async function fillAndSubmit(page: Page) {
-  await page.goto("/student/practice");
+  await page.goto(`/student/practice/${SET_ID}`);
   await page
     .getByRole("radio", { name: "A single, focused responsibility" })
     .check();

@@ -5,6 +5,8 @@ from sqlalchemy import create_engine
 from auth.settings import load_settings
 from companion_helpers import BENIGN, SET_ID, ask, new_student, start
 
+pytestmark = pytest.mark.usefixtures("fake_provider")
+
 
 @pytest.mark.parametrize("page", ["other", "practice"])
 def test_stu03_companion_releases_auth_connection_before_model_and_nested_reads(
@@ -19,7 +21,7 @@ def test_stu03_companion_releases_auth_connection_before_model_and_nested_reads(
         pool_timeout=0.25,
     )
     # All request/session/store paths share the same deliberately bounded pool.
-    for module in ("auth.db", "attempt_store", "companion_routes"):
+    for module in ("auth.db", "companion_routes"):  # attempt_store opens its sessions through auth.db
         monkeypatch.setattr(f"{module}.engine_for", lambda _url: engine)
     held_during_model = []
 

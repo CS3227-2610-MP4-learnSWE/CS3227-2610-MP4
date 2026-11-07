@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router";
 import {
   Alert,
   Button,
@@ -7,25 +8,30 @@ import {
   RadioGroup,
 } from "@mui/material";
 import { CheckCircle2, Lightbulb, Sparkles, Target } from "lucide-react";
-import {
-  PageHeading,
-  Panel,
-  PreviewNote,
-  Progress,
-  Tag,
-} from "../components/ui";
+import { PageHeading, Panel, PreviewNote, Progress } from "../components/ui";
 import { usePractice } from "../practice/PracticeContext";
 import { useAuth } from "../auth/AuthContext";
 import SignInNotice from "../auth/SignInNotice";
+import {
+  PRACTICE_FORBIDDEN,
+  SET_NO_LONGER_AVAILABLE,
+  SET_NOT_AVAILABLE,
+} from "../services/practiceMessages";
 
-export default function Practice() {
+function BackToSets() {
+  return <Link to="/student/practice">Back to practice sets</Link>;
+}
+
+export default function Practice({ setId }: { setId: string }) {
   const p = usePractice();
   const demoMode = useAuth().status === "anonymous";
-  const { load, loadSet, set, choices, results, submitted } = p;
+  const { loadSet, set, choices, results, submitted } = p;
   const [hint, setHint] = useState(false);
   useEffect(() => {
-    if (load === "idle") loadSet();
-  }, [load, loadSet]);
+    loadSet(setId);
+  }, [setId, loadSet]);
+  // State of another set may still be held for one render before the reset.
+  const load = p.setId === setId ? p.load : "loading";
 
   const heading = (
     <PageHeading
@@ -34,6 +40,33 @@ export default function Practice() {
       description="A few focused questions to turn understanding into confidence."
     />
   );
+  if (p.setId === setId && p.unavailable === "later")
+    return (
+      <>
+        {heading}
+        <Alert severity="error" sx={{ my: 2 }}>
+          {SET_NO_LONGER_AVAILABLE} <BackToSets />
+        </Alert>
+      </>
+    );
+  if (load === "error" && p.unavailable === "load")
+    return (
+      <>
+        {heading}
+        <Alert severity="error" sx={{ my: 2 }}>
+          {SET_NOT_AVAILABLE} <BackToSets />
+        </Alert>
+      </>
+    );
+  if (load === "error" && p.forbidden)
+    return (
+      <>
+        {heading}
+        <Alert severity="error" sx={{ my: 2 }}>
+          {PRACTICE_FORBIDDEN}
+        </Alert>
+      </>
+    );
   if (load === "error")
     return (
       <>
@@ -45,7 +78,11 @@ export default function Practice() {
             severity="error"
             sx={{ my: 2 }}
             action={
-              <Button color="inherit" size="small" onClick={loadSet}>
+              <Button
+                color="inherit"
+                size="small"
+                onClick={() => loadSet(setId)}
+              >
                 Try again
               </Button>
             }
@@ -55,7 +92,7 @@ export default function Practice() {
         )}
       </>
     );
-  if (!set)
+  if (!set || p.setId !== setId)
     return (
       <>
         {heading}
@@ -77,7 +114,6 @@ export default function Practice() {
         <div>
           <Panel className="practice-intro">
             <div>
-              <Tag tone="purple">SOFTWARE ENGINEERING ESSENTIALS</Tag>
               <h2>{set.title}</h2>
               <p>{total} MCQs · Whole-set submission</p>
             </div>

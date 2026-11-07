@@ -42,7 +42,7 @@ function radio(page: Page, questionId: string, choiceId: string) {
 }
 
 async function openPractice(page: Page) {
-  await page.goto("/student/practice");
+  await page.goto(`/student/practice/${SET_ID}`);
   await expect(
     page.getByRole("radio", { name: choiceText("q1", "a"), exact: true }),
   ).toBeVisible();
@@ -112,7 +112,7 @@ test("stu02fe AC1 page shows the API's title, questions, code and choices in ord
     ],
   };
   const mock = await mockPracticeApi(page, { set });
-  await page.goto("/student/practice");
+  await page.goto(`/student/practice/${SET_ID}`);
   await expect(page.getByText("Mocked set title ZX").first()).toBeVisible();
   const text = await pageText(page);
   expect(text.indexOf("Zeta question text?")).toBeGreaterThan(-1);
@@ -151,7 +151,7 @@ test("stu02fe AC1 a loading state shows while the set is loading", async ({
   const mock = await mockPracticeApi(page, {
     replies: { getSet: [{ delayMs: 800, passThrough: true }] },
   });
-  await page.goto("/student/practice");
+  await page.goto(`/student/practice/${SET_ID}`);
   await expect(page.getByText(/loading/i).first()).toBeVisible();
   await expect(page.getByRole("radio")).toHaveCount(0);
   await expect(radio(page, "q1", "a")).toBeVisible();
@@ -301,7 +301,7 @@ test("stu02fe AC6 network failure on load shows an error panel with Try again, t
   const mock = await mockPracticeApi(page, {
     replies: { getSet: [{ abort: true }] },
   });
-  await page.goto("/student/practice");
+  await page.goto(`/student/practice/${SET_ID}`);
   await expect(page.getByRole("button", { name: "Try again" })).toBeVisible();
   await expect(page.getByRole("radio")).toHaveCount(0);
   await page.getByRole("button", { name: "Try again" }).click();
@@ -309,22 +309,25 @@ test("stu02fe AC6 network failure on load shows an error panel with Try again, t
   expect(mock.count("getSet")).toBe(2);
 });
 
-test("stu02fe AC6 404 set_not_found shows an error panel without raw details", async ({
+test("stu02fe AC6 404 set_not_found shows the not-available panel without raw details (STU-02-published-sets: no Try again)", async ({
   page,
 }) => {
   const mock = await mockPracticeApi(page, {
     replies: { getSet: [apiError(404, "set_not_found")] },
   });
-  await page.goto("/student/practice");
-  await expect(page.getByRole("button", { name: "Try again" })).toBeVisible();
+  await page.goto(`/student/practice/${SET_ID}`);
+  await expect(
+    page
+      .getByRole("alert")
+      .filter({ hasText: "This practice set is not available to you." }),
+  ).toBeVisible();
+  await expect(page.getByRole("button", { name: "Try again" })).toHaveCount(0);
   await expect(page.getByRole("radio")).toHaveCount(0);
   const text = await pageText(page);
   expect(text).not.toContain("set_not_found");
   expect(text).not.toContain("Server says");
-  expect(text).not.toMatch(/\b404\b/);
-  await page.getByRole("button", { name: "Try again" }).click();
-  await expect(radio(page, "q1", "a")).toBeVisible();
-  expect(mock.count("getSet")).toBe(2);
+  expect(text.includes(" 404")).toBe(false);
+  expect(mock.count("getSet")).toBe(1);
 });
 
 test("stu02fe AC6 a response of the wrong shape on load is treated as a failure", async ({
@@ -335,7 +338,7 @@ test("stu02fe AC6 a response of the wrong shape on load is treated as a failure"
       getSet: [{ json: { id: SET_ID, title: 42, questions: "nope" } }],
     },
   });
-  await page.goto("/student/practice");
+  await page.goto(`/student/practice/${SET_ID}`);
   await expect(page.getByRole("button", { name: "Try again" })).toBeVisible();
   await expect(page.getByRole("radio")).toHaveCount(0);
 });
@@ -346,7 +349,7 @@ test("stu02fe AC6 HTTP 500 on load shows an error panel", async ({ page }) => {
       getSet: [{ status: 500, body: "Traceback SECRET_TRACE_MARKER" }],
     },
   });
-  await page.goto("/student/practice");
+  await page.goto(`/student/practice/${SET_ID}`);
   await expect(page.getByRole("button", { name: "Try again" })).toBeVisible();
   const text = await pageText(page);
   expect(text).not.toContain("SECRET_TRACE_MARKER");
@@ -536,7 +539,7 @@ test("stu02fe AC6 slow load past 10 seconds times out with an error panel (fake 
     replies: { getSet: [{ hang: true }] },
   });
   await page.clock.install();
-  await page.goto("/student/practice");
+  await page.goto(`/student/practice/${SET_ID}`);
   await expect.poll(() => mock.count("getSet")).toBe(1);
   await page.clock.fastForward(11_000);
   await expect(page.getByRole("button", { name: "Try again" })).toBeVisible();
@@ -661,7 +664,8 @@ test("stu02fe AC10 answers survive navigating away and back", async ({
   await pick(page, { q1: "b", q2: "b" });
   await page.getByRole("link", { name: "Overview", exact: true }).click();
   await expect(page).toHaveURL(/\/student\/overview$/);
-  await page.getByRole("link", { name: "Practice", exact: true }).click();
+  await page.goBack();
+  await expect(page).toHaveURL(new RegExp(`/student/practice/${SET_ID}$`));
   await expect(radio(page, "q1", "b")).toBeChecked();
   await expect(radio(page, "q2", "b")).toBeChecked();
   await expect(page.getByText("2 of 3 answered")).toBeVisible();
@@ -675,7 +679,8 @@ test("stu02fe AC10 results survive navigating away and back", async ({
   await submitCompleteSet(page, mock, TWO_OF_THREE);
   await page.getByRole("link", { name: "Overview", exact: true }).click();
   await expect(page).toHaveURL(/\/student\/overview$/);
-  await page.getByRole("link", { name: "Practice", exact: true }).click();
+  await page.goBack();
+  await expect(page).toHaveURL(new RegExp(`/student/practice/${SET_ID}$`));
   await expect(page.getByText(EXPLANATIONS[0]).first()).toBeVisible();
   await expect(page.getByText(scoreText(2)).first()).toBeVisible();
   await expect(radio(page, "q3", "a")).toBeChecked();
@@ -736,7 +741,7 @@ test("stu02fe security server text is rendered as text, never as HTML", async ({
     q1: { correct: "a", explanation: `Explain ${payload}` },
   };
   await mockPracticeApi(page, { set, key });
-  await page.goto("/student/practice");
+  await page.goto(`/student/practice/${SET_ID}`);
   await expect(page.getByText("<b>bold-choice</b>")).toBeVisible();
   await page.getByRole("radio", { name: "<b>bold-choice</b>" }).check();
   await radio(page, "q2", "b").check();

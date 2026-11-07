@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { TWO_OF_THREE, apiError, mockPracticeApi } from "./practiceApi";
+import { TWO_OF_THREE, apiError, mockPracticeApi, SET_ID } from "./practiceApi";
 import { STUDENT, mockAuthApi } from "./authApi";
 
 /** STU-02-frontend: locked state after a failure past the save, and shape-checked replies. */
@@ -17,7 +17,7 @@ test.beforeEach(async ({ page }) => {
 });
 
 async function fillAndSubmit(page: Page) {
-  await page.goto("/student/practice");
+  await page.goto(`/student/practice/${SET_ID}`);
   await page.getByRole("radio", { name: RADIO }).check();
   await page
     .getByRole("radio", { name: "To catch regressions when code changes" })

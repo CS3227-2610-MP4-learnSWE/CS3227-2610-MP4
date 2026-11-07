@@ -13,3 +13,9 @@
 | 8 | Record security outcomes, handoffs, session log, resource report and local status; prepare reviewable PR for human approval | orchestrator | 4, 5 | in progress |
 
 Tasks 1, 2, 6 and 7 run in parallel after approval. Independent designer resets to the exact approved start commit and never reads implementation until integration. Orchestrator owns invocation tracking and report generation. Approval received 2026-11-07; build begins from the orchestrator-recorded approved commit.
+
+
+## Shared admin UI baseline maintenance (2026-11-07)
+- [x] developer: amend the approved presentation contract under the user's scoped redesign request, retaining functional/security behavior.
+- [x] developer: add browser checks before implementation; apply scoped panels, outlined controls, responsive layout and metadata hierarchy.
+- [x] developer: complete regression and visual checks, update guides and record the session/usage handoff (see workflow/notes.md).

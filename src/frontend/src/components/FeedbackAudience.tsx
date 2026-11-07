@@ -101,6 +101,7 @@ export default function FeedbackAudience({
       open
       onClose={pending ? undefined : close}
       aria-labelledby="feedback-audience-title"
+      className="admin-dialog"
       fullWidth
       maxWidth="sm"
     >
@@ -112,101 +113,112 @@ export default function FeedbackAudience({
         {reconcile && <Button onClick={reload}>Reload saved form</Button>}
         {pending && <p role="status">Publishing form...</p>}
         {review ? (
-          <>
+          <section className="admin-review">
             <h2>
               {role === "student" ? "Selected students" : "Selected teachers"}
             </h2>
             <p>{selected.size} recipients</p>
-            <ul>
+            <ul className="admin-recipient-review">
               {[...selected.values()].map((person) => (
                 <li key={person.id}>
-                  {person.display_name} ({person.id})
+                  <strong>{person.display_name}</strong>{" "}
+                  <small>({person.id})</small>
                 </li>
               ))}
             </ul>
-          </>
+          </section>
         ) : (
-          <>
-            <TextField
-              select
-              label="Audience role"
-              value={role}
-              slotProps={{
-                select: { native: true },
-                inputLabel: { shrink: true },
-              }}
-              onChange={(e) => {
-                setRole(e.target.value as "student" | "teacher");
-                setSelected(new Map());
-                setOffset(0);
-                setError("");
-              }}
-            >
-              <option value="student">Students</option>
-              <option value="teacher">Teachers</option>
-            </TextField>
-            <TextField
-              label="Search recipients"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-            <Button
-              onClick={() => {
-                if (query === search.trim() && offset === 0) read.reload();
-                else {
-                  setQuery(search.trim());
+          <div className="admin-recipient-picker">
+            <section className="admin-editor-section">
+              <h2>Find recipients</h2>
+              <TextField
+                select
+                label="Audience role"
+                value={role}
+                slotProps={{
+                  select: { native: true },
+                  inputLabel: { shrink: true },
+                }}
+                onChange={(e) => {
+                  setRole(e.target.value as "student" | "teacher");
+                  setSelected(new Map());
                   setOffset(0);
-                }
-              }}
-            >
-              Search
-            </Button>
-            {read.loading && <p role="status">Loading audience...</p>}
-            {read.error && (
-              <div>
-                <p role="alert">{read.error}</p>
-                <Button onClick={read.reload}>Retry</Button>
-              </div>
-            )}
-            {!read.loading && read.data && (
-              <>
-                {!read.data.items.length && (
-                  <p>No eligible recipients found.</p>
-                )}
-                <div className="feedback-audience-options">
-                  {read.data.items.map((person) => (
-                    <FormControlLabel
-                      key={person.id}
-                      label={`${person.display_name} (${person.id})`}
-                      control={
-                        <Checkbox
-                          checked={selected.has(person.id)}
-                          onChange={(e) =>
-                            setSelected((old) => {
-                              const next = new Map(old);
-                              if (e.target.checked) next.set(person.id, person);
-                              else next.delete(person.id);
-                              return next;
-                            })
-                          }
-                        />
-                      }
-                    />
-                  ))}
+                  setError("");
+                }}
+              >
+                <option value="student">Students</option>
+                <option value="teacher">Teachers</option>
+              </TextField>
+              <TextField
+                label="Search recipients"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+              <Button
+                onClick={() => {
+                  if (query === search.trim() && offset === 0) read.reload();
+                  else {
+                    setQuery(search.trim());
+                    setOffset(0);
+                  }
+                }}
+              >
+                Search
+              </Button>
+            </section>
+            <section className="admin-editor-section">
+              <h2>Selected recipients</h2>
+              <p className="admin-summary" role="status">
+                {selected.size} selected
+              </p>
+              {read.loading && <p role="status">Loading audience...</p>}
+              {read.error && (
+                <div>
+                  <p role="alert">{read.error}</p>
+                  <Button onClick={read.reload}>Retry</Button>
                 </div>
-                {offset > 0 && (
-                  <Button onClick={() => setOffset(Math.max(0, offset - 20))}>
-                    Previous page
-                  </Button>
-                )}
-                {read.data.next_offset !== null && (
-                  <Button onClick={() => setOffset(read.data!.next_offset!)}>
-                    Next page
-                  </Button>
-                )}
-              </>
-            )}
-          </>
+              )}
+              {!read.loading && read.data && (
+                <>
+                  {!read.data.items.length && (
+                    <p>No eligible recipients found.</p>
+                  )}
+                  <div className="feedback-audience-options">
+                    {read.data.items.map((person) => (
+                      <FormControlLabel
+                        key={person.id}
+                        label={`${person.display_name} (${person.id})`}
+                        control={
+                          <Checkbox
+                            checked={selected.has(person.id)}
+                            onChange={(e) =>
+                              setSelected((old) => {
+                                const next = new Map(old);
+                                if (e.target.checked)
+                                  next.set(person.id, person);
+                                else next.delete(person.id);
+                                return next;
+                              })
+                            }
+                          />
+                        }
+                      />
+                    ))}
+                  </div>
+                  {offset > 0 && (
+                    <Button onClick={() => setOffset(Math.max(0, offset - 20))}>
+                      Previous page
+                    </Button>
+                  )}
+                  {read.data.next_offset !== null && (
+                    <Button onClick={() => setOffset(read.data!.next_offset!)}>
+                      Next page
+                    </Button>
+                  )}
+                </>
+              )}
+            </section>
+          </div>
         )}
       </DialogContent>
       <DialogActions>
@@ -235,6 +247,7 @@ export default function FeedbackAudience({
                 );
               else setReview(true);
             }}
+            variant="contained"
             disabled={!selected.size}
           >
             Review selected recipients

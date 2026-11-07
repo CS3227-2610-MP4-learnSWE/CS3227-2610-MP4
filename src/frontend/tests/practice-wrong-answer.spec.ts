@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { mockPracticeApi } from "./practiceApi";
+import { mockPracticeApi, SET_ID } from "./practiceApi";
 import { STUDENT, mockAuthApi } from "./authApi";
 
 /** STU-02-frontend: a wrong answer must look wrong, and the right one must be shown. */
@@ -14,7 +14,7 @@ test.beforeEach(async ({ page }) => {
 
 async function submitWithOneWrong(page: Page) {
   await mockPracticeApi(page);
-  await page.goto("/student/practice");
+  await page.goto(`/student/practice/${SET_ID}`);
   await page
     .getByRole("radio", { name: "A single, focused responsibility" })
     .check();

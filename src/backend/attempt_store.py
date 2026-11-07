@@ -8,11 +8,9 @@ from datetime import datetime
 from typing import Protocol
 
 from sqlalchemy import func, or_, select, update
-from sqlalchemy.orm import Session
 
 from attempt_models import PracticeAttempt
-from auth.db import engine_for
-from auth.settings import load_settings
+from auth.db import open_session
 from errors import ApiError
 
 
@@ -82,17 +80,13 @@ def _valid_id(attempt_id: str) -> bool:
     return _ID_PATTERN.fullmatch(attempt_id) is not None
 
 
-def _session() -> Session:
-    return Session(engine_for(load_settings().database_url), expire_on_commit=False)
-
-
 class DbAttemptStore:
     def create(self, student_id: str, set_id: str) -> Attempt:
         row = PracticeAttempt(
             id=secrets.token_urlsafe(16), student_id=student_id, set_id=set_id,
             status="in_progress", answers={}, correct_question_ids=[],
         )
-        with _session() as db:
+        with open_session() as db:
             db.add(row)
             db.commit()
             return _to_attempt(row)
@@ -100,14 +94,14 @@ class DbAttemptStore:
     def get_owned(self, attempt_id: str, student_id: str) -> Attempt | None:
         if not _valid_id(attempt_id):
             return None
-        with _session() as db:
+        with open_session() as db:
             row = db.scalars(
                 select(PracticeAttempt).where(PracticeAttempt.id == attempt_id, PracticeAttempt.student_id == student_id)
             ).one_or_none()
             return None if row is None else _to_attempt(row)
 
     def list_for_student(self, student_id: str, set_id: str) -> list[Attempt]:
-        with _session() as db:
+        with open_session() as db:
             rows = db.scalars(
                 select(PracticeAttempt)
                 .where(PracticeAttempt.student_id == student_id, PracticeAttempt.set_id == set_id)
@@ -119,7 +113,7 @@ class DbAttemptStore:
     def lock(self, attempt_id: str) -> Iterator[Attempt]:
         if not _valid_id(attempt_id):
             raise ApiError(404, "attempt_not_found", "Attempt not found.")
-        with _session() as db:
+        with open_session() as db:
             row = db.scalars(
                 select(PracticeAttempt).where(PracticeAttempt.id == attempt_id).with_for_update()
             ).one_or_none()
@@ -178,7 +172,7 @@ class DbAttemptStore:
         best: dict[str, PracticeAttempt] = {}
         latest: dict[str, PracticeAttempt] = {}
         counts: dict[str, int] = {}
-        with _session() as db:
+        with open_session() as db:
             for row, best_n, latest_n, n in db.execute(query):
                 counts[row.set_id] = n
                 if best_n == 1:

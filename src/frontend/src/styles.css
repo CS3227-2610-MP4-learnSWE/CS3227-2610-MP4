@@ -3604,6 +3604,17 @@ td .MuiButton-root {
 .publication-viewer > h2 {
   margin-top: 0;
 }
+.practice-set-list {
+  list-style: none;
+  margin: 0 0 20px;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+.practice-set-row h3,
+.practice-set-row p {
+  margin: 4px 0;
+}
 :root .admin-access-panel {
   padding: 24px;
   margin-bottom: 24px;
@@ -3887,6 +3898,333 @@ td .MuiButton-root {
   .feedback-option {
     display: grid;
     width: 100%;
+  }
+}
+
+/* Remaining admin screens follow the shared baseline without restyling ADM-04. */
+.admin-surface,
+.admin-dialog {
+  --muted: #626e82;
+  --admin-input: #fbfcff;
+  --admin-outline: #8793a5;
+}
+:root[data-theme="dark"] .admin-surface,
+:root[data-theme="dark"] .admin-dialog {
+  --muted: #a0acc1;
+  --admin-input: #131b28;
+  --admin-outline: #75859d;
+}
+.admin-surface {
+  max-width: 1280px;
+  margin-inline: auto;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.admin-surface .panel {
+  padding: 24px;
+  margin-bottom: 24px;
+  min-width: 0;
+  border-radius: 12px;
+}
+.admin-surface .page-heading > div,
+.admin-surface .page-heading > .MuiFormControl-root {
+  min-width: 0;
+}
+.admin-surface .page-heading p {
+  max-width: 720px;
+}
+.admin-surface h2,
+.admin-dialog h2 {
+  font-size: 20px;
+  margin-bottom: 12px;
+}
+.admin-surface .MuiOutlinedInput-root,
+.admin-dialog .MuiOutlinedInput-root {
+  background: var(--admin-input);
+  border-radius: 10px;
+  font-size: 15px;
+}
+.admin-surface .MuiOutlinedInput-notchedOutline,
+.admin-dialog .MuiOutlinedInput-notchedOutline {
+  border: 1px solid var(--admin-outline);
+  margin: 0;
+  padding: 0 8px;
+}
+.admin-surface .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline,
+.admin-dialog .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline {
+  border-color: var(--ink);
+}
+.admin-surface
+  .MuiOutlinedInput-root.Mui-focused
+  .MuiOutlinedInput-notchedOutline,
+.admin-dialog
+  .MuiOutlinedInput-root.Mui-focused
+  .MuiOutlinedInput-notchedOutline {
+  border: 2px solid var(--blue);
+}
+.admin-surface .MuiInputLabel-root,
+.admin-dialog .MuiInputLabel-root,
+.admin-surface .MuiFormHelperText-root {
+  color: var(--muted);
+}
+.admin-surface .MuiInputLabel-root.Mui-focused,
+.admin-dialog .MuiInputLabel-root.Mui-focused {
+  color: var(--blue);
+}
+.admin-surface .MuiFormHelperText-root {
+  margin: 8px 2px 0;
+  line-height: 1.5;
+}
+.admin-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  align-items: start;
+  column-gap: 24px;
+}
+.admin-workspace > .panel:last-child {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+}
+.admin-course-read-state {
+  grid-column: 1;
+  min-width: 0;
+}
+.admin-course-read-state:empty {
+  display: none;
+}
+.admin-surface .admin-create-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+  gap: 24px;
+  margin: 24px 0 0;
+}
+.admin-surface .admin-create-form > .MuiFormControl-root {
+  flex: none;
+}
+.admin-course-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 360px) minmax(0, 1fr);
+  align-items: start;
+  gap: 24px;
+}
+.admin-course-workspace .admin-access-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 24px;
+}
+.admin-course-workspace .admin-access-form > .MuiFormControl-root {
+  flex: none;
+}
+.admin-surface .admin-course-list li {
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--bg);
+  margin-bottom: 12px;
+}
+.admin-dialog .MuiDialog-paper {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  overflow-wrap: anywhere;
+}
+.admin-dialog .MuiDialogContent-root {
+  padding: 24px;
+}
+.admin-dialog .MuiDialogActions-root {
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 16px 24px;
+  border-top: 1px solid var(--line);
+}
+.admin-dialog .MuiDialogActions-root > :not(style) ~ :not(style) {
+  margin-left: 0;
+}
+.admin-editor-section {
+  display: grid;
+  gap: 24px;
+  min-width: 0;
+  padding: 8px 0 24px;
+}
+.admin-editor-section + .admin-editor-section {
+  padding-top: 24px;
+  border-top: 1px solid var(--line);
+}
+.admin-editor-section h2,
+.admin-editor-section > p {
+  margin: 0;
+}
+.admin-action-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  border-top: 1px solid var(--line);
+  padding-top: 20px;
+  margin-top: 16px;
+}
+.admin-surface .feedback-question {
+  margin: 0;
+  padding: 20px;
+  border: 1px solid var(--admin-outline);
+  background: var(--bg);
+}
+.admin-surface .feedback-question > legend {
+  padding: 0 8px;
+  color: var(--ink);
+  font-size: 16px;
+}
+.admin-surface .feedback-list-entry {
+  align-items: start;
+  gap: 16px;
+  min-height: 80px;
+  padding: 20px;
+  white-space: normal;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+.admin-surface .feedback-list article {
+  border: 0;
+}
+.admin-surface .feedback-list-entry:hover {
+  background: var(--blue-soft);
+}
+.admin-surface .feedback-list-entry-title {
+  overflow: visible;
+  text-overflow: clip;
+  overflow-wrap: anywhere;
+  font-size: 16px;
+}
+.admin-surface .feedback-list-entry-meta {
+  display: grid;
+  flex: 0 1 45%;
+  gap: 6px;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+.admin-surface .feedback-list-entry-meta small,
+.admin-metadata,
+.admin-recipient-review small {
+  color: var(--muted);
+  font-size: 13px;
+}
+.admin-summary {
+  padding: 12px 16px;
+  background: var(--blue-soft);
+  color: var(--blue);
+  border-radius: 8px;
+  font-weight: 600;
+}
+.admin-question-summary {
+  display: grid;
+  gap: 16px;
+  padding-left: 24px;
+}
+.admin-question-summary li {
+  padding-left: 8px;
+}
+.admin-question-summary p {
+  color: var(--muted);
+  margin: 8px 0 0;
+}
+.admin-dialog .feedback-audience-options,
+.admin-recipient-review {
+  max-height: 280px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 8px;
+}
+.admin-dialog .feedback-audience-options .MuiFormControlLabel-root {
+  padding: 8px;
+  margin: 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  align-items: start;
+}
+.admin-dialog .feedback-audience-options .MuiFormControlLabel-label {
+  padding-top: 8px;
+}
+.admin-recipient-review {
+  list-style: none;
+  display: grid;
+  gap: 12px;
+}
+.admin-recipient-review li {
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--bg);
+}
+.admin-review {
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--bg);
+}
+.admin-surface .ai-usage-filters {
+  margin: 24px 0 0;
+}
+.admin-preview .studio-controls,
+.admin-preview .form-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.admin-preview .studio-controls > *,
+.admin-preview .form-panel > * {
+  min-width: 0;
+}
+.admin-preview .form-panel > h2,
+.admin-preview .form-panel > p {
+  margin: 0;
+}
+@media (max-width: 1100px) {
+  .admin-workspace,
+  .admin-course-workspace {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
+  .admin-workspace > .panel:last-child {
+    grid-column: auto;
+    grid-row: auto;
+  }
+}
+@media (max-width: 600px) {
+  .admin-surface .panel,
+  .admin-dialog .MuiDialogContent-root {
+    padding: 16px;
+  }
+  .admin-surface .admin-access-form {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 20px;
+  }
+  .admin-surface .admin-access-form > .MuiFormControl-root {
+    flex: none;
+  }
+  .admin-surface .feedback-list-entry {
+    flex-direction: column;
+    align-items: start;
+    padding: 16px;
+  }
+  .admin-surface .feedback-list-entry-meta {
+    flex: auto;
+  }
+  .admin-dialog .MuiDialogActions-root {
+    padding: 16px;
+  }
+  .admin-surface .feedback-question {
+    padding: 16px;
+  }
+  .admin-surface .feedback-scale-fields {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .admin-surface .feedback-scale-fields > .MuiTextField-root {
+    flex: none;
   }
 }
 

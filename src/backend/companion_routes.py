@@ -1,6 +1,7 @@
 """HTTP route for the study companion: resolves context, calls the model, checks the reply."""
 import logging
 import time
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, Request
 from sqlalchemy.orm import Session
@@ -12,7 +13,6 @@ from auth.settings import load_settings
 import companion_config as config
 import companion_service as service
 import leak_check
-import practice_data
 from attempt_store import Attempt, store
 from companion_schemas import CompanionMessageIn, CompanionReplyOut, ContextIn
 from errors import ApiError
@@ -29,7 +29,9 @@ from llm_client import (
 )
 from practice_data import PracticeSet, Question
 from question_match import find_match
+from set_provider import SetProvider, get_set_provider
 from student_identity import require_student
+from teacher_access import parse_uuid
 
 router = APIRouter(prefix="/api")
 log = logging.getLogger("companion")
@@ -61,7 +63,17 @@ def _map_error(exc: LlmError) -> ApiError:
     return ApiError(503, "llm_unavailable", "The study companion is unavailable right now.")
 
 
-def _resolve_context(ctx: ContextIn, student: str) -> tuple[PracticeSet | None, Attempt | None]:
+def _canonical_set_id(value: str) -> str:
+    """Lowercase hyphenated form of a UUID spelling; any other text is returned unchanged."""
+    try:
+        return str(UUID(value))
+    except ValueError:
+        return value
+
+
+def _resolve_context(
+    ctx: ContextIn, student: str, provider: SetProvider
+) -> tuple[PracticeSet | None, Attempt | None]:
     """Lookups (404), then consistency (422). Page "other" ignores set and attempt ids."""
     practice_set: PracticeSet | None = None
     attempt: Attempt | None = None
@@ -70,14 +82,14 @@ def _resolve_context(ctx: ContextIn, student: str) -> tuple[PracticeSet | None, 
             attempt = store.get_owned(ctx.attempt_id, student)
             if attempt is None:
                 raise ApiError(404, "attempt_not_found", "Attempt not found.")
-            if ctx.set_id is not None and ctx.set_id != attempt.set_id:
+            if ctx.set_id is not None and _canonical_set_id(ctx.set_id) != attempt.set_id:
                 raise ApiError(422, "invalid_context", "The page context is not consistent.")
             set_id = attempt.set_id
         else:
             if ctx.set_id is None:
                 raise ApiError(422, "invalid_context", "The page context is not consistent.")
-            set_id = ctx.set_id
-        practice_set = practice_data.get_set(set_id)
+            set_id = str(parse_uuid(ctx.set_id))
+        practice_set = provider.get_for_student(set_id, student)
         if practice_set is None:
             raise ApiError(404, "set_not_found", "Practice set not found.")
     if ctx.label is not None and len(ctx.label) > config.LABEL_MAX_CHARS:
@@ -85,12 +97,12 @@ def _resolve_context(ctx: ContextIn, student: str) -> tuple[PracticeSet | None, 
     return practice_set, attempt
 
 
-def _leak_scope(plan: service.Plan) -> tuple[Question, ...]:
-    """Hint: the questions in context. Help: every question of every set. Explain: no check."""
+def _leak_scope(plan: service.Plan, accessible: list[PracticeSet]) -> tuple[Question, ...]:
+    """Hint: the questions in context. Help: every question the student can access. Explain: no check."""
     if plan.mode == "hint":
         return plan.questions + plan.leak_extra
     if plan.mode == "help":
-        return tuple(q for s in practice_data.PRACTICE_SETS.values() for q in s.questions)
+        return tuple(q for s in accessible for q in s.questions)
     return ()
 
 
@@ -114,16 +126,18 @@ def post_message(
     request: Request,
     student: str = Depends(require_student),
     llm: LlmClient = Depends(get_llm_client),
+    provider: SetProvider = Depends(get_set_provider),
     db: Session = Depends(get_session),
 ) -> CompanionReplyOut:
     # Identity/CSRF checks are complete. Return their read-only connection before
     # independent store reads and the model call, or concurrent requests can each
     # hold one pool slot while waiting for a second. Recheck access after the call.
     db.rollback()
-    practice_set, attempt = _resolve_context(body.context, student)
+    practice_set, attempt = _resolve_context(body.context, student, provider)
     message = service.validate_message(body.message)
     history = service.validate_history(body.history)
-    match = find_match(message, list(practice_data.PRACTICE_SETS.values()))
+    accessible = provider.accessible_sets(student)
+    match = find_match(message, accessible)
     attempts = store.list_for_student(student, practice_set.id) if attempt and practice_set else []
     plan = service.select_mode(practice_set, attempt, attempts, match)
     messages = service.build_messages(plan, message, history, body.context.label)
@@ -142,9 +156,8 @@ def post_message(
         fresh = current_user(role="student")(session_context(request, access_db))
         if fresh.id != student:
             raise unauthenticated()
-    # Current legacy practice fixtures do not retrieve course-linked material.
-    # Any future course context must also recheck its memberships here.
-    leak = leak_check.find_leak(reply.text, _leak_scope(plan))
+    # The leak scope covers only the sets this student can access (set_provider).
+    leak = leak_check.find_leak(reply.text, _leak_scope(plan, accessible))
     outcome = "withheld" if leak else "ok"
     _log(plan.mode, outcome, started, reply.prompt_tokens, reply.completion_tokens)
     if leak:
