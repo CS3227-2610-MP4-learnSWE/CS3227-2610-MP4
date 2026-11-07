@@ -275,6 +275,14 @@ Students and teachers receive each delivery as unread in the **Messages** sectio
 A review remains valid for 15 minutes. Refreshing its URL recovers the review or its sent receipt and never sends automatically. If confirmation times out or loses connection, retry **Confirm send** on that same review; this checks/completes the same delivery without duplicating it. Creating a fresh review intentionally creates a different message. Keep the same review URL when delivery is uncertain. Use **Retry** or **Retry messages** for failed loads; errors retain unsent text while you remain in that session. Leaving an unreviewed composer or refreshing it clears local unsent fields. Logout clears private page state. Expired reviews require a fresh review.
 
 
+### Student inbox: what you see and what is not available
+
+- **Feedback requests** lists each published form sent to you with its title, a Read or Unread label and a status chip: **Not started**, **Draft**, **Completed** or **Closed**. Lists show 20 at a time with **Previous page** and **Next page**. Selecting a request opens its form. A closed form shows "This form is closed." and accepts no changes.
+- **Messages** lists announcements and feedback replies. Each card shows its type, an Unread or Read chip, the subject, the text, the sent time and **From: Administrator**. Replies and announcements are not sent from individual named admins, so the sender is always shown as Administrator.
+- The form page states: once submitted, your name and feedback are visible to administrators; your unfinished draft is private.
+- A form is sent to named recipients chosen by an admin. Targeting a student group or class is not available. Email and push notifications are not available; new items appear after the sidebar badge or the lists refresh (see the badge description above).
+
+
 ### ADM-04: redesigned inbox and composer
 The **Inbox** sidebar badge counts unread feedback requests plus messages; it disappears at zero and shows **99+** for larger counts. Opening a request or marking a message read updates the count. While the app is visible it checks for new unread items every minute and when you return to the window; it does not provide instant push notifications. A temporary background failure retains the last known count until the next refresh.
 

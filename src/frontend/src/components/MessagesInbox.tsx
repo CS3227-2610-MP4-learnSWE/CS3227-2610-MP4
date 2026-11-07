@@ -146,6 +146,7 @@ export default function MessagesInbox() {
               <time dateTime={item.sent_at} title={item.sent_at}>
                 {displayTime(item.sent_at)}
               </time>
+              <span>From: Administrator</span>
               {!item.read_at && (
                 <Button
                   variant="outlined"

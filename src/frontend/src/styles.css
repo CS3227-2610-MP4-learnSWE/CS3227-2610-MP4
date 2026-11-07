@@ -4606,9 +4606,13 @@ td .MuiButton-root {
   margin-top: 20px;
   border-top: 1px solid var(--line);
 }
-.message-card-footer time {
+.message-card-footer time,
+.message-card-footer > span {
   color: var(--muted);
   font-size: 12px;
+}
+.message-card-footer time {
+  margin-right: auto;
 }
 .message-card-footer .MuiButton-root {
   font-size: 12px;
