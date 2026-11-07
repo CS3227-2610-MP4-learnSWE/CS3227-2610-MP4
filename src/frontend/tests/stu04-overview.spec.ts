@@ -101,6 +101,7 @@ test("stu04 AC14 the link View full progress goes to the Progress page and pushe
   page,
 }) => {
   const { api } = await openOverview(page);
+  await expect(stat(page, "Lessons completed")).toContainText("1 / 3");
   const link = page.getByRole("link", {
     name: "View full progress",
     exact: true,
@@ -110,6 +111,9 @@ test("stu04 AC14 the link View full progress goes to the Progress page and pushe
   await expect(page).toHaveURL(/\/student\/progress$/);
   await expect(
     page.getByRole("heading", { level: 1, name: "Your progress" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("region", { name: "Lesson progress", exact: true }),
   ).toBeVisible();
   await page.goBack();
   await expect(page).toHaveURL(/\/student\/overview$/);
@@ -259,7 +263,13 @@ test("stu04 AC14 Back and Forward to the Overview load it again (one request eac
   expect(api.count).toBe(1);
   await page.getByRole("link", { name: "Practice", exact: true }).click();
   await expect(page).toHaveURL(/\/student\/practice$/);
-  await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+  await expect(
+    page.getByRole("heading", {
+      level: 1,
+      name: "Choose a practice set",
+      exact: true,
+    }),
+  ).toBeVisible();
   await page.goBack();
   await expect(stat(page, "Lessons completed")).toContainText("1 / 3");
   await expect.poll(() => api.count).toBe(2);

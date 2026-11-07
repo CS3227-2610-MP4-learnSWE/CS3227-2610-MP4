@@ -291,3 +291,6 @@ Feedback forms, Users, Courses and AI usage follow the shared admin design: outl
 - **AI usage:** Report filters are separate from the Service-call report. The reporting range is still UTC; collection timestamps display in local time. Wide results scroll within their own keyboard-focusable area. Missing measurements remain explicitly unavailable.
 
 Analytics and the legacy feedback-analysis, form and usage demos retain their sample-only notices. This visual update does not activate live analytics or AI feedback analysis. ADM-04's composer and recipient Inbox retain their existing design.
+
+
+When choosing announcement recipients, moving to another result page keeps that page selected until you change the search or audience role. Search updates after a short pause in typing; selected recipients remain selected across pages and searches.

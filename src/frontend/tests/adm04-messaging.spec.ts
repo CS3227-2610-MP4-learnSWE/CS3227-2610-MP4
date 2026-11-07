@@ -160,14 +160,35 @@ test("adm04 AC06 selected IDs persist across paging search and review then clear
   ).not.toBeChecked();
 });
 
+test("adm04 AC13 unchanged initial search cannot reset a newly selected recipient page", async ({
+  page,
+}) => {
+  await page.clock.install();
+  const ctx = await setup(page);
+  ctx.recipients = Array.from({ length: 51 }, (_, n) => ({
+    id: `opaque-${n}`,
+    display_name: `Student ${String(n).padStart(2, "0")}`,
+    role: "student",
+  }));
+  await page.goto(NEW);
+  await page.getByRole("button", { name: "Next page", exact: true }).click();
+  await expect(page.getByText("Student 50", { exact: true })).toBeVisible();
+  await page.clock.fastForward(300);
+  await expect(page.getByText("Student 50", { exact: true })).toBeVisible();
+  expect(ctx.of("GET", "/recipients").map((r) => r.query.get("page"))).toEqual([
+    "1",
+    "2",
+  ]);
+});
+
 test("adm04 AC13 debounced search makes one request and stale response cannot replace latest role", async ({
   page,
 }) => {
+  await page.clock.install();
   const ctx = await setup(page);
   await page.goto(NEW);
   await expect(heading(page, "New announcement")).toBeVisible();
   expect(ctx.of("GET", "/recipients")).toHaveLength(1);
-  await page.clock.install();
   await page
     .getByRole("textbox", { name: "Search recipients", exact: true })
     .fill("Sam");
@@ -381,7 +402,7 @@ for (const fault of [
     await expect(
       page.getByRole("textbox", { name: "Subject", exact: true }),
     ).toHaveValue("");
-    expect(ctx.of("GET", "/recipients")).toHaveLength(1);
+    await expect.poll(() => ctx.of("GET", "/recipients").length).toBe(1);
     expect(ctx.of("POST")).toHaveLength(0);
   });
 }
