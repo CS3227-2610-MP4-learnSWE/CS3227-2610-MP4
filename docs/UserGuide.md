@@ -253,6 +253,8 @@ All active admins can manage the forms and review submitted responses. Feedback 
 3. Return to the request to continue from the saved answers, including after refresh or a later sign-in on another device. Normal navigation inside the app waits for pending draft changes to save. Browser termination or offline navigation cannot recover edits the server never received.
 4. Click **Submit feedback** when finished. Required fields and answer types are validated. Successful submission shows **Completed** and **Feedback submitted. Thank you.** Submitted responses cannot be edited or submitted again.
 
+Each question shows its prompt once, with a **Required** or **Optional** tag beside it, above a plain outlined field. A linear scale shows its low label at the left end and its high label at the right end of the numbers. After a failed submit, each unanswered required question gets a red border and the text **This question is required.**; the marker clears when you answer it. The completed and closed pages are padded, with **Back to inbox** aligned to the left.
+
 Only you can read your unfinished draft. Once submitted, your name and feedback are visible to administrators. Closing collection stops saving and submission; it does not convert an unfinished draft into a submitted response.
 
 ### Recovering from a feedback error
@@ -273,6 +275,14 @@ For an announcement, open **Announcements**, select **Students** or **Teachers**
 Students and teachers receive each delivery as unread in the **Messages** section beneath their existing feedback requests. The section displays the full subject, text, type and timestamp, with its own unread count. **Mark as read** persists across refresh; **Load more messages** retrieves older messages. Other recipients and raw survey responses are not exposed. Email and push notifications are not sent.
 
 A review remains valid for 15 minutes. Refreshing its URL recovers the review or its sent receipt and never sends automatically. If confirmation times out or loses connection, retry **Confirm send** on that same review; this checks/completes the same delivery without duplicating it. Creating a fresh review intentionally creates a different message. Keep the same review URL when delivery is uncertain. Use **Retry** or **Retry messages** for failed loads; errors retain unsent text while you remain in that session. Leaving an unreviewed composer or refreshing it clears local unsent fields. Logout clears private page state. Expired reviews require a fresh review.
+
+
+### Student inbox: what you see and what is not available
+
+- **Feedback requests** lists each published form sent to you with its title, a Read or Unread label and a status chip: **Not started**, **Draft**, **Completed** or **Closed**. Lists show 20 at a time with **Previous page** and **Next page**. Selecting a request opens its form. A closed form shows "This form is closed." and accepts no changes.
+- **Messages** lists announcements and feedback replies. Each card shows its type, an Unread or Read chip, the subject, the text, the sent time and **From: Administrator**. The inbox does not show which administrator sent a message, so the sender is always shown as Administrator.
+- The form page states: once submitted, your name and feedback are visible to administrators; your unfinished draft is private.
+- A form is sent to named recipients chosen by an admin. Targeting a student group or class is not available. Email and push notifications are not available; the sidebar badge updates every minute and when you return to the window; reopen the Inbox to see new items (see the badge description above).
 
 
 ### ADM-04: redesigned inbox and composer

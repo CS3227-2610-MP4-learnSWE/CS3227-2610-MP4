@@ -25,6 +25,14 @@ export type Answer = {
   question_id: string;
   value: null | string | string[] | number;
 };
+export function isBlankAnswer(value: Answer["value"] | undefined) {
+  return (
+    value === null ||
+    value === undefined ||
+    (typeof value === "string" && !value.trim()) ||
+    (Array.isArray(value) && !value.length)
+  );
+}
 export type Draft = {
   version: number;
   answers: Answer[];

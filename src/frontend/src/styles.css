@@ -3877,7 +3877,136 @@ td .MuiButton-root {
 .feedback-answer-text {
   white-space: pre-wrap;
 }
+.feedback-form {
+  padding: 28px;
+  gap: 16px;
+}
+.feedback-form > p {
+  margin: 0;
+}
+.feedback-form > a {
+  justify-self: start;
+}
+.feedback-form .feedback-question {
+  gap: 14px;
+  margin: 0;
+  padding: 16px;
+  border-color: var(--line);
+  background: var(--bg);
+}
+.feedback-form .feedback-question-head {
+  display: flex;
+  gap: 8px 16px;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+.feedback-form .feedback-question-prompt {
+  min-width: 0;
+  color: var(--ink);
+  font-size: 17px;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+.feedback-form .feedback-question-tag {
+  flex: none;
+  padding: 2px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 13px;
+}
+.feedback-form .MuiOutlinedInput-root {
+  background: var(--paper);
+}
+.feedback-form .feedback-form-fields {
+  display: grid;
+  gap: 16px;
+  justify-items: start;
+}
+.feedback-form .feedback-form-fields > .feedback-question {
+  justify-self: stretch;
+}
+.feedback-form
+  .MuiOutlinedInput-root:not(.Mui-disabled):hover
+  .MuiOutlinedInput-notchedOutline {
+  border-color: var(--blue);
+}
+.feedback-form
+  .MuiOutlinedInput-root.Mui-focused
+  .MuiOutlinedInput-notchedOutline {
+  border-color: var(--blue);
+  border-width: 2px;
+}
+.feedback-form .MuiOutlinedInput-notchedOutline legend {
+  display: none;
+}
+.feedback-form .feedback-scale {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 4px 12px;
+  align-items: center;
+}
+.feedback-form .feedback-scale-min {
+  grid-column: 1;
+  text-align: left;
+}
+.feedback-form .feedback-scale-max {
+  grid-column: 3;
+  text-align: right;
+}
+.feedback-form .feedback-scale .MuiFormGroup-root {
+  grid-column: 2;
+  justify-content: center;
+}
+.feedback-form .feedback-scale-min,
+.feedback-form .feedback-scale-max {
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+.feedback-form .feedback-control-invalid,
+.feedback-form
+  [data-invalid]
+  .MuiOutlinedInput-root.MuiInputBase-root
+  .MuiOutlinedInput-notchedOutline {
+  border: 2px solid var(--red);
+}
+.feedback-form [data-invalid] .MuiOutlinedInput-root.Mui-focused {
+  box-shadow: 0 0 0 3px var(--blue);
+}
+.feedback-form .feedback-control-invalid {
+  padding: 4px 8px;
+  border-radius: 8px;
+}
+.feedback-form .feedback-question-error {
+  margin: 0;
+  color: var(--red);
+  font-weight: 600;
+}
 @media (max-width: 600px) {
+  .feedback-form {
+    padding: 16px;
+  }
+  .feedback-form .feedback-question-head {
+    flex-direction: column;
+  }
+  .feedback-form .feedback-scale {
+    grid-template-columns: 1fr 1fr;
+  }
+  .feedback-form .feedback-scale .MuiFormGroup-root {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    justify-content: flex-start;
+  }
+  .feedback-form .feedback-scale-min {
+    grid-column: 1;
+    grid-row: 2;
+    /* MUI FormControlLabel starts 11px left of its group; match it. */
+    margin-left: -11px;
+  }
+  .feedback-form .feedback-scale-max {
+    grid-column: 2;
+    grid-row: 2;
+  }
   .feedback-list-entry {
     align-items: flex-start;
     flex-direction: column;
@@ -4606,9 +4735,13 @@ td .MuiButton-root {
   margin-top: 20px;
   border-top: 1px solid var(--line);
 }
-.message-card-footer time {
+.message-card-footer time,
+.message-card-footer > span {
   color: var(--muted);
   font-size: 12px;
+}
+.message-card-footer time {
+  margin-right: auto;
 }
 .message-card-footer .MuiButton-root {
   font-size: 12px;
