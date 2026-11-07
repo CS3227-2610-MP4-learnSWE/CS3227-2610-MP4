@@ -3,3 +3,4 @@ feature_run_id,invocation_id,role,effort,tool,session_id,agent_id,started_at,fin
 2026-11-07-STU0506-01,2026-11-07-STU0506-01-spec-writer-01,spec-writer,inherited,claude,e31aef4b-9d2c-41d6-8128-3e8e5a501604,a2f2964d867328a14,2026-11-07T18:09:57+08:00,2026-11-07T18:12:35+08:00
 2026-11-07-STU0506-01,2026-11-07-STU0506-01-test-designer-01,test-designer,inherited,claude,e31aef4b-9d2c-41d6-8128-3e8e5a501604,a32f2279fd80152db,2026-11-07T19:04:44+08:00,2026-11-07T19:19:54+08:00
 2026-11-07-STU0506-01,2026-11-07-STU0506-01-developer-01,developer,inherited,claude,e31aef4b-9d2c-41d6-8128-3e8e5a501604,aa951816612ac6655,2026-11-07T19:04:44+08:00,2026-11-07T19:19:54+08:00
+2026-11-07-STU0506-01,2026-11-07-STU0506-01-verifier-01,verifier,inherited,claude,e31aef4b-9d2c-41d6-8128-3e8e5a501604,ac087ea5de20688b0,2026-11-07T19:20:11+08:00,
