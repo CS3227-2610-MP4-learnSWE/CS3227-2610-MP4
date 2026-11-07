@@ -31,6 +31,7 @@ Copied from `docs/UserStories.md`; IDs added for test mapping.
 - [ ] AC10 (US-STU-06-03) Email and push delivery are outside the MVP.
 - [ ] AC11 (slice) The sidebar badge on the student `Inbox` link equals survey unread plus message unread (the `unread_count` of the count endpoint), the page keeps the two section counts, and the badge is absent at zero.
 - [ ] AC12 (slice) The badge drops after the student opens a survey request's form and after the student marks a message read.
+- [ ] AC14 (slice) After PR 31 merges, student pages send one extra `GET /api/messaging/unread-count` from the shell badge. The existing STU-02 picker request-count test (`stu02ps-picker.spec.ts`, AC15 "one GET /api/practice-sets on load and nothing else") must still express its intent (the picker itself sends exactly one GET `/api/practice-sets`) and no longer fail because of the shell's count request. Only that assertion changes; no picker behaviour changes.
 - [ ] AC13 (slice) A failure of one count source does not hide the other section's count or list, and no failure shows a generic message.
 
 ## UI states and copy
@@ -57,7 +58,7 @@ Names are taken from the ADM-02 code on this branch and the PR 31 code (checked 
 - No generic failure message: Every failure uses its dictionary message or the section-specific message above; the words for a network failure appear only for a real transport failure (known inconsistency: the survey section says `Cannot connect to the server. Check your connection and try again.` and the Messages section says `Could not reach the server. Check your connection and try again.`; both are kept, tests assert each as is); the badge never shows an error text.
 
 ## Out of scope
-Student-group targeting (forms target named recipients, so AC01 "or my student group" is met only by named targeting); a merged chronological list of requests and messages; a deep link from a message to a form; search or filter of the inbox; email and push delivery; new student routes, tables or backend endpoints; any admin or teacher change; changes to ADM-02 or ADM-04 behaviour beyond the optional sender label.
+Student-group targeting (forms target named recipients, so AC01 "or my student group" is met only by named targeting); a merged chronological list of requests and messages; a deep link from a message to a form; search or filter of the inbox; email and push delivery; new student routes, tables or backend endpoints; any admin or teacher change; changes to ADM-02 or ADM-04 behaviour beyond the sender label; the PR 31 search-debounce test failure (`adm04-messaging.spec.ts:163`) belongs to the ADM-04 owner.
 
 ## Security and AI safeguards
 No SoC LLM call is made or changed; feedback and messages never enter AI context. Access is enforced on the server by ADM-02 and ADM-04: a student can read only their own inbox rows, their own form and draft, and mark only their own delivery read; another student's form, response or delivery returns the same not-found error as a missing one (ADM-02 E03). Rendering is plain text; message bodies are never inserted as HTML. The slice adds no endpoint, so no new access rule; the new tests must prove the existing ones by direct request as a second student.

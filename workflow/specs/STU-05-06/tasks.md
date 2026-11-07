@@ -11,6 +11,7 @@
 | 6 | Concurrent-request test: simultaneous mark-read on one delivery and simultaneous submit of one form leave one consistent result | test-designer | spec + plan approved | todo |
 | 7 | Cross-user test: a second student, a teacher and a student without a recipient row cannot read or change the first student's form, response, draft or delivery | test-designer | spec + plan approved | todo |
 | 8 | Fix defects (max 2 rounds), verifier re-checks | developer, verifier | 5 | todo |
+| 10 | Update the one assertion in `stu02ps-picker.spec.ts` (AC14): count only picker requests, ignore the shell's `/api/messaging/unread-count`; confirm it fails before the change on a branch with PR 31 and passes after | developer (this is a test file; the orchestrator authorises the edit as the student-role owner) | 0 | todo |
 | 9 | Record the first-run browser failures, security results and resource log, and close the run report | orchestrator | 8 | todo |
 
 Tasks 1, 2, 3, 6 and 7 run in parallel after task 0. If the user rejects option A, task 2 is dropped and task 3 records the sender gap as a known deviation.
