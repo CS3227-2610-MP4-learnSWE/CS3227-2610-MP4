@@ -3,4 +3,5 @@ feature_run_id,invocation_id,role,effort,tool,session_id,agent_id,started_at,fin
 2026-11-07-STU0506-02,2026-11-07-STU0506-02-spec-writer-01,spec-writer,inherited,claude,e31aef4b-9d2c-41d6-8128-3e8e5a501604,a4d8ff005cdb1c1d4,2026-11-07T21:42:51+08:00,2026-11-07T21:45:25+08:00
 2026-11-07-STU0506-02,2026-11-07-STU0506-02-test-designer-01,test-designer,inherited,claude,e31aef4b-9d2c-41d6-8128-3e8e5a501604,ad2f7164edfe2f544,2026-11-07T21:45:25+08:00,2026-11-07T22:29:17+08:00
 2026-11-07-STU0506-02,2026-11-07-STU0506-02-developer-01,developer,inherited,claude,e31aef4b-9d2c-41d6-8128-3e8e5a501604,ad6a63cff12116442,2026-11-07T21:45:25+08:00,2026-11-07T22:29:17+08:00
-2026-11-07-STU0506-02,2026-11-07-STU0506-02-verifier-01,verifier,inherited,claude,e31aef4b-9d2c-41d6-8128-3e8e5a501604,a81bdb35e977ca390,2026-11-07T22:29:17+08:00,
+2026-11-07-STU0506-02,2026-11-07-STU0506-02-verifier-01,verifier,inherited,claude,e31aef4b-9d2c-41d6-8128-3e8e5a501604,a81bdb35e977ca390,2026-11-07T22:29:17+08:00,2026-11-07T22:47:00+08:00
+2026-11-07-STU0506-02,2026-11-07-STU0506-02-verifier-02,verifier,inherited,claude,e31aef4b-9d2c-41d6-8128-3e8e5a501604,PENDING_V2,2026-11-07T22:47:00+08:00,
