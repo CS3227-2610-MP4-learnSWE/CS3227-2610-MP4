@@ -1,5 +1,10 @@
 # Handoff notes
 
+## 2026-11-07: STU-05/06 merged (orchestrator, student-role owner)
+- Done: PR 32 merged into `master` (merge commit `d0f2323`); all 6 GitHub checks passed on its final commits. STATUS rows for STU-05 and STU-06 set to merged. Student features STU-01 to STU-06 are all merged.
+- Open: dark-theme inputs lighter than their card (needs a new dark-only colour, user decision); ADM-02 owner to show what is missing when an admin saves an incomplete draft; real-backend Playwright and the end-to-end run with docs are still to do (11 Nov), reflections and website 12 Nov.
+- The slide deck for this feature is outside the repo: `MP4 presentation/STU0506-Student-Feedback-Inbox-Learnings.pptx`.
+
 ## 2026-11-07: developer frontend CI messaging/picker repair
 - Done: skip unchanged initial recipient search debounce (fixes fast pagination reset), install the search test clock before navigation, add a regression, explicitly expect the approved shell unread-summary read alongside the picker's one catalog read. Clarified STU-02 spec/plan; both guides updated. Recovery tests await the exact one recipient read; Overview history tests await the actual destination/report completion, preserving request-count assertions. No retries/timeouts increased.
 - Validation: final full710/710browserPASS366.824s, zero failures/errors/skips/flaky/retries; JSON/result retries verified. Four affected scenarios repeated5times20/20PASS. New pagination regression RED before source; picker mismatch RED. Original CI four-read case not reproduced in 16 diagnostic repeats; test clock now precedes mounting and no-op initial timer removed. Initial full708/710 and second709/710 exposed three asynchronous test-wait defects, corrected without relaxing counts. Types/lint/build/scoped and137LF-normalizedformat/spec/diffPASS.

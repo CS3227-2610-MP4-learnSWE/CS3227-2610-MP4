@@ -12,3 +12,7 @@
 - Admin draft-editor messaging on save was raised by the user but belongs to the ADM-02 owner and was not changed.
 - Checked: typecheck, lint, Prettier clean; full frontend suite on a private port 742 passed and 10 failed, none in our files (known flakes and races, see `workflow/notes.md`); backend untouched. Not run: GitHub CI for the new commits, real-backend Playwright, screenshots.
 - Open: dark-theme input surface (user decision); the user's eye check of the page.
+
+## After the merge
+- PR 32 merged into `master` (`d0f2323`) with all 6 GitHub checks passing. STATUS and `workflow/notes.md` updated in a follow-up docs change.
+- Slide deck built outside the repo (`MP4 presentation/STU0506-Student-Feedback-Inbox-Learnings.pptx`, 9 slides).
