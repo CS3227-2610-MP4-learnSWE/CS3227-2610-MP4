@@ -1,0 +1,15 @@
+# Progress history CI synchronization ? 2026-11-06
+
+User supplied frontend CI log:513browser cases,512PASS/1FAIL; STU04AC15 Back/Forward expected2progress reads but got1, repeated onCI retry. Vite proxy ECONNREFUSED lines were not the failing assertion; the Progress helper already mocks unrelated Practice/Study requests.
+
+Role: developer, single-session test-maintenance exemption under workflow/coordination.md. Approved STU04 Back/Forward and exactrequest budgets retained. No feature/app source changes.
+
+Diagnosis: temporary copy of original test with6xCDP CPU throttling, historypush/pop recording and heading MutationObserver.10/10RED reproduced original count failure. First recorded sequence: render /student/progress headingYourprogress at4755.2ms; push /student/practice while headingstillYourprogress at5604.2ms; pop /student/progress while headingstillYourprogress at5788.2ms. No Practice heading mutation occurred. ReactRouter sets URL/history before its concurrent React render commits; test's toHaveURL then immediateBack could cancel intermediate render. Same history key/currentpage then needs no remount/refetch. This establishes the local test race; original remote tracezip was not supplied/inspected.
+
+Fix: retain requestcount1/2/3assertions and URL checks; additionally await Practice h1 and absence of Progress region before each Back (after click and Forward). Await Progress region after both returns. No sleeps, timeout increase, test.skip, assertion removal, source/refetch changes or CI retry changes. Previous locationkey hardening did not prove this race fixed; this investigation now reproduces its synchronization failure.
+
+Validation:20/20corrected repeats under6xCPU PASS(1.7min), two workers/no retries. Full513/513suite PASS286.19s on isolated5183/5184 with API proxy deliberately unavailable (127.0.0.1:1) to match no-backendCI. JSON verdict: expected513, unexpected0, skipped0, flaky0, top-levelerrors empty. Typecheck/lint/targetedPrettier/diffPASS. No backend suite needed for test-only change.
+
+Temporary files/config live in ignoredcache or owned temporary test spec; remove preview spec before fullcollection. No developerenv/database/liveAI/userprocess changes. Resources: inherited Codex model/effort; exacttokens/cost unavailable; no agents/tracker/manifest or new feature correctionrounds.
+
+DeveloperGuide records the observable-page synchronization rule. Temporary diagnostic spec removed before fullcollection; only original513cases ran. Fresh dev/preview servers built and started by Playwright; no production build command needed for unchanged application source. Full JSON/log ignored under src/frontend/node_modules/.cache/progress-ci-full.{json,log}. PowerShell5.1 redirected native warning stderr as NativeCommandError and wrapperreturned1 despite greenPlaywright report; JSON success independently asserted, and a stderr-only Node probe confirmed native exit0 with the same redirection behavior. No remoteCI rerun or independent verifier claim; local commit must be pushed for CI.

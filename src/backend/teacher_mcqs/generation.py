@@ -3,7 +3,7 @@ import json
 
 from text_validation import is_postgres_text, normalise_newlines_and_trim
 
-from llm_client import ChatMessage, LlmBadResponse, LlmClient, LlmError
+from llm_client import ChatMessage, LlmBadResponse, LlmClient, LlmError, usage_feature
 from llm_errors import generation_error
 
 SYSTEM_INSTRUCTION = (
@@ -41,8 +41,9 @@ def _text(value, maximum):
 
 def generate_mcqs(llm: LlmClient, text: str, teacher_id: str) -> list[dict]:
     try:
-        reply = llm.complete([ChatMessage("system", SYSTEM_INSTRUCTION), ChatMessage("user", text)],
-                             max_tokens=800, caller_id=f"teacher:{teacher_id}")
+        with usage_feature("TEA-02"):
+            reply = llm.complete([ChatMessage("system", SYSTEM_INSTRUCTION), ChatMessage("user", text)],
+                                 max_tokens=800, caller_id=f"teacher:{teacher_id}")
     except LlmError as exc:
         raise generation_error(exc) from None
     try:

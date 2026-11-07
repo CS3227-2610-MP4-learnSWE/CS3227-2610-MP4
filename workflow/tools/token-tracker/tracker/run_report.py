@@ -31,12 +31,7 @@ REPORT_COLUMNS = [
     "Effort",
     "Elapsed",
     "Requests",
-    "Input",
-    "Cache read",
-    "Cache write (5m)",
-    "Cache write (1h)",
-    "Output",
-    "Reasoning",
+    "Token usage",
     "Cost (USD)",
 ]
 
@@ -46,7 +41,6 @@ _TOKEN_FIELDS = (
     "cache_write_5m_tokens",
     "cache_write_1h_tokens",
     "output_tokens",
-    "reasoning_tokens",
 )
 
 
@@ -172,6 +166,8 @@ def render_report(feature_run_id: str, invocations: list[Invocation], rows: list
         "",
         "Elapsed values are wall-clock durations. The run total is latest finish minus earliest start, so parallel agent time is not added twice.",
         "",
+        "Token usage = uncached input + cache reads + cache writes + output. Reasoning is already included in output and is not added again. Unmatched usage and incomplete totals are unavailable, not zero.",
+        "",
         _markdown_table([*summaries, total]),
     ]
     no_usage = [item.invocation_id for item in invocations if not usage_by_invocation[item.invocation_id]]
@@ -227,8 +223,9 @@ def _summarise_invocation(invocation: Invocation, rows: list[UsageRow]) -> dict:
         "Requests": len(rows),
         "Cost (USD)": _cost(rows),
     }
-    for field, column in zip(_TOKEN_FIELDS, REPORT_COLUMNS[8:14]):
-        result[column] = sum(getattr(row, field) for row in rows)
+    result["Token usage"] = sum(getattr(row, field) for row in rows for field in _TOKEN_FIELDS) if rows else "unavailable"
+    if not rows:
+        result["Cost (USD)"] = "unavailable"
     return result
 
 
@@ -242,10 +239,9 @@ def _summarise_run(feature_run_id: str, invocations: list[Invocation], summaries
         "Effort": "",
         "Elapsed": _duration(max(item.finished_at for item in invocations) - min(item.started_at for item in invocations)),
         "Requests": sum(row["Requests"] for row in summaries),
-        "Cost (USD)": None if any(row["Cost (USD)"] is None for row in summaries) else sum(row["Cost (USD)"] for row in summaries),
+        "Cost (USD)": "unavailable" if any(row["Cost (USD)"] == "unavailable" for row in summaries) else None if any(row["Cost (USD)"] is None for row in summaries) else sum(row["Cost (USD)"] for row in summaries),
     }
-    for column in REPORT_COLUMNS[8:14]:
-        result[column] = sum(row[column] for row in summaries)
+    result["Token usage"] = "unavailable" if any(row["Token usage"] == "unavailable" for row in summaries) else sum(row["Token usage"] for row in summaries)
     return result
 
 

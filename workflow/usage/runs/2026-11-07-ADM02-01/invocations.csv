@@ -1,0 +1,2 @@
+"feature_run_id","invocation_id","role","effort","tool","session_id","agent_id","started_at","finished_at"
+"2026-11-07-ADM02-01","2026-11-07-ADM02-01-spec-writer-01","spec-writer","inherited","codex","unavailable","/root/adm02_spec","2026-11-07T00:07:32.1484491+08:00","2026-11-07T00:12:35.2864507+08:00"

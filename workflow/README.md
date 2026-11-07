@@ -46,3 +46,5 @@ The orchestrator starts tracking when a feature is selected for a multi-agent ru
 Each teammate runs the tracker on their own machine because it reads local tool logs. Commit only the manifest and aggregate Markdown report; the row-level `usage.csv` stays local.
 A feature is not closed until its usage report is linked from `experiments/resource-log.md`; every handoff states the invocation ID, model, effort, elapsed time and report path (`templates/handoff.md`).
 Full steps, options and limits: [`tools/token-tracker/README.md`](tools/token-tracker/README.md#use-in-the-workflow).
+
+Every explicit workflow invocation must close with a generated and linked report.md usage table, including incomplete runs. See coordination.md and usage/README.md closeout checks. Standard report.md has one Token usage column; unavailable attribution must be explicit.

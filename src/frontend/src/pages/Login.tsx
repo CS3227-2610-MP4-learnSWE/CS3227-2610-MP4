@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { Link, Navigate } from "react-router";
+import { Link, Navigate, useLocation } from "react-router";
 import { Alert, Button, Tab, Tabs, TextField } from "@mui/material";
 import {
   ArrowRight,
@@ -58,6 +58,7 @@ export default function Login({
   toggle: () => void;
 }) {
   const { user, login, signup } = useAuth();
+  const { state: navigationState } = useLocation();
   // The demo tabs only pick which demo shortcut to show; a real sign-in takes its role from the server.
   const [role, setRole] = useState<Role>("student");
   const [mode, setMode] = useState<Mode>("signin");
@@ -202,6 +203,11 @@ export default function Login({
                 ? "Create account"
                 : "Have an account? Use the sign-in form"}
             </Button>
+            {navigationState?.sessionExpired === true && (
+              <Alert severity="info" role="alert" sx={{ mt: 2 }}>
+                Your session has expired. Sign in again.
+              </Alert>
+            )}
             {accepted && (
               <Alert severity="success" role="status" sx={{ mt: 2 }}>
                 Thanks. If this email can be used, your student account is

@@ -85,7 +85,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (state.status !== "anonymous" || signOutRedirect === null) return;
     setSignOutRedirect(null);
-    navigate("/login", { replace: signOutRedirect === "expired" });
+    navigate("/login", {
+      replace: signOutRedirect === "expired",
+      state: signOutRedirect === "expired" ? { sessionExpired: true } : null,
+    });
   }, [state.status, signOutRedirect, navigate]);
 
   const value: Auth = {

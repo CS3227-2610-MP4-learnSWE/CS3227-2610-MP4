@@ -96,8 +96,15 @@ export default function Shell({
   // Anonymous visitors are in demo mode (sample data, no session); signed-in users are real.
   const demoMode = status !== "authenticated";
   const displayName = user?.display_name ?? "";
-  const unread = messages[role].filter((message) => message.unread).length;
+  const unread = demoMode
+    ? messages[role].filter((message) => message.unread).length
+    : 0;
   const section = location.pathname.split("/")[2];
+  const liveUsage = !demoMode && role === "admin" && section === "ai-usage";
+  const liveFeedback =
+    !demoMode &&
+    (section === "feedback" ||
+      ((role === "student" || role === "teacher") && section === "inbox"));
   const current =
     navigation[role].find((item) => item.path === section)?.label ||
     (section === "feedback" ? "Feedback" : "Workspace");
@@ -121,21 +128,29 @@ export default function Shell({
             : "YOUR ADMIN SPACE"}
       </div>
       <nav aria-label={`${role} navigation`}>
-        {navigation[role].map((item) => (
-          <NavLink
-            key={item.path}
-            to={`/${role}/${item.path}`}
-            className={({ isActive }) => `nav-item ${isActive ? "active" : ""}`}
-            onClick={() => setOpen(false)}
-          >
-            <Icon name={item.icon} />
-            <span>{item.label}</span>
-            {item.path === "inbox" && unread > 0 && (
-              <span className="nav-count">{unread}</span>
-            )}
-            {item.path === "generate" && <span className="nav-ai">AI</span>}
-          </NavLink>
-        ))}
+        {navigation[role].map((original) => {
+          const item =
+            !demoMode && role === "admin" && original.path === "forms"
+              ? { ...original, path: "feedback" }
+              : original;
+          return (
+            <NavLink
+              key={item.path}
+              to={`/${role}/${item.path}`}
+              className={({ isActive }) =>
+                `nav-item ${isActive ? "active" : ""}`
+              }
+              onClick={() => setOpen(false)}
+            >
+              <Icon name={item.icon} />
+              <span>{item.label}</span>
+              {item.path === "inbox" && unread > 0 && (
+                <span className="nav-count">{unread}</span>
+              )}
+              {item.path === "generate" && <span className="nav-ai">AI</span>}
+            </NavLink>
+          );
+        })}
       </nav>
       <div className="sidebar-bottom">
         {dismissedTipFor !== tipOwner && (
@@ -266,9 +281,11 @@ export default function Shell({
             <strong>{current}</strong>
           </div>
           <div className="topbar-actions">
-            <span className="demo-pill">
-              <span /> Demo · Sample data
-            </span>
+            {!liveUsage && !liveFeedback && (
+              <span className="demo-pill">
+                <span /> Demo · Sample data
+              </span>
+            )}
             {demoMode && (
               <div className="role-select">
                 <Select

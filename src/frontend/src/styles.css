@@ -3695,3 +3695,208 @@ td .MuiButton-root {
     font-size: 12px;
   }
 }
+
+/* ADM-06 controls remain visible while the wide aggregate table scrolls. */
+.ai-usage-panel.MuiPaper-root {
+  min-width: 0;
+  padding: 24px;
+}
+.ai-usage-panel > p {
+  font-size: 16px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.ai-usage-filters {
+  display: grid;
+  grid-template-columns: minmax(180px, 1.4fr) repeat(2, minmax(160px, 1fr)) auto;
+  gap: 16px;
+  align-items: start;
+  margin-bottom: 24px;
+}
+.ai-usage-filters > * {
+  min-width: 0;
+}
+.ai-usage-results {
+  max-width: 100%;
+  container-type: inline-size;
+}
+.ai-usage-results table {
+  min-width: 1280px;
+  table-layout: fixed;
+  white-space: normal;
+}
+.ai-usage-results th,
+.ai-usage-results td {
+  padding: 16px;
+  line-height: 1.5;
+  vertical-align: top;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.ai-usage-results th {
+  font-size: 14px;
+}
+.ai-usage-results td,
+.ai-usage-results th[scope="row"] {
+  font-size: 15px;
+}
+.ai-usage-results caption {
+  padding: 0 0 16px;
+  font-size: 16px;
+  line-height: 1.6;
+  text-align: left;
+}
+.ai-usage-results caption > span {
+  display: block;
+  max-width: 100cqi;
+  overflow-wrap: anywhere;
+}
+.ai-usage-results th:first-child {
+  width: 230px;
+  text-align: left;
+}
+.ai-usage-reason {
+  display: block;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.5;
+  margin-top: 6px;
+}
+@media (max-width: 1000px) {
+  .ai-usage-filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 600px) {
+  .ai-usage-panel.MuiPaper-root {
+    padding: 16px;
+  }
+  .ai-usage-filters {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+/* Persistent feedback surfaces share the role shell and keep long text usable. */
+.feedback-list {
+  display: grid;
+  gap: 16px;
+}
+.feedback-list article {
+  padding: 16px 0;
+  border-bottom: 1px solid var(--border, #d8dfeb);
+  overflow-wrap: anywhere;
+}
+.feedback-list article.feedback-list-entry-container {
+  padding: 0;
+}
+.feedback-list-entry {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  width: 100%;
+  min-height: 52px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  white-space: nowrap;
+  transition:
+    background-color 120ms ease,
+    color 120ms ease;
+}
+.feedback-list-entry-title {
+  min-width: 0;
+  overflow: hidden;
+  font-weight: 600;
+  text-overflow: ellipsis;
+}
+.feedback-list-entry-meta {
+  flex: 0 0 auto;
+  color: var(--muted);
+  font-size: 0.95em;
+}
+.feedback-list-entry:hover {
+  background-color: var(--blue-soft);
+  color: var(--blue);
+}
+.feedback-list-entry:hover .feedback-list-entry-meta {
+  color: inherit;
+}
+.feedback-list-entry:focus-visible {
+  outline: 3px solid var(--blue);
+  outline-offset: 2px;
+  position: relative;
+  z-index: 1;
+}
+.feedback-form,
+.feedback-editor-fields {
+  display: grid;
+  gap: 18px;
+  min-width: 0;
+}
+.feedback-editor-fields {
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
+.feedback-question {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+  margin: 12px 0;
+  padding: 20px;
+  border: 1px solid var(--border, #d8dfeb);
+  border-radius: 12px;
+}
+.feedback-question legend {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+  max-width: 100%;
+}
+.feedback-option,
+.feedback-scale-fields {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.feedback-option > .MuiTextField-root,
+.feedback-scale-fields > .MuiTextField-root {
+  flex: 1 1 180px;
+}
+.feedback-audience-options {
+  display: grid;
+  gap: 8px;
+}
+.feedback-audience-options .MuiFormControlLabel-label {
+  overflow-wrap: anywhere;
+}
+.feedback-answer {
+  border-top: 1px solid var(--border, #d8dfeb);
+  padding: 20px 0;
+  overflow-wrap: anywhere;
+}
+.feedback-answer-text {
+  white-space: pre-wrap;
+}
+@media (max-width: 600px) {
+  .feedback-list-entry {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 4px;
+    white-space: normal;
+  }
+  .feedback-list-entry-title {
+    overflow: visible;
+    text-overflow: clip;
+    overflow-wrap: anywhere;
+  }
+  .feedback-list-entry-meta {
+    overflow-wrap: anywhere;
+  }
+  .feedback-question {
+    padding: 14px;
+  }
+  .feedback-option {
+    display: grid;
+    width: 100%;
+  }
+}

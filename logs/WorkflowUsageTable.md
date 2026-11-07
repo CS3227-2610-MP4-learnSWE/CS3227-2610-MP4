@@ -1,0 +1,9 @@
+# Workflow usage table maintenance ? 2026-11-07
+
+User requested a generated table for every workflow invocation and one token-usage column. Single-session tracker maintenance, approved spec/plan amendment recorded in TRK-02 before code; regression tests written and run first (2 expected failures). No delegated agents or application code changes.
+
+Updated run-report Markdown to one Token usage column: uncached input + cache reads + both cache-write categories + output. Reasoning is not added because it is already included in output. Missing invocation usage/cost and incomplete run totals render unavailable; raw export, aggregate report and TRK-03 detailed metrics schemas remain unchanged. Updated golden output and meaningful reused-source/partial-total checks. All 168 tracker tests PASS (1.060s). One intermediate full run found two old layout expectations, updated to the explicit new totals without weakening source attribution checks. Whitespace check PASS.
+
+AGENTS.md, coordination, workflow/usage index and handoff template now require run creation before work, orchestrator/delegate invocation recording, generated/inspected/linked report before any workflow handoff, interrupted closeout recovery, and report path in user handoff. Corrected documented manifest relative paths. This is required agent behavior; no background hook or parser support was added. Regenerated current ADM-02 implementation table with one token column and retained its recovery limitations. Exact Codex attribution remains unavailable.
+
+Resource use: inherited model/effort; task tokens/cost unavailable. No new workflow invocation was requested for this maintenance edit; no agents/tracker manifest for this task. Existing ADM-02 report regenerated with tracker. No application/database/env/live AI changes. Temporary Unicode read failure recovered using explicit UTF-8; preserved pre-existing work and unrelated .claude/worktrees/. Changes left unstaged for user review.

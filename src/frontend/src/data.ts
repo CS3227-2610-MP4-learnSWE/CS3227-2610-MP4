@@ -30,7 +30,7 @@ export const navigation: Record<
     { path: "announcements", label: "Announcements", icon: "inbox" },
     { path: "users", label: "Users", icon: "people" },
     { path: "courses", label: "Courses", icon: "book" },
-    { path: "usage", label: "AI usage", icon: "usage" },
+    { path: "ai-usage", label: "AI usage", icon: "usage" },
   ],
 };
 export const initialMessages = [

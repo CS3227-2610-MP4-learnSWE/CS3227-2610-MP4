@@ -21,6 +21,8 @@ Teacher endpoints use `teacher_access.teacher_session`: the shared cookie/CSRF/O
 
 ## Study companion (STU-03, first slice)
 
+- Connection lifetime: release the initial read-only auth transaction before store/model work. Keep the fresh post-model account/session check. Nested reads must work with a one-connection pool; do not increase pool limits to hide starvation. Regression: `tests/test_stu03_connection_lifetime.py`.
+
 One endpoint, `POST /api/companion/messages`, sends a student message and gets `{reply, mode, withheld}`. The request has `message`, optional `history` (untrusted, at most 50 items) and a `context` (`page` is `practice` or `other`, plus `set_id`, `attempt_id`, `label`). The client never names a mode; the server picks it (`companion_service.select_mode`): `help` on other pages; `hint` on the practice page with no attempt or an unsubmitted one; `explain` only for the student's own `submitted` attempt that has no later `in_progress` attempt on the same set. A message that matches a practice question (`question_match.find_match`: normalised, whole text, two choice texts, or 80% of the question's words) forces `hint` with that question's text and code. Hint context holds question text and code only, never choices, key, explanation or key version. Check order: header 401, set/attempt 404 (another student's attempt gives the same 404 as an unknown one), context 422, message and history 422, per-student limit 429, model call, leak check. Error codes are in `workflow/specs/STU-03/plan.md`.
 
 Modules in `src/backend/`: `companion_routes` (route, context lookup, error mapping, metadata-only logging), `companion_service` (mode selection, history trimming, message assembly), `companion_schemas`, `companion_prompts` (fixed rules per mode), `companion_help` (fixed app-help text, written from the user guide: keep them in step), `companion_config` (message 1,000 characters, history 4 messages / 2,000 characters, label 80, output caps hint 100 / explain 200 / help 150, the canned reply), `question_match`, `leak_check` and `attempt_store.list_for_student`. A hint or help reply that `leak_check.find_leak` flags (correct choice by letter or text, or a right/wrong verdict on a choice) is replaced by the canned reply with `withheld: true`. This check is deterministic and limited: paraphrased leaks pass.
@@ -340,6 +342,8 @@ For only ADM-05 browser tests, replace the last command with `npm.cmd test -- te
 
 ## Progress dashboard (STU-04)
 
+History-test synchronization: wait for the destination page heading before Back or Forward. React Router can update the URL before React commits the view; a URL assertion alone does not establish a page visit. The navigation regression retains exact progress-request counts of 1, 2 and 3.
+
 Spec and contract: `workflow/specs/STU-04/`. `GET /api/progress` (student role only; user from the session; `Cache-Control: no-store`) feeds both the Progress page and the Overview stats.
 
 - Storage: migration `20261105_stu04_practice_attempt` and `attempt_models.PracticeAttempt` (table `practice_attempt`: opaque `id`, creation order `seq`, `status` in_progress or submitted, `answers`, score, `key_version` and `correct_question_ids` stored at submission, `submitted_at`; CHECKs keep submitted rows complete). `attempt_store.DbAttemptStore` replaces the in-memory store. Interface: `create`, `get_owned` (None if unknown or not owned), `list_for_student`, `lock` (see the practice section; an unknown id raises 404 `attempt_not_found`; a row already submitted is never rewritten) and `submitted_summaries(student_id)` (per set: submitted count, best and latest submitted attempt, computed in SQL with window functions; in-progress attempts never appear). The store opens its own short session per call, so routes need no session.
@@ -373,3 +377,226 @@ Spec and contract: `workflow/specs/STU-02-published-sets/`. No migration of its 
 - Dev seed (development databases only; refuses unless `APP_ENV=development`): after migrations and `teacher_materials.seed`, run `uv run --env-file .env python -m teacher_publications.seed` from `src/backend`. It adds the set "Software engineering practice" (three questions, with the material and draft rows its foreign keys need) for `demo-student`'s course, idempotently and without overwriting rows. CI runs it in the real-backend job.
 - Tests: the fixture set lives in the tests (`tests/fake_sets.py`, a `FakeSetProvider` installed with `app.dependency_overrides[set_provider.get_set_provider]`); database tests insert published rows.
 - Frontend: `config.ts` is deleted. `services/practice.ts` has `listPracticeSets`; `services/practiceMessages.ts` holds the exact picker and not-available texts; `pages/PracticePicker.tsx` is the picker; `pages/Practice.tsx` takes `setId` from `/student/practice/SETID` (via `Student.tsx`); `PracticeContext.loadSet(setId)` resets all state when the set id changes and tracks `unavailable` ("load" for a 404 or 422 on load, "later" for a 404 `set_not_found` at save, submit or results) and `forbidden`; `StudyCompanion` sends the URL's set id and the submitted attempt id only when the practice state belongs to that set.
+
+## ADM-06 operational AI usage
+
+### ADM-06 local setup
+
+Prerequisites:
+
+- Git, uv, Node/npm and Docker installed.
+- Existing `src/backend/.env` and an enabled admin account.
+- Keep your existing database and credentials.
+- First-time account? See [local admin setup](#local-admin-setup-and-password-reset-powershell).
+- Local HTTP: `SESSION_COOKIE_SECURE=false`; allow the frontend origin in `.env`.
+- Frontend `.env`: `API_PORT=8000`. If `API_PROXY_TARGET` exists, use `http://127.0.0.1:8000`.
+- SoC credentials are needed only for real chat/generation, not mocked tests.
+
+**1. Stop backend workers with Ctrl+C. Start PostgreSQL and migrate.**
+
+Windows — PowerShell:
+
+```powershell
+Set-Location (git rev-parse --show-toplevel)
+docker compose up -d --wait postgres
+Set-Location src\backend
+uv sync --frozen
+uv run --env-file .env alembic upgrade head
+```
+
+macOS/Linux — bash or zsh:
+
+```bash
+cd "$(git rev-parse --show-toplevel)"
+docker compose up -d --wait postgres
+cd src/backend
+uv sync --frozen
+uv run --env-file .env alembic upgrade head
+```
+
+**2. Start the updated backend. Leave this terminal running.**
+
+Windows:
+
+```powershell
+Set-Location (git rev-parse --show-toplevel)
+Set-Location src\backend
+uv run --env-file .env uvicorn main:app --host 127.0.0.1 --port 8000 --reload
+```
+
+macOS/Linux:
+
+```bash
+cd "$(git rev-parse --show-toplevel)/src/backend"
+uv run --env-file .env uvicorn main:app --host 127.0.0.1 --port 8000 --reload
+```
+
+**3. In a second terminal, activate collection.** Every backend worker must use the updated code first.
+
+Windows:
+
+```powershell
+Set-Location (git rev-parse --show-toplevel)
+Set-Location src\backend
+uv run --env-file .env python -m ai_usage.activate --feature STU-03 --feature TEA-02
+```
+
+macOS/Linux:
+
+```bash
+cd "$(git rev-parse --show-toplevel)/src/backend"
+uv run --env-file .env python -m ai_usage.activate --feature STU-03 --feature TEA-02
+```
+
+Expected: `AI usage coverage activated; existing starts and gaps preserved.` Repeating activation preserves the original start.
+
+**4. In a third terminal, start the frontend.** Stop the old frontend first. Its proxy must point to backend port 8000.
+
+Windows:
+
+```powershell
+Set-Location (git rev-parse --show-toplevel)
+Set-Location src\frontend
+npm.cmd ci
+npm.cmd run dev
+```
+
+macOS/Linux:
+
+```bash
+cd "$(git rev-parse --show-toplevel)/src/frontend"
+npm ci
+npm run dev
+```
+
+Open **http://127.0.0.1:5173/login**. Follow the [ADM-06 manual checklist](UserGuide.md#manual-test-checklist).
+
+- Initial seven-day results can be **Unavailable**. No backfill.
+- For numeric totals, select dates starting after activation's next UTC midnight.
+- Do not backdate coverage or clear gaps to manufacture complete data.
+
+### ADM-06 automated tests
+
+Mocks and isolated data. No live AI. No wait for UTC midnight.
+
+**Backend — 77 ADM-06 cases.** Start Docker Desktop/the Docker daemon first. The connection below is for the repository's local Docker service. The fixture creates and removes a unique test schema. Do not add `--env-file .env` to these test commands.
+
+Windows:
+
+```powershell
+Set-Location (git rev-parse --show-toplevel)
+docker compose up -d --wait postgres
+Set-Location src\backend
+uv sync --frozen
+$env:TEA01_TEST_DATABASE_URL = 'postgresql+psycopg://learnswe:learnswe-local-only@127.0.0.1:5433/learnswe'
+$env:PGCONNECT_TIMEOUT = '2'
+uv run pytest -q tests/test_adm06_transport.py tests/test_adm06_usage.py tests/test_adm06_migration.py --basetemp .pytest_cache/adm06-guide
+```
+
+macOS/Linux:
+
+```bash
+cd "$(git rev-parse --show-toplevel)"
+docker compose up -d --wait postgres
+cd src/backend
+uv sync --frozen
+export TEA01_TEST_DATABASE_URL='postgresql+psycopg://learnswe:learnswe-local-only@127.0.0.1:5433/learnswe'
+export PGCONNECT_TIMEOUT=2
+uv run pytest -q tests/test_adm06_transport.py tests/test_adm06_usage.py tests/test_adm06_migration.py --basetemp .pytest_cache/adm06-guide
+```
+
+Expected: **77 passed**, with no skipped database tests. Covers attempts/retries, tokens, unavailable data, permissions, concurrency and migration. Use a fresh terminal for normal development afterward.
+
+**Browser — 40 ADM-06 cases.** Stop frontends on ports 5173 and 5174 first. Playwright starts its own servers. Backend not required.
+
+Windows:
+
+```powershell
+Set-Location (git rev-parse --show-toplevel)
+Set-Location src\frontend
+npm.cmd ci
+npx.cmd playwright install chromium
+npm.cmd test -- tests/adm06-usage.spec.ts --project=mocked --workers=2 --output=test-results/adm06-guide
+```
+
+macOS/Linux:
+
+```bash
+cd "$(git rev-parse --show-toplevel)/src/frontend"
+npm ci
+npx playwright install chromium
+npm test -- tests/adm06-usage.spec.ts --project=mocked --workers=2 --output=test-results/adm06-guide
+```
+
+Expected: **40 passed**. Covers filters, messages, retry, timeout, access, history, logout and mobile layout. Linux missing browser libraries? Run `npx playwright install --with-deps chromium`.
+
+### ADM-06 implementation notes
+
+- Report layout: scoped panel padding, 14–16px text and fixed wrapping columns. Caption text stays within the visible scroll region using its inline-size container; table semantics and accessible name remain unchanged.
+- `ai_usage`: metadata only. No prompts, replies, credentials or user identifiers.
+- Production: `SoclaasClient` + `DatabaseAttemptObserver`. Each retry gets a record. Standalone test clients may omit the observer; production clients must not.
+- `usage_feature`: server-owned context; resets after each call. STU-03 and TEA-02 integrated; ADM-03 disabled.
+- Mapping: `usage.prompt_tokens` → input; `usage.completion_tokens` → output; `usage.total_tokens` → total. Independent recorded values only; live availability unverified.
+- Tokens: nonnegative signed-64-bit integers. Invalid/missing fields stay null; report totals above JavaScript's safe integer range become unavailable.
+- Provider 2xx = service success, even if feature validation later fails. 429 = rate-limit failure; other non-2xx/transport errors = other failure.
+- Reservation failure blocks dispatch. Finalisation failure leaves pending; all affected totals become unavailable. Domain rollback cannot erase attempts.
+- Atomic finalisation: identical replay accepted; conflicting replay cannot overwrite.
+- Report: active admins; strict filters; REPEATABLE READ cutoff; private/no-store and Vary: Cookie.
+- Limits unchanged. Report throttle: 30 requests/60 seconds/admin, process-local.
+- Browser: memory only; clears on session/navigation/new request; 15-second timeout; no automatic retry.
+- Coverage: forward-only. No backfill, retention deletion or gap-recovery tool. Downgrade removes usage metadata.
+- Production deployment: GitHub Actions; replace every worker before activation.
+- Full contract: [ADM-06 spec and plan](../workflow/specs/ADM-06/).
+
+## ADM-02: targeted feedback implementation
+
+Browser fixture maintenance: admin response lists and response details in `tests/adm02Api.ts` describe the same student respondent, independent of the signed-in reviewer. Row navigation tests click the complete name-and-timestamp metadata text, which shares one span.
+
+Apply additive migration `20261107_adm02_feedback` before starting the updated application. It follows `20261106_adm06_ai_usage` and adds `feedback_forms`, `feedback_recipients`, `feedback_responses` and `feedback_response_drafts`. Existing account, course, lesson and AI data are preserved. Use your existing configured database; never point development commands at production.
+
+Windows (from a configured local checkout; both commands load `.env` so migration and API use the same `DATABASE_URL`):
+
+```powershell
+Set-Location (git rev-parse --show-toplevel)
+Set-Location src\backend
+uv sync --frozen
+uv run --env-file .env alembic upgrade head
+uv run --env-file .env uvicorn main:app --host 127.0.0.1 --port 8000 --reload
+```
+
+macOS/Linux:
+
+```bash
+cd "$(git rev-parse --show-toplevel)/src/backend"
+uv sync --frozen
+uv run --env-file .env alembic upgrade head
+uv run --env-file .env uvicorn main:app --host 127.0.0.1 --port 8000 --reload
+```
+
+Start the frontend with the existing setup instructions. Sign in as an enabled admin and open `/admin/feedback`; use separate student/teacher browser profiles to check targeted `/student/inbox` and `/teacher/inbox` delivery. Follow the [ADM-02 user walkthrough](UserGuide.md#adm-02-targeted-feedback-forms). No LLM configuration or calls are needed for this feature.
+
+### Storage, access and concurrency
+
+- `feedback_models.py` owns relational records, `feedback_validation.py` validates definitions/answers, `feedback_store.py` serialises snapshots and centralises access/locking, and `feedback.py` owns HTTP routes, strict query/body handling, quotas and fixed error translation. The approved [plan](../workflow/specs/ADM-02/plan.md) is the endpoint/schema contract.
+- Reuse cookie sessions, role checks, Origin/CSRF validation and the existing SQLAlchemy session/pool. Before record work, reuse the account lifecycle transaction advisory lock and freshly verify the session/account. Survey operations take that lock before feature records, so account disable/archive, publication, saves, submit and close use a consistent ordering across workers. This simple global ordering favours correctness over throughput.
+- Publication freezes definitions/audience and inserts all recipient inbox rows in the same transaction. Partial publication rolls back. Form editing and private draft saving have independent optimistic versions. A unique form/recipient response plus serialised submit/close prevents duplicate completion or late draft resurrection.
+- Draft PUT preserves exact text and allows missing required answers. The final POST carries `draft_version` and the complete final answers, validates required fields and atomically inserts the immutable form/question/answer snapshot and removes the private draft. Acknowledgement determines saved/completed UI state; elapsed time alone never does.
+- Draft answers are owner-only while open. Admins see submitted responses only. Recipient terminal reads and inbox payloads contain no answer text. Association references are metadata and confer no course/lesson access. The study companion receives no feedback answers or form contents.
+- All protected feedback successes/errors use `Cache-Control: no-store`. Render text without HTML interpretation. Strict types reject unknown fields, invalid/foreign IDs, duplicate questions/options/answers and booleans masquerading as scale integers. Body cap is 256 KiB; combined answer text is 20,000 characters. Form and field limits are in the plan.
+- Feedback validation currently returns fixed error codes/messages without optional structured field-path details. The browser focuses the relevant invalid control using the entered values and error code.
+- Per-account rolling minute quotas: reads 120, general mutations 60, submissions additionally 10, private draft writes separately 120. Shared `auth.rate_limit.admit` is process-local; multiple workers do not share these quota counters. Rate-limit responses include retry timing, and clients do not retry automatically.
+- Forms and submissions have no expiry/deletion API; closure retains submitted responses and hidden private drafts. Downgrading this additive migration drops its feedback tables and their contents; back up data before an intentional downgrade.
+
+### Browser lifecycle
+
+`services/feedbackApi.ts` validates public payloads and coalesces only in-flight reads within the same session/write generation. The shared client now accepts an optional AbortSignal without changing existing callers. Feature requests use a 15-second timeout, distinct transport/timeout errors and abort on unmount; late results cannot overwrite a new account's state.
+
+`useResponseDraft` owns the one-second autosave debounce, one in-flight write, coalesced later edits, explicit retry/conflict handling and navigation flushing. Hydration produces no write. Submission cancels debounce, waits for a pending save, then posts once with final answers. A saved draft is recovered server-side after reload or another device; answers never enter localStorage/sessionStorage. Beforeunload warns for unacknowledged edits. Session exit clears the view immediately and does not wait for autosave. Native abrupt termination can lose edits that never reached the server.
+
+Signed-in student/teacher inboxes use persistent request data, with no sample rows or sample unread badge. The inbox shows the real unread count. Anonymous demo previews remain explicitly sample-only. Admin sidebar feedback navigation points to the live form manager; unrelated analytics/announcement previews retain their existing labels.
+
+### Verification
+
+Run the existing backend suite with `uv run pytest -q`, plus the frontend `npm run typecheck`, `npm run lint` and `npm test`. Tests need the documented disposable PostgreSQL schema harness. Set process-local `PGCONNECT_TIMEOUT=3` when running the historical unavailable-database test on Windows if a refused port otherwise waits indefinitely; this bounds the test process's libpq connection attempts without changing application configuration. Use `pytest -k adm02` and Playwright `--grep ADM-02` for the independent feature cases after their integration. No live AI calls are required.
+
+Manual checks: save/reopen all six question types; publish to selected student and teacher accounts separately; verify an unselected account cannot open the URL; save partial required answers, navigate away/return and resume; submit once and see Completed; close collection and verify further saves/submits fail; review preserved submitted snapshots as admin. Test two tabs saving the same draft, close racing submission, failure/retry, session change and mobile keyboard access. Deployment remains through the team's GitHub Actions process.

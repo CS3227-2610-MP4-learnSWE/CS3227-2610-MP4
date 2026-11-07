@@ -1,0 +1,9 @@
+# ADM-06 testing walkthrough ? 2026-11-06
+
+User asked for concise, actionable testing instructions and copyable Windows/macOS/Linux commands. Developer role, single-session documentation maintenance; no multi-agent feature run or app/test code changes.
+
+Rewrote only ADM-06 sections: DeveloperGuide now has four local setup steps (healthy PostgreSQL/migration, running updated backend, separate-terminal activation, frontend), six paired PowerShell/bash command blocks and focused automated testing. UserGuide now has an eight-step manual checklist with expected results, a five-step real-call count check, immediate mocked-test alternative and recovery bullets. Retained coverage limitations, actual-attempt unit, missing-token behavior, privacy and deployment constraints. Explained nextUTCmidnight rather than promising immediate historical counts. Existing-account/configuration prerequisites remain explicit.
+
+Validation: six PowerShell blocks parsed with PS5.1 AST; six bash blocks parsed with GitBash bash -n. Guide file links/heading anchors PASS; focused commands collection-only confirms77backend/40browser cases. Docker Compose local help confirms --wait flag; documented setup waits for health. git diff --check PASS. No test execution, liveSoC, developerDB/env changes, process restarts or deployment. A long shell-based file-write request was blocked by automatic policy review before execution; edits completed safely via apply_patch. Trailing-blank-line check corrected. Collection-only commands used existing dependencies; no npmci/uvsync/setup commands executed.
+
+Resources: inherited Codex model/effort; per-task tokens/cost unavailable. Single-session documentation exemption; no agents/manifest/tracker, no new feature revision rounds. Existing untracked .claude/worktrees/ untouched.

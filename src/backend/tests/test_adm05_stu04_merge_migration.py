@@ -16,7 +16,8 @@ PARENTS = ("20261106_adm05_access", "20261105_stu04_practice_attempt")
 
 def test_adm05_stu04_merge_has_one_head_and_preserves_both_parents():
     graph = ScriptDirectory.from_config(Config("alembic.ini"))
-    assert graph.get_heads() == [MERGE_REVISION]
+    assert len(graph.get_heads()) == 1
+    assert MERGE_REVISION in {revision.revision for revision in graph.walk_revisions()}
     assert set(graph.get_revision(MERGE_REVISION).down_revision) == set(PARENTS)
 
 
@@ -37,7 +38,7 @@ def test_adm05_stu04_merge_upgrades_either_existing_head_without_data_loss(paren
         else:
             isolated.sql("INSERT INTO practice_attempt(id,student_id,set_id,status) "
                          "VALUES ('merge-attempt','merge-student','intro-se-1','in_progress')")
-        isolated.migrate("upgrade", "head")
+        isolated.migrate("upgrade", MERGE_REVISION)
         assert isolated.sql("SELECT version_num FROM alembic_version") == [(MERGE_REVISION,)]
         expected_status = "disabled" if parent == PARENTS[0] else "enabled"
         assert isolated.sql("SELECT display_name,access_status FROM \"user\" WHERE id='merge-student'") == [("Retained", expected_status)]

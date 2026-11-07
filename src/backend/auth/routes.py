@@ -186,6 +186,12 @@ def read_course(course_id: str, user: AuthUser = Depends(current_user()), db: Se
 async def add_no_store(request: Request, call_next):
     """Middleware: auth and per-student study responses must never be cached."""
     response = await call_next(request)
-    if request.url.path.startswith(("/api/auth/", "/api/study/", "/api/teacher/", "/api/admin/", "/api/progress", "/api/practice-sets", "/api/attempts")):
+    if request.url.path.startswith(("/api/auth/", "/api/study/", "/api/teacher/", "/api/admin/", "/api/progress", "/api/feedback/", "/api/practice-sets", "/api/attempts")):
         response.headers["Cache-Control"] = "no-store"
+    if request.url.path == "/api/admin/ai-usage":
+        response.headers["Cache-Control"] = "private, no-store"
+        vary = [value.strip() for value in response.headers.get("Vary", "").split(",") if value.strip()]
+        if "cookie" not in {value.lower() for value in vary}:
+            vary.append("Cookie")
+        response.headers["Vary"] = ", ".join(vary)
     return response

@@ -1,6 +1,6 @@
 # Token tracker
 
-Reads local Claude Code and Codex session logs and reports token use and cost. The existing aggregate report groups by agent type and model; `run-report` produces a per-invocation Markdown report for one feature run from a hand-written manifest; `invocations-from-logs` rebuilds the invocations from Claude Code logs and adds cache, tool, file-read and time metrics. Python 3.12+, standard library only. Not product code; it is independent of learnSWE and can be copied elsewhere.
+Reads local Claude Code and Codex session logs and reports token use and cost. The existing aggregate report groups by agent type and model; `run-report` produces a per-invocation Markdown report for one feature run from a hand-written manifest, including both Claude and Codex token usage; `invocations-from-logs` rebuilds the invocations from Claude Code logs and adds cache, tool, file-read and time metrics. Python 3.12+, standard library only. Not product code; it is independent of learnSWE and can be copied elsewhere.
 
 ## Run (from this folder)
 
@@ -39,7 +39,7 @@ Generate one report for all agent invocations in a feature run (the manifest and
 ```powershell
 Set-Location (git rev-parse --show-toplevel)
 Set-Location workflow\tools\token-tracker
-python -m tracker run-report --manifest ..\..\..\usage\runs\2026-11-05-STU04-01\invocations.csv
+python -m tracker run-report --manifest ..\..\usage\runs\2026-11-05-STU04-01\invocations.csv
 ```
 
 The command writes `report.md` next to the manifest. Supply `--out PATH` to choose another location. A manifest has one row per agent start and these columns in order: `feature_run_id, invocation_id, role, effort, tool, session_id, agent_id, started_at, finished_at`. Use a globally unique `feature_run_id`; build each `invocation_id` as `<feature_run_id>-<role>-<sequence>`. Record start and finish timestamps with a timezone. `tool` is `claude` or `codex`; the source session/agent IDs connect local usage records to the invocation. Model names come from usage records; effort is recorded in the manifest.
@@ -58,7 +58,7 @@ python -m tracker invocations-from-logs --run-id 2026-11-05-ADM01-01 SESSION_ID 
 
 macOS/Linux: `python3 -m tracker invocations-from-logs --run-id 2026-11-05-ADM01-01 SESSION_ID`.
 
-Options: `--run-id` (required; starts with a letter or digit, then letters, digits, `.`, `_`, `-`), `--meta PATH` (optional sidecar, below), `--claude-dir`, `--codex-dir` (only passed to the shared row reader; Codex rows are discarded), `--prices`, `--out-md` (default `workflow/usage/runs/<run-id>/report-v2.md`) and `--out-csv` (default `workflow/usage/runs/<run-id>/metrics-v2.csv`). Outputs are written only after every check passes; an existing file is overwritten only then. The two files are written one after the other, so a disk error on the second leaves the first already replaced. Exit codes: 0 success, 1 cross-check mismatch, 2 any input or usage error. Every error line starts `error: ` and names the input that caused it (option and value, argument position, sidecar line number, path). Warnings (`warning: ...`, for example a subagent without a usable `meta.json`) go to stderr and do not change the exit code.
+Options: `--run-id` (required; starts with a letter or digit, then letters, digits, `.`, `_`, `-`), `--meta PATH` (optional sidecar, below), `--claude-dir`, `--codex-dir` (used by the aggregate cross-check; Codex rows are not reconstructed as invocation-v2 rows), `--prices`, `--out-md` (default `workflow/usage/runs/<run-id>/report-v2.md`) and `--out-csv` (default `workflow/usage/runs/<run-id>/metrics-v2.csv`). Outputs are written only after every check passes; an existing file is overwritten only then. The two files are written one after the other, so a disk error on the second leaves the first already replaced. Exit codes: 0 success, 1 cross-check mismatch, 2 any input or usage error. Every error line starts `error: ` and names the input that caused it (option and value, argument position, sidecar line number, path). Warnings (`warning: ...`, for example a subagent without a usable `meta.json`) go to stderr and do not change the exit code.
 
 **How invocations are cut.** A session ID names `<claude-dir>/projects/<project folder>/<session>.jsonl` (the main session) and `.../<session>/subagents/agent-<id>.jsonl` with a sibling `.meta.json`. The main session becomes one `orchestrator` invocation per session, so orchestrator spend is visible. Each subagent file gives one invocation per prompt: a prompt starts at the first non-meta string user line and at each string user line that follows a `SubagentHandback` result, so a resumed subagent splits per new prompt. Invocation IDs are `<run-id>-<role>-<NN>`, numbered per role by start time, then session, agent and prompt. Adding an earlier invocation can renumber later ones, so write the sidecar after you have the IDs.
 
@@ -94,10 +94,12 @@ Options: `--run-id` (required; starts with a letter or digit, then letters, digi
 
 For every multi-agent feature run, the orchestrator starts tracking when the feature is selected, records every agent launch/return (including retries), and generates the report when the run ends or is stopped. The human user does not do this manually. Each teammate runs the tracker on their own machine only when their local logs are needed, because the tracker reads local session logs. Routine feature-run records go under `workflow/usage/runs/<feature-run-id>/`; workflow comparison experiments such as A/B/C stay under `workflow/experiments/results/`. This is an orchestrator lifecycle requirement, not a background provider hook.
 
+For Codex invocations, put the exact `session_meta.payload.id` in `session_id`; use that ID as `agent_id` for a subagent and leave `agent_id` blank for the main session. Set `tool` to `codex` and record timezone-aware start and finish times. `run-report` includes Codex model, request, token-category and cost data when the matching local log rows and prices are available. If the source ID or records cannot be matched, mark attribution incomplete in the resource log rather than treating the report's empty row as proof of zero usage. The detailed `invocations-from-logs` metrics remain Claude-only.
+
 1. On feature selection, the orchestrator creates the run folder and manifest before starting the spec-writer.
 2. On each launch, it adds a unique invocation row; on return, it fills `finished_at`, `tool`, the required `session_id`, and `agent_id` when available.
 3. On run close, it runs `run-report`, commits the manifest and `report.md`, and links the report in `workflow/experiments/resource-log.md`.
-4. Use `report --branch <branch-name>` for the existing aggregate view or manually run `run-report` only for testing/recovery.
+4. At run close, use `run-report` as the routine invocation-level report. Use `report --branch <branch-name>` for an aggregate view or re-run `run-report` for recovery.
 
 New per-run reports use format `invocation-v1`. Existing aggregate reports under `workflow/experiments/results/` remain unchanged and are historical/experiment records. The row-level `usage.csv` holds local usage history and is gitignored. Commit invocation manifests and Markdown run reports, not provider logs or prompts/replies. Quote numbers as measured by the tracker, not as billed (see Cost and Known limits).
 
@@ -123,7 +125,7 @@ An entry may instead hold `tiers`, a list of price rows chosen per request by pr
 - Results should be compared with the usage shown in the Claude and Codex apps before being trusted.
 - `invocations-from-logs` reads the Claude Code log format, which is undocumented and may change. Its fields were observed in one probe session (`workflow/specs/TRK-03/log-probe.md`); a missing field gives `unavailable`.
 - Where a worktree-isolated subagent's log is stored is unverified. A log of a listed session outside the folder layout is shown as unattributed usage, with a labelled guess, not attached to an invocation.
-- Codex logs get no new metrics; a session found only in Codex logs counts as "no logs".
+- Codex invocation token counts, model and cost are available through `run-report`; Claude-only tool, file-read, context and detailed timing metrics are not reconstructed for Codex.
 - The Haiku tier rule (prompt size above 100,000 tokens uses the second row) is an unverified assumption. Only IDs that extend `claude-haiku-5-5` after a non-alphanumeric character are priced as Haiku; provider-prefixed IDs are not.
 - Wall-clock gaps (`wait_before_start_s`) are not dependencies. Orchestrator elapsed time includes idle time between human turns, and its tool time includes waiting for subagents. `human_messages` may include injected messages that are not marked meta. Repeated reads ignore offsets and limits. Roles depend on the session's agent registry (unregistered agents log as `general-purpose`).
 - Costs are tracker list-price estimates, not billed.
@@ -145,3 +147,7 @@ python3 -m unittest discover -s tests
 ```
 
 Tests build synthetic logs in temporary folders; no real logs are in the repo. The original tracker spec is in `workflow/specs/TRK-01/`; invocation reports are specified in `workflow/specs/TRK-02/`; log-derived invocations and metrics in `workflow/specs/TRK-03/`.
+
+## Compact standard workflow table (2026-11-07 amendment)
+
+`run-report` displays one Token usage column instead of six token-category columns: uncached input + cache reads + cache writes + output, without adding reasoning again. Raw exports, aggregate reports and TRK-03 detailed metrics are unchanged. Unmatched invocation usage/cost and incomplete totals display unavailable. Generate/link report.md before every workflow handoff, including incomplete runs. This is an orchestrator duty, not a background hook.

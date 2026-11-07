@@ -6,7 +6,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Request
 from sqlalchemy.orm import Session
 
-from auth.db import engine_for
+from auth.db import engine_for, get_session
 from auth.dependencies import current_user, session_context, unauthenticated
 from auth.settings import load_settings
 
@@ -25,6 +25,7 @@ from llm_client import (
     LlmNotConfigured,
     LlmRateLimited,
     get_llm_client,
+    usage_feature,
 )
 from practice_data import PracticeSet, Question
 from question_match import find_match
@@ -126,7 +127,12 @@ def post_message(
     student: str = Depends(require_student),
     llm: LlmClient = Depends(get_llm_client),
     provider: SetProvider = Depends(get_set_provider),
+    db: Session = Depends(get_session),
 ) -> CompanionReplyOut:
+    # Identity/CSRF checks are complete. Return their read-only connection before
+    # independent store reads and the model call, or concurrent requests can each
+    # hold one pool slot while waiting for a second. Recheck access after the call.
+    db.rollback()
     practice_set, attempt = _resolve_context(body.context, student, provider)
     message = service.validate_message(body.message)
     history = service.validate_history(body.history)
@@ -138,7 +144,8 @@ def post_message(
 
     started = time.monotonic()
     try:
-        reply = llm.complete(messages, max_tokens=config.MAX_TOKENS[plan.mode], caller_id=student)
+        with usage_feature("STU-03"):
+            reply = llm.complete(messages, max_tokens=config.MAX_TOKENS[plan.mode], caller_id=student)
     except LlmError as exc:
         error = _map_error(exc)
         _log(plan.mode, error.code, started)

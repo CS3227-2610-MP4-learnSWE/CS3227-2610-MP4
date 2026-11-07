@@ -34,3 +34,6 @@ None. Uses local provider logs only; no live model calls.
 - Use Markdown for the committed per-run report; keep raw row-level CSV local and ignored.
 - Do not change the existing experiment-results directory or historical files.
 - The orchestrator records each invocation in its run manifest; tracker IDs from local logs are matching metadata and need not be shown in the report table.
+
+## Approved maintenance amendment ? 2026-11-07
+User requests a table on every workflow invocation and one Token usage column. Replace the six token-category columns in run-report Markdown with Token usage = input + cache_read + cache_write_5m + cache_write_1h + output. Reasoning is a subset of output and is not added. Preserve raw usage/export and TRK-03 detailed metrics schemas. Unmatched invocations show unavailable for tokens/cost; a partial run total is unavailable rather than a misleading subtotal. Workflow closeout must generate/link the report before final handoff, including paused/interrupted runs; resume regenerates the same run report, new explicit runs receive new IDs. No background hook is claimed. Single-session tracker maintenance; tests precede implementation.
