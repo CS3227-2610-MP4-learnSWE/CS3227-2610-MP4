@@ -1,5 +1,17 @@
 # Handoff notes
 
+## 2026-11-09: spec-writer on TEA-06
+- Done: wrote `workflow/specs/TEA-06/spec.md`, `plan.md`, `tasks.md` (draft, awaiting user approval). Teacher-only verification slice mirroring STU-05-06: AC01-AC15 (US-TEA-06-01 to 06-04 plus badge, failure isolation, `/teacher/feedback` redirect, wrong role), evidence matrix, fixed existing endpoint contract. Only source change planned: `/teacher` block of `src/frontend/src/App.tsx`; docs changes in UserGuide and DeveloperGuide.
+- Next (agent + task): orchestrator: user approval and Open question 1; then test-designer (tasks 1, 4, 5) and developer (tasks 2, 3) in parallel.
+- Files touched: `workflow/specs/TEA-06/{spec,plan,tasks}.md`, `workflow/notes.md`.
+- Invocation ID(s) for this handoff: n/a (recorded by the orchestrator in the run manifest).
+- Model(s) and effort setting: n/a (not measured by this agent).
+- Elapsed wall-clock time: n/a.
+- Feature-run report path: not yet.
+- Decisions / open questions: user decisions 1-4 (2026-11-09) recorded as resolved. Open: (1) anonymous `/teacher/feedback`: recommend redirect only when signed in, anonymous demo keeps the sample form; (2) note for the ADM-02 owner: `feedback.py` inbox `unread_count` (about line 242) does not filter `role_snapshot` while the list does; unreachable while ADM-05 keeps roles fixed; not fixed here; (3) unauthenticated and malformed-id error values to be taken from existing tests.
+- Blocking findings: none.
+- Resource use: Tracker run: no (spec-writer only; orchestrator owns the manifest). Model: n/a. Total tokens: unavailable. Cost (USD): unavailable. Retries and revision rounds: 0.
+
 ## 2026-11-08: A vs B agent counts clarified (orchestrator, student-role owner)
 - Done: `docs/Reflections.md` now says A is 4 agents plus the orchestrator and B is 3 agents plus the orchestrator, with a short "How the agents are counted" note. The earlier "A 5 agents / B 3 agents" labels counted the orchestrator for A only; the spec-writer was not part of the comparison (the spec was shared). Source: cost-by-agent lines in `workflow/experiments/stu02/fair/README.md`.
 - Not changed on purpose: the historical resource-log rows, `workflow/experiments/results/` files, `docs/images/stu02-a-vs-b.png` and `workflow/variants/README.md` (its "4 agents; 5 with the spec-writer" is about the build phase and stays accurate). The note in Reflections points to them.

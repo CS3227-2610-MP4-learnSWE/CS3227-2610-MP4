@@ -1,0 +1,3 @@
+feature_run_id,invocation_id,role,effort,tool,session_id,agent_id,started_at,finished_at
+2026-11-09-TEA06-01,2026-11-09-TEA06-01-orchestrator-01,orchestrator,inherited,claude,2425d628-f209-4ab1-ad7c-dffaa90cb90d,,2026-11-09T00:18:56+08:00,
+2026-11-09-TEA06-01,2026-11-09-TEA06-01-spec-writer-01,spec-writer,inherited,claude,2425d628-f209-4ab1-ad7c-dffaa90cb90d,a6ffcde2d8a343edb,2026-11-09T00:18:56+08:00,2026-11-09T00:22:24+08:00
