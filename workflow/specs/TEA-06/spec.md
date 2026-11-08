@@ -38,7 +38,7 @@ Copied from `docs/UserStories.md` (US-TEA-06-01 to 06-04); IDs added for test ma
 - [ ] AC11 (slice) The sidebar badge on the teacher `Inbox` link equals survey unread plus message unread (`unread_count` of the count endpoint), the page keeps the two section counts, and the badge is absent at zero.
 - [ ] AC12 (slice) The badge drops after the teacher opens a survey request's form and after the teacher marks a message read.
 - [ ] AC13 (slice) A failure of one count source or section does not hide the other section's count or list, and no failure shows a generic message.
-- [ ] AC14 (slice, decision 3) A signed-in teacher opening `/teacher/feedback` lands on `/teacher/inbox` through a history replace; the "Preview only" sample form is no longer reachable by a signed-in teacher; `/teacher/feedback/{form_id}` still opens the real form.
+- [ ] AC14 (slice, decision 3) A signed-in teacher opening `/teacher/feedback` lands on `/teacher/inbox` through a history replace; the sample feedback form (heading "A better learning experience", text "Sample feedback form", button "Preview submission") is no longer reachable by a signed-in teacher; `/teacher/feedback/{form_id}` still opens the real form.
 - [ ] AC15 (slice) Wrong role: a student or admin opening `/teacher/inbox`, `/teacher/feedback` or `/teacher/feedback/{form_id}` is redirected to their own area with replace and no inbox, form or count request; direct API calls from the wrong role return 403.
 
 ## UI states and copy

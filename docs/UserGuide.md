@@ -291,7 +291,7 @@ A review remains valid for 15 minutes. Refreshing its URL recovers the review or
 - **Messages** lists announcements and feedback replies. Each card shows its type, an Unread or Read chip, the subject, the text, the sent time and **From: Administrator**. The inbox does not show which administrator sent a message, so the sender is always shown as Administrator. Message text is shown as plain text.
 - The form page states: once submitted, your name and feedback are visible to administrators; your unfinished draft is private.
 - A form is sent to named teachers chosen by an admin. Targeting a teacher group is not available. Email and push notifications are not available; the sidebar **Inbox** badge counts unread requests plus messages, updates every minute and when you return to the window; reopen the Inbox to see new items.
-- When signed in, `/teacher/feedback` opens the Inbox. The "Preview only" sample form appears only in the anonymous demo.
+- When signed in, `/teacher/feedback` opens the Inbox. The sample feedback form ("Sample feedback form" with a **Preview submission** button) appears only in the anonymous demo.
 
 
 ### ADM-04: redesigned inbox and composer
