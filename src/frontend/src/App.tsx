@@ -35,6 +35,19 @@ function Inbox({ role }: { role: "student" | "teacher" }) {
   );
 }
 
+function TeacherFeedbackIndex({
+  notify,
+}: {
+  notify: (message?: string) => void;
+}) {
+  const { status } = useAuth();
+  return status === "authenticated" ? (
+    <Navigate to="/teacher/inbox" replace />
+  ) : (
+    <FeedbackForm notify={notify} />
+  );
+}
+
 function LiveFeedback({ admin = false }: { admin?: boolean }) {
   const { status } = useAuth();
   if (status !== "authenticated") return <Navigate to="/login" replace />;
@@ -148,7 +161,7 @@ export default function App() {
               <Route path="feedback/:formId" element={<LiveFeedback />} />
               <Route
                 path="feedback"
-                element={<FeedbackForm notify={notify} />}
+                element={<TeacherFeedbackIndex notify={notify} />}
               />
               <Route
                 path="*"
