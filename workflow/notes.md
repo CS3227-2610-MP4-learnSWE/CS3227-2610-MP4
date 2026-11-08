@@ -1,5 +1,12 @@
 # Handoff notes
 
+## 2026-11-09: developer on TEA-05
+- Done: tasks 4-7 per `plan.md`. Backend: additive helpers `course_student_ids`, `lesson_completion_stats` (`study_lessons/progress.py`) and `submitted_in_period` (`attempt_store.py`); new package `teacher_overview/` (`schemas.py`, `service.py`, `routes.py`), router registered in `main.py`. Frontend: `services/teacherOverview.ts`, `pages/TeacherOverview.tsx`, `Teacher.tsx` Overview now renders the report and the greeting "Welcome back, {display_name}." (anonymous "Welcome back."), scoped `.teacher-overview-*` CSS. Docs: UserGuide (new "Teacher learning overview (TEA-05)", sample-preview claims removed) and DeveloperGuide (TEA-05 section). No existing function in student or admin code changed; no tests edited.
+- Checks: `test_stu04_*` + `test_stu01_*` 246 passed; manual TestClient-style check of the endpoint (200 figures, 422 for bad/empty period, 401 anonymous, 403 student, no-store). `npm run typecheck`, `npm run lint`, Prettier --check clean. Playwright mocked project, whole suite: 790 passed (no existing spec broke; signed-in teacher specs that reach the overview only see an error alert from the unmocked request). New TEA-05 backend and browser tests not run (written by the test-designer).
+- Notes for the verifier: the greeting keeps the sentence "Good teaching starts with your ideas." after the name (spec says no other text changes). `Cache-Control` observed as `no-store` from the existing middleware. The date of `as_of`/period comes from `service.utc_now` (monkeypatchable). Prettier not run on the markdown docs.
+- Blocking findings: none. No plan ambiguity found.
+- Files touched: see commits `feat(teacher): ...`, `docs(TEA-05): ...`.
+
 ## 2026-11-09: spec-writer on TEA-05
 - Done: wrote `workflow/specs/TEA-05/spec.md`, `plan.md`, `tasks.md` (draft, awaiting user approval). Teacher Overview gets a real learning report (lesson completion, practice results, top-5 missed questions) replacing the sample figures: `GET /api/teacher/overview?period=7d|30d|all`, new `teacher_overview/` package, additive helpers in `study_lessons/progress.py` and `attempt_store.py`, new `TeacherOverview.tsx` and `teacherOverview.ts`. AC1-AC4 copied from US-TEA-05-01/02, AC5-AC16 operational (SHR-01, 04, 05; SHR-02 by absence of AI). No migration.
 - Next (agent + task): orchestrator: user approval and Open questions; then test-designer (tasks 1-3, 8, 9) and developer (tasks 4-7) in parallel.
