@@ -1,5 +1,10 @@
 # Handoff notes
 
+## 2026-11-08: A vs B agent counts clarified (orchestrator, student-role owner)
+- Done: `docs/Reflections.md` now says A is 4 agents plus the orchestrator and B is 3 agents plus the orchestrator, with a short "How the agents are counted" note. The earlier "A 5 agents / B 3 agents" labels counted the orchestrator for A only; the spec-writer was not part of the comparison (the spec was shared). Source: cost-by-agent lines in `workflow/experiments/stu02/fair/README.md`.
+- Not changed on purpose: the historical resource-log rows, `workflow/experiments/results/` files, `docs/images/stu02-a-vs-b.png` and `workflow/variants/README.md` (its "4 agents; 5 with the spec-writer" is about the build phase and stays accurate). The note in Reflections points to them.
+- Documentation only; no tests run. Branch `docs/ab-agent-counts`, not pushed; no PR yet.
+
 ## 2026-11-08: Progress page and practice picker presentation fix (orchestrator, student-role owner)
 - Done: user feedback that the Progress page (and, found on checking, the practice set cards) had no inner padding and tiny type. CSS only, scoped to `.progress-sections` and `.practice-set-row`; no copy, request or backend change. Spec notes added to `workflow/specs/STU-04/spec.md` and `workflow/specs/STU-02-published-sets/spec.md` (speccheck passes). New tests `stu04-progress-layout.spec.ts` (9) and `stu02ps-picker-layout.spec.ts` (4): 7 of 9 and 3 of 4 failed on the old code, all pass now. Study materials was checked and needs no change.
 - Checked: typecheck, lint, Prettier; focused browser run (both layout files, the progress, overview and picker specs, `app.spec.ts`): the new and related tests pass; known flakes `stu04-progress.spec.ts:571` (click-then-Back race) and two `app.spec.ts:122` route tests that pass alone. Light path as agreed with the user: no independent test-designer or verifier; no tracker run, so no measured cost. Dark-theme screenshots were checked by eye through the app's own theme toggle. Not run: backend suite (untouched), full browser suite (GitHub CI).
