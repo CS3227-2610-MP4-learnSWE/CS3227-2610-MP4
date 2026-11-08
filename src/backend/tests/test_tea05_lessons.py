@@ -92,10 +92,10 @@ def test_tea05_ac6_withdrawn_and_draft_lessons_are_absent():
     make_draft(course, title="DRAFT-TITLE-5521", content="DRAFT-BODY-5521")
     (student,) = roster(course, 1)
     complete(student, gone)
+    withdraw(gone)
     got = only_course(report(teacher))
     assert got["lesson_count"] == 1 and [i["title"] for i in got["lessons"]] == ["Kept lesson"]
     assert got["completion_rate_percent"] == 0
-    withdraw(gone)
     text = str(report(teacher))
     assert "WITHDRAWN-TITLE-5521" not in text and "DRAFT-TITLE-5521" not in text and "DRAFT-BODY-5521" not in text
     assert kept in text

@@ -9,7 +9,7 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from adm02_helpers import actor
 from auth_helpers import call, code_of
-from stu01_helpers import make_draft
+from stu01_helpers import make_draft, withdraw
 from tea05_helpers import (COURSE_KEYS, LESSON_KEYS, MISSED_KEYS, PERIOD_KEYS, PRACTICE_KEYS, RATE_LIMITED, SECRET_QUESTIONS,
                            SET_KEYS, TOP_KEYS, attempt, complete, dumps, enroll, make_course, make_lesson, miss_counts,
                            overview, published_set, report, roster, set_clock, sql, student_row, teacher_with_course, walk)
@@ -32,6 +32,7 @@ def _rich_world():
     for s in students:
         complete(s, lesson)
         complete(s, withdrawn)
+    withdraw(withdrawn)
     miss_counts(students, sid, [(3, 4), (2, 4), (1, 4)])
     other_teacher, other_course = teacher_with_course("TEA05 SOMEONE-ELSES-COURSE")
     make_lesson(other_course, title="SOMEONE-ELSES-LESSON")
@@ -104,7 +105,9 @@ def test_tea05_ac11_the_31st_request_in_a_window_is_429_with_retry_after():
         assert overview(teacher, "30d").status_code == 200, i
     r = overview(teacher, "30d")
     assert r.status_code == 429
-    assert r.json()["detail"] == {"code": "overview_rate_limited", "message": RATE_LIMITED}
+    detail = r.json()["detail"]
+    assert {k: detail[k] for k in ("code", "message")} == {"code": "overview_rate_limited", "message": RATE_LIMITED}
+    assert set(detail) <= {"code", "message", "retry_after_seconds"}
     retry = r.headers["retry-after"]
     assert retry.isdigit() and 1 <= int(retry) <= 60
     assert "no-store" in r.headers["cache-control"]

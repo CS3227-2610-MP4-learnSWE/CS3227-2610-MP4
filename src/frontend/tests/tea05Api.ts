@@ -221,7 +221,11 @@ export function overviewBody(
   preset: string,
   courses: CourseRow[] = [dataCourse()],
 ): OverviewBody {
-  return { period: periodFor(preset), as_of: AS_OF, courses };
+  return {
+    period: periodFor(preset),
+    as_of: AS_OF,
+    courses: structuredClone(courses),
+  };
 }
 
 export type Step = {

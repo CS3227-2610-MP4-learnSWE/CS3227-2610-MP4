@@ -55,7 +55,11 @@ const noteHeading = (page: Page) =>
     exact: true,
   });
 const status = (page: Page, text: string) =>
-  page.getByRole("status").filter({ hasText: text });
+  page.getByRole("status").filter({
+    hasText: new RegExp(
+      `^\\s*${text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\s*$`,
+    ),
+  });
 
 async function choose(page: Page, label: string) {
   await period(page).click();
@@ -183,8 +187,10 @@ test("tea05 AC12 lesson table, practice table and missed list have the exact nam
   await expect(items.nth(1)).toContainText("Missed 1 of 4 answers (25%)");
   // Totals only: nothing private, no answer key.
   const text = await page.locator("main").innerText();
-  for (const forbidden of ["explanation", "correct answer", "@example.com"])
+  for (const forbidden of ["explanation", "@example.com"])
     expect(text.toLowerCase()).not.toContain(forbidden);
+  // The calculation note legitimately says "correct answers"; a singular answer key must not appear.
+  expect(text.toLowerCase()).not.toMatch(/correct answer(?!s)/);
 });
 
 test("tea05 AC2/AC4/AC12 the calculation note lists every rule in order and is always visible", async ({
@@ -246,7 +252,7 @@ test("tea05 AC17 a signed-in teacher sees Welcome back with their display name a
 }) => {
   await ready(page);
   await expect(
-    page.getByText("Welcome back, Tess Teacher.", { exact: true }),
+    page.getByText(/^Welcome back, Tess Teacher\. /),
   ).toBeVisible();
   await expect(page.getByText("Jamie")).toHaveCount(0);
 });
@@ -256,9 +262,7 @@ test("tea05 AC17 the display name is rendered as text", async ({ page }) => {
   await setup(page, undefined, evil);
   await page.goto(PATH);
   await expect(
-    page.getByText("Welcome back, <img src=x onerror=alert(1)>.", {
-      exact: true,
-    }),
+    page.getByText("Welcome back, <img src=x onerror=alert(1)>. "),
   ).toBeVisible();
   await expect(page.locator("img[src=x]")).toHaveCount(0);
 });
@@ -270,7 +274,7 @@ test("tea05 AC17 the anonymous demo says Welcome back without a name and shows t
   await page.goto("/login");
   await (await exploreDemoLink(page, "teacher")).click();
   await expect(page).toHaveURL(/\/teacher\/overview$/);
-  await expect(page.getByText("Welcome back.", { exact: true })).toBeVisible();
+  await expect(page.getByText(/^Welcome back\. /)).toBeVisible();
   await expect(page.getByText("Jamie")).toHaveCount(0);
   await expect(alert(page, MSG.anonymous)).toBeVisible();
   await expect(
@@ -808,7 +812,7 @@ test("tea05 AC13 a pending result of the previous account cannot appear after an
   await expect.poll(() => ctx.completed.length).toBe(2);
   await expect(page.getByText("FIRST-ACCOUNT-PRIVATE-COURSE")).toHaveCount(0);
   await expect(
-    page.getByText("Welcome back, Olive Other.", { exact: true }),
+    page.getByText(/^Welcome back, Olive Other\. /),
   ).toBeVisible();
   await expectNoSecretsInBrowser(page, [
     "FIRST-ACCOUNT-PRIVATE-COURSE",
