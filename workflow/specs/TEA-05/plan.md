@@ -55,7 +55,7 @@ Errors (envelope `{"detail": {"code", "message"}}` via `errors.ApiError` and `pr
 | 429 | `overview_rate_limited` | "Too many overview requests. Try again shortly." | more than 30 accepted in 60 s; `Retry-After` integer seconds |
 | 503 | `service_unavailable` | existing | database failure |
 
-All responses carry `Cache-Control: private, no-store` (existing `auth.routes.add_no_store` middleware; do not set it twice).
+All responses carry `Cache-Control: no-store` (amended 2026-11-09, user decision) (existing `auth.routes.add_no_store` middleware; do not set it twice).
 
 ## Components and modules
 ### Backend (new package `src/backend/teacher_overview/`, registered in `main.py` with `app.include_router(teacher_overview_router)` next to the other teacher routers)
