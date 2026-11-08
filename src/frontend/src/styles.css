@@ -4948,3 +4948,70 @@ td .MuiButton-root {
     transition: none;
   }
 }
+
+/* TEA-05 teacher learning overview: neutral panels, wrapping text, tables scroll inside their own region. */
+.teacher-overview-panel.MuiPaper-root {
+  min-width: 0;
+  margin-top: 16px;
+  padding: 24px;
+  overflow-wrap: anywhere;
+}
+.teacher-overview-panel h3,
+.teacher-overview-panel h4 {
+  margin: 0 0 8px;
+}
+.teacher-overview-panel p {
+  margin: 0 0 8px;
+}
+.teacher-overview-panel .MuiTextField-root {
+  min-width: min(240px, 100%);
+  margin-bottom: 16px;
+}
+.teacher-overview-tables {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 24px;
+  margin-top: 16px;
+}
+.teacher-overview-tables > section {
+  min-width: 0;
+}
+.teacher-overview-scroll {
+  max-width: 100%;
+}
+.teacher-overview-scroll th,
+.teacher-overview-scroll td {
+  padding: 12px 16px;
+  font-size: 14px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.teacher-overview-scroll table {
+  min-width: 480px;
+}
+.teacher-overview-missed {
+  margin: 0;
+  padding-left: 24px;
+}
+.teacher-overview-missed li {
+  margin-bottom: 8px;
+}
+.teacher-overview-missed small {
+  display: block;
+  color: var(--muted);
+}
+.teacher-overview-panel ul {
+  margin: 8px 0 0;
+  padding-left: 24px;
+  line-height: 1.6;
+}
+@media (min-width: 1000px) {
+  .teacher-overview-tables {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 600px) {
+  .teacher-overview-panel.MuiPaper-root {
+    padding: 16px;
+  }
+}

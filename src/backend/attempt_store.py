@@ -1,7 +1,7 @@
 """Attempt store: the interface and its PostgreSQL implementation (table `practice_attempt`)."""
 import re
 import secrets
-from collections.abc import Iterator
+from collections.abc import Collection, Iterator
 from contextlib import AbstractContextManager, contextmanager
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -34,6 +34,14 @@ class SetSummary:
     attempts_submitted: int
     best_correct: int
     best_total: int
+    latest: Attempt
+
+
+@dataclass(frozen=True)
+class PeriodAttempts:
+    set_id: str
+    student_id: str
+    submitted_count: int
     latest: Attempt
 
 
@@ -183,6 +191,34 @@ class DbAttemptStore:
                 SetSummary(sid, counts[sid], best[sid].score_correct, best[sid].score_total, _to_attempt(latest[sid]))
                 for sid in sorted(counts)
             ]
+
+
+def submitted_in_period(
+    set_ids: Collection[str], student_ids: Collection[str], start: datetime | None, end: datetime
+) -> list[PeriodAttempts]:
+    """Per (set, student) with a submitted attempt in [start, end): the count and the latest by (submitted_at, seq)."""
+    if not set_ids or not student_ids:
+        return []
+    query = (
+        select(PracticeAttempt)
+        .where(
+            PracticeAttempt.set_id.in_(list(set_ids)),
+            PracticeAttempt.student_id.in_(list(student_ids)),
+            PracticeAttempt.status == "submitted",
+            PracticeAttempt.submitted_at < end,
+        )
+        .order_by(PracticeAttempt.submitted_at, PracticeAttempt.seq)
+    )
+    if start is not None:
+        query = query.where(PracticeAttempt.submitted_at >= start)
+    counts: dict[tuple[str, str], int] = {}
+    latest: dict[tuple[str, str], PracticeAttempt] = {}
+    with open_session() as db:
+        for row in db.scalars(query):
+            key = (row.set_id, row.student_id)
+            counts[key] = counts.get(key, 0) + 1
+            latest[key] = row
+        return [PeriodAttempts(key[0], key[1], counts[key], _to_attempt(latest[key])) for key in sorted(counts)]
 
 
 store: AttemptStore = DbAttemptStore()

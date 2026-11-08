@@ -15,7 +15,7 @@ import {
   MenuItem,
   TextField,
 } from "@mui/material";
-import { ArrowRight, FileText, Sparkles, Upload } from "lucide-react";
+import { FileText, Sparkles, Upload } from "lucide-react";
 import {
   CourseArt,
   EmptyState,
@@ -23,12 +23,10 @@ import {
   Panel,
   PreviewNote,
   PrimaryLink,
-  Progress,
-  SectionHeading,
-  Stat,
   Tag,
 } from "../components/ui";
 import PublishedContent from "./PublishedContent";
+import TeacherOverviewReport from "./TeacherOverview";
 import { ApiError } from "../services/client";
 import TeacherContentStudio from "./TeacherContentStudio";
 import {
@@ -46,12 +44,13 @@ import {
 
 type Props = { notify: (message?: string) => void };
 function Overview() {
+  const { user } = useAuth();
   return (
     <>
       <PageHeading
         eyebrow="MAKE UNDERSTANDING POSSIBLE"
         title="Teaching, with a little more space."
-        description="Welcome back, Jamie. Good teaching starts with your ideas."
+        description={`Welcome back${user?.display_name ? `, ${user.display_name}` : ""}. Good teaching starts with your ideas.`}
         action={
           <PrimaryLink to="/teacher/generate">Open content studio</PrimaryLink>
         }
@@ -80,78 +79,7 @@ function Overview() {
           </span>
         </div>
       </div>
-      <div className="stats-grid">
-        <Stat
-          label="Students learning"
-          value="48"
-          detail="Across your sample course"
-          icon="people"
-        />
-        <Stat
-          label="Materials published"
-          value="8"
-          detail="2 drafts ready for review"
-          icon="book"
-          tone="purple"
-        />
-        <Stat
-          label="Practice completion"
-          value="76%"
-          detail="↑ 12% this week · Sample"
-          icon="review"
-          tone="green"
-        />
-      </div>
-      <div className="dashboard-columns">
-        <div>
-          <SectionHeading
-            title="A few things to pick up"
-            link="View drafts"
-            to="/teacher/review"
-          />
-          <Panel className="task-list">
-            {[
-              {
-                title: "Clean code essentials",
-                detail: "Study notes · Draft ready for your review",
-                path: "review",
-              },
-              {
-                title: "Testing with confidence",
-                detail: "3 MCQs · Awaiting review",
-                path: "review",
-              },
-              {
-                title: "Your teaching experience",
-                detail: "A new feedback request from the team",
-                path: "inbox",
-              },
-            ].map((task, i) => (
-              <Link key={task.title} to={`/teacher/${task.path}`}>
-                <span className={`icon-box ${i === 1 ? "purple" : "blue"}`}>
-                  <FileText size={20} />
-                </span>
-                <div>
-                  <strong>{task.title}</strong>
-                  <small>{task.detail}</small>
-                </div>
-                <ArrowRight size={17} />
-              </Link>
-            ))}
-          </Panel>
-        </div>
-        <div>
-          <SectionHeading title="Where a little help matters" />
-          <Panel className="topic-progress">
-            <Tag tone="green">LEARNING PULSE · SAMPLE</Tag>
-            <h3>Understanding takes practice.</h3>
-            <p>These topics could use another explanation.</p>
-            <Progress value={58} label="Writing focused functions" />
-            <Progress value={72} label="Thinking in test cases" />
-            <Progress value={86} label="Version control basics" />
-          </Panel>
-        </div>
-      </div>
+      <TeacherOverviewReport />
     </>
   );
 }
