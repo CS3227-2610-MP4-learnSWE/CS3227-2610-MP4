@@ -1,5 +1,17 @@
 # Handoff notes
 
+## 2026-11-09: spec-writer on TEA-05
+- Done: wrote `workflow/specs/TEA-05/spec.md`, `plan.md`, `tasks.md` (draft, awaiting user approval). Teacher Overview gets a real learning report (lesson completion, practice results, top-5 missed questions) replacing the sample figures: `GET /api/teacher/overview?period=7d|30d|all`, new `teacher_overview/` package, additive helpers in `study_lessons/progress.py` and `attempt_store.py`, new `TeacherOverview.tsx` and `teacherOverview.ts`. AC1-AC4 copied from US-TEA-05-01/02, AC5-AC16 operational (SHR-01, 04, 05; SHR-02 by absence of AI). No migration.
+- Next (agent + task): orchestrator: user approval and Open questions; then test-designer (tasks 1-3, 8, 9) and developer (tasks 4-7) in parallel.
+- Files touched: `workflow/specs/TEA-05/{spec,plan,tasks}.md`, `workflow/notes.md`.
+- Invocation ID(s) for this handoff: n/a (recorded by the orchestrator in the run manifest).
+- Model(s) and effort setting: n/a (not measured by this agent).
+- Elapsed wall-clock time: n/a.
+- Feature-run report path: not yet.
+- Decisions / open questions: user decisions 1-4 (2026-11-09) recorded as resolved. Open, with recommendations: (1) disabled students counted as enrolled; (2) no minimum cohort size; (3) frontend service uses `request` (15 s, `distinguishTimeout`) instead of `requestTeacher`, which cannot report a timeout; (4) no cap on lesson/set lists, missed list capped at 5; (5) pooled average score; (6) latest attempt per student, no weak-topic threshold; (7) completion rate counts completions made in the period; (8) UTC calendar-day periods including today; (9) hard-coded "Welcome back, Jamie" left unchanged; (10) shared specs needing the mock route are listed in the plan and the test-designer must report, not edit, any assertion broken by the new request.
+- Blocking findings: none.
+- Resource use: Tracker run: no (spec-writer only; orchestrator owns the manifest). Model: n/a. Total tokens: unavailable. Cost (USD): unavailable. Retries and revision rounds: 0.
+
 ## 2026-11-09: orchestrator on TEA-06 (teacher-role owner)
 - Done: TEA-06 verified locally on `feat/tea06-feedback-inbox` (from master `1d53b2d`). Spec approved by the user (named recipients only; `/teacher/feedback` redirects signed-in teachers to `/teacher/inbox` with replace, anonymous demo keeps the sample form). Developer: `TeacherFeedbackIndex` in the `/teacher` block of `App.tsx`, teacher inbox section in `docs/UserGuide.md`, TEA-06 notes in `docs/DeveloperGuide.md`. Test-designer (own worktree, from start commit `c82b9b2`): 27 backend (`test_tea06_access.py`, `test_tea06_concurrency.py`) and 25 browser (`tea06-inbox.spec.ts`) tests; 49 of 50 passed before the change, the AC14 redirect test failed as expected. Tests merged at `0c3c719`. Verifier (Opus) PASS in round 1, no blocking defects. Teacher-only scope held: no student or admin source, tests or guide sections changed.
 - Checks at `0c3c719`: TEA-06 backend 27/27, browser 25/25 (mocked); full backend 1548 passed (`test_shr01_sec_auth_12` deselected as hang-prone); verifier re-runs: backend 208 passed (TEA-06 + ADM-02 + ADM-04 files), Playwright 77/77 (tea06, stu05-06, app, adm04-inbox) and 48/48 (adm02-feedback); typecheck, lint, Prettier clean. Backend tests used a throwaway Homebrew PostgreSQL 14 on port 5499 (Docker was down). Not run: full browser suite, real-backend Playwright, GitHub CI.
