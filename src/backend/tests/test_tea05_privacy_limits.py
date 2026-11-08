@@ -79,12 +79,11 @@ def test_tea05_ac10_values_are_only_ids_text_integers_and_nulls():
     assert not any(k.endswith(("_at", "_time", "timestamp")) for k, _ in walk(body["courses"]))
 
 
-def test_tea05_ac10_responses_are_private_no_store_for_success_and_errors():
+def test_tea05_ac10_responses_are_no_store_for_success_and_errors():
     teacher, _ = teacher_with_course()
     for r in (overview(teacher), overview(teacher, query="?period=bad"), call("GET", "/api/teacher/overview?period=7d"),
               overview(actor("student"))):
-        assert "no-store" in r.headers["cache-control"]
-        assert "private" in r.headers["cache-control"]
+        assert r.headers["cache-control"] == "no-store"  # AC10 amended 2026-11-09 (user decision)
 
 
 def test_tea05_ac10_membership_removal_and_other_teachers_data_never_leak():
