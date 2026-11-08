@@ -18,7 +18,7 @@ Stages: not started, spec, build, verified (local), merged.
 | TEA-03 | merged | `feat/tea03-publish-content` | 12, 17, 21, 22 | Notes/MCQ editing/deletion merged; immutable publication verified at380749e, strongest review PASS. Human push/PR/merge gate retained. |
 | TEA-04 | merged (whole-batch publication) | `feat/tea03-publish-content` | 21, 22 | One batch of three questions = one immutable practice set; no assembly. Publishing verified at380749e; student attempt integration remains future. |
 | TEA-05 | not started | | | |
-| TEA-06 | not started | | | |
+| TEA-06 | verified (local) | `feat/tea06-feedback-inbox` | | Verification slice on ADM-02 and ADM-04 (no new endpoints): teacher-only `/teacher/feedback` redirect, 52 new tests (`test_tea06_*`, `tea06-inbox.spec.ts`), teacher inbox guide section. Verifier PASS round 1. Named recipients only (no teacher groups). Open: 3 non-blocking test tightenings (see notes.md); PR not yet opened. [Usage](usage/runs/2026-11-09-TEA06-01/report.md). |
 | ADM-01 | not started | | | |
 | ADM-02 | merged | `feat/adm02-targeted-feedback-forms` | 30 | Revised spec/plan approved 2026-11-07 at 629f708; independent developer/test-designer started. Includes persistent private respondent autosave/resume and Completed state. Verification pending. |
 | ADM-03 | not started | | | |
