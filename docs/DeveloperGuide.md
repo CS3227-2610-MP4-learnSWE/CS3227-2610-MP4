@@ -548,6 +548,14 @@ Expected: **40 passed**. Covers filters, messages, retry, timeout, access, histo
 - Production deployment: GitHub Actions; replace every worker before activation.
 - Full contract: [ADM-06 spec and plan](../workflow/specs/ADM-06/).
 
+## TEA-05: teacher learning overview
+
+- Endpoint: `GET /api/teacher/overview?period=7d|30d|all` (`teacher_overview/routes.py`). Order of checks: `teacher_session` (401/403, database failure 503 `service_unavailable`), period validation (422 `invalid_overview_period`; exactly one `period` key, trimmed, case-sensitive), rate limit 30 per 60 s per teacher (429 `overview_rate_limited` with `Retry-After`), then `service.build_overview`. Read-only; no migration, no LLM call.
+- `schemas.py`: `PERIODS`, `ReportingPeriod`, `resolve_period` (half-open UTC day range ending 00:00 UTC tomorrow; `all` has no start), `period_json`, `parse_period`. `service.py`: `utc_now()` is the single clock (tests monkeypatch `teacher_overview.service.utc_now`), `build_overview`, `_rate` (reuses `progress_rules.accuracy_percent`; null for a zero denominator) and `_missed_questions` (ranked by exact `missed/answered` fraction, then misses, lower(set title), position, set id; `TOP_MISSED = 5`).
+- Additive read helpers (no existing function changed): `study_lessons/progress.py` `course_student_ids`, `lesson_completion_stats`, `LessonCompletionStat`; `attempt_store.py` module function `submitted_in_period` and `PeriodAttempts` (not part of the `AttemptStore` protocol). One roster per course is read first and every count is limited to it, so `completed_students <= student_count` even under concurrent writes. Attempt `set_id` is text and is matched against `str(published_practice_set.id)`, so built-in set ids never match. Answer keys, choices and explanations are never selected.
+- Frontend: `services/teacherOverview.ts` (shape-checked `readOverview`, `overviewError`, `periodLine`), `pages/TeacherOverview.tsx` (report section, remounted per history entry, stale and cross-session responses dropped, as `AdminAiUsage.tsx`), used by `Overview` in `pages/Teacher.tsx`, which also shows "Welcome back, {display_name}." from the auth user. Styles are `.teacher-overview-*`.
+- Tests: `src/backend/tests/test_tea05_*.py` (`cd src/backend`, `TEA01_TEST_DATABASE_URL=... .venv/bin/python -m pytest -q tests/test_tea05_*.py`) and `src/frontend/tests/tea05-overview.spec.ts`. Browser specs that sign a teacher in and open `/teacher/overview` need a mock of the overview request.
+
 ## ADM-02: targeted feedback implementation
 
 Browser fixture maintenance: admin response lists and response details in `tests/adm02Api.ts` describe the same student respondent, independent of the signed-in reviewer. Row navigation tests click the complete name-and-timestamp metadata text, which shares one span.
