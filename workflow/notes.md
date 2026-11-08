@@ -1,5 +1,18 @@
 # Handoff notes
 
+## 2026-11-09: developer on TEA-06
+- Done: tasks 2 and 3. `src/frontend/src/App.tsx` `/teacher` block only: new `TeacherFeedbackIndex` redirects a signed-in teacher from `/teacher/feedback` to `/teacher/inbox` with replace; anonymous keeps the sample `FeedbackForm` (option A). Student route, shared `FeedbackForm` and all shared components untouched. Docs: new `### Teacher inbox: what you see and what is not available` in `docs/UserGuide.md`, teacher paragraph (line 35) corrected; `### TEA-06: teacher inbox verification notes` in `docs/DeveloperGuide.md` including the Open question 2 note for the ADM-02 owner.
+- Checks: `npm run typecheck`, `npm run lint`, Prettier on App.tsx pass; Playwright adm02-feedback, adm04-inbox, stu05-06-inbox, app specs: 100 passed (port 5173 was free). Backend unchanged, not run. Prettier not run on the markdown docs.
+- Next (agent + task): orchestrator merges test-designer tests; test-designer task 6; verifier task 7.
+- Files touched: `src/frontend/src/App.tsx`, `docs/UserGuide.md`, `docs/DeveloperGuide.md`, `workflow/notes.md`.
+- Invocation ID(s) for this handoff: n/a (recorded by the orchestrator).
+- Model(s) and effort setting: n/a (not measured by this agent).
+- Elapsed wall-clock time: n/a.
+- Feature-run report path: not yet.
+- Decisions / open questions: none new.
+- Blocking findings: none.
+- Resource use: Tracker run: no (orchestrator owns the manifest). Model: n/a. Total tokens: unavailable. Cost (USD): unavailable. Retries and revision rounds: 0.
+
 ## 2026-11-09: spec-writer on TEA-06
 - Done: wrote `workflow/specs/TEA-06/spec.md`, `plan.md`, `tasks.md` (draft, awaiting user approval). Teacher-only verification slice mirroring STU-05-06: AC01-AC15 (US-TEA-06-01 to 06-04 plus badge, failure isolation, `/teacher/feedback` redirect, wrong role), evidence matrix, fixed existing endpoint contract. Only source change planned: `/teacher` block of `src/frontend/src/App.tsx`; docs changes in UserGuide and DeveloperGuide.
 - Next (agent + task): orchestrator: user approval and Open question 1; then test-designer (tasks 1, 4, 5) and developer (tasks 2, 3) in parallel.
