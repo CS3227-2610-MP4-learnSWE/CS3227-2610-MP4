@@ -7,9 +7,11 @@ Concrete examples backed by results in `workflow/experiments/`, `workflow/securi
 ### The experiment: one feature, three ways of working
 We built the same feature, the server-side core of STU-02 (practice attempts, with answers released only after whole-set submission), from one approved spec and one start commit:
 
-- **Variant A, split verification (5 agents):** spec-writer, then developer and test-designer in parallel (the test-designer in its own git worktree, so neither sees the other's files), then a reviewer and a separate security-reviewer (Opus).
-- **Variant B, merged verification (3 build agents):** the same build step, then one verifier (Opus) doing code, docs and security review together.
+- **Variant A, split verification (4 agents plus the orchestrator):** developer and test-designer in parallel (the test-designer in its own git worktree, so neither sees the other's files), then a reviewer (Sonnet, read-only) and a separate security-reviewer (Opus).
+- **Variant B, merged verification (3 agents plus the orchestrator):** the same build step, then one verifier (Opus, read-only) doing code, docs and security review together.
 - **Baseline, single session:** no subagents. A reference only, because the assignment requires multi-agent SE.
+
+**How the agents are counted.** The spec-writer was not part of the comparison: the spec and plan were written and approved once and given identically to every run. The orchestrator is the main session that coordinates the run. Older records (the resource log, `workflow/experiments/results/`, the comparison image below and the earlier deck) label A "5 agents" and B "3 agents"; that counts the orchestrator for A and not for B. Like for like, A has the orchestrator plus four agents and B the orchestrator plus three, so the real difference is one agent: A has two reviewers where B has one verifier. The recorded cost by agent in `workflow/experiments/stu02/fair/README.md` lists exactly these agents.
 
 ![A vs B comparison](images/stu02-a-vs-b.png)
 
