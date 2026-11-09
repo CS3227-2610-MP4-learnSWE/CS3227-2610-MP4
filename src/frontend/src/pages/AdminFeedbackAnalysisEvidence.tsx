@@ -1,8 +1,12 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useLayoutEffect, useState } from "react";
 import { Link, useParams } from "react-router";
 import { Button } from "@mui/material";
 import { PageHeading, Panel } from "../components/ui";
-import { getEvidence, type Evidence } from "../services/feedbackAnalysisApi";
+import {
+  getAnalysis,
+  getEvidence,
+  type Evidence,
+} from "../services/feedbackAnalysisApi";
 import { loadMessage, localTime } from "../messages/feedbackAnalysis";
 
 const answerText = (
@@ -25,7 +29,8 @@ export default function AdminFeedbackAnalysisEvidence() {
   const [loading, setLoading] = useState(true);
   const [attempt, setAttempt] = useState(0);
   const retry = useCallback(() => setAttempt((n) => n + 1), []);
-  useEffect(() => {
+  // Layout effect: the read leaves as soon as the page mounts.
+  useLayoutEffect(() => {
     let current = true;
     setLoading(true);
     setError("");
@@ -43,7 +48,11 @@ export default function AdminFeedbackAnalysisEvidence() {
     <div className="feedback-analysis">
       <PageHeading title={`Response ${label}`} />
       <p>
-        <Link to={`/admin/feedback/analysis/${analysisId}`}>
+        <Link
+          to={`/admin/feedback/analysis/${analysisId}`}
+          // Start the result page's read at the click, so it leaves even if the user goes Back at once.
+          onClick={() => void getAnalysis(analysisId).catch(() => undefined)}
+        >
           Back to analysis
         </Link>
       </p>

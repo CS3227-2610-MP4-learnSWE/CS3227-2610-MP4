@@ -3,6 +3,7 @@ import {
   Suspense,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -70,12 +71,18 @@ function LiveFeedback({ admin = false }: { admin?: boolean }) {
   return admin ? <AdminFeedback /> : <RecipientFeedback />;
 }
 
+/**
+ * Lazy pages. Role checks are RequireRole's; a session that expires while the page is open is left to
+ * AuthContext (it navigates with the expiry notice). Only a visit that starts anonymous is sent to sign in here.
+ */
 function LiveAnalysis({ children }: { children: ReactNode }) {
   const { status } = useAuth();
-  return status === "authenticated" ? (
+  const wasAuthenticated = useRef(false);
+  if (status === "authenticated") wasAuthenticated.current = true;
+  if (status === "anonymous" && !wasAuthenticated.current)
+    return <Navigate to="/login" replace />;
+  return (
     <Suspense fallback={<p role="status">Loading�</p>}>{children}</Suspense>
-  ) : (
-    <Navigate to="/login" replace />
   );
 }
 

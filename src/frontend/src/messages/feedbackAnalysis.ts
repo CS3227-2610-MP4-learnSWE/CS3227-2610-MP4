@@ -1,8 +1,6 @@
 import { ApiError } from "../services/client";
 import type { Step } from "../services/feedbackAnalysisApi";
 
-export const SESSION_EXPIRED =
-  "Your session has expired. Please sign in again.";
 export const NO_ACCESS =
   "You do not have access to this page. Only admin accounts can use feedback analysis.";
 export const SELECTION_REQUIRED =
@@ -24,7 +22,6 @@ const asApiError = (error: unknown) =>
 /** The exact message for a failed request; `doing` completes "while ..." (for example "loading forms"). */
 export function failureMessage(error: unknown, doing: string): string {
   const e = asApiError(error);
-  if (e.status === 401) return SESSION_EXPIRED;
   if (e.status === 403) return NO_ACCESS;
   if (e.code === "timeout")
     return `The server did not answer within 15 seconds while ${doing}. Press Retry.`;
@@ -59,8 +56,6 @@ export function deleteMessage(error: unknown): string {
   return failureMessage(e, "deleting the analysis");
 }
 
-export const isSessionError = (error: unknown) =>
-  error instanceof ApiError && error.status === 401;
 /** A network failure or abort: the request may or may not have reached the server. */
 export const isTransport = (error: unknown) =>
   !(error instanceof ApiError) ||

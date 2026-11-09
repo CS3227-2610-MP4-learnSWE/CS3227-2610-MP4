@@ -1,4 +1,10 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import { getAnalysis, type Analysis } from "../services/feedbackAnalysisApi";
 import { ApiError } from "../services/client";
 import {
@@ -32,7 +38,8 @@ export function useAnalysisPolling(analysisId: string) {
     setNotFound(false);
   }, [analysisId]);
 
-  useEffect(() => {
+  // Layout effect: the GET leaves as soon as the page mounts.
+  useLayoutEffect(() => {
     let cancelled = false;
     let inflight = false;
     let timer: ReturnType<typeof setTimeout> | undefined;
