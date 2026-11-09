@@ -211,7 +211,8 @@ def test_adm03_ac16_15_a_reply_that_follows_the_injection_is_rejected(admin, llm
     err = done["ai"]["error"]
     assert done["ai"]["status"] == "failed" and err["code"] == "ai_reply_invalid"
     assert "a supporting response label (R999) is not in the selection" in err["message"]
-    assert done["ai"]["result"] is None and len(llm.calls) == 1
+    assert done["ai"]["result"] is None and len(llm.calls) == 2  # one retry of the same step
+    assert err["details"]["attempts"] == 2 and err["details"]["first_attempt_code"] == "ai_reply_invalid"
 
 
 def test_adm03_ac16_15_a_reply_with_an_action_field_is_rejected(admin, llm):
