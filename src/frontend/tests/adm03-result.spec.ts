@@ -103,6 +103,20 @@ test("adm03 evidence opened directly loads the analysis too; unavailable evidenc
   await expect(page.getByText("Person 1")).toHaveCount(0);
 });
 
+for (const failure of [{ status: 500, code: "internal_error", message: "x" }, { abort: true }] as const) {
+  test(`adm03 evidence opened directly still shows when the extra analysis GET fails (${"abort" in failure ? "abort" : failure.status}): no alert, no retry`, async ({ page }) => {
+    const ctx = await setup(page, { analyses: [analysis(1, "complete")] });
+    ctx.steps.push({ method: "GET", suffix: `/analyses/${uuid(1)}`, ...failure });
+    await page.goto(`${URL(1)}/responses/R1`);
+    await expect(page.getByRole("heading", { name: "Response R1", level: 1 })).toBeVisible();
+    await expect.poll(() => gets(ctx, 1).length).toBe(1);
+    await page.waitForTimeout(500);
+    expect(gets(ctx, 1)).toHaveLength(1);
+    expect(ctx.of("GET", "/responses/R1")).toHaveLength(1);
+    await expect(page.getByRole("alert")).toHaveCount(0);
+  });
+}
+
 for (const [name, error, text] of [
   ["ai_timeout", { code: "ai_timeout", message: MSG.aiTimeout, step: { kind: "batch", index: 2, total: 3 }, details: {} }, MSG.aiTimeout],
   ["rate_limited_minute", { code: "rate_limited_minute", message: MSG.aiRate, step: { kind: "batch", index: 3, total: 6 }, details: {} }, MSG.aiRate],

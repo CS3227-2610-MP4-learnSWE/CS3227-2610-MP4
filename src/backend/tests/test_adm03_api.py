@@ -121,6 +121,14 @@ def test_adm03_ac17_invalid_request_reasons(admin, llm, mutate, reason):
     expect(call("POST", BASE, admin, b), 422, "invalid_request", REASON.format(reason))
 
 
+def test_adm03_ac17_oversize_request_body_is_invalid_request_without_work(admin, llm):
+    form, ids = text_form(admin, 2)
+    big = {"form_id": form["id"], "request_id": uid(), "response_ids": [uid() for _ in range(8500)]}  # about 320 KiB
+    r = call("POST", BASE, admin, big)
+    expect(r, 422, "invalid_request", REASON.format("the request body is larger than 256 KiB"))
+    assert not llm.calls and listing(admin)["items"] == []
+
+
 def test_adm03_ac2_3_4_result_sections_and_evidence_labels(admin, llm):
     form, ids = text_form(admin, 5)
     done = run(admin, form, ids)
