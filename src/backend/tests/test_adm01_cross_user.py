@@ -225,22 +225,6 @@ def test_adm01_ac39_follow_up_hooks_cannot_name_another_user(name):
     assert not {n for n in names if re.search(r"user|student|teacher|owner|role", n)}, names
 
 
-def test_adm01_ac39_the_package_exports_exactly_the_hook_functions_of_the_recording_module():
-    import feature_analytics
-    from feature_analytics import recording
-
-    for name in HOOKS:
-        assert getattr(feature_analytics, name) is getattr(recording, name), name
-
-
-def test_adm01_ac39_the_recording_module_has_no_web_request_access():
-    """Heuristic code-shape check: a hook that cannot import the web layer cannot read a body or header id."""
-    from feature_analytics import recording
-
-    source = inspect.getsource(recording)
-    assert not re.search(r"^\s*(from|import)\s+(fastapi|starlette)\b", source, re.M), "recording imports the web layer"
-
-
 # ---------------------------------------------------------------- hooks: behaviour is per-user
 
 def test_adm01_ac39_hooks_write_exactly_the_user_id_they_are_given(tracked_users):

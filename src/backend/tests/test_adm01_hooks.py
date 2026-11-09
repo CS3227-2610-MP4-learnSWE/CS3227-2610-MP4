@@ -567,13 +567,14 @@ def test_adm01_ac2_generation_responds_exactly_as_before_when_the_analytics_data
 
 def test_adm01_ac23_an_mcq_generation_stores_stems_and_choices_but_never_the_key_or_explanation(tea):
     app, fake, since = tea
-    source = upload(app)
     marker = "KEYMARK" + uid()[:8]
+    source = upload(app, f"Source solution and answer key: {marker}".encode())
     fake.text, rows = mcq_with(marker)
     assert generate(app, "mcq_batch", source).status_code == 201
     (item,) = new_items(since)
     stored = " ".join(t or "" for t in item[2:5])
     assert item[1] == "mcq_batch"
+    assert item[4] is None  # the full source may itself contain solutions or answer keys
     for row in rows:
         assert row["question"] in stored
         assert all(choice in stored for choice in row["choices"])

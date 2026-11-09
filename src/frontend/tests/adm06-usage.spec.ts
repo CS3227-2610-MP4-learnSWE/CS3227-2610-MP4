@@ -217,7 +217,7 @@ test("adm06 AC2/3/7/13 named controls, metadata, exact columns and recorded valu
   await expect(row).toContainText("99");
   await expect(
     page.locator('time[datetime="2020-01-01T00:00:00Z"]'),
-  ).toHaveCount(2);
+  ).toHaveCount(Object.keys(LABELS).length - 1);
   expect(await table(page).innerText()).not.toContain("%");
   expect(ctx.requests).toHaveLength(1);
   const query = ctx.requests[0].searchParams;
@@ -322,7 +322,7 @@ for (const [reason, message] of [
     await expect(table(page)).toContainText(message);
     await expect(
       table(page).getByText("Unavailable", { exact: true }),
-    ).toHaveCount(21);
+    ).toHaveCount(METRICS.length * Object.keys(LABELS).length);
     await expect(
       page.getByText("No AI service calls in this period.", { exact: true }),
     ).toHaveCount(0);

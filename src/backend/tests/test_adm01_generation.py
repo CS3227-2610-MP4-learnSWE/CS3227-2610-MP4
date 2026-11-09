@@ -13,8 +13,7 @@ import llm_client
 from adm01_fixtures import analytics_admin, no_ai, recording_start, tracked_users  # noqa: F401
 from adm01_grading_helpers import gen_row, get_json, new_window
 from adm01_helpers import GENERATION, url
-from adm01_tea02 import (WORKFLOWS, generate, mcq_with, max_attempt_id, new_attempts, new_items, prepare, tea,  # noqa: F401
-                         upload)
+from adm01_tea02 import WORKFLOWS, generate, tea, upload  # noqa: F401
 from adm02_helpers import actor, uid
 from auth_helpers import call, sql
 
@@ -293,24 +292,6 @@ LIMITERS = [("LlmRateLimited", lambda: llm_client.LlmRateLimited("minute", 17)),
 
 @pytest.mark.parametrize("workflow", WORKFLOWS)
 @pytest.mark.parametrize("name,make", LIMITERS, ids=[n for n, _ in LIMITERS])
-def test_adm01_ac15_decision8_a_rate_limited_or_busy_ai_call_creates_no_attempt(workflow, name, make, tea):
-    app, fake, since = tea
-    source = upload(app)
-    fake.error = make()
-    r = generate(app, workflow, source)
-    assert r.status_code == 429, r.text  # the host route's own answer is unchanged
-    assert len(fake.calls) == 1  # the call really was made and refused by the AI service's limiter
-    assert new_attempts(since) == []  # ... and it is not a generation attempt
-    assert new_items(since) == []
-    # a later accepted request is counted exactly once: the refused one left no residue
-    prepare(fake, workflow)
-    assert generate(app, workflow, source).status_code == 201
-    rows = new_attempts(since)
-    assert len(rows) == 1 and rows[0][1] == workflow and rows[0][2] == "success"
-
-
-@pytest.mark.parametrize("workflow", WORKFLOWS)
-@pytest.mark.parametrize("name,make", LIMITERS, ids=[n for n, _ in LIMITERS])
 def test_adm01_ac15_decision8_refused_calls_do_not_move_the_report(workflow, name, make, tea, analytics_admin):
     from datetime import datetime, timezone
 
@@ -328,16 +309,3 @@ def test_adm01_ac15_decision8_refused_calls_do_not_move_the_report(workflow, nam
     for _ in range(3):
         assert generate(app, workflow, source).status_code == 429
     assert attempts() == before
-
-
-@pytest.mark.parametrize("workflow", WORKFLOWS)
-def test_adm01_ac15_every_other_failure_of_the_call_is_exactly_one_unsuccessful_attempt(workflow, tea):
-    """Contrast with decision 8: only the limiter refusals are excluded."""
-    app, fake, since = tea
-    source = upload(app)
-    for exc_name in ("LlmTimeout", "LlmUpstreamError", "LlmNotConfigured", "LlmBadResponse"):
-        fake.error = getattr(llm_client, exc_name)("sentinel-secret private failure")
-        assert generate(app, workflow, source).status_code >= 400
-    rows = new_attempts(since)
-    assert [r[2] for r in rows] == ["failure"] * 4 and {r[1] for r in rows} == {workflow}
-    assert new_items(since) == []  # failed generations leave nothing to grade

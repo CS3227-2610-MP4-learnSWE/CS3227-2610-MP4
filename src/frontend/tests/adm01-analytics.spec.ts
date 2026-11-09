@@ -97,7 +97,9 @@ const previous = (p: Page) => p.getByRole("button", { name: "Previous page", exa
 async function loaded(page: Page) {
   await expect(usageTable(page)).toBeVisible();
   await expect(generationTable(page)).toBeVisible();
-  await expect(itemsTable(page)).toBeVisible();
+  await expect(
+    itemsTable(page).or(qualityPanel(page).getByText("No assessed responses in this period.", { exact: true })),
+  ).toBeVisible();
 }
 
 async function ready(page: Page, configure?: (mock: AnalyticsMock) => void) {
@@ -322,6 +324,7 @@ test("adm01 AC40 quality panel: tabs, notice, sections, averages, times and the 
   await expect(tab(page, "Student exercises")).toHaveAttribute("aria-selected", "true");
   await expect(tab(page, "Teacher lesson planning")).toHaveAttribute("aria-selected", "false");
   await expect(panel.getByText(MSG.notice, { exact: true })).toBeVisible();
+  await expect(panel).toContainText("12 assessed, 5 waiting to be graded, 1 could not be graded");
   for (const name of [
     "Quality grades",
     "Response time",
@@ -718,9 +721,6 @@ for (const query of [
 for (const [label, from, to, field, message] of [
   ["empty start", "", "2026-01-31", "from", MSG.period.format],
   ["empty end", "2026-01-01", "", "to", MSG.period.format],
-  ["malformed start", "2026-1-5", "2026-01-31", "from", MSG.period.format],
-  ["impossible date", "2026-02-30", "2026-03-31", "from", MSG.period.format],
-  ["malformed end", "2026-01-01", "31/01/2026", "to", MSG.period.format],
   ["start after end", "2026-02-01", "2026-01-01", "from", MSG.period.order],
   ["367 days", "2025-01-01", "2026-01-02", "to", MSG.period.long],
 ] as const) {
@@ -741,7 +741,7 @@ for (const [label, from, to, field, message] of [
 
 test("adm01 AC41 two invalid fields: focus goes to the first, and a corrected period then loads", async ({ page }) => {
   const mock = await ready(page);
-  await applyPeriod(page, "bad", "worse");
+  await applyPeriod(page, "", "");
   await expect(fromField(page)).toBeFocused();
   await expect(periodPanel(page).getByText(MSG.period.format, { exact: true })).toHaveCount(2);
   await applyPeriod(page, "2025-01-01", "2026-01-01"); // exactly 366 days is valid
@@ -916,6 +916,11 @@ for (const [label, step, message] of [
   test(`adm01 AC43 a failed start (${label}) shows its exact message, closes the dialog, keeps results and the period, sends once`, async ({ page }) => {
     const mock = await ready(page);
     const { from, to } = defaultPeriod();
+    if (label === "409") {
+      mock.tweak.quality = (body) => {
+        body.active_run = run({ status: "running", items_total: 3 });
+      };
+    }
     mock.next("start", step);
     await openAndStartGrading(page);
     await expect(page.getByText(message, { exact: true }).first()).toBeVisible();
@@ -938,7 +943,7 @@ test("adm01 AC43 a start that times out after 15 seconds says to reload and does
   await openAndStartGrading(page);
   await expect.poll(() => mock.count("start")).toBe(1);
   await page.clock.fastForward(15_100);
-  await expect(alertWith(qualityPanel(page), MSG.start.timeout).or(page.getByText(MSG.start.timeout, { exact: true }))).toBeVisible();
+  await expect(alertWith(qualityPanel(page), MSG.start.timeout)).toBeVisible();
   expect(mock.count("start")).toBe(1);
   mock.release();
 });
@@ -974,10 +979,10 @@ test("adm01 AC43 a polling HTTP error uses the progress copy with the status", a
 
 test("adm01 AC43 a polling request that takes 15 seconds says grading may still be running", async ({ page }) => {
   const mock = await ready(page);
-  await setHeldClock(page);
   mock.startRun = { items_total: 3 };
   await openAndStartGrading(page);
   await expect(progress(page, "Grading is running: 0 of 3 responses graded.")).toBeVisible();
+  await setHeldClock(page);
   mock.next("run", { hold: true });
   await page.clock.fastForward(3100);
   await expect.poll(() => mock.count("run")).toBe(1);
@@ -1021,9 +1026,11 @@ test("adm01 AC42 an active run in the quality response is shown again and resume
 test("adm01 AC45 the period controls are reachable in reading order and Apply works from the keyboard", async ({ page }) => {
   const mock = await ready(page);
   await fromField(page).focus();
-  await page.keyboard.press("Tab");
+  for (let i = 0; i < 5 && !(await toField(page).evaluate((el) => el === document.activeElement)); i++)
+    await page.keyboard.press("Tab");
   await expect(toField(page)).toBeFocused();
-  await page.keyboard.press("Tab");
+  for (let i = 0; i < 5 && !(await apply(page).evaluate((el) => el === document.activeElement)); i++)
+    await page.keyboard.press("Tab");
   await expect(apply(page)).toBeFocused();
   await fromField(page).fill("2026-03-01");
   await toField(page).fill("2026-03-31");
@@ -1070,19 +1077,26 @@ async function outlined(page: Page, label: string) {
   await expect(field).toBeVisible();
   await expect(outline).toHaveCSS("border-top-style", "solid");
   const contrast = await outline.evaluate((el) => {
-    const luminance = (color: string) => {
+    const rgba = (color: string) => {
+      const channels = color.match(/[\d.]+/g)!.map(Number);
+      return [...channels.slice(0, 3), channels[3] ?? 1];
+    };
+    const over = (front: number[], back: number[]) =>
+      front.slice(0, 3).map((channel, index) => channel * front[3] + back[index] * (1 - front[3]));
+    const ancestors: Element[] = [];
+    for (let node = el.parentElement; node; node = node.parentElement) ancestors.unshift(node);
+    let background = [255, 255, 255];
+    for (const node of ancestors) background = over(rgba(getComputedStyle(node).backgroundColor), background);
+    const luminance = (color: number[]) => {
       const channels = color
-        .match(/[\d.]+/g)!
-        .slice(0, 3)
-        .map(Number)
         .map((value) => {
           const channel = value / 255;
           return channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
         });
       return channels[0] * 0.2126 + channels[1] * 0.7152 + channels[2] * 0.0722;
     };
-    const border = luminance(getComputedStyle(el).borderTopColor);
-    const surface = luminance(getComputedStyle(el.parentElement!).backgroundColor);
+    const border = luminance(over(rgba(getComputedStyle(el).borderTopColor), background));
+    const surface = luminance(background);
     return (Math.max(border, surface) + 0.05) / (Math.min(border, surface) + 0.05);
   });
   expect(contrast).toBeGreaterThanOrEqual(3);

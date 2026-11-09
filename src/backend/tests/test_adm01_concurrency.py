@@ -9,7 +9,7 @@ practice attempt starts through the host routes) once developer check 4 records 
 """
 import threading
 import time
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, TimeoutError
 
 import psycopg
 import pytest
@@ -73,6 +73,65 @@ def test_adm01_ac38_many_simultaneous_grading_starts_still_give_exactly_one_202(
     statuses = sorted(r.status_code for r in replies)
     assert statuses == [202] + [409] * 5, [(r.status_code, r.text) for r in replies]
     assert run_count() == 1
+
+
+def test_adm01_ac33_ac38_quick_completed_competing_runs_cannot_exceed_the_hourly_quota(
+        analytics_admin, no_ai, monkeypatch):
+    import os
+
+    from sqlalchemy import event
+
+    from auth.db import engine_for
+    from feature_analytics import jobs
+
+    sql("INSERT INTO analytics_grading_run (workflow, period_start, period_end, status, requested_by, finished_at) "
+        "SELECT 'student_exercise', current_date, current_date, 'completed', %s, now() FROM generate_series(1, 9)",
+        (str(analytics_admin),))
+    first_counted, release_first, second_counted, first_finished = [threading.Event() for _ in range(4)]
+    count_lock = threading.Lock()
+    count_calls = 0
+
+    def finish_immediately(run_id, *args):
+        sql("UPDATE analytics_grading_run SET status='completed', finished_at=now() WHERE id=%s", (run_id,))
+        first_finished.set()
+
+    def hold_quota_reads(conn, cursor, statement, parameters, context, executemany):
+        nonlocal count_calls
+        if "count(" not in statement.lower() or "FROM analytics_grading_run" not in statement:
+            return
+        with count_lock:
+            count_calls += 1
+            ordinal = count_calls
+        if ordinal == 1:
+            first_counted.set()
+            assert release_first.wait(5)
+        elif ordinal == 2:
+            second_counted.set()
+            assert first_finished.wait(5)
+
+    monkeypatch.setattr(jobs, "start", finish_immediately)
+    engine = engine_for(os.environ["DATABASE_URL"])
+    event.listen(engine, "after_cursor_execute", hold_quota_reads)
+    futures = []
+    try:
+        futures.append(POOL.submit(send, analytics_admin, "start", period_start=day(0), period_end=day(0)))
+        assert first_counted.wait(5)
+        futures.append(POOL.submit(send, analytics_admin, "start", period_start=day(0), period_end=day(0)))
+        # Without serialized admission the second caller reads the stale count of nine.
+        second_counted.wait(0.2)
+        release_first.set()
+        replies = [future.result(5) for future in futures]
+    finally:
+        release_first.set()
+        first_finished.set()
+        for future in futures:
+            future.result(5)
+        event.remove(engine, "after_cursor_execute", hold_quota_reads)
+
+    assert sum(reply.status_code == 202 for reply in replies) == 1, [(r.status_code, r.text) for r in replies]
+    assert {r.status_code for r in replies} <= {202, 409, 429}
+    assert run_count() == 10
+    error_body(send(analytics_admin, "start", period_start=day(0), period_end=day(0)), 429, "grading_quota")
 
 
 def test_adm01_ac38_the_active_run_blocks_the_next_start_until_it_ends(analytics_admin, eligible, no_ai):
@@ -166,6 +225,63 @@ def chat(student, ref, **kw):
 
     return recording.record_chat_request_received(user_id=str(student),
                                                   activity_type="practice_attempt", activity_ref=ref, **kw)
+
+
+def test_adm01_ac27_ac38_submission_cannot_leave_a_concurrent_first_chat_session_open(student):
+    """Pause the first session insert after its attempt read; submission must serialize with it."""
+    import os
+
+    from sqlalchemy import event
+
+    from auth.db import engine_for
+    from feature_analytics import recording
+
+    ref = attempt(student)
+    entered, release = threading.Event(), threading.Event()
+    engine = engine_for(os.environ["DATABASE_URL"])
+
+    def hold_first_session(conn, cursor, statement, parameters, context, executemany):
+        if statement.lstrip().startswith("INSERT INTO analytics_session"):
+            entered.set()
+            assert release.wait(5), "the test did not release the session insert"
+
+    event.listen(engine, "before_cursor_execute", hold_first_session)
+    first_chat = POOL.submit(chat, student, ref)
+    submitted = None
+    try:
+        assert entered.wait(5), "the chat did not reach its first session insert"
+        submitted = POOL.submit(recording.record_practice_attempt_submitted, attempt_ref=ref)
+        with pytest.raises(TimeoutError):
+            submitted.result(timeout=0.2)
+    finally:
+        release.set()
+        first_chat.result(timeout=5)
+        if submitted is not None:
+            submitted.result(timeout=5)
+        event.remove(engine, "before_cursor_execute", hold_first_session)
+
+    assert sql("SELECT ended_at IS NOT NULL, end_reason FROM analytics_session WHERE activity_ref=%s", (ref,)) == [
+        (True, "activity_ended")
+    ]
+
+
+def test_adm01_ac27_a_delayed_pre_submission_message_never_reopens_a_completed_activity(student):
+    from datetime import datetime, timedelta, timezone
+
+    from feature_analytics import recording
+
+    submitted_at = datetime.now(timezone.utc)
+    ref = attempt(student)
+    recording.record_practice_attempt_submitted(attempt_ref=ref, submitted_at=submitted_at)
+    later_activity = attempt(student)
+    assert isinstance(chat(student, later_activity, received_at=submitted_at + timedelta(seconds=1)), int)
+    assert isinstance(chat(student, ref, received_at=submitted_at - timedelta(seconds=1)), int)
+    assert sql("SELECT activity_ref FROM analytics_session WHERE user_id=%s AND ended_at IS NULL", (str(student),)) == [
+        (later_activity,)
+    ]
+    assert sql("SELECT ended_at, end_reason FROM analytics_session WHERE activity_ref=%s", (ref,)) == [
+        (submitted_at, "activity_ended")
+    ]
 
 
 @pytest.mark.parametrize("n", [2, 8])
