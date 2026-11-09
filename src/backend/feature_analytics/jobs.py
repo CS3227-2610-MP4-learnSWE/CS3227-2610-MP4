@@ -186,6 +186,9 @@ def _run(run_id: int, llm: LlmClient | None, admin_id: str, phase: dict) -> None
             continue
         safe = result.content
         item = GradingInput(item.id, item.workflow, item.generation_workflow, safe.request_text, safe.response_text, "")
+        # The privacy rescan can cross the AI-start cutoff; leave the item pending.
+        if _now() - started >= config.GRADING_AI_START_LIMIT_S:
+            break
         phase["code"] = "ai_unavailable"
         try:
             grades = grading.grade_one(llm, item, admin_id)
