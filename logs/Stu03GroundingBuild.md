@@ -10,5 +10,5 @@ Branch: `claude/stu03-lesson-grounding-5ac797` (local; not pushed, no pull reque
 - Usage report: `workflow/usage/runs/2026-11-09-STU03G-01/report.md`.
 
 ## Not done / open
-- 5 over-strict regression tests (`test_stu03_grounding_marker2.py`) still fail; user decision needed (see `workflow/notes.md`).
+- Resolved: the user chose option b; commit 607523e; verifier-04 PASS (backend stu03 468 passed, Playwright 53/53).
 - Full backend and full Playwright suites not re-run after the last fix; GitHub CI not run; AC29 live check not run; no push or PR.
