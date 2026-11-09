@@ -52,8 +52,7 @@ def create_mcq_draft(request: Request, material_id: str, llm: LlmClient = Depend
         questions = generate_mcqs(llm, text, teacher_id)
         graded = GradingContent(
             request_text=MCQ_REQUEST_TEXT,
-            response_text=format_mcq_batch_for_grading([(q["question"], q["choices"]) for q in questions]),
-            context_text=text)
+            response_text=format_mcq_batch_for_grading([(q["question"], q["choices"]) for q in questions]))
         payload = _save_mcq_draft(request, teacher_id, source_id, course_id, title, questions)
         success = True
         return payload

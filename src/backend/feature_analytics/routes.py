@@ -3,7 +3,7 @@ import logging
 from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends
-from sqlalchemy import func, select, update
+from sqlalchemy import func, select, text, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -93,6 +93,9 @@ def create_grading_run(body: GradingRunIn, admin: AuthUser = Depends(admin_user)
     window = periods.parse_period(body.period_start, body.period_end)
     workflow = periods.parse_workflow(body.workflow)
     _sweep()
+    # Serialize admission as well as insertion: an empty first run can finish before
+    # another insert, so the active-run index alone cannot enforce the hourly quota.
+    db.execute(text("SELECT pg_advisory_xact_lock(hashtext('analytics-grading-admission'))"))
     if db.scalar(select(Run.id).where(Run.status.in_(queries.ACTIVE_STATUSES)).limit(1)) is not None:
         raise ApiError(409, "grading_run_active", "A grading run is already in progress.")
     now = datetime.now(timezone.utc)

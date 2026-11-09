@@ -1,4 +1,11 @@
-import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type FormEvent,
+  type ReactNode,
+} from "react";
 import {
   Alert,
   Button,
@@ -20,8 +27,9 @@ import * as api from "../services/featureAnalytics";
 
 const POLL_MS = 3000;
 const NOTICE =
-  "Grades are advisory: they are produced by an AI model and never change content or access. Timing and message counts are descriptive measurements, not quality grades.";
-const NO_AVERAGE = "No average can be calculated: no eligible records in this period.";
+  "Grades are AI assessments, not verified facts. They do not change access or application content.";
+const NO_AVERAGE =
+  "No average can be calculated: no eligible records in this period.";
 
 const seconds = (ms: number) => (ms / 1000).toFixed(1);
 
@@ -55,7 +63,12 @@ function PanelFailure({
 
 function Scroll({ name, children }: { name: string; children: ReactNode }) {
   return (
-    <div className="table-scroll analytics-scroll" role="region" aria-label={name} tabIndex={0}>
+    <div
+      className="table-scroll analytics-scroll"
+      role="region"
+      aria-label={name}
+      tabIndex={0}
+    >
       {children}
     </div>
   );
@@ -129,7 +142,11 @@ function UsagePanel({
       />
     );
   else {
-    const { chatbot, practice_completion: done, recording_started_on: recorded } = result.data;
+    const {
+      chatbot,
+      practice_completion: done,
+      recording_started_on: recorded,
+    } = result.data;
     const total = chatbot.total;
     body = (
       <>
@@ -144,8 +161,18 @@ function UsagePanel({
               </tr>
             </thead>
             <tbody>
-              <GroupRows title="Students" total="Students total" group={chatbot.student} recorded={recorded} />
-              <GroupRows title="Teachers" total="Teachers total" group={chatbot.teacher} recorded={recorded} />
+              <GroupRows
+                title="Students"
+                total="Students total"
+                group={chatbot.student}
+                recorded={recorded}
+              />
+              <GroupRows
+                title="Teachers"
+                total="Teachers total"
+                group={chatbot.teacher}
+                recorded={recorded}
+              />
               <tr>
                 <th scope="row">All users total</th>
                 {total.state === "available" ? (
@@ -161,7 +188,9 @@ function UsagePanel({
           </table>
         </Scroll>
         {(chatbot.student.rows_truncated || chatbot.teacher.rows_truncated) && (
-          <p className="muted">Showing the first 500 users; totals include all users.</p>
+          <p className="muted">
+            Showing the first 500 users; totals include all users.
+          </p>
         )}
         <h3>Practice-set completion</h3>
         <p>
@@ -190,7 +219,8 @@ function GenerationPanel({
   retry: () => void;
 }) {
   let body;
-  if (result === null) body = <p role="status">Loading generation reliability...</p>;
+  if (result === null)
+    body = <p role="status">Loading generation reliability...</p>;
   else if (!result.ok)
     body = (
       <PanelFailure
@@ -239,7 +269,11 @@ function GenerationPanel({
     );
   }
   return (
-    <Panel className="analytics-panel" role="region" ariaLabel="Generation reliability">
+    <Panel
+      className="analytics-panel"
+      role="region"
+      ariaLabel="Generation reliability"
+    >
       <h2>Generation reliability</h2>
       {body}
     </Panel>
@@ -275,7 +309,11 @@ function ItemsTable({ items }: { items: api.Items }) {
               <td>
                 <LocalTime value={row.received_at} />
               </td>
-              <td>{row.response_time_ms === null ? "—" : `${seconds(row.response_time_ms)} s`}</td>
+              <td>
+                {row.response_time_ms === null
+                  ? "—"
+                  : `${seconds(row.response_time_ms)} s`}
+              </td>
               <td>{STATUS_LABELS[row.status] ?? row.status}</td>
               {api.DIMENSIONS.map((d) => {
                 const grade = row.grades.find((g) => g.dimension === d.id);
@@ -283,8 +321,12 @@ function ItemsTable({ items }: { items: api.Items }) {
                   <td key={d.id}>
                     {grade ? (
                       <>
-                        <strong>{grade.score === null ? "Unassessable" : grade.score}</strong>
-                        <small className="analytics-reason">{grade.reason}</small>
+                        <strong>
+                          {grade.score === null ? "Unassessable" : grade.score}
+                        </strong>
+                        <small className="analytics-reason">
+                          {grade.reason}
+                        </small>
                       </>
                     ) : (
                       "—"
@@ -300,7 +342,12 @@ function ItemsTable({ items }: { items: api.Items }) {
   );
 }
 
-type PageView = { key: string; items: api.Items | null; loading: boolean; error: string };
+type PageView = {
+  key: string;
+  items: api.Items | null;
+  loading: boolean;
+  error: string;
+};
 
 function QualityBody({
   data,
@@ -313,9 +360,15 @@ function QualityBody({
   page: PageView;
   onPage: (offset: number) => void;
 }) {
-  const { grades, response_time: time, sessions, activity_time: activity } = data;
+  const {
+    grades,
+    response_time: time,
+    sessions,
+    activity_time: activity,
+  } = data;
   const items = page.items ?? data.items;
-  const noSessions = "Unavailable: no conversation sessions are recorded for this workflow.";
+  const noSessions =
+    "Unavailable: no conversation sessions are recorded for this workflow.";
   const from = items.rows.length === 0 ? 0 : items.offset + 1;
   const to = items.offset + items.rows.length;
   return (
@@ -324,14 +377,14 @@ function QualityBody({
         <h3 id="analytics-grades-title">Quality grades</h3>
         {grades.state === "unavailable" ? (
           <p>{unavailable(grades.reason, recorded)}</p>
-        ) : data.items.total === 0 ? (
-          <p>No assessed responses in this period.</p>
         ) : grades.state === "not_applicable" ? (
           <p>No responses have been graded for this period yet.</p>
         ) : (
           <ul className="analytics-list">
             {grades.dimensions.map((d) => {
-              const label = api.DIMENSIONS.find((x) => x.id === d.dimension)?.label ?? d.dimension;
+              const label =
+                api.DIMENSIONS.find((x) => x.id === d.dimension)?.label ??
+                d.dimension;
               return (
                 <li key={d.dimension}>
                   {label}:{" "}
@@ -342,6 +395,13 @@ function QualityBody({
               );
             })}
           </ul>
+        )}
+        {grades.state !== "unavailable" && (
+          <p>
+            {grades.assessed_count} assessed, {grades.pending_count} waiting to
+            be graded, {grades.grading_failed_count} could not be graded,{" "}
+            {grades.content_expired_count} content no longer retained.
+          </p>
         )}
       </section>
       <section aria-labelledby="analytics-time-title">
@@ -390,7 +450,9 @@ function QualityBody({
               <Button
                 variant="outlined"
                 disabled={page.loading || items.offset === 0}
-                onClick={() => onPage(Math.max(0, items.offset - api.PAGE_SIZE))}
+                onClick={() =>
+                  onPage(Math.max(0, items.offset - api.PAGE_SIZE))
+                }
               >
                 Previous page
               </Button>
@@ -417,17 +479,20 @@ function runMessage(run: api.Run): string {
     return run.items_total === 0
       ? "No ungraded responses are available for this period."
       : `Grading finished: ${run.items_graded} graded, ${run.items_failed} could not be graded.`;
-  const why = (run.failure_code && api.RUN_FAILURES[run.failure_code]) || "an unexpected error occurred";
+  const why =
+    (run.failure_code && api.RUN_FAILURES[run.failure_code]) ||
+    "an unexpected error occurred";
   return `Grading stopped: ${why}. ${run.items_graded} of ${run.items_total} responses were graded before it stopped.`;
 }
 
 export default function AdminAnalytics() {
   const [params] = useSearchParams();
   const navigate = useNavigate();
-  const fallback = useMemo(api.defaultPeriod, []);
+  const [fallback] = useState(api.defaultPeriod);
   const rawFrom = params.get("from") ?? "";
   const rawTo = params.get("to") ?? "";
-  const valid = Object.keys(api.checkPeriod({ from: rawFrom, to: rawTo })).length === 0;
+  const valid =
+    Object.keys(api.checkPeriod({ from: rawFrom, to: rawTo })).length === 0;
   const from = valid ? rawFrom : fallback.from;
   const to = valid ? rawTo : fallback.to;
   const rawWorkflow = params.get("workflow");
@@ -438,7 +503,8 @@ export default function AdminAnalytics() {
   // An invalid or missing period or workflow in the URL is replaced by the default, without a message.
   useEffect(() => {
     const wanted = new URLSearchParams({ from, to, workflow }).toString();
-    if (wanted !== params.toString()) navigate({ search: `?${wanted}` }, { replace: true });
+    if (wanted !== params.toString())
+      navigate({ search: `?${wanted}` }, { replace: true });
   }, [from, to, workflow, params, navigate]);
 
   // Period fields.
@@ -465,26 +531,41 @@ export default function AdminAnalytics() {
   }
 
   function chooseWorkflow(next: api.Workflow) {
-    navigate({ search: `?${new URLSearchParams({ from, to, workflow: next })}` }, { replace: true });
+    navigate(
+      { search: `?${new URLSearchParams({ from, to, workflow: next })}` },
+      { replace: true },
+    );
   }
 
   // The three reads. A key change (period, workflow, retry) starts a new read; the old one is aborted.
   const [usageTry, setUsageTry] = useState(0);
   const [generationTry, setGenerationTry] = useState(0);
   const [qualityTry, setQualityTry] = useState(0);
-  const usage = useAnalyticsLoad(`usage|${from}|${to}|${usageTry}`, (s) => api.readUsage(period, s));
-  const generation = useAnalyticsLoad(`generation|${from}|${to}|${generationTry}`, (s) =>
-    api.readGeneration(period, s),
+  const usage = useAnalyticsLoad(`usage|${from}|${to}|${usageTry}`, (s) =>
+    api.readUsage(period, s),
+  );
+  const generation = useAnalyticsLoad(
+    `generation|${from}|${to}|${generationTry}`,
+    (s) => api.readGeneration(period, s),
   );
   const qualityKey = `quality|${from}|${to}|${workflow}|${qualityTry}`;
-  const quality = useAnalyticsLoad(qualityKey, (s) => api.readQuality(period, workflow, 0, s));
+  const quality = useAnalyticsLoad(qualityKey, (s) =>
+    api.readQuality(period, workflow, 0, s),
+  );
 
   // Pagination: a failed page keeps the current one.
-  const [page, setPage] = useState<PageView>({ key: "", items: null, loading: false, error: "" });
+  const [page, setPage] = useState<PageView>({
+    key: "",
+    items: null,
+    loading: false,
+    error: "",
+  });
   const pageAbort = useRef<AbortController | null>(null);
   useEffect(() => () => pageAbort.current?.abort(), [qualityKey]);
   const currentPage: PageView =
-    page.key === qualityKey ? page : { key: qualityKey, items: null, loading: false, error: "" };
+    page.key === qualityKey
+      ? page
+      : { key: qualityKey, items: null, loading: false, error: "" };
 
   async function goToPage(offset: number) {
     pageAbort.current?.abort();
@@ -492,11 +573,25 @@ export default function AdminAnalytics() {
     pageAbort.current = controller;
     setPage({ ...currentPage, loading: true, error: "" });
     try {
-      const next = await api.readQuality(period, workflow, offset, controller.signal);
-      setPage({ key: qualityKey, items: next.items, loading: false, error: "" });
+      const next = await api.readQuality(
+        period,
+        workflow,
+        offset,
+        controller.signal,
+      );
+      setPage({
+        key: qualityKey,
+        items: next.items,
+        loading: false,
+        error: "",
+      });
     } catch (error) {
       if (api.isAborted(error)) return;
-      setPage({ ...currentPage, loading: false, error: api.loadFailure("Assessed responses", error) });
+      setPage({
+        ...currentPage,
+        loading: false,
+        error: api.loadFailure("Assessed responses", error),
+      });
     }
   }
 
@@ -512,7 +607,8 @@ export default function AdminAnalytics() {
 
   const active = quality?.ok ? quality.data.active_run : null;
   useEffect(() => {
-    if (active && api.isActive(active)) setRun((current) => (api.isActive(current) ? current : active));
+    if (active && api.isActive(active))
+      setRun((current) => (api.isActive(current) ? current : active));
   }, [active]);
 
   const runId = run?.run_id;
@@ -551,7 +647,8 @@ export default function AdminAnalytics() {
       if (api.isAborted(error)) return;
       setStartError(api.startFailure(error));
       // A run is already active: reload so its progress line shows.
-      if (error instanceof ApiError && error.status === 409) setQualityTry((n) => n + 1);
+      if (error instanceof ApiError && error.status === 409)
+        setQualityTry((n) => n + 1);
     } finally {
       setStartPending(false);
     }
@@ -571,7 +668,8 @@ export default function AdminAnalytics() {
 
   const recorded = quality?.ok ? quality.data.recording_started_on : "";
   let qualityBody;
-  if (quality === null) qualityBody = <p role="status">Loading quality results...</p>;
+  if (quality === null)
+    qualityBody = <p role="status">Loading quality results...</p>;
   else if (!quality.ok)
     qualityBody = (
       <PanelFailure
@@ -582,7 +680,12 @@ export default function AdminAnalytics() {
     );
   else
     qualityBody = (
-      <QualityBody data={quality.data} recorded={recorded} page={currentPage} onPage={(o) => void goToPage(o)} />
+      <QualityBody
+        data={quality.data}
+        recorded={recorded}
+        page={currentPage}
+        onPage={(o) => void goToPage(o)}
+      />
     );
   return (
     <>
@@ -590,7 +693,11 @@ export default function AdminAnalytics() {
         title="Feature analytics"
         description="Review how chatbot, practice and AI generation features are used. Periods use UTC dates."
       />
-      <Panel className="analytics-panel" role="region" ariaLabel="Reporting period">
+      <Panel
+        className="analytics-panel"
+        role="region"
+        ariaLabel="Reporting period"
+      >
         <h2>Reporting period</h2>
         <form onSubmit={apply} noValidate className="analytics-period">
           <TextField
@@ -602,7 +709,9 @@ export default function AdminAnalytics() {
             helperText={errors.from}
             inputRef={fromInput}
             slotProps={{ inputLabel: { shrink: true } }}
-            onChange={(event) => setFields({ ...fields, from: event.target.value })}
+            onChange={(event) =>
+              setFields({ ...fields, from: event.target.value })
+            }
           />
           <TextField
             id="analytics-to"
@@ -613,7 +722,9 @@ export default function AdminAnalytics() {
             helperText={errors.to}
             inputRef={toInput}
             slotProps={{ inputLabel: { shrink: true } }}
-            onChange={(event) => setFields({ ...fields, to: event.target.value })}
+            onChange={(event) =>
+              setFields({ ...fields, to: event.target.value })
+            }
           />
           <Button type="submit" variant="contained">
             Apply period
@@ -622,10 +733,21 @@ export default function AdminAnalytics() {
         <p className="muted">Periods use UTC dates. Maximum 366 days.</p>
       </Panel>
       <UsagePanel result={usage} retry={() => setUsageTry((n) => n + 1)} />
-      <GenerationPanel result={generation} retry={() => setGenerationTry((n) => n + 1)} />
-      <Panel className="analytics-panel" role="region" ariaLabel="AI quality and session activity">
+      <GenerationPanel
+        result={generation}
+        retry={() => setGenerationTry((n) => n + 1)}
+      />
+      <Panel
+        className="analytics-panel"
+        role="region"
+        ariaLabel="AI quality and session activity"
+      >
         <h2>AI quality and session activity</h2>
         <p className="muted">{NOTICE}</p>
+        <p className="muted">
+          Timing and message counts are descriptive measurements, not quality
+          grades.
+        </p>
         <Tabs
           value={workflow}
           onChange={(_, next: api.Workflow) => chooseWorkflow(next)}
@@ -634,10 +756,21 @@ export default function AdminAnalytics() {
           scrollButtons={false}
         >
           {api.WORKFLOWS.map((w) => (
-            <Tab key={w.id} value={w.id} label={w.label} id={`analytics-tab-${w.id}`} aria-controls="analytics-tabpanel" />
+            <Tab
+              key={w.id}
+              value={w.id}
+              label={w.label}
+              id={`analytics-tab-${w.id}`}
+              aria-controls="analytics-tabpanel"
+            />
           ))}
         </Tabs>
-        <div role="tabpanel" id="analytics-tabpanel" aria-labelledby={`analytics-tab-${workflow}`} className="analytics-tabpanel">
+        <div
+          role="tabpanel"
+          id="analytics-tabpanel"
+          aria-labelledby={`analytics-tab-${workflow}`}
+          className="analytics-tabpanel"
+        >
           <div className="analytics-grading">
             <Button
               variant="outlined"
@@ -663,12 +796,18 @@ export default function AdminAnalytics() {
           </div>
           {qualityBody}
         </div>
-        <Dialog open={confirming} onClose={() => setConfirming(false)} aria-labelledby="analytics-grade-title">
-          <DialogTitle id="analytics-grade-title">Grade responses with AI?</DialogTitle>
+        <Dialog
+          open={confirming}
+          onClose={() => setConfirming(false)}
+          aria-labelledby="analytics-grade-title"
+        >
+          <DialogTitle id="analytics-grade-title">
+            Grade responses with AI?
+          </DialogTitle>
           <DialogContent>
             <DialogContentText>
-              Up to 20 ungraded responses from this workflow and period will be sent to the SoC LLM service for
-              grading. Grades are advisory.
+              Up to 20 ungraded responses from this workflow and period will be
+              sent to the SoC LLM service for grading. Grades are advisory.
             </DialogContentText>
           </DialogContent>
           <DialogActions>

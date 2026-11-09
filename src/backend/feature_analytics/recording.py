@@ -41,12 +41,34 @@ def _elapsed_ms(start: datetime, end: datetime) -> int:
     return max(0, int((end - start).total_seconds() * 1000))
 
 
+def _lock_sessions(db, user_id: str) -> None:
+    db.execute(text("SELECT pg_advisory_xact_lock(hashtext(:key))"), {"key": f"analytics-session:{user_id}"})
+
+
 def _assign_session(db, user_id: str, activity_ref: str, received_at: datetime) -> int | None:
     """The open session of this user for this attempt, or a new one. Serialised per user by an advisory lock."""
-    db.execute(text("SELECT pg_advisory_xact_lock(hashtext(:key))"), {"key": f"analytics-session:{user_id}"})
+    _lock_sessions(db, user_id)
     attempt = db.get(AnalyticsPracticeAttempt, activity_ref)
-    if attempt is not None and attempt.submitted_at is not None and attempt.submitted_at <= received_at:
-        return None  # a chat after submission is not part of the practice activity
+    if attempt is not None and attempt.submitted_at is not None:
+        if attempt.submitted_at <= received_at:
+            return None  # a chat after submission is not part of the practice activity
+        # A request received before submission can reach this hook after submission committed.
+        # Attach it to the completed activity without reopening a session or closing a newer activity.
+        previous = db.scalar(select(AnalyticsSession).where(
+            AnalyticsSession.user_id == user_id, AnalyticsSession.activity_ref == activity_ref,
+            AnalyticsSession.started_at <= received_at,
+        ).order_by(AnalyticsSession.started_at.desc()).limit(1).with_for_update())
+        if previous is not None and received_at - previous.last_message_at <= timedelta(minutes=config.SESSION_IDLE_MINUTES):
+            previous.last_message_at = max(previous.last_message_at, received_at)
+            return previous.id
+        closed = AnalyticsSession(
+            user_id=user_id, role="student", activity_type="practice_attempt", activity_ref=activity_ref,
+            started_at=received_at, last_message_at=received_at, ended_at=attempt.submitted_at,
+            end_reason="activity_ended",
+        )
+        db.add(closed)
+        db.flush()
+        return closed.id
     current = db.scalar(
         select(AnalyticsSession).where(AnalyticsSession.user_id == user_id, AnalyticsSession.ended_at.is_(None))
         .with_for_update()
@@ -148,6 +170,12 @@ def record_practice_attempt_submitted(*, attempt_ref: str, submitted_at: datetim
     try:
         done = _when(submitted_at)
         with open_session() as db:
+            user_id = db.scalar(select(AnalyticsPracticeAttempt.user_id).where(
+                AnalyticsPracticeAttempt.attempt_ref == str(attempt_ref)))
+            if user_id is None:
+                return
+            # Both paths take the user advisory lock before any attempt/session row lock.
+            _lock_sessions(db, user_id)
             row = db.get(AnalyticsPracticeAttempt, str(attempt_ref), with_for_update=True)
             if row is None or row.submitted_at is not None:
                 return

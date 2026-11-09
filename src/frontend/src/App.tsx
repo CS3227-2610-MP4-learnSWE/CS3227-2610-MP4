@@ -90,6 +90,7 @@ function LiveAnalysis({ children }: { children: ReactNode }) {
   const { status } = useAuth();
   const was = useWasAuthenticated();
   if (status === "anonymous" && !was) return <Navigate to="/login" replace />;
+  if (status !== "authenticated") return null;
   return (
     <Suspense fallback={<p role="status">Loading�</p>}>{children}</Suspense>
   );

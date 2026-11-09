@@ -5117,6 +5117,12 @@ td .MuiButton-root {
 .analytics-period > * {
   min-width: 0;
 }
+.analytics-period .MuiOutlinedInput-notchedOutline {
+  border-color: var(--muted);
+}
+.analytics-period .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline {
+  border-color: var(--blue);
+}
 .analytics-scroll {
   max-width: 100%;
 }
