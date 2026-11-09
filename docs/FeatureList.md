@@ -22,7 +22,7 @@ All role features below are MVP requirements. Optional extensions are listed sep
 - Open a bottom-right chat box from the floating icon on any student page. Close minimises without losing history or the unsent draft; refresh clears both and starts fresh.
 - In the authenticated app, history belongs to one signed-in account and survives navigation and browser reload until logout or explicit clear. Logout/account switching removes it from the active session.
 - Use the current page and relevant authorised visible contents as context, updating as the student navigates. Do not include protected answer keys/solutions before submission, unpublished content or other users’ data.
-- This release previews the widget with local history, fixed replies and a page label only. Browser reload or leaving the student demo resets chat; real AI context retrieval and authenticated persistence remain future work.
+- The companion answers from published lessons: on a lesson page it uses that lesson, and elsewhere it uses up to two related lessons it finds by word overlap. Replies that use lessons show a "Based on:" line with the lesson titles; when the lessons do not cover a question the reply says so. Practice hints, explanations and answer protection are unchanged. Chat is kept in the browser only: reload or leaving the student demo resets it, and persistence across reload and per-account history remain future work.
 
 ## Teacher
 

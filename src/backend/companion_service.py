@@ -3,6 +3,7 @@
 The mode and the context come from stored data and server-side attempt state only. Nothing the
 client sends (history, label, message) influences either.
 """
+import re
 from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Literal
@@ -13,10 +14,11 @@ from attempt_store import Attempt
 from companion_help import HELP_TEXT
 from companion_schemas import HistoryItem
 from errors import ApiError
+from lesson_provider import LessonText
 from llm_client import ChatMessage
 from practice_data import KEY_VERSION, PracticeSet, Question
 
-Mode = Literal["hint", "explain", "help"]
+Mode = Literal["hint", "explain", "help", "lesson"]
 
 
 @dataclass(frozen=True)
@@ -26,6 +28,7 @@ class Plan:
     answers: dict[str, str] | None  # explain only: a snapshot of the student's choices
     # Questions checked for leaks but not placed in context (a pasted question from another set).
     leak_extra: tuple[Question, ...] = ()
+    lessons: tuple[LessonText, ...] = ()  # lesson mode: the lessons placed in context
 
 
 def validate_message(raw: str) -> str:
@@ -57,9 +60,14 @@ def select_mode(
     attempt: Attempt | None,
     student_attempts: Sequence[Attempt],
     match: Question | None,
+    lessons: Sequence[LessonText] = (),
 ) -> Plan:
-    """practice_set is None for page "other". attempt is the one named by the context, if any."""
+    """practice_set is None for page "other" and "lesson". attempt is the one named by the context, if any.
+
+    lessons is the already-resolved list (the viewed lesson, or the related lessons). A match wins over it."""
     if practice_set is None:
+        if match is None and lessons:
+            return Plan("lesson", (), None, lessons=tuple(lessons))
         return Plan("hint", (match,), None) if match else Plan("help", (), None)
     # Read the status once: a submit racing this request cannot make it less restricted.
     explain = attempt is not None and attempt.status == "submitted"
@@ -78,6 +86,11 @@ def select_mode(
 def _context_text(plan: Plan) -> str:
     if plan.mode == "help":
         return HELP_TEXT
+    if plan.mode == "lesson":
+        return "\n\n".join(
+            f'Lesson "{l.title}":\n{prompts.LESSON_OPEN}\n{l.content}\n{prompts.LESSON_CLOSE}'
+            for l in plan.lessons
+        )
     lines: list[str] = []
     for n, q in enumerate(plan.questions, 1):
         lines.append(f"Question {n}: {q.text}")
@@ -93,6 +106,17 @@ def _context_text(plan: Plan) -> str:
     if plan.mode == "explain":
         lines.append(f"Answer key version: {KEY_VERSION}")
     return "\n".join(lines).strip()
+
+
+def finish_lesson_reply(text: str, lessons: Sequence[LessonText]) -> tuple[str, list[LessonText]]:
+    """Apply the NOT_IN_LESSON marker: a leading marker gives the limitation sentence and no sources."""
+    marker = config.NOT_IN_LESSON_MARKER
+    stripped = text.strip()
+    if stripped.casefold().startswith(marker.casefold()):
+        rest = stripped[len(marker) :].strip()
+        return f"{config.LIMITATION_SENTENCE} {rest}".strip(), []
+    cleaned = re.sub(re.escape(marker), "", text, flags=re.IGNORECASE)
+    return cleaned, list(lessons)
 
 
 def build_messages(

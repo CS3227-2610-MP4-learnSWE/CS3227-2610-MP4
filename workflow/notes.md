@@ -1,5 +1,19 @@
 # Handoff notes
 
+## 2026-11-09: developer on STU-03-grounding (tasks 3, 4, 5, 9)
+- Done: backend `lesson_provider.py`, `lesson_match.py`, `check_text` option in `leak_check.py`, constants in `companion_config.py`, schema, prompt, service (`select_mode` lessons, `finish_lesson_reply`), route and help text; frontend `services/companion.ts`, `StudyCompanion.tsx`, `styles.css`; docs (UserGuide, DeveloperGuide, FeatureList, UserStories, STU-03 spec pointer, security test-log, STATUS). No tests written.
+- Next (agent + task): orchestrator merges the test-designer's tests; test-designer runs the suites (task 8); verifier (task 10).
+- Files touched: `src/backend/{lesson_provider,lesson_match,leak_check,companion_config,companion_schemas,companion_prompts,companion_service,companion_routes,companion_help,student_identity}.py`, `src/frontend/src/{services/companion.ts,components/StudyCompanion.tsx,styles.css}`, `docs/{UserGuide,DeveloperGuide,FeatureList,UserStories}.md`, `workflow/specs/STU-03/spec.md`, `workflow/security/test-log.md`, `workflow/STATUS.md`, `workflow/notes.md`.
+- Invocation ID(s) for this handoff: run 2026-11-09-STU03G-01 (developer row, recorded by the orchestrator).
+- Model(s) and effort setting: Sonnet 5.5, effort inherited.
+- Elapsed wall-clock time: n/a.
+- Feature-run report path: not yet.
+- Decisions / open questions: (1) The plan says FastAPI caches the dependency per request, but `current_user(role="student")` builds a new function each call, so two uses would look up the session twice. I added `student_user = current_user(role="student")` in `student_identity.py` and used it for both `require_student` and the route, giving one lookup (small addition outside the plan's file list). (2) Existing frontend mock helper and old Playwright companion tests return no `sources`, so they will now fail the response-shape check until the test-designer adds `sources: []` (AC17/AC21). (3) `RELATED_STOPWORDS` extends the plan's minimum list with common words (would, could, should, there, their, them, then, than, some, much, many, work, works, like, make, need, want, know, using, used, uses). (4) On a lesson page with a pasted question (hint mode) there is no post-call lesson recheck, as the lesson is not in context. (5) `npm run format:check` fails on 147 files in this checkout, all pre-existing (CRLF line endings); my three frontend files pass with `--end-of-line auto`.
+- Blocking findings: none.
+- Resource use: Tracker run: yes (orchestrator-owned). Model: Sonnet 5.5. Total tokens: unavailable. Cost (USD): unavailable. Retries and revision rounds: 0.
+- Tests run: backend `uv run pytest -q`: 242 passed, 1381 skipped (no DB), 19 failed, all `KeyError: 'DATABASE_URL'` in `test_shr01_access.py` / `test_shr01_accounts.py` (environment, not touched by this change). Frontend: typecheck and lint pass; Playwright `npm test` not run (existing mocks lack `sources`).
+
+
 ## 2026-11-09: spec-writer on STU-03-grounding (student-role owner)
 - Done: wrote `workflow/specs/STU-03-grounding/spec.md`, `plan.md`, `tasks.md` (draft, awaiting user approval; nothing built, no code or tests touched). Makes the study companion grounded in published lessons: new `lesson` mode (lesson page by URL lesson id, or up to 2 related visible lessons on general pages by plain word overlap), server-built `sources` (lesson id and title only), a fixed `NOT_IN_LESSON:` marker for the "not supported, say so" case, access through `study_lessons/access.py` with a uniform 404 `lesson_not_found` plus a recheck after the model call, pasted-question rule still wins, letters-and-verdicts leak check in Lesson mode. Speccheck passes (`OK STU-03-grounding`).
 - Next (agent + task): orchestrator: user approval and the open questions; then test-designer (tasks 1, 2, 6, 7) and developer (tasks 3 to 5) in parallel.

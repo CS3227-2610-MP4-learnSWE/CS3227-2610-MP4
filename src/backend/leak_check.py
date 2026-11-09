@@ -135,8 +135,10 @@ def _text_verdict(words: str, q: Question) -> bool:
     return False
 
 
-def find_leak(reply: str, questions: Sequence[Question]) -> str | None:
-    """Return "letter", "text" or "verdict" if the reply states or marks the answer, else None."""
+def find_leak(reply: str, questions: Sequence[Question], *, check_text: bool = True) -> str | None:
+    """Return "letter", "text" or "verdict" if the reply states or marks the answer, else None.
+
+    check_text=False skips the correct-choice-text check (Lesson mode: lesson text may equal a choice)."""
     if not questions:
         return None
     clean = _clean(reply)
@@ -145,7 +147,7 @@ def find_leak(reply: str, questions: Sequence[Question]) -> str | None:
     correct_ids = {q.correct.lower() for q in questions}
     if _letter_reference(clean, all_ids, correct_ids):
         return "letter"
-    if any(_text_leak(words, clean, q) for q in questions):
+    if check_text and any(_text_leak(words, clean, q) for q in questions):
         return "text"
     if _letter_verdict(clean, all_ids) or any(_text_verdict(words, q) for q in questions):
         return "verdict"

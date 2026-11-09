@@ -8,7 +8,7 @@ import {
   type Dispatch,
   type SetStateAction,
 } from "react";
-import { useLocation } from "react-router";
+import { Link, useLocation } from "react-router";
 import {
   Button,
   Fab,
@@ -21,7 +21,10 @@ import { MessageCircle, RotateCcw, Send, Sparkles, X } from "lucide-react";
 import { navigation } from "../data";
 import { usePractice } from "../practice/PracticeContext";
 import { ApiError } from "../services/client";
-import { sendCompanionMessage } from "../services/companion";
+import {
+  sendCompanionMessage,
+  type CompanionSource,
+} from "../services/companion";
 import { useAuth } from "../auth/AuthContext";
 import SignInNotice, { isSignInNeeded } from "../auth/SignInNotice";
 
@@ -29,6 +32,7 @@ type Message = {
   from: "you" | "companion";
   text: string;
   failed?: boolean;
+  sources?: CompanionSource[];
 };
 const MAX_MESSAGE_CHARS = 1000;
 const HISTORY_ITEMS = 4;
@@ -47,6 +51,8 @@ function failureMessage(error: unknown): string {
       : "The study companion is busy. Please try again shortly.";
   if (e?.status === 401)
     return "The study companion could not tell who you are. Please sign in again.";
+  if (e?.status === 404 && e.code === "lesson_not_found")
+    return "I could not find this lesson. It may have been withdrawn, or you may no longer have access. Go to Study materials and try again.";
   if (e?.status === 404)
     return "I could not find this practice page or attempt. Reload the page and try again.";
   if (e?.status === 422)
@@ -144,6 +150,7 @@ export default function StudyCompanion() {
     return () => document.removeEventListener("keydown", close);
   }, [open, setOpen]);
   const urlSetId = path[2] === "practice" && path[3] ? path[3] : null;
+  const urlLessonId = path[2] === "materials" && path[3] ? path[3] : null;
   const onPractice = urlSetId !== null;
   const ownsPractice = onPractice && practiceSetId === urlSetId;
   const send = async () => {
@@ -170,16 +177,17 @@ export default function StudyCompanion() {
         message: text,
         history,
         context: {
-          page: onPractice ? "practice" : "other",
+          page: onPractice ? "practice" : urlLessonId ? "lesson" : "other",
           set_id: ownsPractice && practiceSet ? practiceSet.id : urlSetId,
           attempt_id: ownsPractice ? submittedAttemptId : null,
+          lesson_id: urlLessonId,
           label: page.slice(0, 80),
         },
       });
       if (run !== generation.current) return;
       setMessages((items) => [
         ...items,
-        { from: "companion", text: result.reply },
+        { from: "companion", text: result.reply, sources: result.sources },
       ]);
     } catch (caught) {
       if (run !== generation.current) return;
@@ -263,9 +271,11 @@ export default function StudyCompanion() {
                 We’ll take it one thought at a time.
               </p>
               <small>
-                {submitted
-                  ? "Practice submitted · Ask about your attempt from the Practice page"
-                  : "Hints only before whole-set submission"}
+                {urlLessonId
+                  ? "Answers use the lesson you are viewing."
+                  : submitted
+                    ? "Practice submitted · Ask about your attempt from the Practice page"
+                    : "Hints only before whole-set submission"}
               </small>
             </div>
             {messages.map((message, index) => (
@@ -274,6 +284,23 @@ export default function StudyCompanion() {
                   {message.from === "you" ? "You" : "Study companion"}
                 </span>
                 <p>{message.text}</p>
+                {message.sources && message.sources.length > 0 && (
+                  <p
+                    className="companion-sources"
+                    role="group"
+                    aria-label="Sources"
+                  >
+                    <span>Based on:</span>
+                    {message.sources.map((s) => (
+                      <Link
+                        key={s.lesson_id}
+                        to={`/student/materials/${encodeURIComponent(s.lesson_id)}`}
+                      >
+                        {s.title}
+                      </Link>
+                    ))}
+                  </p>
+                )}
               </div>
             ))}
             {pending && (
