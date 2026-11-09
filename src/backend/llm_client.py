@@ -51,7 +51,12 @@ class LlmReply:
 
 class LlmClient(Protocol):
     def complete(
-        self, messages: Sequence[ChatMessage], *, max_tokens: int, caller_id: str
+        self,
+        messages: Sequence[ChatMessage],
+        *,
+        max_tokens: int,
+        caller_id: str,
+        timeout_seconds: float | None = None,
     ) -> LlmReply: ...
 
 
@@ -144,8 +149,14 @@ class SoclaasClient:
         self._http = httpx.Client(transport=transport, timeout=limits.timeout_seconds)
 
     def complete(
-        self, messages: Sequence[ChatMessage], *, max_tokens: int, caller_id: str
+        self,
+        messages: Sequence[ChatMessage],
+        *,
+        max_tokens: int,
+        caller_id: str,
+        timeout_seconds: float | None = None,
     ) -> LlmReply:
+        """`timeout_seconds` overrides `Limits.timeout_seconds` for this call's attempts; None keeps the default."""
         s = self._settings
         if not s.complete:
             raise LlmNotConfigured("The model service is not configured.")
@@ -159,7 +170,7 @@ class SoclaasClient:
             "messages": [{"role": m.role, "content": m.content} for m in messages],
             "max_tokens": max_tokens,
         }
-        response = self._send(url, headers, payload)
+        response = self._send(url, headers, payload, timeout_seconds)
         return self._parse(response)
 
     def _admit(self, caller_id: str) -> None:
@@ -173,13 +184,16 @@ class SoclaasClient:
             self._minute.record(caller_id)
             self._day.record(caller_id)
 
-    def _send(self, url: str, headers: dict[str, str], payload: dict) -> httpx.Response:
+    def _send(
+        self, url: str, headers: dict[str, str], payload: dict, timeout_seconds: float | None = None
+    ) -> httpx.Response:
         attempts = self._limits.max_retries + 1
+        extra = {} if timeout_seconds is None else {"timeout": timeout_seconds}
         for attempt in range(attempts):
             last = attempt == attempts - 1
             attempt_id = self._reserve()
             try:
-                response = self._http.post(url, headers=headers, json=payload)
+                response = self._http.post(url, headers=headers, json=payload, **extra)
             except httpx.TimeoutException:
                 self._finish(attempt_id, "other_failure")
                 if last:

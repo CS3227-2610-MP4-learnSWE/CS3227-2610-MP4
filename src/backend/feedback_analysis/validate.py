@@ -109,13 +109,13 @@ def parse_reduce_reply(text, allowed_labels, selection_labels=None):
     selection = set(selection_labels) if selection_labels is not None else allowed
     data = _object(text)
     _keys(data, ("summary", "themes", "suggestions"))
-    result = {"summary": _text(data["summary"], "summary", 600),
-              "themes": _themes(data["themes"], (80, 400, 20), 6, selection, allowed), "suggestions": []}
-    for item in _list(data["suggestions"], "suggestions", 0, 8):
+    result = {"summary": _text(data["summary"], "summary", 400),
+              "themes": _themes(data["themes"], (80, 250, 20), 5, selection, allowed), "suggestions": []}
+    for item in _list(data["suggestions"], "suggestions", 0, 6):
         if not isinstance(item, dict):
             raise _bad("wrong_type", field="suggestions")
         _keys(item, ("text", "basis", "evidence"))
-        suggestion_text = _text(item["text"], "text", 300)
+        suggestion_text = _text(item["text"], "text", 200)
         basis = item["basis"]
         if not isinstance(basis, str):
             raise _bad("wrong_type", field="basis")

@@ -102,7 +102,7 @@ New backend package `feedback_analysis/`:
 - `failures.py`: one registry `MESSAGES` mapping each code to its template from spec.md, `render(code, **values) -> str`, and `from_llm_error(exc, step, client_limits) -> FailureRecord` mapping `LlmTimeout`, `LlmRateLimited` (scope containing "day" gives `rate_limited_day`, otherwise `rate_limited_minute`), `LlmBusy`, `LlmUpstreamError`, `LlmBadResponse` (no usable body: `ai_reply_not_json`), `LlmNotConfigured`, `LlmInputTooLarge`, finish_reason `length`, and unexpected exceptions (`internal_error` with a new reference). Limits in messages come from the shared client's limits object, not constants.
 - `jobs.py`: `run_job(analysis_id)` runs map calls in order then the reduce call, updating `ai_done` and the current step with conditional writes; on any failure writes the failure record and stops.
 - `service.py` (create, idempotency, sweep, reads, history page), `routes.py` (six endpoints: create, list, get, delete, evidence, response-count; `service.delete_analysis(admin_id, analysis_id)` returns deleted, running with seconds, or missing), `models.py`, migration. Router registered in `main.py`.
-- Constants in one place: `MAX_RESPONSES=500`, `MAX_ENTRY_CHARS=280`, `MAX_LABELS_PER_ENTRY=5`, `BATCH_DATA_CHARS=9000`, `BATCH_MAX_ENTRIES=30`, `MAX_MAP_CALLS=10`, `MAP_MAX_TOKENS=600`, `REDUCE_MAX_TOKENS=1500`, `AGG_PROMPT_CHARS=1500`, `JOB_BOUND_SECONDS=360`, `HISTORY_DEFAULT_LIMIT=20`, `HISTORY_MAX_LIMIT=50`.
+- Constants in one place: `MAX_RESPONSES=500`, `MAX_ENTRY_CHARS=280`, `MAX_LABELS_PER_ENTRY=5`, `BATCH_DATA_CHARS=9000`, `BATCH_MAX_ENTRIES=30`, `MAX_MAP_CALLS=10`, `MAP_MAX_TOKENS=800`, `REDUCE_MAX_TOKENS=1200`, `REDUCE_TIMEOUT_SECONDS=22.0`, `AGG_PROMPT_CHARS=1500`, `JOB_BOUND_SECONDS=360`, `HISTORY_DEFAULT_LIMIT=20`, `HISTORY_MAX_LIMIT=50`.
 Reused: `get_llm_client` (the job obtains the same client object; tests override it), `LlmClient.complete(messages, max_tokens=..., caller_id=f"admin:{admin_id}")`, `usage_feature("feedback_analysis")` wrapping every call (map and reduce use the same label; the ADM-06 feature label is `ADM-03`, the value ADM-06 already reserves for this feature; decided by the orchestrator 2026-11-09 because the shared client and the ADM-06 constraints accept only STU-03, TEA-02 and ADM-03), `admin_user`, ApiError, the ADM-02-04 lookup, the DB session layer (the job opens its own session).
 New frontend: `pages/AdminFeedbackAnalysis.tsx`, `pages/AdminFeedbackAnalysisResult.tsx`, `pages/AdminFeedbackAnalysisEvidence.tsx`, `components/QuestionResults.tsx` (accessible table with CSS bars), `hooks/useAnalysisPolling.ts`, `api/feedbackAnalysis.ts`, `messages/feedbackAnalysis.ts` (load, abort and polling message builders from spec.md), routes `/admin/feedback/analysis`, `/admin/feedback/analysis/:analysisId`, `/admin/feedback/analysis/:analysisId/responses/:label`, link "Feedback analysis" on AdminFeedback.tsx, scoped styles `.feedback-analysis`. No chart library: bars are CSS-width divs (justified: counts and percentages need no library, smaller bundle, trivially accessible).
 
@@ -133,16 +133,16 @@ Map call (system message begins with the exact first line `TASK: MAP`, at most 1
 ```json
 {"themes": [{"title": "string 1..50", "description": "string 1..100", "evidence": ["R3", "R9"]}]}
 ```
-Rules: only the key `themes`; at most 3 themes; evidence 1..6 labels, each present in that batch; duplicates collapsed. `max_tokens=600`.
+Rules: only the key `themes`; at most 3 themes; evidence 1..6 labels, each present in that batch; duplicates collapsed. `max_tokens=800`.
 
 Reduce call (system first line exactly `TASK: REDUCE`, at most 1,200 characters; user message: statistics context at most 1,500 characters, then partial themes at most 6,150 characters; total at most 9,000): the context is one line per question, `{prompt up to 60}: answered A, skipped S, options label=count (up to 8 options, rest summed as other) or mean/median`, truncated at 1,500. Partial themes are the validated map themes (title, description, evidence labels). Reduce reply schema (same as the stored `ai_result`):
 ```json
-{"summary": "string 1..600",
- "themes": [{"title": "string 1..80", "description": "string 1..400", "evidence": ["R3"]}],
- "suggestions": [{"text": "string 1..300", "basis": "feedback", "evidence": ["R3"]},
-                 {"text": "string 1..300", "basis": "ai", "evidence": []}]}
+{"summary": "string 1..400",
+ "themes": [{"title": "string 1..80", "description": "string 1..250", "evidence": ["R3"]}],
+ "suggestions": [{"text": "string 1..200", "basis": "feedback", "evidence": ["R3"]},
+                 {"text": "string 1..200", "basis": "ai", "evidence": []}]}
 ```
-Rules: exactly these keys; themes 0..6, each with 1..20 evidence labels; suggestions 0..8; `basis` "feedback" needs 1 or more labels, "ai" needs none; every label must appear in some partial theme (reduce input) and in the snapshot; duplicates collapsed. `max_tokens=1500`. A suggestion based on aggregate numbers only uses basis "ai". With no free-text entries there are no map calls and the partial themes list is empty.
+Rules: exactly these keys; themes 0..5 (description at most 250), each with 1..20 evidence labels; suggestions 0..6 (text at most 200); `basis` "feedback" needs 1 or more labels, "ai" needs none; every label must appear in some partial theme (reduce input) and in the snapshot; duplicates collapsed. `max_tokens=1200`. A suggestion based on aggregate numbers only uses basis "ai". With no free-text entries there are no map calls and the partial themes list is empty.
 
 Common validation: `finish_reason == "length"` gives `ai_reply_cut_off`; the text must be exactly one JSON object after trimming (no fences) else `ai_reply_not_json`; any schema violation gives `ai_reply_invalid` with the rule from the list in spec.md; control characters other than newline are stripped from stored strings. A failing call stops the job, writes the failure record with the step, and no later call is made. `ai_total` is map calls plus 1 (1 when no entries); `ai_done` increments after each validated call.
 Retries: the shared client may retry once on timeout or 5xx; the user sees only a longer step and the messages say "after up to 2 attempts". The app adds no retries. Worst case 11 calls times about 31 s is under the 360 s bound.
