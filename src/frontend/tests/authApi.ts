@@ -225,6 +225,27 @@ export async function mockAuthApi(
         },
       }),
   );
+  // TEA-05 loads the learning overview on the teacher home page. Auth-only fixtures must not
+  // send that request to a developer's real API. TEA-05 tests register their own route after
+  // this neutral empty report (the later route wins).
+  await page.route(
+    (url) => url.pathname === "/api/teacher/overview",
+    (route) =>
+      route.fulfill({
+        json: {
+          period: {
+            preset: "30d",
+            start: "2026-10-11T00:00:00Z",
+            end: "2026-11-10T00:00:00Z",
+            start_date: "2026-10-11",
+            end_date: "2026-11-09",
+            timezone: "UTC",
+          },
+          as_of: "2026-11-09T12:00:00Z",
+          courses: [],
+        },
+      }),
+  );
   await page.route(
     (url) => url.pathname.startsWith("/api/auth/"),
     (route) => mock.handle(route),
