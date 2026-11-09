@@ -148,6 +148,16 @@ def responses_deleted(step_, phrase, missing, selected):
                          {"missing": missing, "selected": selected})
 
 
+# Model-output failures: the only ones the job retries (once).
+RETRYABLE = frozenset({"ai_reply_cut_off", "ai_reply_not_json", "ai_reply_invalid"})
+
+
+def after_two_attempts(record, first_code):
+    """The second attempt's failure, marked as such: message suffix, details.attempts and details.first_attempt_code."""
+    return FailureRecord(record.code, f"{record.message} The step failed after 2 attempts.", record.step,
+                         {**record.details, "attempts": 2, "first_attempt_code": first_code})
+
+
 def cut_off(step_, max_tokens, empty=False):
     """`empty`: the model produced no answer at all because it used its whole token budget before answering."""
     note = " (the model used its whole token budget before answering)" if empty else ""

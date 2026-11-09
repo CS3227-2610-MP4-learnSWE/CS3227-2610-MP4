@@ -1,6 +1,7 @@
 """The background AI step: map calls in order, then one reduce call. Own DB sessions, conditional writes only."""
 import logging
 import threading
+import time
 from uuid import UUID
 
 from sqlalchemy import func, select, update
@@ -79,6 +80,28 @@ def _call(llm, messages, max_tokens, admin_id, step, limits, timeout_seconds=Non
     return reply.text, None
 
 
+def _run_step(llm, messages, parse, max_tokens, admin_id, step, limits, started, *call_args):
+    """One map or reduce step: (parsed value, None) or (None, failure record).
+
+    A model-output failure (cut off, not JSON, schema-invalid) gets exactly one more attempt of the same step while
+    the job is younger than RETRY_CUTOFF_SECONDS; every other failure is final. Two failures store the second one.
+    """
+    def attempt():
+        text, record = _call(llm, messages, max_tokens, admin_id, step, limits, *call_args)
+        if record is not None:
+            return None, record
+        try:
+            return parse(text), None
+        except InvalidReply as exc:
+            return None, failures.from_invalid_reply(exc, step)
+
+    value, record = attempt()
+    if record is None or record.code not in failures.RETRYABLE or time.monotonic() - started >= config.RETRY_CUTOFF_SECONDS:
+        return value, record
+    value, again = attempt()
+    return (value, None) if again is None else (None, failures.after_two_attempts(again, record.code))
+
+
 def _missing(ids):
     """How many of the selected responses no longer exist."""
     with open_session() as db:
@@ -86,6 +109,7 @@ def _missing(ids):
 
 
 def _run(analysis_id, llm, progress):
+    started = time.monotonic()
     loaded = _load(analysis_id)
     if loaded is None:
         return
@@ -110,28 +134,21 @@ def _run(analysis_id, llm, progress):
             return
         # An unexpected exception is recorded against the step that was running (kind map).
         progress.update(step=failures.step("map", index, len(batches)), phrase=f"processing batch {index} of {len(batches)}")
-        text, record = _call(llm, map_messages(batch), config.MAP_MAX_TOKENS, admin_id, step, limits,
-                              config.MAP_TIMEOUT_SECONDS)
-        if record is None:
-            try:
-                partials += parse_map_reply(text, batch.labels, selection)
-            except InvalidReply as exc:
-                record = failures.from_invalid_reply(exc, step)
+        themes, record = _run_step(llm, map_messages(batch), lambda t, b=batch: parse_map_reply(t, b.labels, selection),
+                                   config.MAP_MAX_TOKENS, admin_id, step, limits, started, config.MAP_TIMEOUT_SECONDS)
         if record is not None:
             _fail(analysis_id, record)
             return
+        partials += themes
         if not _write(analysis_id, ai_done=FeedbackAnalysis.ai_done + 1):
             return
     step = failures.step("merge")
     progress.update(step=failures.step("reduce"), phrase="merging themes")
     partials = fit_partials(partials)
-    text, record = _call(llm, reduce_messages(aggregates, partials), config.REDUCE_MAX_TOKENS, admin_id, step, limits,
-                          config.REDUCE_TIMEOUT_SECONDS, config.REDUCE_MAX_REPLY_CHARS)
-    if record is None:
-        try:
-            result = parse_reduce_reply(text, {label for t in partials for label in t["evidence"]}, selection)
-        except InvalidReply as exc:
-            record = failures.from_invalid_reply(exc, step)
+    allowed = {label for t in partials for label in t["evidence"]}
+    result, record = _run_step(llm, reduce_messages(aggregates, partials), lambda t: parse_reduce_reply(t, allowed, selection),
+                               config.REDUCE_MAX_TOKENS, admin_id, step, limits, started, config.REDUCE_TIMEOUT_SECONDS,
+                               config.REDUCE_MAX_REPLY_CHARS)
     if record is not None:
         _fail(analysis_id, record)
         return
