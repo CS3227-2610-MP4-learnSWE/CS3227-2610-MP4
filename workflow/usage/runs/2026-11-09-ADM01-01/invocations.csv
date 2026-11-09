@@ -1,0 +1,2 @@
+feature_run_id,invocation_id,role,effort,tool,session_id,agent_id,started_at,finished_at
+2026-11-09-ADM01-01,2026-11-09-ADM01-01-orchestrator-1,orchestrator,default,Copilot CLI (VS Code),8a57a205-a6b3-40ad-b0d8-0760c7df8c11,,2026-11-09T18:29:25+08:00,
