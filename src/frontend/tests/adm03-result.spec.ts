@@ -225,10 +225,10 @@ test("adm03 polling: an unreadable 5xx reply stops it with the status in the mes
   await expect(page.getByRole("button", { name: "Retry" })).toBeVisible();
 });
 
-test("adm03 polling gives up after 400 seconds with the exact message", async ({ page }) => {
+test("adm03 polling gives up after 450 seconds with the exact message", async ({ page }) => {
   const ctx = await setup(page, { analyses: [analysis(1, "running")] });
   await running(page, ctx, [analysis(1, "running")]);
-  for (let i = 0; i < 215; i++) {
+  for (let i = 0; i < 235; i++) {
     await page.clock.runFor(2000);
     await page.waitForTimeout(5);
   }

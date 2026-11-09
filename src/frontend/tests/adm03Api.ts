@@ -20,13 +20,13 @@ export const MSG = {
   evidenceNotFound:
     "This response cannot be shown. It was deleted, or the reference is not part of this analysis.",
   inProgress:
-    "Another analysis started 12 seconds ago is still running its AI step. A running AI step finishes or fails within 360 seconds. Wait for it, then generate again.",
+    "Another analysis started 12 seconds ago is still running its AI step. A running AI step finishes or fails within 420 seconds. Wait for it, then generate again.",
   progressNetwork:
     "Could not reach the server while checking the analysis progress. The analysis is saved and may still be running. Press Retry to check again.",
   progressUnreadable: (status: number) =>
     `The server answered the progress check with an unreadable reply (HTTP ${status}). The analysis is saved. Press Retry to check again.`,
   stoppedWaiting:
-    "Stopped waiting after 400 seconds. The server may still be working. Reload this page to check again.",
+    "Stopped waiting after 450 seconds. The server may still be working. Reload this page to check again.",
   load: (what: string) =>
     `Could not reach the server while loading ${what}. Check your connection and press Retry.`,
   abort: (what: string) =>
@@ -44,7 +44,7 @@ export const MSG = {
   deleteAbort:
     "The server did not answer within 15 seconds while deleting the analysis. It may or may not be deleted. Press Delete permanently again; if it was already deleted you will be told so.",
   deleteRunning:
-    "This analysis cannot be deleted yet: its AI step has been running for 100 seconds. It finishes or is marked interrupted within 260 seconds (the limit is 360 seconds). Delete it after that.",
+    "This analysis cannot be deleted yet: its AI step has been running for 100 seconds. It finishes or is marked interrupted within 260 seconds (the limit is 420 seconds). Delete it after that.",
   deleteInternal:
     "An unexpected server error occurred while deleting the analysis. The cause was not an invalid request. Reference abc123 identifies it in the server logs.",
   aiTimeout:
@@ -54,7 +54,7 @@ export const MSG = {
   aiInvalid:
     "The AI reply for merging themes was rejected because a theme had no supporting responses. No AI result was saved. Start a new analysis.",
   aiInterrupted:
-    "The AI step was interrupted: it had been running for 400 seconds without finishing (the limit is 360 seconds), probably because the server restarted. It had finished 1 of 3 steps. The statistics are unaffected. Start a new analysis.",
+    "The AI step was interrupted: it had been running for 500 seconds without finishing (the limit is 420 seconds), probably because the server restarted. It had finished 1 of 3 steps. The statistics are unaffected. Start a new analysis.",
 };
 
 export type Step = {

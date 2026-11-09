@@ -118,14 +118,14 @@ def test_adm03_ac41_delete_changes_nothing_except_the_row(admin):
 def test_adm03_ac45_50_stored_analysis_is_unchanged_and_readable_after_a_cited_response_is_deleted(admin, llm):
     form, users, rids = respondents(admin, 3)
     done = run(admin, form, rids)
-    before = sql("SELECT to_jsonb(a)::text FROM feedback_analyses a WHERE id=%s", (done["id"],))
     cited = call("GET", f"{BASE}/{done['id']}/responses/R1", admin).json()["response"]["id"]
     sql("UPDATE feedback_analyses SET created_at = created_at - interval '400 days' WHERE id=%s", (done["id"],))
     before = sql("SELECT to_jsonb(a)::text FROM feedback_analyses a WHERE id=%s", (done["id"],))
+    read_before = get(admin, done["id"]).json()  # taken after backdating: created_at is part of the object
     assert delete(admin, form, cited).status_code == 204
     assert sql("SELECT to_jsonb(a)::text FROM feedback_analyses a WHERE id=%s", (done["id"],)) == before
     again = get(admin, done["id"]).json()
-    assert again == done and again["response_count"] == 3 and again["ai"]["status"] == "complete"
+    assert again == read_before and again["response_count"] == 3 and again["ai"]["status"] == "complete"
     expect(call("GET", f"{BASE}/{done['id']}/responses/R1", admin), 404, "evidence_not_found", MSG["evidence_not_found"])
     for label in ("R2", "R3"):
         assert call("GET", f"{BASE}/{done['id']}/responses/{label}", admin).status_code == 200

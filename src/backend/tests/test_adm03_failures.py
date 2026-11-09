@@ -60,7 +60,7 @@ EXCEPTIONS = [
      exact("The AI service replied that it is busy (HTTP 429) while processing {step}. Try again in 7 seconds."),
      {"retry_after_seconds": 7}),
     ("timeout", llm_client.LlmTimeout("slow"), "ai_timeout",
-     exact("The AI service did not answer within 15 seconds (after up to 2 attempts) while processing {step}. The statistics are unaffected. Start a new analysis to run the AI part again."),
+     lambda step: exact("The AI service did not answer within 15 seconds (after up to 2 attempts) while processing {step}. The statistics are unaffected. Start a new analysis to run the AI part again.".replace("within 15 seconds", "within " + ("40" if step == "merging themes" else "15") + " seconds"))(step),
      {"timeout_seconds": 15, "attempts": 2}),
     ("upstream", llm_client.LlmUpstreamError("5xx"), "ai_unavailable",
      exact("The AI service could not be reached or returned a server error while processing {step}, after up to 2 attempts. The statistics are unaffected. Start a new analysis once the service is back."),
@@ -85,7 +85,7 @@ FIELD = r"[\w\.\[\]]*"
 
 
 def cut_off_matcher(position):
-    limit = 1500 if position == "reduce" else 600
+    limit = 2000 if position == "reduce" else 800
     return exact("The AI reply for {step} was cut off at the output limit of " + str(limit) + " tokens. No AI result was saved. Select fewer responses and start a new analysis.")
 
 
@@ -104,9 +104,9 @@ REDUCE_INVALID = [
     ("reduce_missing_key", '{"themes":[],"suggestions":[]}', invalid(r"a required field \(summary\) was missing")),
     ("reduce_wrong_type", reduce_json(summary=5), invalid(r"summary had the wrong type")),
     ("reduce_empty_summary", reduce_json(summary=""), invalid(FIELD + r"summary was empty")),
-    ("reduce_long_summary", reduce_json(summary="s" * 601), invalid(FIELD + r"summary was longer than 600 characters")),
-    ("reduce_too_many_themes", reduce_json(themes=[theme(title=f"t{i}") for i in range(7)]), invalid(r"themes had 7 items, the maximum is 6")),
-    ("reduce_too_many_suggestions", reduce_json(suggestions=[sug(text=f"s{i}") for i in range(9)]), invalid(r"suggestions had 9 items, the maximum is 8")),
+    ("reduce_long_summary", reduce_json(summary="s" * 401), invalid(FIELD + r"summary was longer than 400 characters")),
+    ("reduce_too_many_themes", reduce_json(themes=[theme(title=f"t{i}") for i in range(6)]), invalid(r"themes had 6 items, the maximum is 5")),
+    ("reduce_too_many_suggestions", reduce_json(suggestions=[sug(text=f"s{i}") for i in range(7)]), invalid(r"suggestions had 7 items, the maximum is 6")),
     ("reduce_theme_no_evidence", reduce_json(themes=[theme(ev=())]), invalid(r"a theme had no supporting responses")),
     ("reduce_label_outside_selection", reduce_json(themes=[theme(ev=("R999",))]), invalid(r"a supporting response label \(R999\) is not in the selection")),
     ("reduce_label_outside_input", reduce_json(themes=[theme(ev=("R3",))]), invalid(r"a supporting response label \(R3\) was not in the input for this step")),
@@ -150,6 +150,8 @@ def test_adm03_ac6_15_31_ai_failure_has_exact_stored_message_step_details_and_st
     if code != "ai_not_configured":
         want = {"batch": {"kind": "batch", "index": n, "total": N_MAP}, "reduce": {"kind": "merge", "index": None, "total": None}}
         assert err["step"] == want["batch" if pos != "reduce" else "reduce"]
+    if code == "ai_timeout":  # the actual per-call limit: 15 s for a batch, 40 s for the merge
+        details = {**details, "timeout_seconds": 40 if pos == "reduce" else 15}
     for k, v in details.items():
         assert err["details"][k] == v, err["details"]
     assert done["ai"]["progress"]["done"] == n - 1  # a partial result is never presented as complete
