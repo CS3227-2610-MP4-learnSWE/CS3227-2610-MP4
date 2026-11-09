@@ -102,12 +102,6 @@ export default function Shell({
     ? messages[role].filter((message) => message.unread).length
     : (inboxUnread ?? 0);
   const section = location.pathname.split("/")[2];
-  const liveUsage = !demoMode && role === "admin" && section === "ai-usage";
-  const liveFeedback =
-    !demoMode &&
-    (section === "feedback" ||
-      (role === "admin" && section === "announcements") ||
-      ((role === "student" || role === "teacher") && section === "inbox"));
   const current =
     navigation[role].find((item) => item.path === section)?.label ||
     (section === "feedback" ? "Feedback" : "Workspace");
@@ -302,7 +296,7 @@ export default function Shell({
             <strong>{current}</strong>
           </div>
           <div className="topbar-actions">
-            {!liveUsage && !liveFeedback && (
+            {demoMode && (
               <span className="demo-pill">
                 <span /> Demo · Sample data
               </span>
