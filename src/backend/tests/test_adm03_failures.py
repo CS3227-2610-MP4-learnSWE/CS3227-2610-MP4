@@ -60,7 +60,7 @@ EXCEPTIONS = [
      exact("The AI service replied that it is busy (HTTP 429) while processing {step}. Try again in 7 seconds."),
      {"retry_after_seconds": 7}),
     ("timeout", llm_client.LlmTimeout("slow"), "ai_timeout",
-     exact("The AI service did not answer within 15 seconds (after up to 2 attempts) while processing {step}. The statistics are unaffected. Start a new analysis to run the AI part again."),
+     lambda step: exact("The AI service did not answer within 15 seconds (after up to 2 attempts) while processing {step}. The statistics are unaffected. Start a new analysis to run the AI part again.".replace("within 15 seconds", "within " + ("40" if step == "merging themes" else "15") + " seconds"))(step),
      {"timeout_seconds": 15, "attempts": 2}),
     ("upstream", llm_client.LlmUpstreamError("5xx"), "ai_unavailable",
      exact("The AI service could not be reached or returned a server error while processing {step}, after up to 2 attempts. The statistics are unaffected. Start a new analysis once the service is back."),
@@ -74,6 +74,7 @@ EXCEPTIONS = [
                              + re.escape(". This is a defect in the batch size, not something you can fix by selecting differently. Reference ") + r"\S+"
                              + re.escape(" identifies it in the server logs.")), {}),
     ("cut_off", LlmReply(text=VALID_MAP, finish_reason="length", prompt_tokens=1, completion_tokens=1), "ai_reply_cut_off", None, {}),
+    ("cut_off_empty", LlmReply(text="", finish_reason="length", prompt_tokens=1, completion_tokens=1), "ai_reply_cut_off", None, {}),
     ("not_json", "I think the themes are great.", "ai_reply_not_json",
      exact("The AI reply for {step} was not a single JSON object, so it was rejected. No AI result was saved. Start a new analysis."), {}),
     ("fenced", "```json\n" + VALID_MAP + "\n```", "ai_reply_not_json",
@@ -85,7 +86,7 @@ FIELD = r"[\w\.\[\]]*"
 
 
 def cut_off_matcher(position):
-    limit = 1500 if position == "reduce" else 600
+    limit = 2000 if position == "reduce" else 800
     return exact("The AI reply for {step} was cut off at the output limit of " + str(limit) + " tokens. No AI result was saved. Select fewer responses and start a new analysis.")
 
 
@@ -104,9 +105,9 @@ REDUCE_INVALID = [
     ("reduce_missing_key", '{"themes":[],"suggestions":[]}', invalid(r"a required field \(summary\) was missing")),
     ("reduce_wrong_type", reduce_json(summary=5), invalid(r"summary had the wrong type")),
     ("reduce_empty_summary", reduce_json(summary=""), invalid(FIELD + r"summary was empty")),
-    ("reduce_long_summary", reduce_json(summary="s" * 601), invalid(FIELD + r"summary was longer than 600 characters")),
-    ("reduce_too_many_themes", reduce_json(themes=[theme(title=f"t{i}") for i in range(7)]), invalid(r"themes had 7 items, the maximum is 6")),
-    ("reduce_too_many_suggestions", reduce_json(suggestions=[sug(text=f"s{i}") for i in range(9)]), invalid(r"suggestions had 9 items, the maximum is 8")),
+    ("reduce_long_summary", reduce_json(summary="s" * 401), invalid(FIELD + r"summary was longer than 400 characters")),
+    ("reduce_too_many_themes", reduce_json(themes=[theme(title=f"t{i}") for i in range(6)]), invalid(r"themes had 6 items, the maximum is 5")),
+    ("reduce_too_many_suggestions", reduce_json(suggestions=[sug(text=f"s{i}") for i in range(7)]), invalid(r"suggestions had 7 items, the maximum is 6")),
     ("reduce_theme_no_evidence", reduce_json(themes=[theme(ev=())]), invalid(r"a theme had no supporting responses")),
     ("reduce_label_outside_selection", reduce_json(themes=[theme(ev=("R999",))]), invalid(r"a supporting response label \(R999\) is not in the selection")),
     ("reduce_label_outside_input", reduce_json(themes=[theme(ev=("R3",))]), invalid(r"a supporting response label \(R3\) was not in the input for this step")),
@@ -120,7 +121,7 @@ def cases():
     out = []
     for name, value, code, matcher, details in EXCEPTIONS:
         for pos in POSITIONS:
-            m = cut_off_matcher(pos) if name == "cut_off" else matcher
+            m = cut_off_matcher(pos) if name.startswith("cut_off") else matcher
             out.append(pytest.param(pos, value, code, m, details, id=f"{name}-{pos}"))
     for name, value, matcher in MAP_INVALID:
         for pos in ("first", "middle"):
@@ -150,6 +151,8 @@ def test_adm03_ac6_15_31_ai_failure_has_exact_stored_message_step_details_and_st
     if code != "ai_not_configured":
         want = {"batch": {"kind": "batch", "index": n, "total": N_MAP}, "reduce": {"kind": "merge", "index": None, "total": None}}
         assert err["step"] == want["batch" if pos != "reduce" else "reduce"]
+    if code == "ai_timeout":  # the actual per-call limit: 15 s for a batch, 40 s for the merge
+        details = {**details, "timeout_seconds": 40 if pos == "reduce" else 15}
     for k, v in details.items():
         assert err["details"][k] == v, err["details"]
     assert done["ai"]["progress"]["done"] == n - 1  # a partial result is never presented as complete
@@ -194,3 +197,25 @@ def test_adm03_ac2_complete_only_when_every_call_validated(big, llm):
     done = run(admin, form, ids)
     assert done["ai"]["status"] == "complete" and done["ai"]["progress"]["done"] == done["ai"]["progress"]["total"] == 4
     assert len(llm.calls) == 4
+
+
+def test_adm03_ac2_a_long_valid_reduce_reply_completes_the_analysis(big, llm):
+    admin, form, ids = big
+    long_reply = json.dumps({
+        "summary": "s" * 400,
+        "themes": [{"title": f"Theme {i} " + "t" * 60, "description": "d" * 250, "evidence": ["R1"]} for i in range(5)],
+        "suggestions": [{"text": "x" * 200, "basis": "feedback", "evidence": ["R1"]} for _ in range(6)]})
+    assert len(long_reply) >= 3000
+    llm.script = {4: long_reply}
+    done = wait_done(admin, create(admin, form, ids).json()["id"])
+    assert done["ai"]["status"] == "complete", done["ai"]["error"]
+    assert len(done["ai"]["result"]["themes"]) == 5 and len(done["ai"]["result"]["suggestions"]) == 6
+
+
+def test_adm03_ac31_empty_reply_cut_off_message_is_the_registry_text(big, llm):
+    from feedback_analysis import failures
+    admin, form, ids = big
+    llm.script = {4: LlmReply(text="", finish_reason="length", prompt_tokens=1, completion_tokens=1)}
+    err = wait_done(admin, create(admin, form, ids).json()["id"])["ai"]["error"]
+    assert err["code"] == "ai_reply_cut_off"
+    assert err["message"] == failures.render("ai_reply_cut_off", step="merging themes", max_tokens=2000)

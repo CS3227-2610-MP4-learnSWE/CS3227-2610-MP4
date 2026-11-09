@@ -9,9 +9,9 @@ from adm03_helpers import (POOL, create, expect, get, listing, release, row_coun
                            wait_done)
 
 IN_PROGRESS = re.compile(r"Another analysis started (\d+) seconds ago is still running its AI step\. "
-                         r"A running AI step finishes or fails within 360 seconds\. Wait for it, then generate again\.")
+                         r"A running AI step finishes or fails within 420 seconds\. Wait for it, then generate again\.")
 INTERRUPTED = re.compile(r"The AI step was interrupted: it had been running for (\d+) seconds without finishing "
-                         r"\(the limit is 360 seconds\), probably because the server restarted\. It had finished (\d+) of (\d+) steps\. "
+                         r"\(the limit is 420 seconds\), probably because the server restarted\. It had finished (\d+) of (\d+) steps\. "
                          r"The statistics are unaffected\. Start a new analysis\.")
 
 
@@ -110,17 +110,17 @@ def test_adm03_ac23_create_returns_running_with_progress_and_reads_show_it_advan
     assert done["ai"]["progress"]["done"] == 4 and done["ai"]["status"] == "complete"
 
 
-def test_adm03_ac23_running_over_360_s_reads_as_interrupted_and_a_late_write_does_not_revive_it(admin, llm):
+def test_adm03_ac23_running_over_420_s_reads_as_interrupted_and_a_late_write_does_not_revive_it(admin, llm):
     form, ids = text_form(admin, 3)
     fut, aid = start_blocked(admin, llm, form, ids)
     before = get(admin, aid).json()
-    sql("UPDATE feedback_analyses SET created_at = now() - interval '400 seconds' WHERE id=%s", (aid,))
+    sql("UPDATE feedback_analyses SET created_at = now() - interval '500 seconds' WHERE id=%s", (aid,))
     swept = get(admin, aid).json()
     err = swept["ai"]["error"]
     assert swept["ai"]["status"] == "failed" and err["code"] == "analysis_interrupted" and swept["ai"]["result"] is None
     m = INTERRUPTED.fullmatch(err["message"])
-    assert m and int(m.group(1)) >= 400 and int(m.group(2)) == 0 and int(m.group(3)) == 2, err["message"]
-    assert err["details"]["ran_seconds"] >= 400 and err["details"]["done"] == 0 and err["details"]["total"] == 2
+    assert m and int(m.group(1)) >= 500 and int(m.group(2)) == 0 and int(m.group(3)) == 2, err["message"]
+    assert err["details"]["ran_seconds"] >= 500 and err["details"]["done"] == 0 and err["details"]["total"] == 2
     assert swept["aggregates"] == before["aggregates"]
     release(llm, fut)  # the job completes its calls and attempts its conditional writes
     time.sleep(1.0)
@@ -132,7 +132,7 @@ def test_adm03_ac23_running_over_360_s_reads_as_interrupted_and_a_late_write_doe
 def test_adm03_ac23_sweeping_frees_the_slot_for_a_new_analysis(admin, llm):
     form, ids = text_form(admin, 3)
     fut, aid = start_blocked(admin, llm, form, ids)
-    sql("UPDATE feedback_analyses SET created_at = now() - interval '400 seconds' WHERE id=%s", (aid,))
+    sql("UPDATE feedback_analyses SET created_at = now() - interval '500 seconds' WHERE id=%s", (aid,))
     nxt = create(admin, form, ids)  # POST itself sweeps stale rows first; the gate is still held
     assert nxt.status_code == 201, nxt.text
     llm.gate.set()  # now both jobs run; the first one's late conditional writes must change nothing
