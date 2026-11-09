@@ -8,7 +8,7 @@ import pytest
 import llm_client
 from llm_client import LlmReply
 from adm02_helpers import actor
-from adm03_fixtures import llm  # noqa: F401
+from adm03_fixtures import admin, llm  # noqa: F401
 from adm03_helpers import SEEDED_USERS, cleanup_from, create, get, listing, run, text_form, wait_done
 
 N_MAP = 3  # 65 distinct free-text answers, at most 30 entries per batch

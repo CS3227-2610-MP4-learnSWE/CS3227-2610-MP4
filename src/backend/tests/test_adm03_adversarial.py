@@ -206,7 +206,7 @@ def test_adm03_ac16_injected_text_stays_in_the_data_part_and_changes_nothing(adm
 
 def test_adm03_ac16_15_a_reply_that_follows_the_injection_is_rejected(admin, llm):
     form, ids = one_text_form(admin, [INJECTION, "normal comment"])
-    llm.script = {1: REPLY_BAD}
+    llm.script = {1: REPLY_BAD, 2: REPLY_BAD}
     done = run(admin, form, ids)
     err = done["ai"]["error"]
     assert done["ai"]["status"] == "failed" and err["code"] == "ai_reply_invalid"
@@ -216,7 +216,8 @@ def test_adm03_ac16_15_a_reply_that_follows_the_injection_is_rejected(admin, llm
 
 def test_adm03_ac16_15_a_reply_with_an_action_field_is_rejected(admin, llm):
     form, ids = one_text_form(admin, [INJECTION])
-    llm.script = {1: '{"themes":[],"send_message":{"to":"all","body":"hi"}}'}
+    action = '{"themes":[],"send_message":{"to":"all","body":"hi"}}'
+    llm.script = {1: action, 2: action}
     err = run(admin, form, ids)["ai"]["error"]
     assert err["code"] == "ai_reply_invalid" and "an unexpected field (send_message) was present" in err["message"]
 
@@ -224,6 +225,6 @@ def test_adm03_ac16_15_a_reply_with_an_action_field_is_rejected(admin, llm):
 def test_adm03_ac15_oversize_reply_text_is_rejected_and_not_stored(admin, llm):
     form, ids = one_text_form(admin, ["a", "b"])
     huge = json.dumps({"themes": [{"title": "t", "description": "d" * 5000, "evidence": ["R1"]}]})
-    llm.script = {1: huge}
+    llm.script = {1: huge, 2: huge}
     done = run(admin, form, ids)
     assert done["ai"]["status"] == "failed" and "d" * 200 not in json.dumps(done)

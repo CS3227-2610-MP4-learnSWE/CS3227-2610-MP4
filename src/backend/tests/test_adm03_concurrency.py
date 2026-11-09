@@ -47,7 +47,8 @@ def test_adm03_ac19_same_request_id_later_returns_the_existing_analysis_in_any_s
     calls = len(llm.calls)
     again = create(admin, form, ids, request_id=rid)
     assert again.status_code == 200 and again.json() == done and len(llm.calls) == calls
-    llm.script = {len(llm.calls) + 1: "nonsense"}
+    k = len(llm.calls) + 1
+    llm.script = {k: "nonsense", k + 1: "nonsense"}  # both attempts of the step
     failed = run(admin, form, ids, request_id=(rid2 := uid()))
     assert failed["ai"]["status"] == "failed"
     replay = create(admin, form, ids, request_id=rid2)

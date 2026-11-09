@@ -154,8 +154,9 @@ def test_adm03_ac20_23_statistics_present_and_unchanged_whatever_the_ai_does(adm
         assert live["ai"]["status"] == "running" and live["aggregates"]
         first = release(llm, fut).json()
     else:
-        llm.script = {1: {"never_configured": llm_client.LlmNotConfigured("x"), "timeout": llm_client.LlmTimeout("x"),
-                          "reply_not_json": "not json"}[mode]}
+        mode_value = {"never_configured": llm_client.LlmNotConfigured("x"), "timeout": llm_client.LlmTimeout("x"),
+                          "reply_not_json": "not json"}[mode]
+        llm.script = {1: mode_value, 2: mode_value}
         first = create(admin, form, ids).json()
     final = wait_done(admin, first["id"])
     assert first["aggregates"] and final["aggregates"] == first["aggregates"]

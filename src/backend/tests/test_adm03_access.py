@@ -114,7 +114,8 @@ def test_adm03_ac8_evidence_works_while_the_ai_step_runs_and_after_it_failed(adm
     release(llm, fut)
     wait_done(admin, aid)
     llm.gate = None
-    llm.script = {len(llm.calls) + 1: "nonsense"}
+    k = len(llm.calls) + 1
+    llm.script = {k: "nonsense", k + 1: "nonsense"}  # both attempts of the step
     failed = run(admin, form, ids)
     assert failed["ai"]["status"] == "failed"
     assert call("GET", f"{BASE}/{failed['id']}/responses/R3", admin).status_code == 200
