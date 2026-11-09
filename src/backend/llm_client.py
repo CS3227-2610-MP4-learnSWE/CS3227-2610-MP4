@@ -210,9 +210,12 @@ class SoclaasClient:
             attempt_id = self._reserve()
             try:
                 response = self._http.post(url, headers=headers, json=payload, **extra)
-                if "reasoning_effort" in payload and 400 <= response.status_code < 500 and response.status_code != 429:
-                    # The gateway rejected the optional field (some models do): retry this attempt once without it.
+                if "reasoning_effort" in payload and response.status_code in (400, 422):
+                    # The gateway rejected the optional field (some models do): retry once without it, accounted
+                    # like any other attempt (own reservation).
+                    self._finish(attempt_id, "other_failure", response)
                     payload = {k: v for k, v in payload.items() if k != "reasoning_effort"}
+                    attempt_id = self._reserve()
                     response = self._http.post(url, headers=headers, json=payload, **extra)
             except httpx.TimeoutException:
                 self._finish(attempt_id, "other_failure")

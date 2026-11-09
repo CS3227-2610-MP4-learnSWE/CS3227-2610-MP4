@@ -309,3 +309,6 @@
 ## 2026-11-09: developer on ADM-03, fifth pass (job-level retry)
 - `jobs._run_step` is the one place that runs a map or reduce step with the retry rule (RETRYABLE codes in failures.py, one more attempt, none after RETRY_CUTOFF_SECONDS 600); `failures.after_two_attempts` adds the suffix and details.attempts/first_attempt_code; reduce prompt asks for a summary of at most 350 characters. Spec/plan/DeveloperGuide updated (22 calls, 13 analyses/day, 721 s < 780 s).
 - Checks: ADM-02/04 192 passed, tsc clean. Not run per instruction: `-k adm03`, Playwright. Live end-to-end (3 calls, 44.1 s): map1 16.5 s (644/1111 tokens, 961 reasoning), map2 5.0 s (350/343, 230), reduce 22.7 s (461/1473, 949), all finish stop and valid on attempt 1, no retry fired; injection ignored (no R999).
+
+## 2026-11-09: developer on ADM-03, verifier round 3 fix
+- `jobs._run_step` checks the job's age before every attempt (clock seam: `jobs._now()`, monkeypatchable); at `config.AI_START_CUTOFF_SECONDS` (600, replaces RETRY_CUTOFF_SECONDS) the step fails with `ai_time_limit` (registry, spec, details elapsed_seconds/limit_seconds/step, not retried; if a retry is blocked the first failure stands). Job ends by 721 s < 780 s. `SoclaasClient._send`: reasoning_effort fallback only on 400/422, with its own `_reserve`. Checks: ADM-02/04 + stu03 client/companion 334 passed, tsc clean.

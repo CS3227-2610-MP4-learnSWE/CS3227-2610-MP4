@@ -27,6 +27,7 @@ MESSAGES = {
     "feedback_response_not_found": "This response was not found. It may already have been deleted, or it does not belong to this form.",
     "internal_error_response_delete": "An unexpected server error occurred while deleting the response. Nothing was confirmed as deleted. Reference {ref} identifies it in the server logs.",
     "ai_responses_deleted": "The AI step stopped while {step} because {k} of the {n} selected responses were deleted after the analysis started. The statistics remain correct for the responses present when the analysis was created. Start a new analysis to analyse the remaining responses.",
+    "ai_time_limit": "The AI step stopped before {step} because the analysis had already run {s} seconds, close to the {limit} second limit. The statistics remain correct. Start a new analysis, or select fewer responses.",
     "ai_timeout": "The AI service did not answer within {t} seconds (after up to 2 attempts) while processing {step}. " + _UNAFFECTED + " Start a new analysis to run the AI part again.",
     "rate_limited_minute": "The AI limit of {limit} requests per minute was reached while processing {step}. Try again in {n} seconds.",
     "rate_limited_day": "The daily AI limit of {limit} requests was reached while processing {step}. Try again in {n} seconds.",
@@ -156,6 +157,11 @@ def after_two_attempts(record, first_code):
     """The second attempt's failure, marked as such: message suffix, details.attempts and details.first_attempt_code."""
     return FailureRecord(record.code, f"{record.message} The step failed after 2 attempts.", record.step,
                          {**record.details, "attempts": 2, "first_attempt_code": first_code})
+
+
+def time_limit(step_, elapsed, limit):
+    return _record("ai_time_limit", step_, {"elapsed_seconds": elapsed, "limit_seconds": limit, "step": step_},
+                   s=elapsed, limit=limit)
 
 
 def cut_off(step_, max_tokens, empty=False):

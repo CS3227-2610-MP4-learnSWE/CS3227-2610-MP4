@@ -81,13 +81,22 @@ def _call(llm, messages, max_tokens, admin_id, step, limits, timeout_seconds=Non
     return reply.text, None
 
 
+def _now():
+    """The job's clock (seconds, monotonic). Tests replace this function to drive the time limit."""
+    return time.monotonic()
+
+
 def _run_step(llm, messages, parse, max_tokens, admin_id, step, limits, started, *call_args):
     """One map or reduce step: (parsed value, None) or (None, failure record).
 
-    A model-output failure (cut off, not JSON, schema-invalid) gets exactly one more attempt of the same step while
-    the job is younger than RETRY_CUTOFF_SECONDS; every other failure is final. Two failures store the second one.
+    Before EVERY attempt the job checks its age: from AI_START_CUTOFF_SECONDS on no call starts and the step fails with
+    ai_time_limit. A model-output failure (cut off, not JSON, schema-invalid) gets exactly one more attempt of the same
+    step; every other failure is final. Two failures store the second one.
     """
     def attempt():
+        elapsed = int(_now() - started)
+        if elapsed >= config.AI_START_CUTOFF_SECONDS:
+            return None, failures.time_limit(step, elapsed, config.AI_START_CUTOFF_SECONDS)
         text, record = _call(llm, messages, max_tokens, admin_id, step, limits, *call_args)
         if record is not None:
             return None, record
@@ -97,10 +106,14 @@ def _run_step(llm, messages, parse, max_tokens, admin_id, step, limits, started,
             return None, failures.from_invalid_reply(exc, step)
 
     value, record = attempt()
-    if record is None or record.code not in failures.RETRYABLE or time.monotonic() - started >= config.RETRY_CUTOFF_SECONDS:
+    if record is None or record.code not in failures.RETRYABLE:
         return value, record
     value, again = attempt()
-    return (value, None) if again is None else (None, failures.after_two_attempts(again, record.code))
+    if again is None:
+        return value, None
+    if again.code == "ai_time_limit":  # the first failure stands: no second attempt was made
+        return None, record
+    return None, failures.after_two_attempts(again, record.code)
 
 
 def _missing(ids):
@@ -110,7 +123,7 @@ def _missing(ids):
 
 
 def _run(analysis_id, llm, progress):
-    started = time.monotonic()
+    started = _now()
     loaded = _load(analysis_id)
     if loaded is None:
         return

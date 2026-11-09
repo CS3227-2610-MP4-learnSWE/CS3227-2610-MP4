@@ -19,4 +19,4 @@ HISTORY_MAX_LIMIT = 50
 USAGE_FEATURE = "ADM-03"
 REDUCE_MAX_REPLY_CHARS = 8000  # the shared client cuts replies at 2000 characters by default; the reduce JSON can be longer
 REASONING_EFFORT = "low"  # live test: roughly halves hidden reasoning tokens and latency
-RETRY_CUTOFF_SECONDS = 600  # no second attempt once the job has run this long (worst case 600 + 121 = 721 s < 780 s)
+AI_START_CUTOFF_SECONDS = 600  # no AI call starts after this; a started call ends within 121 s, so the job ends by 721 s < 780 s
