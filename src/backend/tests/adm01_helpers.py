@@ -1,12 +1,10 @@
-"""ADM-01 independent helpers. Contract only: workflow/specs/ADM-01/plan.md (Phase A).
+"""ADM-01 independent helpers. Contract only: workflow/specs/ADM-01/plan.md (decision 7 fake seam).
 
-No test here ever reaches the SoC LLM: `BlockedAiClient` replaces the shared client seam
-(`feature_analytics.grading.get_grader_client`, named in plan.md "Reused shared modules") and
-every call to it fails after it is recorded.
-
-TODO(phase B): once plan.md "Decisions" records the shared client accessor and the fake's call
-signature (PENDING CHECK 5), replace `BlockedAiClient` with the ADM-03 style fake used by the
-quality/grading tests. Nothing in this file depends on the hook internals.
+No test here ever reaches the SoC LLM: `BlockedAiClient` is installed through
+`app.dependency_overrides[llm_client.get_llm_client]` (the pattern of adm03_helpers.install) and the
+background job start `feature_analytics.jobs.start` is a no-op, so a started run stays `queued`.
+Any call that still reaches the client is recorded and fails. Tests that need a grading run to
+really execute use `adm01_grading_helpers.FakeGrader` instead.
 """
 import threading
 from datetime import date, datetime, timedelta, timezone
@@ -165,14 +163,17 @@ class BlockedAiClient:
 
 
 def install_ai_block(monkeypatch, client):
-    """Route the grader seam to `client` and make the background run a no-op.
+    """Route the shared client dependency to `client` and make the background run a no-op.
 
-    Both seams are named by the plan (`grading.get_grader_client`, `grading.run_grading(run_id)`).
-    The no-op keeps a started run `queued`, so an active run stays active for the next request.
-    If the route bound `run_grading` before this patch, the blocked client still catches the call.
+    Seams named by the plan: `app.dependency_overrides[llm_client.get_llm_client]` (decision 7) and
+    `jobs.start(run_id, llm, admin_id)` (run execution). The no-op keeps a started run `queued`, so
+    an active run stays active for the next request. If the route bound `start` by name before this
+    patch, the blocked client still catches the call and the run fails.
     """
-    from feature_analytics import grading
+    import llm_client
+    from feature_analytics import jobs
+    from main import app
 
-    monkeypatch.setattr(grading, "get_grader_client", lambda *a, **k: client)
-    monkeypatch.setattr(grading, "run_grading", lambda *a, **k: None)
+    monkeypatch.setitem(app.dependency_overrides, llm_client.get_llm_client, lambda: client)
+    monkeypatch.setattr(jobs, "start", lambda *a, **k: None)
     return client

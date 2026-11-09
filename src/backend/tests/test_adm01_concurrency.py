@@ -164,7 +164,7 @@ def attempt(student):
 def chat(student, ref, **kw):
     from feature_analytics import recording
 
-    return recording.record_chat_request_received(user_id=str(student), role="student",
+    return recording.record_chat_request_received(user_id=str(student),
                                                   activity_type="practice_attempt", activity_ref=ref, **kw)
 
 

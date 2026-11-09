@@ -181,7 +181,8 @@ def test_adm01_ac39_the_published_api_declares_no_user_selecting_parameter(no_ai
 # ---------------------------------------------------------------- hooks: the user id is an explicit keyword only
 
 HOOKS = {
-    "record_chat_request_received": ([], {"user_id", "role", "activity_type", "activity_ref", "received_at"}),
+    # plan decision 4: no `role` parameter (every recorded chat request is a student request)
+    "record_chat_request_received": ([], {"user_id", "activity_type", "activity_ref", "received_at"}),
     "record_chat_request_outcome": (["request_id"], {"success", "grading", "completed_at"}),
     "record_practice_attempt_started": ([], {"user_id", "practice_set_id", "attempt_ref", "started_at"}),
     "record_practice_attempt_submitted": ([], {"attempt_ref", "submitted_at"}),
@@ -250,9 +251,9 @@ def test_adm01_ac39_hooks_write_exactly_the_user_id_they_are_given(tracked_users
     ref_a, ref_b = "att-" + uid(), "att-" + uid()
     recording.record_practice_attempt_started(user_id=str(a), practice_set_id="s", attempt_ref=ref_a)
     recording.record_practice_attempt_started(user_id=str(b), practice_set_id="s", attempt_ref=ref_b)
-    rid_a = recording.record_chat_request_received(user_id=str(a), role="student",
+    rid_a = recording.record_chat_request_received(user_id=str(a),
                                                    activity_type="practice_attempt", activity_ref=ref_a)
-    rid_b = recording.record_chat_request_received(user_id=str(b), role="student",
+    rid_b = recording.record_chat_request_received(user_id=str(b),
                                                    activity_type="practice_attempt", activity_ref=ref_b)
     gid = recording.record_generation_accepted(workflow="mcq_batch", user_id=str(t))
     assert sql("SELECT user_id, role FROM analytics_chat_request WHERE id=%s", (rid_a,)) == [(str(a), "student")]
@@ -267,8 +268,8 @@ def test_adm01_ac39_an_outcome_changes_only_the_request_it_names(tracked_users):
 
     a, b = actor("student"), actor("student")
     tracked_users.extend([a, b])
-    rid_a = recording.record_chat_request_received(user_id=str(a), role="student")
-    rid_b = recording.record_chat_request_received(user_id=str(b), role="student")
+    rid_a = recording.record_chat_request_received(user_id=str(a))
+    rid_b = recording.record_chat_request_received(user_id=str(b))
     recording.record_chat_request_outcome(rid_a, success=True)
     assert sql("SELECT outcome FROM analytics_chat_request WHERE id=%s", (rid_a,)) == [("success",)]
     assert sql("SELECT outcome, completed_at FROM analytics_chat_request WHERE id=%s", (rid_b,)) == [("pending", None)]
@@ -288,7 +289,7 @@ def test_adm01_ac39_a_submission_closes_only_the_owners_session_and_attempt(trac
     recording.record_practice_attempt_started(user_id=str(a), practice_set_id="s", attempt_ref=shared)
     recording.record_practice_attempt_started(user_id=str(b), practice_set_id="s", attempt_ref=own_b)
     for user in (a, b):  # b's activity_ref text collides with a's attempt reference
-        recording.record_chat_request_received(user_id=str(user), role="student",
+        recording.record_chat_request_received(user_id=str(user),
                                                activity_type="practice_attempt", activity_ref=shared)
     recording.record_practice_attempt_submitted(attempt_ref=shared)
     assert sql("SELECT submitted_at IS NOT NULL FROM analytics_practice_attempt WHERE attempt_ref=%s", (shared,)) == [(True,)]
