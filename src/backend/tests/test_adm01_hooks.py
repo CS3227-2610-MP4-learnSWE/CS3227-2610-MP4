@@ -19,7 +19,7 @@ import time
 import pytest
 
 import llm_client
-from adm01_fixtures import analytics_admin, tracked_users  # noqa: F401
+from adm01_fixtures import privacy_scanner, analytics_admin, tracked_users  # noqa: F401
 from adm01_tea02 import (ROUTE, TEACHER, WORKFLOWS, cleanup, generate, max_attempt_id, mcq_with, new_attempts,  # noqa: F401
                          new_items, prepare, tea, upload)
 from adm02_helpers import uid
@@ -177,7 +177,7 @@ def test_adm01_ac4_a_successful_practice_reply_stores_one_redacted_grading_item_
     plain = recording.record_chat_request_received(user_id=str(s))
     failed = recording.record_chat_request_received(user_id=str(s), activity_type="practice_attempt", activity_ref="att-" + uid())
     for rid, ok in ((practice, True), (lesson, True), (plain, True), (failed, False)):
-        recording.record_chat_request_outcome(rid, success=ok, grading=content)
+        recording.record_chat_request_outcome(rid, success=ok, grading=content, source="student_hint")
     items = chat_items(s)
     assert len(items) == 1
     _, workflow, source_type, req, resp, ctx, status = items[0]
@@ -444,7 +444,10 @@ def test_adm01_ac15_ac16_a_successful_generation_is_one_attempt_recorded_after_t
     assert duration >= 250  # the accepted timestamp was taken before the call, so the duration covers it
     (item,) = new_items(since)
     assert item[1] == workflow
-    assert item[3]  # the generated text is stored for grading (bounded and redacted)
+    if workflow == "mcq_batch":
+        assert all(value is None for value in item[2:5])
+    else:
+        assert item[3]  # eligible study notes retain only sanitised text
 
 
 FAILURES = [("LlmTimeout", 504), ("LlmUpstreamError", 502), ("LlmNotConfigured", 503), ("LlmBadResponse", 502),

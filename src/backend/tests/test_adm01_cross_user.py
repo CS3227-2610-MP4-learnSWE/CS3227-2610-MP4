@@ -19,7 +19,7 @@ import uuid
 
 import pytest
 
-from adm01_fixtures import analytics_admin, analytics_student, analytics_teacher, no_ai, tracked_users  # noqa: F401
+from adm01_fixtures import privacy_scanner, analytics_admin, analytics_student, analytics_teacher, no_ai, tracked_users  # noqa: F401
 from adm01_helpers import (GENERATION, QUALITY, RUNS, USAGE, day, run_count, seed_generation_response,
                            seed_student_response, send, url)
 from adm02_helpers import actor, uid
@@ -126,7 +126,7 @@ def test_adm01_ac11_the_seeded_responses_are_visible_as_rows_but_without_their_t
     teacher = send(analytics_admin, "quality", workflow="teacher_lesson_planning", limit=100,
                    period_start=day(0), period_end=day(0)).json()
     assert student["items"]["total"] >= 2 and teacher["items"]["total"] >= 1
-    assert all(i["status"] in ("pending", "graded", "grading_failed", "content_expired")
+    assert all(i["status"] in ("pending", "graded", "grading_failed", "content_expired", "privacy_blocked")
                for i in student["items"]["rows"] + teacher["items"]["rows"])
     for row in student["items"]["rows"] + teacher["items"]["rows"]:
         assert not FORBIDDEN_KEYS & set(row)
@@ -183,11 +183,11 @@ def test_adm01_ac39_the_published_api_declares_no_user_selecting_parameter(no_ai
 HOOKS = {
     # plan decision 4: no `role` parameter (every recorded chat request is a student request)
     "record_chat_request_received": ([], {"user_id", "activity_type", "activity_ref", "received_at"}),
-    "record_chat_request_outcome": (["request_id"], {"success", "grading", "completed_at"}),
+    "record_chat_request_outcome": (["request_id"], {"success", "grading", "completed_at", "source", "identity_values"}),
     "record_practice_attempt_started": ([], {"user_id", "practice_set_id", "attempt_ref", "started_at"}),
     "record_practice_attempt_submitted": ([], {"attempt_ref", "submitted_at"}),
     "record_generation_accepted": ([], {"workflow", "user_id", "accepted_at"}),
-    "record_generation_outcome": (["attempt_id"], {"success", "grading", "completed_at"}),
+    "record_generation_outcome": (["attempt_id"], {"success", "grading", "completed_at", "source", "identity_values"}),
 }
 
 

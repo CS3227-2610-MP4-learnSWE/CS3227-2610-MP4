@@ -10,7 +10,7 @@ import re
 
 import pytest
 
-from adm01_fixtures import analytics_admin, no_ai, recording_start, tracked_users  # noqa: F401
+from adm01_fixtures import privacy_scanner, analytics_admin, no_ai, recording_start, tracked_users  # noqa: F401
 from adm01_grading_helpers import (attempt_row, bulk_users, chat_item, chat_row, drop_users, get_json, new_window,
                                    set_name)
 from adm01_helpers import USAGE, day, send, url, wipe_user_rows

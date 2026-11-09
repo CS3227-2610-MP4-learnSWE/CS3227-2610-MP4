@@ -8,7 +8,7 @@ match the shared admin dependency exactly (this file only checks status, no-stor
 """
 import pytest
 
-from adm01_fixtures import analytics_admin, analytics_student, analytics_teacher, disabled_admin, no_ai  # noqa: F401
+from adm01_fixtures import privacy_scanner, analytics_admin, analytics_student, analytics_teacher, disabled_admin, no_ai  # noqa: F401
 from adm01_helpers import (GENERATION, QUALITY, RUN_KEYS, RUNS, USAGE, day, error_body, run_count, send, url,
                            wipe_runs)
 from auth_helpers import call

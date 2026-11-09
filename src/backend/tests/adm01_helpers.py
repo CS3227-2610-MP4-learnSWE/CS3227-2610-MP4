@@ -116,6 +116,8 @@ def seed_student_response(user_id, *, request_text, response_text, context_text=
                "request_text, response_text, context_text, status) VALUES "
                "('student_exercise','chat_request',%s,now(),%s,%s,%s,%s,%s) RETURNING id",
                (rid, duration_ms, request_text, response_text, context_text, status))[0][0]
+    sql("UPDATE analytics_grading_item SET privacy_policy_version=%s WHERE id=%s",
+        ("adm01-local-dlp-v1", item))
     return rid, item
 
 
@@ -129,6 +131,8 @@ def seed_generation_response(user_id, *, response_text, request_text="Generate",
                "received_at, duration_ms, request_text, response_text, context_text, status) VALUES "
                "('teacher_lesson_planning','generation_attempt',%s,%s,now(),%s,%s,%s,%s,'pending') RETURNING id",
                (aid, generation_workflow, duration_ms, request_text, response_text, context_text))[0][0]
+    sql("UPDATE analytics_grading_item SET privacy_policy_version=%s WHERE id=%s",
+        ("adm01-local-dlp-v1", item))
     return aid, item
 
 

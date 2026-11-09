@@ -10,7 +10,7 @@ from datetime import timedelta
 import pytest
 
 import llm_client
-from adm01_fixtures import analytics_admin, no_ai, recording_start, tracked_users  # noqa: F401
+from adm01_fixtures import privacy_scanner, analytics_admin, no_ai, recording_start, tracked_users  # noqa: F401
 from adm01_grading_helpers import gen_row, get_json, new_window
 from adm01_helpers import GENERATION, url
 from adm01_tea02 import WORKFLOWS, generate, tea, upload  # noqa: F401
@@ -247,7 +247,7 @@ def test_adm01_ac16_an_outcome_for_no_attempt_is_a_no_op(tracked_users):
     assert sql("SELECT count(*) FROM analytics_generation_attempt")[0][0] == before
 
 
-def test_adm01_ac16_a_successful_outcome_with_content_stores_one_redacted_bounded_grading_item(tracked_users):
+def test_adm01_ac16_an_oversize_success_keeps_metrics_but_excludes_grading_text(tracked_users):
     from feature_analytics import recording
     from feature_analytics.grading_text import GradingContent
 
@@ -257,15 +257,14 @@ def test_adm01_ac16_a_successful_outcome_with_content_stores_one_redacted_bounde
     content = GradingContent(request_text="Contact owner@example.com " + token + " " + "word " * 1000,
                              response_text="Reply " + "text " * 3000, context_text="Source " + "line " * 2000)
     aid = recording.record_generation_accepted(workflow="study_notes", user_id=str(t), accepted_at=w.at(1))
-    recording.record_generation_outcome(aid, success=True, grading=content, completed_at=w.at(1, 2))
+    recording.record_generation_outcome(aid, success=True, grading=content, completed_at=w.at(1, 2), source="teacher_notes")
     items = sql("SELECT workflow, source_type, generation_workflow, status, request_text, response_text, context_text, "
                 "duration_ms FROM analytics_grading_item WHERE source_type='generation_attempt' AND source_id=%s", (aid,))
     assert len(items) == 1
     workflow, source_type, gen_wf, status, req, resp, ctx, duration = items[0]
     assert (workflow, source_type, gen_wf, status) == ("teacher_lesson_planning", "generation_attempt",
-                                                       "study_notes", "pending")
-    assert "owner@example.com" not in req and token not in req and "[redacted]" in req
-    assert len(req) <= 2000 and len(resp) <= 6000 and len(ctx) <= 3000
+                                                       "study_notes", "privacy_blocked")
+    assert req is None and resp is None and ctx is None
     assert duration == 2000
 
 

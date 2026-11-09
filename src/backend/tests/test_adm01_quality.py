@@ -13,7 +13,7 @@ from datetime import timedelta
 import pytest
 
 import llm_client
-from adm01_fixtures import analytics_admin, grader, no_ai, recording_start, tracked_users  # noqa: F401
+from adm01_fixtures import privacy_scanner, analytics_admin, grader, no_ai, recording_start, tracked_users  # noqa: F401
 from adm01_grading_helpers import (DIMS, NO_CONTEXT_REASONS, FakeGrader, attempt_row, chat_item, chat_row, exc,
                                    gen_item, gen_row, get_json, give_grades, grader_json, grades_of, install_grader,
                                    item_row, new_window, quality, run_to_end, session_row, start_run, wait_run)
@@ -824,7 +824,7 @@ def test_adm01_ac21_ac23_invalid_output_marks_only_that_item_grading_failed_and_
     bad_row = item_row(newest)
     assert bad_row["status"] == "grading_failed" and bad_row["failure_code"] == "invalid_ai_output"
     assert grades_of(newest) == {}  # nothing from invalid output is stored
-    assert bad_row["response_text"] is not None  # the text stays so a later run can retry
+    assert bad_row["response_text"] is not None  # already sanitised text stays for the authorised retry
     assert item_row(older)["status"] == "graded" and len(grades_of(older)) == 4  # the run went on
     assert len(grader.calls) == 2  # exactly one call per item, no retry of the invalid one
 
@@ -858,7 +858,7 @@ def test_adm01_ac21_boundary_scores_and_reason_lengths_are_accepted(analytics_ad
     grader.script = {1: grader_json({"relevance": 1, "factual_accuracy": 5, "clarity": 2, "safety": 3}, reasons)}
     run_to_end(analytics_admin, w)
     stored = grades_of(item)
-    assert stored["relevance"] == ("graded", 1, "x") and stored["factual_accuracy"][:2] == ("graded", 5)
+    assert stored["relevance"] == ("graded", 1, "x") and stored["factual_accuracy"][:2] == ("unassessable", None)
     assert stored["clarity"][1] == 2 and stored["safety"][1] == 3
 
 
@@ -895,7 +895,6 @@ def graded_with_reason(admin, grader, tracked, reason, *, response=QUOTED, reque
     ("response_longer_quote", "Quoting " + QUOTED[:60]),
     ("uppercase", "IT SAYS " + QUOTED[4:34].upper()),
     ("request_30_chars", "The asker wrote " + REQUEST_TEXT[7:37]),
-    ("context_30_chars", "Context reads " + CONTEXT_TEXT[4:34]),
 ])
 def test_adm01_ac22_a_reason_quoting_30_or_more_characters_makes_the_item_grading_failed(label, reason, analytics_admin, grader, tracked_users):
     item = graded_with_reason(analytics_admin, grader, tracked_users, reason)
@@ -948,9 +947,14 @@ def test_adm01_ac24_an_item_without_authorised_context_cannot_have_a_factual_acc
 
 @pytest.mark.parametrize("context", [None, "Source file text"])
 def test_adm01_ac24_every_mcq_batch_item_is_unassessable_for_factual_accuracy(context, analytics_admin, grader, tracked_users):
-    state, score, reason = factual_after_run(analytics_admin, grader, tracked_users, workflow="teacher_lesson_planning",
-                                             context=context, generation_workflow="mcq_batch")
-    assert (state, score) == ("unassessable", None) and reason in NO_CONTEXT_REASONS
+    w = new_window()
+    teacher = actor("teacher")
+    tracked_users.append(teacher)
+    _, item = gen_item(teacher, w.at(1), generation_workflow="mcq_batch", context_text=context)
+    run_to_end(analytics_admin, w, "teacher_lesson_planning")
+    assert grader.calls == []
+    assert grades_of(item) == {}
+    assert item_row(item)["status"] == "privacy_blocked"
 
 
 @pytest.mark.parametrize("workflow,generation_workflow", [("student_exercise", None), ("teacher_lesson_planning", "study_notes")])
@@ -1151,16 +1155,16 @@ def test_adm01_ac23_the_hooks_redact_emails_and_token_like_strings_before_anythi
     token, secret_key = "ghp_" + "Ab3dE9" * 8, "sk-" + "Zy1" * 20
     rid = recording.record_chat_request_received(user_id=str(user), activity_type="practice_attempt",
                                                  activity_ref="att-" + uid(), received_at=w.at(1))
-    recording.record_chat_request_outcome(rid, success=True, completed_at=w.at(1, 2), grading=GradingContent(
+    recording.record_chat_request_outcome(rid, success=True, completed_at=w.at(1, 2), source="student_hint", grading=GradingContent(
         request_text=f"Mail me at pupil@example.com, my token is {token}",
         response_text=f"Use key {secret_key} or write to teacher.name@school.edu.sg",
         context_text="Question stem about loops"))
     stored = sql("SELECT request_text, response_text, context_text FROM analytics_grading_item "
                  "WHERE source_type='chat_request' AND source_id=%s", (rid,))[0]
-    joined = " ".join(stored)
+    joined = " ".join(t or "" for t in stored)
     for secret in ("pupil@example.com", "teacher.name@school.edu.sg", token, secret_key):
         assert secret not in joined, secret
-    assert "[redacted]" in stored[0] and "[redacted]" in stored[1]
+    assert "[REDACTED]" in stored[0] and "[REDACTED]" in stored[1]
     run_to_end(analytics_admin, w)
     (c,) = grader.calls
     for secret in ("pupil@example.com", "teacher.name@school.edu.sg", token, secret_key):

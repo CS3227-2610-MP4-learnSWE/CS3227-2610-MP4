@@ -6,6 +6,14 @@ from adm02_helpers import actor
 from auth_helpers import sql
 
 
+@pytest.fixture(autouse=True)
+def privacy_scanner(monkeypatch):
+    """Old analytics contracts use a healthy scanner seam; gate/model tests own their scanner."""
+    from feature_analytics import privacy
+    monkeypatch.setattr(privacy, "privacy_ready", lambda: True)
+    monkeypatch.setattr(privacy, "scan_person_spans", lambda text: ())
+
+
 @pytest.fixture(scope="module")
 def analytics_admin():
     return actor("admin")

@@ -14,7 +14,7 @@ from concurrent.futures import ThreadPoolExecutor, TimeoutError
 import psycopg
 import pytest
 
-from adm01_fixtures import analytics_admin, no_ai, tracked_users  # noqa: F401
+from adm01_fixtures import privacy_scanner, analytics_admin, no_ai, tracked_users  # noqa: F401
 from adm01_helpers import (RUN_KEYS, active_run_count, day, error_body, run_count, seed_student_response, send)
 from adm02_helpers import actor, race, uid
 from auth_helpers import sql

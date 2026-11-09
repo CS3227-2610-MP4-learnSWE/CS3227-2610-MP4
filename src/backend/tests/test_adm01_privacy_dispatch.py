@@ -70,7 +70,7 @@ def test_adm01_privacy_dispatch_rescans_and_sends_exact_sanitised_payload(
     sent = grader.calls[0]
     assert sent.block("request") == "Please give a hint."
     assert sent.block("response") == "[REDACTED] considers loops."
-    assert sent.block("context") in (None, "")
+    assert sent.block("context") == "no authorised context"
     assert "Alice" not in sent.all_text
     assert "[REDACTED] considers loops." in seen
     assert item_row(item)["request_text"] is None
@@ -124,3 +124,27 @@ def test_adm01_privacy_scanner_failure_midrun_purges_current_item_without_ai(
     assert row["status"] == "privacy_blocked"
     assert all(row[key] is None for key in ("request_text", "response_text", "context_text"))
     assert grader.calls == []
+
+
+def test_adm01_privacy_midrun_failure_preserves_prior_grade_and_untouched_pending_item(
+        analytics_admin, grader, tracked_users, ready_scanner, monkeypatch):
+    win = new_window()
+    untouched = pending(tracked_users, win, response_text="Untouched response.")
+    current = pending(tracked_users, win, response_text="Second scanner fails.")
+    first = pending(tracked_users, win, response_text="First accepted response.")
+
+    def scan(text):
+        if text == "Second scanner fails.":
+            raise RuntimeError("scanner processing failure")
+        return ()
+
+    monkeypatch.setattr(privacy, "scan_person_spans", scan)
+    result = run_to_end(analytics_admin, win)
+    assert (result["status"], result["failure_code"]) == ("failed", "privacy_scanner_unavailable")
+    assert result["items_graded"] == 1
+    assert len(grader.calls) == 1
+    assert item_row(first)["status"] == "graded" and len(grades_of(first)) == 4
+    assert item_row(current)["status"] == "privacy_blocked"
+    assert item_row(current)["response_text"] is None
+    assert item_row(untouched)["status"] == "pending"
+    assert item_row(untouched)["response_text"] == "Untouched response."

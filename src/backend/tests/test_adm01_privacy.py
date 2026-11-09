@@ -58,6 +58,14 @@ def test_adm01_privacy_identity_normalisation_and_unrelated_name(scanner):
     assert "ＩＳＡＡＣ" not in result.content.response_text
 
 
+@pytest.mark.parametrize("text,secret", [("my password is abc", "abc"), ("API key is q", "q")])
+def test_adm01_privacy_short_natural_language_labelled_credentials_are_removed(scanner, text, secret):
+    result = prepare(response=text)
+    assert result.state == "eligible"
+    assert "[REDACTED]" in result.content.response_text
+    assert secret not in result.content.response_text.split()
+
+
 @pytest.mark.parametrize("source", ["student_explanation", "teacher_mcq", "legacy"])
 def test_adm01_privacy_excluded_sources_are_never_scanned(scanner, source):
     blocked(prepare(source=source), "privacy_source_excluded")
@@ -67,7 +75,7 @@ def test_adm01_privacy_excluded_sources_are_never_scanned(scanner, source):
 @pytest.mark.parametrize("marker", ["correct answer", "CoRrEcT   ChOiCe", "answer key",
                                         "solution", "explanation:"])
 def test_adm01_privacy_solution_markers_block_whole_candidate(scanner, marker):
-    blocked(prepare(response=f"The {marker} is the second option."), "privacy_source_excluded")
+    blocked(prepare(response=f"The {marker} is the second option."), "privacy_input_unsupported")
 
 
 def test_adm01_privacy_context_is_excluded_and_safe_text_is_preserved(scanner):
@@ -142,6 +150,10 @@ def test_adm01_privacy_grade_reasons_reject_detected_spans_without_partial_redac
 
 def test_adm01_privacy_safe_grade_reasons_pass(scanner):
     assert privacy.validate_grader_privacy(reasons=("The response is clear.",)) is True
+
+
+def test_adm01_privacy_grade_reason_with_solution_marker_is_rejected(scanner):
+    assert privacy.validate_grader_privacy(reasons=("The correct answer is B.",)) is False
 
 
 def test_adm01_privacy_strict_setting_blocks_even_a_healthy_scanner(scanner, monkeypatch):
