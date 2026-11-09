@@ -65,9 +65,19 @@ function TeacherFeedbackIndex({
   );
 }
 
+/** True once the user was signed in during this visit, so a mid-visit expiry is left to AuthContext's redirect. */
+function useWasAuthenticated() {
+  const { status } = useAuth();
+  const was = useRef(false);
+  if (status === "authenticated") was.current = true;
+  return was.current;
+}
+
 function LiveFeedback({ admin = false }: { admin?: boolean }) {
   const { status } = useAuth();
-  if (status !== "authenticated") return <Navigate to="/login" replace />;
+  const was = useWasAuthenticated();
+  if (status === "anonymous" && !was) return <Navigate to="/login" replace />;
+  if (status !== "authenticated") return null;
   return admin ? <AdminFeedback /> : <RecipientFeedback />;
 }
 
@@ -77,10 +87,8 @@ function LiveFeedback({ admin = false }: { admin?: boolean }) {
  */
 function LiveAnalysis({ children }: { children: ReactNode }) {
   const { status } = useAuth();
-  const wasAuthenticated = useRef(false);
-  if (status === "authenticated") wasAuthenticated.current = true;
-  if (status === "anonymous" && !wasAuthenticated.current)
-    return <Navigate to="/login" replace />;
+  const was = useWasAuthenticated();
+  if (status === "anonymous" && !was) return <Navigate to="/login" replace />;
   return (
     <Suspense fallback={<p role="status">Loading�</p>}>{children}</Suspense>
   );

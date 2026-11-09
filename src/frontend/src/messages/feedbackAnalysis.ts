@@ -80,3 +80,20 @@ export const stepText = (step: Step | null) =>
       : step.kind === "merge"
         ? "merging themes"
         : "starting";
+
+export const RESPONSE_NOT_FOUND =
+  "This response was not found. It may already have been deleted, or it does not belong to this form.";
+export const RESPONSE_DELETED_STATUS =
+  "Response deleted. The form, the respondent's account and stored analyses were not changed. The respondent can submit again only if the form is open.";
+
+export function deleteResponseMessage(error: unknown): string {
+  const e = asApiError(error);
+  if (e.code === "timeout")
+    return "The server did not answer within 15 seconds while deleting the response. It may or may not be deleted. Press Delete permanently again; if it was already deleted you will be told so.";
+  if (e.status === 0 && e.code === "network")
+    return "Could not reach the server while deleting the response. It was not confirmed as deleted. Press Delete permanently to try again.";
+  if (e.status === 404) return RESPONSE_NOT_FOUND;
+  if (e.status === 403)
+    return "You do not have permission to delete feedback responses. Only admin accounts can.";
+  return failureMessage(e, "deleting the response");
+}

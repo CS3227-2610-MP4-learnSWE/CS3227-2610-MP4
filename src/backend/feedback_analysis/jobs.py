@@ -3,7 +3,7 @@ import logging
 import threading
 from uuid import UUID
 
-from sqlalchemy import select, update
+from sqlalchemy import func, select, update
 
 from auth.db import open_session
 from feedback_models import FeedbackResponse
@@ -59,16 +59,24 @@ def run_job(analysis_id, llm=None):
             log.error("analysis %s could not store its failure, class=%s", analysis_id, type(exc).__name__)
 
 
-def _call(llm, messages, max_tokens, admin_id, step, limits):
+def _call(llm, messages, max_tokens, admin_id, step, limits, timeout_seconds=None):
     """(reply text, None) or (None, failure record)."""
     try:
         with usage_feature(config.USAGE_FEATURE):
-            reply = llm.complete(messages, max_tokens=max_tokens, caller_id=f"admin:{admin_id}")
+            # Only a call with its own limit passes the keyword; other calls use the client's default.
+            extra = {} if timeout_seconds is None else {"timeout_seconds": timeout_seconds}
+            reply = llm.complete(messages, max_tokens=max_tokens, caller_id=f"admin:{admin_id}", **extra)
     except LlmError as exc:
-        return None, failures.from_llm_error(exc, step, limits, sum(len(m.content) for m in messages))
+        return None, failures.from_llm_error(exc, step, limits, sum(len(m.content) for m in messages), timeout_seconds)
     if reply.finish_reason == "length":
         return None, failures.cut_off(step, max_tokens)
     return reply.text, None
+
+
+def _missing(ids):
+    """How many of the selected responses no longer exist."""
+    with open_session() as db:
+        return len(ids) - db.scalar(select(func.count()).select_from(FeedbackResponse).where(FeedbackResponse.id.in_(ids)))
 
 
 def _run(analysis_id, llm, progress):
@@ -76,15 +84,24 @@ def _run(analysis_id, llm, progress):
     if loaded is None:
         return
     admin_id, aggregates, selection, responses, labels, ai_total = loaded
+    ids = [UUID(r) for r in labels]
+    gone = len(ids) - len(responses)
+    if gone:  # deleted after the analysis started, before the first call
+        _fail(analysis_id, failures.responses_deleted(failures.step("start"), "starting the AI step", gone, len(ids)))
+        return
     batches, _used, _total = sample_and_batch(build_entries(responses, labels))
     if len(batches) + 1 != ai_total:
-        # A cited response was deleted after creation, so the stored step count no longer matches: stop with a reference.
+        # All selected responses exist yet the step count differs: a real defect, stopped with a reference.
         raise RuntimeError("stored snapshot no longer matches the stored step count")
     llm = llm or get_llm_client()
     limits = Limits()
     partials = []
     for index, batch in enumerate(batches, 1):
         step = failures.step("batch", index, len(batches))
+        gone = _missing(ids)
+        if gone:  # a selected response was deleted while earlier steps ran: no partial result
+            _fail(analysis_id, failures.responses_deleted(step, f"processing batch {index} of {len(batches)}", gone, len(ids)))
+            return
         # An unexpected exception is recorded against the step that was running (kind map).
         progress.update(step=failures.step("map", index, len(batches)), phrase=f"processing batch {index} of {len(batches)}")
         text, record = _call(llm, map_messages(batch), config.MAP_MAX_TOKENS, admin_id, step, limits)
@@ -101,7 +118,8 @@ def _run(analysis_id, llm, progress):
     step = failures.step("merge")
     progress.update(step=failures.step("reduce"), phrase="merging themes")
     partials = fit_partials(partials)
-    text, record = _call(llm, reduce_messages(aggregates, partials), config.REDUCE_MAX_TOKENS, admin_id, step, limits)
+    text, record = _call(llm, reduce_messages(aggregates, partials), config.REDUCE_MAX_TOKENS, admin_id, step, limits,
+                          config.REDUCE_TIMEOUT_SECONDS)
     if record is None:
         try:
             result = parse_reduce_reply(text, {label for t in partials for label in t["evidence"]}, selection)

@@ -29,6 +29,13 @@ def error(code, extra=None, **values):
     return ApiError(failures.STATUS[code], code, failures.render(code, **values), **(extra or {}))
 
 
+def internal_error(step, ref):
+    """500 internal_error; the response delete has its own wording (nothing confirmed as deleted)."""
+    if step == "deleting the response":
+        return ApiError(500, "internal_error", failures.render("internal_error_response_delete", ref=ref), reference=ref, step=step)
+    return error("internal_error", {"reference": ref}, step=step, ref=ref)
+
+
 def invalid(reason_key, **values):
     reason = failures.INVALID_REASONS[reason_key] if reason_key != "unknown" else f"unknown field {values['name']}"
     return error("invalid_request", reason=reason)
@@ -196,7 +203,7 @@ def create(db, admin_id, raw):
         raise
     except Exception as exc:
         record = failures.internal(None, stage, exc)
-        raise error("internal_error", {"reference": record.details["reference"]}, step=stage, ref=record.details["reference"]) from None
+        raise internal_error(stage, record.details["reference"]) from None
     return _insert(db, admin_id, request_id, build, title)
 
 
@@ -296,3 +303,18 @@ def delete_analysis(db, admin_id, raw_id):
     ran = seconds_since(created)
     remaining = max(0, config.JOB_BOUND_SECONDS - ran)
     raise error("analysis_running", {"ran_seconds": ran, "remaining_seconds": remaining}, s=ran, r=remaining)
+
+
+# ---- response delete (Amendment 2026-11-09) --------------------------------------------------------------------
+
+def delete_response(db, form_id, response_id):
+    """Hard-delete one response row. The recipient and draft rows are untouched: completion is derived from the row."""
+    form, response = parse_uuid(form_id), parse_uuid(response_id)
+    deleted = None
+    if form is not None and response is not None:
+        deleted = db.execute(delete(FeedbackResponse).where(FeedbackResponse.id == response, FeedbackResponse.form_id == form)
+                             .returning(FeedbackResponse.id)).first()
+    db.commit()
+    if deleted is None:
+        raise error("feedback_response_not_found")
+    failures.log.info("feedback response deleted id=%s form=%s", response, form)

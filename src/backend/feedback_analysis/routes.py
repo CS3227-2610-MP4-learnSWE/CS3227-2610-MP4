@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 from auth.db import get_session
 from auth.dependencies import AuthUser, current_user
 from errors import ApiError
+from feedback import admin as feedback_admin
 from llm_client import LlmClient, get_llm_client
 
 from feedback_analysis import config, failures, jobs, service
@@ -19,7 +20,9 @@ class AnalysisRoute(APIRoute):
 
     def get_route_handler(self):
         original = super().get_route_handler()
-        step = "deleting the analysis" if "DELETE" in self.methods else "reading the responses"
+        step = (
+            "deleting the response" if self.path.endswith("/responses/{response_id}") else "deleting the analysis"
+        ) if "DELETE" in self.methods else "reading the responses"
 
         @wraps(original)
         async def handler(request):
@@ -29,7 +32,7 @@ class AnalysisRoute(APIRoute):
                 raise
             except Exception as exc:  # noqa: BLE001
                 ref = failures.internal(None, step, exc).details["reference"]
-                raise service.error("internal_error", {"reference": ref}, step=step, ref=ref) from None
+                raise service.internal_error(step, ref) from None
         return handler
 
 
@@ -92,3 +95,9 @@ def get_evidence(analysis_id: str, label: str, admin: AuthUser = Depends(admin_u
 @router.get("/forms/{form_id}/response-count")
 def get_response_count(form_id: str, _: AuthUser = Depends(admin_user), db: Session = Depends(get_session)):
     return service.response_count(db, form_id)
+
+
+@router.delete("/forms/{form_id}/responses/{response_id}", status_code=204)
+def delete_response(form_id: str, response_id: str, _: AuthUser = Depends(feedback_admin), db: Session = Depends(get_session)):
+    service.delete_response(db, form_id, response_id)
+    return Response(status_code=204)

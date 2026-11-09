@@ -159,3 +159,15 @@ export async function deleteAnalysis(analysisId: string): Promise<void> {
     options,
   );
 }
+
+export async function deleteFeedbackResponse(
+  formId: string,
+  responseId: string,
+): Promise<void> {
+  await request(
+    "DELETE",
+    `${BASE}/forms/${id(formId)}/responses/${id(responseId)}`,
+    undefined,
+    options,
+  );
+}

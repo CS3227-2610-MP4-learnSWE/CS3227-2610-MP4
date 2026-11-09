@@ -24,6 +24,9 @@ MESSAGES = {
     "analysis_running": "This analysis cannot be deleted yet: its AI step has been running for {s} seconds. It finishes or is marked interrupted within {r} seconds (the limit is 360 seconds). Delete it after that.",
     "evidence_not_found": "This response cannot be shown. It was deleted, or the reference is not part of this analysis.",
     "internal_error": "An unexpected server error occurred while {step}. The cause was not an invalid request. Reference {ref} identifies it in the server logs.",
+    "feedback_response_not_found": "This response was not found. It may already have been deleted, or it does not belong to this form.",
+    "internal_error_response_delete": "An unexpected server error occurred while deleting the response. Nothing was confirmed as deleted. Reference {ref} identifies it in the server logs.",
+    "ai_responses_deleted": "The AI step stopped while {step} because {k} of the {n} selected responses were deleted after the analysis started. The statistics remain correct for the responses present when the analysis was created. Start a new analysis to analyse the remaining responses.",
     "ai_timeout": "The AI service did not answer within {t} seconds (after up to 2 attempts) while processing {step}. " + _UNAFFECTED + " Start a new analysis to run the AI part again.",
     "rate_limited_minute": "The AI limit of {limit} requests per minute was reached while processing {step}. Try again in {n} seconds.",
     "rate_limited_day": "The daily AI limit of {limit} requests was reached while processing {step}. Try again in {n} seconds.",
@@ -52,7 +55,7 @@ RULES = {
 }
 STATUS = {"invalid_request": 422, "selection_required": 422, "no_responses": 422, "too_many_responses": 422,
           "nothing_to_analyse": 422, "form_not_found": 404, "response_not_found": 404, "analysis_in_progress": 409,
-          "analysis_not_found": 404, "analysis_running": 409, "evidence_not_found": 404, "internal_error": 500}
+          "analysis_not_found": 404, "feedback_response_not_found": 404, "analysis_running": 409, "evidence_not_found": 404, "internal_error": 500}
 INVALID_REASONS = {
     "form_id": "form_id is not a valid id", "request_id": "request_id is not a valid id",
     "ids_type": "response_ids must be a list of ids", "ids_value": "response_ids contains a value that is not a valid id",
@@ -104,11 +107,11 @@ def internal(step_, phrase, exc=None):
     return FailureRecord("internal_error", render("internal_error", step=phrase, ref=ref), step_, {"reference": ref})
 
 
-def from_llm_error(exc, step_, client_limits=None, input_chars=0):
+def from_llm_error(exc, step_, client_limits=None, input_chars=0, timeout_seconds=None):
     limits = client_limits or Limits()
     if isinstance(exc, LlmTimeout):
-        return _record("ai_timeout", step_, {"timeout_seconds": limits.timeout_seconds, "attempts": 2},
-                       t=f"{limits.timeout_seconds:g}")
+        limit = timeout_seconds if timeout_seconds is not None else limits.timeout_seconds
+        return _record("ai_timeout", step_, {"timeout_seconds": limit, "attempts": 2}, t=f"{limit:g}")
     if isinstance(exc, LlmRateLimited):
         day = "day" in exc.scope
         limit = limits.per_caller_per_day if day else limits.per_caller_per_minute
@@ -136,6 +139,11 @@ def from_invalid_reply(exc: InvalidReply, step_):
         return _record("ai_reply_not_json", step_, {})
     rule = RULES[exc.rule].format(field=exc.field, label=exc.label, max=exc.max, count=exc.count)
     return _record("ai_reply_invalid", step_, exc.details, rule=rule)
+
+
+def responses_deleted(step_, phrase, missing, selected):
+    return FailureRecord("ai_responses_deleted", render("ai_responses_deleted", step=phrase, k=missing, n=selected), step_,
+                         {"missing": missing, "selected": selected})
 
 
 def cut_off(step_, max_tokens):
