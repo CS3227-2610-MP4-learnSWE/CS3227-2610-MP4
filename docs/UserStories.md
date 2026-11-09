@@ -108,7 +108,7 @@ Acceptance criteria:
 - Current page context updates as I navigate and includes relevant authorised, student-visible lesson or question content, not just the URL.
 - The backend revalidates access and submission status before retrieving context. Answer keys, protected solution explanations, drafts and other users’ data are excluded before submission.
 - Page content and prior chat are untrusted input, cannot override fixed rules, and are bounded to the relevant context rather than indiscriminately scraping the entire app.
-- This UI preview only displays a current-page label and fixed replies; real context-aware responses and account-session persistence are not implemented yet. Local history survives navigation/minimise but resets on page reload, login or demo role switching.
+- The companion uses the page: on a lesson page it answers from that lesson, and on other pages it uses related published lessons it finds. Chat history is still local to the browser: it survives navigation and minimise but resets on page reload, login or demo role switching; account-session persistence is not implemented yet.
 
 ### STU-04 — Progress dashboard
 

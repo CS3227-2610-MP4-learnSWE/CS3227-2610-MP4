@@ -14,9 +14,10 @@ class HistoryItem(BaseModel):
 
 
 class ContextIn(BaseModel):
-    page: Literal["practice", "other"]
+    page: Literal["practice", "lesson", "other"]
     set_id: str | None = None
     attempt_id: str | None = None
+    lesson_id: str | None = None
     label: str | None = None
 
 
@@ -26,7 +27,13 @@ class CompanionMessageIn(BaseModel):
     context: ContextIn
 
 
+class SourceOut(BaseModel):
+    lesson_id: str
+    title: str
+
+
 class CompanionReplyOut(BaseModel):
     reply: str
-    mode: Literal["hint", "explain", "help"]
+    mode: Literal["hint", "explain", "help", "lesson"]
     withheld: bool
+    sources: list[SourceOut] = []

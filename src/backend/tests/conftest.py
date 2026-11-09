@@ -109,3 +109,13 @@ def fake_provider():
     fake = install_fake()
     yield fake
     uninstall_fake()
+
+
+@pytest.fixture
+def fake_lessons():
+    """STU-03-grounding: a FakeLessonProvider (every student a member of every course) replaces the DB provider."""
+    from grounding_helpers import install_lessons, uninstall_lessons
+
+    provider = install_lessons()
+    yield provider
+    uninstall_lessons()

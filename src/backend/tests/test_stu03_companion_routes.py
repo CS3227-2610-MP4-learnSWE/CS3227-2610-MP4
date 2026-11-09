@@ -50,7 +50,7 @@ def test_stu03_ac1_response_shape_and_mode_field_ignored(fake):
     r = ask(s, "hello", page="practice", set_id=SET_ID, extra={"mode": "explain"},
             context_extra={"mode": "explain"})
     assert r.status_code == 200, r.text
-    assert r.json() == {"reply": BENIGN, "mode": "hint", "withheld": False}
+    assert r.json() == {"reply": BENIGN, "mode": "hint", "withheld": False, "sources": []}
     assert not KEY_VERSION.search(fake.last.all_text)
     assert_no_key_in(fake.last.all_text)
 
@@ -113,7 +113,7 @@ def test_stu03_ac3_submitted_attempt_gives_explain_with_key(fake):
     aid = submitted_attempt(s, WRONG)
     r = practice(s, "Why was I wrong?", attempt_id=aid)
     assert r.status_code == 200
-    assert r.json() == {"reply": BENIGN, "mode": "explain", "withheld": False}
+    assert r.json() == {"reply": BENIGN, "mode": "explain", "withheld": False, "sources": []}
     text = fake.last.all_text
     for part in QUESTION_TEXTS + CHOICE_TEXTS + EXPLANATIONS + [CODE_Q3]:
         assert part in text, part
@@ -212,7 +212,7 @@ def test_stu03_ac5_other_page_ignores_unknown_ids(fake):
 # ---------------------------------------------------------------- AC6
 def test_stu03_ac6_other_page_is_help_without_practice_content(fake):
     r = ask(new_student(), "How do I start a practice set?")
-    assert r.json() == {"reply": BENIGN, "mode": "help", "withheld": False}
+    assert r.json() == {"reply": BENIGN, "mode": "help", "withheld": False, "sources": []}
     text = fake.last.all_text
     assert_no_key_in(text)
     for q in QUESTION_TEXTS:
@@ -362,7 +362,7 @@ def test_stu03_ac9_leaking_hint_reply_is_withheld(fake, leak):
 def test_stu03_ac9_benign_hint_reply_passes_unchanged(fake, ok):
     fake.reply = ok
     r = practice(new_student(), "Give me a hint")
-    assert r.json() == {"reply": ok, "mode": "hint", "withheld": False}
+    assert r.json() == {"reply": ok, "mode": "hint", "withheld": False, "sources": []}
 
 
 @pytest.mark.parametrize("leak", ["The answer is b.", "To catch regressions when code changes", "Option C is correct."])

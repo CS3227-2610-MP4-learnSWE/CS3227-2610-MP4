@@ -295,7 +295,7 @@ test("stu03 AC29 requests never carry a mode, a score or an answer key", async (
   expect(raw).not.toMatch(/key_version/i);
   const ctx = Object.keys(mock.last.body.context);
   for (const k of ctx)
-    expect(["page", "set_id", "attempt_id", "label"]).toContain(k);
+    expect(["page", "set_id", "attempt_id", "lesson_id", "label"]).toContain(k);
   expect(Object.keys(mock.last.body).sort()).toEqual(
     ["context", "history", "message"].sort(),
   );
