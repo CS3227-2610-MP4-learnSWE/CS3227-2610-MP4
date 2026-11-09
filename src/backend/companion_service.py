@@ -111,26 +111,67 @@ def _context_text(plan: Plan) -> str:
 
 
 _WRAP = r"[*_`~]*"
+_MARKER_NAME = config.NOT_IN_LESSON_MARKER.rstrip(":")
 _MARKER_RE = re.compile(
-    _WRAP + r"not\s*_\s*in\s*_\s*lesson" + _WRAP + r"\s*:" + _WRAP, re.IGNORECASE
+    _WRAP
+    + r"\s*_\s*".join(re.escape(part) for part in _MARKER_NAME.split("_"))
+    + _WRAP
+    + r"\s*:"
+    + _WRAP,
+    re.IGNORECASE,
 )
+
+
+def _delimiter_re(delimiter: str) -> re.Pattern[str]:
+    words = delimiter.split(" (")[0].split()
+    return re.compile(r"[\s_]*".join(re.escape(w) for w in words), re.IGNORECASE)
+
+
+_DELIMITER_RES = tuple(_delimiter_re(d) for d in (prompts.LESSON_OPEN, prompts.LESSON_CLOSE))
+
+
+def _find(text: str, pattern: re.Pattern[str]) -> tuple[int, int] | None:
+    """First match on the NFKC, format-stripped view of text, as (start, end) in the ORIGINAL
+    text, so callers can edit the original without changing other characters."""
+    chars: list[str] = []
+    origin: list[int] = []
+    for i, ch in enumerate(text):
+        for c in strip_format(ch):
+            chars.append(c)
+            origin.append(i)
+    normal = "".join(chars)
+    m = pattern.search(normal)
+    if m is None:
+        return None
+    return origin[m.start()], origin[m.end() - 1] + 1
+
+
+def _remove_all(text: str, pattern: re.Pattern[str], replacement: str) -> tuple[str, bool]:
+    """Replace matches until none remain (so nested spellings cannot re-form); report if any
+    match began at the start of the text."""
+    leading = False
+    while (found := _find(text, pattern)) is not None:
+        start, end = found
+        leading = leading or not strip_format(text[:start]).strip()
+        text = text[:start] + replacement + text[end:]
+    return text, leading
 
 
 def _safe(text: str) -> str:
     """Stop lesson text from closing or faking the delimited data block."""
-    for delimiter in (prompts.LESSON_OPEN, prompts.LESSON_CLOSE):
-        text = re.sub(re.escape(delimiter.split(" (")[0]), "[removed]", text, flags=re.IGNORECASE)
+    for pattern in _DELIMITER_RES:
+        text, _ = _remove_all(text, pattern, "[removed]")
     return text
 
 
 def finish_lesson_reply(text: str, lessons: Sequence[LessonText]) -> tuple[str, list[LessonText]]:
     """Apply the NOT_IN_LESSON marker: a leading marker gives the limitation sentence and no sources.
 
-    Text is matched after NFKC and format-character removal (full-width spellings count), ignoring
-    case, spacing and markdown wrapping. Every marker is removed; it never reaches the student."""
-    normal = strip_format(text).strip()
-    leading = _MARKER_RE.match(normal) is not None
-    rest = _MARKER_RE.sub("", normal).strip()
+    Markers are found on an NFKC, format-stripped view (full-width, bold or zero-width spellings
+    count; case, spacing and markdown wrapping ignored) and removed from the original text, which is
+    otherwise unchanged. Removal repeats until none remain, so no marker reaches the student."""
+    rest, leading = _remove_all(text, _MARKER_RE, "")
+    rest = rest.strip()
     if leading:
         return f"{config.LIMITATION_SENTENCE} {rest}".strip(), []
     return rest, list(lessons)
