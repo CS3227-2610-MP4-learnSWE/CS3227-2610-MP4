@@ -16,5 +16,11 @@
 | 12 | Run suite; report pass/fail | test-designer | 1, 7, 9, 10, 11 | todo |
 | 13 | Verify: code, docs and security review; re-run suite | verifier | 12 | todo |
 | 14 | Fix defects (max 2 rounds), verifier re-checks | developer, verifier | 13 | todo |
+| 15 | Amendment 2026-11-09 (user): design tests AC39 to AC50 (response delete API, uniform 404, concurrency with delete, submit and draft save, resubmission, effects on stored and running analyses, registry messages, delete dialog) from the plan contract | test-designer | amendment | todo |
+| 16 | Amendment: backend DELETE response route in feedback.py plus store function (one transaction: row delete and recipient completion revert, lock order as submit), failure registry entries `feedback_response_not_found`, `ai_responses_deleted` and delete internal_error step; replace the batch-count-mismatch guard in the job with the missing-responses check; ADM-02 existing endpoints unchanged | developer | amendment | todo |
+| 17 | Amendment: frontend "Delete response" button and DeleteResponseDialog on the response detail view (shared confirm-dialog component with the analysis dialog), success status and focus on the response list, exact copy | developer | 16 | todo |
+| 18 | Amendment: update docs/DeveloperGuide.md and docs/UserGuide.md (response delete, resubmission rule, analyses kept indefinitely, running-analysis failure) | developer | 17 | todo |
+| 19 | Amendment: run suite including AC39 to AC50 and re-run ADM-02 and earlier ADM-03 tests; report pass/fail | test-designer | 15, 17 | todo |
+| 20 | Amendment: verify security (admin-only, uniform 404, concurrency with submit and job, no side effects), docs and tests; fix rounds as in task 14 | verifier, developer | 19 | todo |
 
 Tasks 1, 2 to 8, 9, 10 and 11 run in parallel (developer tasks in order). Tasks 9 and 10 stay because the feature stores records.
