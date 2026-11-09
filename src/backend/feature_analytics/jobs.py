@@ -117,7 +117,7 @@ def _privacy_block(item_id: int, code: str) -> None:
 def _mark_failed(item_id: int) -> None:
     with open_session() as db:
         db.execute(update(Item).where(Item.id == item_id, Item.status.in_(queries.GRADABLE_STATUSES))
-                   .values(status="grading_failed", failure_code="invalid_ai_output", request_text=None, response_text=None, context_text=None))
+                   .values(status="grading_failed", failure_code="invalid_ai_output"))
         db.commit()
 
 
