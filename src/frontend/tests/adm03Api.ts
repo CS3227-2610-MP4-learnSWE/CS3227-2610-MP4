@@ -12,7 +12,7 @@ export const uuid = (n: number) =>
 export const MSG = {
   selection:
     "No responses are selected. Select at least one response, or use Select all, then generate the analysis.",
-  expired: "Your session has expired. Please sign in again.",
+  expired: "Your session has expired. Sign in again.",
   forbidden:
     "You do not have access to this page. Only admin accounts can use feedback analysis.",
   analysisNotFound:
