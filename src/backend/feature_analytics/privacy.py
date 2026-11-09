@@ -178,7 +178,19 @@ def prepare_grading_content(*, source: Literal['student_hint', 'teacher_notes', 
         for text in values:
             if _MARKERS.search(" ".join(_normal(text).split())):
                 raise _Unsupported
-        request, response = (_sanitize(t, identity_values) for t in values[:2])
+        cleaned = []
+        for text in values[:2]:
+            # Recheck the sanitised form, with a fixed bound inside the same item deadline.
+            # New entities can emerge after redaction changes surrounding language.
+            for _ in range(3):
+                sanitized = _sanitize(text, identity_values)
+                if sanitized == text:
+                    cleaned.append(sanitized)
+                    break
+                text = sanitized
+            else:
+                raise _Unsupported
+        request, response = cleaned
         if len(request) > 2000 or len(response) > 6000:
             raise _Unsupported
         return GradingContent(request, response, "")
@@ -188,7 +200,8 @@ def prepare_grading_content(*, source: Literal['student_hint', 'teacher_notes', 
 
 def validate_grader_privacy(*, reasons: tuple[str, ...]) -> bool:
     def scan():
-        return all(_sanitize(reason, ()) == reason for reason in reasons)
+        return all(not _MARKERS.search(" ".join(_normal(reason).split()))
+                   and _sanitize(reason, ()) == reason for reason in reasons)
     ok, result = _bounded(scan)
     return bool(ok and result)
 
