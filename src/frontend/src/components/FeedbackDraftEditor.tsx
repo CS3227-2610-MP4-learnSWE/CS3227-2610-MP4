@@ -37,6 +37,85 @@ const choice = (type: string) =>
   ["multiple_choice", "dropdown", "checkbox"].includes(type);
 const freshOption = () => ({ id: crypto.randomUUID(), label: "" });
 
+type Problem = { label: string; reason: string };
+
+/** Finds the first field the server rejected so the alert can name it. */
+function locateProblem(code: string, data: Definition): Problem | null {
+  if (code === "invalid_feedback_title")
+    return { label: "Form title", reason: "enter 1 to 160 characters." };
+  if (code === "invalid_feedback_text")
+    return {
+      label: "Description",
+      reason: "shorten it to 2000 characters or fewer.",
+    };
+  if (code === "invalid_feedback_association")
+    return {
+      label: data.association?.kind === "lesson" ? "Lesson" : "Feature",
+      reason: "select an available option.",
+    };
+  if (code === "invalid_feedback_questions") {
+    if (!data.questions.length)
+      return { label: "", reason: "add at least one question." };
+    const i = data.questions.findIndex(
+      (q) => !q.prompt.trim() || [...q.prompt.trim()].length > 500,
+    );
+    if (i >= 0)
+      return {
+        label: `Question ${i + 1} prompt`,
+        reason: data.questions[i].prompt.trim()
+          ? "shorten the prompt to 500 characters or fewer."
+          : "enter the question text.",
+      };
+  }
+  if (code === "invalid_feedback_options") {
+    for (const [i, q] of data.questions.entries()) {
+      if (!choice(q.type)) continue;
+      if (q.options.length < 2)
+        return {
+          label: `Question ${i + 1} option 1`,
+          reason: "add at least 2 options.",
+        };
+      for (const [j, o] of q.options.entries()) {
+        const name = o.label.trim().toLocaleLowerCase();
+        const label = `Question ${i + 1} option ${j + 1}`;
+        if (!name) return { label, reason: "enter the option text." };
+        if ([...o.label.trim()].length > 200)
+          return { label, reason: "shorten it to 200 characters or fewer." };
+        if (
+          q.options.some(
+            (other, k) =>
+              k < j && other.label.trim().toLocaleLowerCase() === name,
+          )
+        )
+          return { label, reason: "this option repeats an earlier one." };
+      }
+      if (q.options.length > 20)
+        return {
+          label: `Question ${i + 1} option 1`,
+          reason: "remove options so 20 or fewer remain.",
+        };
+    }
+  }
+  if (code === "invalid_feedback_scale") {
+    const i = data.questions.findIndex(
+      (q) =>
+        q.scale &&
+        (!Number.isInteger(q.scale.min) ||
+          !Number.isInteger(q.scale.max) ||
+          q.scale.min < 0 ||
+          q.scale.max > 10 ||
+          q.scale.min >= q.scale.max),
+    );
+    if (i >= 0)
+      return {
+        label: `Question ${i + 1} minimum`,
+        reason:
+          "use whole numbers from 0 to 10 with the minimum below the maximum.",
+      };
+  }
+  return null;
+}
+
 function Questions({
   questions,
   change,
@@ -242,57 +321,17 @@ export default function FeedbackDraftEditor({
     setSuccess("");
     setError("");
   }
+  const problem = error && !saving ? locateProblem(code, data) : null;
   useEffect(() => {
     if (!error || saving) return;
-    let label = "Form title";
-    if (code === "invalid_feedback_text") label = "Description";
-    if (code === "invalid_feedback_association")
-      label = data.association?.kind === "lesson" ? "Lesson" : "Feature";
-    if (code === "invalid_feedback_questions") {
-      const index = data.questions.findIndex(
-        (q) => !q.prompt.trim() || [...q.prompt.trim()].length > 500,
-      );
-      label = index >= 0 ? `Question ${index + 1} prompt` : "";
-    }
-    if (code === "invalid_feedback_options") {
-      const index = data.questions.findIndex(
-        (q) =>
-          choice(q.type) &&
-          (q.options.length < 2 ||
-            q.options.length > 20 ||
-            q.options.some(
-              (o, i) =>
-                !o.label.trim() ||
-                [...o.label.trim()].length > 200 ||
-                q.options.some(
-                  (other, j) =>
-                    j < i &&
-                    other.label.trim().toLocaleLowerCase() ===
-                      o.label.trim().toLocaleLowerCase(),
-                ),
-            )),
-      );
-      if (index >= 0) label = `Question ${index + 1} option 1`;
-    }
-    if (code === "invalid_feedback_scale") {
-      const index = data.questions.findIndex(
-        (q) =>
-          q.scale &&
-          (!Number.isInteger(q.scale.min) ||
-            !Number.isInteger(q.scale.max) ||
-            q.scale.min < 0 ||
-            q.scale.max > 10 ||
-            q.scale.min >= q.scale.max),
-      );
-      if (index >= 0) label = `Question ${index + 1} minimum`;
-    }
+    const label = problem?.label ?? "Form title";
     const target = Array.from(
       controls.current?.querySelectorAll("label") ?? [],
     ).find((item) => item.textContent === label);
     if (target?.htmlFor) document.getElementById(target.htmlFor)?.focus();
     else if (!label)
       controls.current?.querySelector<HTMLButtonElement>("button")?.focus();
-  }, [error, saving, code, data]);
+  }, [error, saving, problem?.label]);
   async function save() {
     if (saving || code === "uncertain_mutation") return;
     setSaving(true);
@@ -350,7 +389,15 @@ export default function FeedbackDraftEditor({
             <Button onClick={associations.reload}>Retry</Button>
           </div>
         )}
-        {error && <p role="alert">{error}</p>}
+        {error && (
+          <p role="alert">
+            {error}
+            {problem &&
+              problem.label &&
+              ` Fix "${problem.label}": ${problem.reason}`}
+            {problem && !problem.label && ` ${problem.reason}`}
+          </p>
+        )}
         {success && <p role="status">{success}</p>}
         {(code === "feedback_version_conflict" ||
           code === "uncertain_mutation") && (

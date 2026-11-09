@@ -501,7 +501,12 @@ for (const who of [STUDENT, TEACHER, null]) {
     await expect(page).toHaveURL(
       who ? new RegExp("/" + who.role + "/") : /\/login/,
     );
-    expect(ctx.requests).toHaveLength(0);
+    // The student/teacher sidebar badge legitimately asks for its own unread
+    // count after the redirect, at a time the test cannot control. This test is
+    // about the admin composer, so only other messaging requests count.
+    expect(
+      ctx.requests.filter((r) => r.path !== "/api/messaging/unread-count"),
+    ).toHaveLength(0);
     await expect(
       page.getByRole("textbox", { name: "Message", exact: true }),
     ).toHaveCount(0);
