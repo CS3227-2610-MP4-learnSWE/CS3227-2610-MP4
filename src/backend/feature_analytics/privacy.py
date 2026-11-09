@@ -56,8 +56,9 @@ def _initialize() -> None:
         spacy.require_cpu()
         _nlp = spacy.load(path, enable=["tok2vec", "ner"])
         fixture = "Alice Johnson met Barack Obama in London."
-        spans = scan_person_spans(fixture)
-        if not any(fixture[a:b] == "Barack Obama" for a, b in spans):
+        # Health checks must use the real model, independent of the test scanner seam.
+        entities = _nlp(fixture).ents
+        if not any(entity.label_ == "PERSON" and entity.text == "Barack Obama" for entity in entities):
             return
         _healthy = True
     except Exception:

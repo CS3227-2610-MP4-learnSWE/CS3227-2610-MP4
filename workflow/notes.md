@@ -1,5 +1,9 @@
 # Handoff notes
 
+## 2026-11-10: developer fixes backend CI scanner isolation
+- Fixed startup health probing through the monkeypatched scanner seam and isolated real-model smoke checks from intentionally poisoned process-lifetime scanner state. Existing recognition/timing assertions remain; no Linux skip added.
+- No tests run, as requested. Small maintenance; no agents/workflow run. Summary: logs/Adm01BackendCiFix.md.
+
 ## 2026-11-10: developer fixes ADM-01 CI formatting
 - Formatted only the three CI-reported files with Prettier; no application behavior changes. Three-file format check passed before user requested no further checks/tests. Full local check also reports unrelated Windows checkout line-ending differences; those files were left untouched.
 - Small maintenance, no workflow agents or usage manifest. Summary: logs/Adm01FormattingFix.md. User personal files preserved.
