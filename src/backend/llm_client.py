@@ -57,6 +57,7 @@ class LlmClient(Protocol):
         max_tokens: int,
         caller_id: str,
         timeout_seconds: float | None = None,
+        max_reply_chars: int | None = None,
     ) -> LlmReply: ...
 
 
@@ -155,8 +156,13 @@ class SoclaasClient:
         max_tokens: int,
         caller_id: str,
         timeout_seconds: float | None = None,
+        max_reply_chars: int | None = None,
     ) -> LlmReply:
-        """`timeout_seconds` overrides `Limits.timeout_seconds` for this call's attempts; None keeps the default."""
+        """Optional per-call overrides; None keeps the defaults.
+
+        `timeout_seconds` replaces `Limits.timeout_seconds` for this call's attempts. `max_reply_chars` replaces
+        MAX_REPLY_CHARS, the length at which the reply text is cut (a structured JSON reply must not be cut).
+        """
         s = self._settings
         if not s.complete:
             raise LlmNotConfigured("The model service is not configured.")
@@ -171,7 +177,7 @@ class SoclaasClient:
             "max_tokens": max_tokens,
         }
         response = self._send(url, headers, payload, timeout_seconds)
-        return self._parse(response)
+        return self._parse(response, max_reply_chars or MAX_REPLY_CHARS)
 
     def _admit(self, caller_id: str) -> None:
         with self._lock:
@@ -248,7 +254,7 @@ class SoclaasClient:
             pass
 
     @staticmethod
-    def _parse(response: httpx.Response) -> LlmReply:
+    def _parse(response: httpx.Response, max_chars: int = MAX_REPLY_CHARS) -> LlmReply:
         try:
             data = response.json()
             choice = data["choices"][0]
@@ -261,7 +267,7 @@ class SoclaasClient:
         usage = usage if isinstance(usage, dict) else {}
         finish = choice.get("finish_reason")
         return LlmReply(
-            text=text.strip()[:MAX_REPLY_CHARS],
+            text=text.strip()[:max_chars],
             finish_reason=finish if isinstance(finish, str) else None,
             prompt_tokens=_int_or_none(usage.get("prompt_tokens")),
             completion_tokens=_int_or_none(usage.get("completion_tokens")),

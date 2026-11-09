@@ -59,12 +59,16 @@ def run_job(analysis_id, llm=None):
             log.error("analysis %s could not store its failure, class=%s", analysis_id, type(exc).__name__)
 
 
-def _call(llm, messages, max_tokens, admin_id, step, limits, timeout_seconds=None):
+def _call(llm, messages, max_tokens, admin_id, step, limits, timeout_seconds=None, max_reply_chars=None):
     """(reply text, None) or (None, failure record)."""
     try:
         with usage_feature(config.USAGE_FEATURE):
             # Only a call with its own limit passes the keyword; other calls use the client's default.
-            extra = {} if timeout_seconds is None else {"timeout_seconds": timeout_seconds}
+            extra = {}
+            if timeout_seconds is not None:
+                extra["timeout_seconds"] = timeout_seconds
+            if max_reply_chars is not None:
+                extra["max_reply_chars"] = max_reply_chars
             reply = llm.complete(messages, max_tokens=max_tokens, caller_id=f"admin:{admin_id}", **extra)
     except LlmError as exc:
         return None, failures.from_llm_error(exc, step, limits, sum(len(m.content) for m in messages), timeout_seconds)
@@ -119,7 +123,7 @@ def _run(analysis_id, llm, progress):
     progress.update(step=failures.step("reduce"), phrase="merging themes")
     partials = fit_partials(partials)
     text, record = _call(llm, reduce_messages(aggregates, partials), config.REDUCE_MAX_TOKENS, admin_id, step, limits,
-                          config.REDUCE_TIMEOUT_SECONDS)
+                          config.REDUCE_TIMEOUT_SECONDS, config.REDUCE_MAX_REPLY_CHARS)
     if record is None:
         try:
             result = parse_reduce_reply(text, {label for t in partials for label in t["evidence"]}, selection)

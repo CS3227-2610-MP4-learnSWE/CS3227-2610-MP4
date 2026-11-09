@@ -16,3 +16,4 @@ HISTORY_DEFAULT_LIMIT = 20
 HISTORY_MAX_LIMIT = 50
 # The ADM-06 usage label. ADM-06 already reserves "ADM-03" for this feature (see notes.md).
 USAGE_FEATURE = "ADM-03"
+REDUCE_MAX_REPLY_CHARS = 8000  # the shared client cuts replies at 2000 characters by default; the reduce JSON can be longer
