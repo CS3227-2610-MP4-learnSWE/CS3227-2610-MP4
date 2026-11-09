@@ -214,6 +214,9 @@ def test_adm01_ac23_the_stored_grading_context_never_carries_answer_keys_or_expl
         save(aid, s, CORRECT)
         submit(aid, s)
     assert practice_msg(s, "Why?", attempt_id=aid).status_code == 200
+    if mode == "explain":
+        assert chat_items(s) == []
+        return
     (item,) = chat_items(s)
     stored = " ".join(t or "" for t in item[3:6])
     for explanation in EXPLANATIONS:
@@ -221,6 +224,20 @@ def test_adm01_ac23_the_stored_grading_context_never_carries_answer_keys_or_expl
     if mode == "hint":
         for choice in CHOICE_TEXTS:
             assert choice not in stored, choice
+
+
+def test_adm01_ac23_a_released_post_submission_solution_is_counted_but_never_stored_for_grading(fake, tracked_users):
+    s = pupil(tracked_users)
+    aid = start(s)
+    save(aid, s, CORRECT)
+    submit(aid, s)
+    fake.reply = "The correct solution is: " + EXPLANATIONS[0]
+    response = practice_msg(s, "Explain the solution.", attempt_id=aid)
+    assert response.status_code == 200
+    assert response.json()["mode"] == "explain" and response.json()["withheld"] is False
+    assert EXPLANATIONS[0] in response.json()["reply"]
+    assert [row[1] for row in chat_rows(s)] == ["success"]
+    assert chat_items(s) == []
 
 
 @pytest.mark.parametrize("exception,status", [
