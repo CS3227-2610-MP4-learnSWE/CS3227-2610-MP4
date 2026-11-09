@@ -114,7 +114,9 @@ _WRAP = r"[*_`~]*"
 _MARKER_NAME = config.NOT_IN_LESSON_MARKER.rstrip(":")
 _MARKER_RE = re.compile(
     _WRAP
-    + r"\s*_\s*".join(re.escape(part) for part in _MARKER_NAME.split("_"))
+    + r"\s*_\s*".join(
+        r"\s*".join(re.escape(ch) for ch in part) for part in _MARKER_NAME.split("_")
+    )
     + _WRAP
     + r"\s*:"
     + _WRAP,
@@ -171,9 +173,8 @@ def finish_lesson_reply(text: str, lessons: Sequence[LessonText]) -> tuple[str, 
     count; case, spacing and markdown wrapping ignored) and removed from the original text, which is
     otherwise unchanged. Removal repeats until none remain, so no marker reaches the student."""
     rest, leading = _remove_all(text, _MARKER_RE, "")
-    rest = rest.strip()
     if leading:
-        return f"{config.LIMITATION_SENTENCE} {rest}".strip(), []
+        return f"{config.LIMITATION_SENTENCE} {rest.strip()}".strip(), []
     return rest, list(lessons)
 
 
