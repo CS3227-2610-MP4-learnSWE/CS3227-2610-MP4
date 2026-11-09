@@ -77,9 +77,9 @@ const timestamp = (value: unknown) =>
   typeof value === "string" &&
   /^\d{4}-\d{2}-\d{2}T.*Z$/.test(value) &&
   Number.isFinite(Date.parse(value));
-const dateOrNull = (value: unknown) =>
-  value === null ||
-  (text(value) && /^\d{4}-\d{2}-\d{2}$/.test(value as string));
+const date = (value: unknown) =>
+  text(value) && /^\d{4}-\d{2}-\d{2}$/.test(value as string);
+const dateOrNull = (value: unknown) => value === null || date(value);
 const all = (value: unknown, check: (item: unknown) => boolean) =>
   Array.isArray(value) && value.every(check);
 
@@ -127,6 +127,7 @@ const validMissed = (m: unknown) =>
   count(m.position) &&
   count(m.missed) &&
   count(m.answered) &&
+  m.miss_rate_percent !== null &&
   percent(m.miss_rate_percent);
 const validCourse = (c: unknown) =>
   keys(c, [
@@ -170,7 +171,7 @@ export async function readOverview(period: Period): Promise<Overview> {
     !(data.period.start === null || timestamp(data.period.start)) ||
     !timestamp(data.period.end) ||
     !dateOrNull(data.period.start_date) ||
-    !text(data.period.end_date) ||
+    !date(data.period.end_date) ||
     !timestamp(data.as_of) ||
     !all(data.courses, validCourse)
   ) {
