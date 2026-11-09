@@ -1,5 +1,17 @@
 # Handoff notes
 
+## 2026-11-09: spec-writer on STU-03-grounding (student-role owner)
+- Done: wrote `workflow/specs/STU-03-grounding/spec.md`, `plan.md`, `tasks.md` (draft, awaiting user approval; nothing built, no code or tests touched). Makes the study companion grounded in published lessons: new `lesson` mode (lesson page by URL lesson id, or up to 2 related visible lessons on general pages by plain word overlap), server-built `sources` (lesson id and title only), a fixed `NOT_IN_LESSON:` marker for the "not supported, say so" case, access through `study_lessons/access.py` with a uniform 404 `lesson_not_found` plus a recheck after the model call, pasted-question rule still wins, letters-and-verdicts leak check in Lesson mode. Speccheck passes (`OK STU-03-grounding`).
+- Next (agent + task): orchestrator: user approval and the open questions; then test-designer (tasks 1, 2, 6, 7) and developer (tasks 3 to 5) in parallel.
+- Files touched: `workflow/specs/STU-03-grounding/{spec,plan,tasks}.md`, `workflow/notes.md`, `workflow/STATUS.md`, `workflow/experiments/resource-log.md`, `logs/Stu03GroundingSpecification.md`.
+- Invocation ID(s) for this handoff: n/a (spec-writer step before an invoked workflow run; the orchestrator creates the run manifest in Phase 2).
+- Model(s) and effort setting: Sonnet 5.5, effort inherited.
+- Elapsed wall-clock time: n/a.
+- Feature-run report path: not yet.
+- Decisions / open questions: D1 to D6 in the spec are recommendations. Open: (1) keep related-lesson search on general pages; (2) no lesson text in Hint/Explain; (3) Lesson-mode leak check ignores choice text (additive `check_text` option on `find_leak`); (4) marker versus "lesson in view" wording; (5) chat history persistence across reload (US-STU-03-04) stays out of scope, separate spec; (6) course scope of general-page search; (7) 200-token cap and 2-lesson context unmeasured; (8) `docs/FeatureList.md` line 25 and US-STU-03-05 last bullet reworded when built, not now.
+- Blocking findings: none. Finding for the record: the STU-03 plan still describes an `X-Student-Id` header, but the code uses the session (`require_student` returns the session user id); this plan follows the code.
+- Resource use: Tracker run: no (single spec-writer step; Phase 2 creates the run). Model: Sonnet 5.5. Total tokens: unavailable. Cost (USD): unavailable. Retries and revision rounds: 0.
+
 ## 2026-11-09: orchestrator on stale student help text (student-role owner)
 - Done: on `fix/stu-stale-help-and-hint-copy` (from master `5755f37`, after TEA-05 merged). The TEA-05 owner flagged that `src/backend/companion_help.py` (the fixed app-help text the study companion uses on non-practice pages) was stale. Rewrote its Overview, Study materials, Practice and Inbox lines from `docs/UserGuide.md`, added Overview/Progress, and replaced the false "published-set practice is pending; teacher overview/inbox and admin screens remain demonstrations" with "some admin screens, such as Analytics and Feedback insights, still show sample data". `README.md` Student bullet corrected (no more "sample lessons" or "feedback-form preview"). Text only; no route, request, schema or test change.
 - Checked: `companion_help.py` parses; STU-03 companion route, gap and fix-round tests: 30 passed, 92 skipped (skipped because no test database was available in this session, so most STU-03 backend tests did not run). Not run: full backend or browser suites, GitHub CI.
