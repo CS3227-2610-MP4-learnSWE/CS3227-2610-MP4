@@ -6,6 +6,10 @@ from fastapi import APIRouter, Depends, Request, Response
 from sqlalchemy import delete, select
 
 from errors import ApiError
+from feature_analytics import (
+    GradingContent, format_mcq_batch_for_grading, record_generation_accepted, record_generation_outcome,
+)
+from feature_analytics.recording import REFUSED_BY_LIMITER
 from llm_client import LlmClient, get_llm_client
 from teacher_access import require_managed_course
 from teacher_materials.models import CourseMembership, Material, McqDraftBatch, McqDraftQuestion, User
@@ -18,6 +22,7 @@ from teacher_access import check_version, commit_deletion, delete_version
 from pydantic import BaseModel, ConfigDict, Field, StrictInt, StrictStr, ValidationError
 
 router = APIRouter(prefix="/api/teacher", tags=["teacher MCQ drafts"])
+MCQ_REQUEST_TEXT = "Create three multiple-choice questions grounded only in the supplied source material."
 
 
 def _metadata(row):
@@ -40,7 +45,27 @@ def create_mcq_draft(request: Request, material_id: str, llm: LlmClient = Depend
         teacher_id, source_id, course_id, title = teacher.id, material.id, material.course_id, material.title
         source_content, media_type = _material_content(session, material.id), material.media_type
     text = extract_source(source_content, media_type)
-    questions = generate_mcqs(llm, text, teacher_id)
+    # ADM-01: see create_note_draft. The grading text is stems and choices only, never a key or explanation.
+    accepted_at = datetime.now(timezone.utc)
+    counted, success, graded = True, False, None
+    try:
+        questions = generate_mcqs(llm, text, teacher_id)
+        graded = GradingContent(
+            request_text=MCQ_REQUEST_TEXT,
+            response_text=format_mcq_batch_for_grading([(q["question"], q["choices"]) for q in questions]))
+        payload = _save_mcq_draft(request, teacher_id, source_id, course_id, title, questions)
+        success = True
+        return payload
+    except ApiError as exc:
+        counted = exc.code not in REFUSED_BY_LIMITER
+        raise
+    finally:
+        if counted:
+            attempt_id = record_generation_accepted(workflow="mcq_batch", user_id=teacher_id, accepted_at=accepted_at)
+            record_generation_outcome(attempt_id, success=success, grading=graded if success else None, source="teacher_mcq")
+
+
+def _save_mcq_draft(request, teacher_id, source_id, course_id, title, questions):
     with teacher_session(request) as (session, teacher):
         user = session.scalar(select(User).where(User.id == teacher_id).with_for_update(read=True).execution_options(populate_existing=True))
         if user is None or user.role != "teacher" or teacher.id != teacher_id:

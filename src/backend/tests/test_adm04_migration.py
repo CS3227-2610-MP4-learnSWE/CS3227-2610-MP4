@@ -30,10 +30,10 @@ def test_adm04_ac03_12_additive_upgrade_preserves_populated_feedback_and_progres
     db.sql("INSERT INTO practice_attempt(id,student_id,set_id,status) VALUES ('adm04-retain-attempt','adm04-retain','intro-se-1','in_progress')")
     tables=['user','course_membership','practice_attempt','feedback_forms','feedback_recipients','feedback_responses','feedback_response_drafts','ai_usage_coverage']
     before={t:db.sql(f'SELECT t::text FROM "{t}" t ORDER BY t::text') for t in tables}
-    db.migrate('upgrade','head')
+    db.migrate('upgrade','20261107_adm04_messaging')
     for table,rows in before.items():assert db.sql(f'SELECT t::text FROM "{table}" t ORDER BY t::text')==rows
     for table in ['admin_message_previews','admin_messages','admin_message_deliveries']:
         assert db.sql('SELECT to_regclass(%s)::text',(table,))[0][0]==table
         assert db.sql(f'SELECT count(*) FROM {table}')[0][0]==0
-    db.migrate('upgrade','head')
+    db.migrate('upgrade','20261107_adm04_messaging')
     assert db.sql('SELECT count(*) FROM feedback_responses WHERE id=%s',(response,))[0][0]==1

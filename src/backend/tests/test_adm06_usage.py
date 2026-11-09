@@ -14,7 +14,7 @@ DAY = date(2026, 1, 15)
 START = datetime(2026, 1, 15, 0, 0, tzinfo=timezone.utc)
 METRICS = ("requests", "failures", "rate_limit_failures", "other_failures",
            "input_tokens", "output_tokens", "total_tokens")
-FEATURES = ["STU-03", "TEA-02", "ADM-03"]
+FEATURES = ["STU-03", "TEA-02", "ADM-03", "ADM-01"]
 PATH = "/api/admin/ai-usage"
 QUERY = "?feature=all&start_date=2026-01-15&end_date=2026-01-15"
 
@@ -212,7 +212,7 @@ def test_adm06_ac12_activation_idempotent_durable_and_rejects_future_feature_ato
     original = sql("SELECT feature,enabled,covered_since,incomplete_since FROM ai_usage_coverage ORDER BY feature")
     service.activate_coverage(["TEA-02", "STU-03"])
     assert sql("SELECT feature,enabled,covered_since,incomplete_since FROM ai_usage_coverage ORDER BY feature") == original
-    assert [r[1] for r in original] == [False, True, True]
+    assert {r[0]: r[1] for r in original} == {"ADM-01": False, "ADM-03": False, "STU-03": True, "TEA-02": True}
     sql("UPDATE ai_usage_coverage SET enabled=false,covered_since=NULL WHERE feature='TEA-02'")
     with pytest.raises(Exception):
         service.activate_coverage(["TEA-02", "ADM-03"])

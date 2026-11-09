@@ -5089,3 +5089,109 @@ td .MuiButton-root {
     grid-template-columns: minmax(0, 1fr) 360px;
   }
 }
+/* ADM-01 feature analytics: stacked panels; wide tables scroll inside their own container. */
+.analytics-panel.MuiPaper-root {
+  min-width: 0;
+  padding: 24px;
+  margin-bottom: 24px;
+}
+.analytics-panel h2 {
+  margin: 0 0 12px;
+}
+.analytics-panel h3 {
+  margin: 20px 0 8px;
+  font-size: 16px;
+}
+.analytics-panel p,
+.analytics-panel li {
+  font-size: 15px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.analytics-period {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(160px, 1fr)) auto;
+  gap: 16px;
+  align-items: start;
+}
+.analytics-period > * {
+  min-width: 0;
+}
+.analytics-period .MuiOutlinedInput-notchedOutline {
+  border-color: var(--muted);
+}
+.analytics-period
+  .MuiOutlinedInput-root.Mui-focused
+  .MuiOutlinedInput-notchedOutline {
+  border-color: var(--blue);
+}
+.analytics-scroll {
+  max-width: 100%;
+}
+.analytics-scroll table {
+  min-width: 560px;
+  white-space: normal;
+}
+.analytics-scroll th,
+.analytics-scroll td {
+  padding: 12px 16px;
+  font-size: 14px;
+  line-height: 1.5;
+  vertical-align: top;
+  overflow-wrap: anywhere;
+}
+.analytics-scroll th {
+  color: var(--ink);
+}
+.analytics-scroll td:first-child {
+  display: table-cell;
+}
+.analytics-scroll td {
+  color: var(--ink);
+}
+.analytics-scroll th[scope="rowgroup"] {
+  background: var(--blue-soft);
+  color: var(--blue);
+}
+.analytics-reason {
+  display: block;
+  margin-top: 4px;
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--muted);
+}
+.analytics-list {
+  margin: 0;
+  padding-left: 20px;
+}
+.analytics-tabpanel {
+  margin-top: 16px;
+}
+.analytics-grading {
+  display: grid;
+  gap: 12px;
+  justify-items: start;
+  margin-bottom: 8px;
+}
+.analytics-run {
+  margin: 0;
+}
+.analytics-pager {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  margin-top: 12px;
+}
+.analytics-pager p {
+  margin: 0;
+}
+@media (max-width: 600px) {
+  .analytics-panel.MuiPaper-root {
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+  .analytics-period {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

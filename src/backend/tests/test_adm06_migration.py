@@ -37,7 +37,8 @@ def test_adm06_ac11_additive_upgrade_preserves_populated_user_and_attempt_histor
     assert isolated.sql('SELECT t::text FROM "user" t ORDER BY id') == before
     assert isolated.sql("SELECT t::text FROM practice_attempt t ORDER BY id") == attempts_before
     assert isolated.sql("SELECT feature,enabled,covered_since,incomplete_since FROM ai_usage_coverage ORDER BY feature") == [
-        ("ADM-03", False, None, None), ("STU-03", False, None, None), ("TEA-02", False, None, None)]
+        ("ADM-01", False, None, None), ("ADM-03", False, None, None),
+        ("STU-03", False, None, None), ("TEA-02", False, None, None)]
 
 
 def test_adm06_ac11_attempts_and_coverage_survive_fresh_process_and_idempotent_activation(isolated):

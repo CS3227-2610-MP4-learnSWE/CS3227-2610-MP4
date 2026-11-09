@@ -25,7 +25,7 @@ _usage_feature: ContextVar[str] = ContextVar("ai_usage_feature", default="STU-03
 @contextmanager
 def usage_feature(feature: str):
     """Server-owned attribution scoped to one call, safe across threads/tasks."""
-    if feature not in ("STU-03", "TEA-02", "ADM-03"):
+    if feature not in ("STU-03", "TEA-02", "ADM-03", "ADM-01"):
         raise ValueError("Unsupported AI feature.")
     token = _usage_feature.set(feature)
     try:

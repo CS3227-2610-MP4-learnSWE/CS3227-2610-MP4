@@ -10,7 +10,7 @@ from auth.db import engine_for
 from auth.settings import load_settings
 from ai_usage.models import ServiceAttempt, UsageCoverage
 
-FEATURES = ("STU-03", "TEA-02", "ADM-03")
+FEATURES = ("STU-03", "TEA-02", "ADM-03", "ADM-01")
 TOKEN_FIELDS = ("input_tokens", "output_tokens", "total_tokens")
 COUNT_FIELDS = ("requests", "failures", "rate_limit_failures", "other_failures")
 MAX_TOKEN = 2**63 - 1

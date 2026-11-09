@@ -1,0 +1,25 @@
+"""Constants for ADM-01, in one place. Read as `config.NAME` at call time so tests can monkeypatch them."""
+MAX_PERIOD_DAYS = 366
+SESSION_IDLE_MINUTES = 30
+GRADING_MAX_ITEMS = 20
+GRADING_RUNS_PER_HOUR = 10
+GRADING_AI_START_LIMIT_S = 200  # no AI call starts after this many monotonic seconds of a run
+GRADING_JOB_BOUND_S = 300  # the whole run thread is bounded by this
+GRADING_CALL_TIMEOUT_S = 30  # per AI call
+GRADING_REPLY_MAX_CHARS = 4000
+GRADING_MAX_TOKENS = 1500  # four short reasons plus the model's hidden reasoning budget
+GRADING_REASONING_EFFORT = "low"
+GRADING_RUN_EXPIRY_S = 900  # a queued or running run older than this is swept to failed/run_expired
+CONTENT_RETENTION_DAYS = 7
+REQUEST_MAX_CHARS = 2000
+RESPONSE_MAX_CHARS = 6000
+CONTEXT_MAX_CHARS = 3000
+ROW_CAP_PER_ROLE = 500
+REASON_MAX_CHARS = 300
+QUOTE_MATCH_CHARS = 30
+MAX_INPUT_CHARS = 12_000  # the shared client's input limit (llm_client.Limits.max_input_chars)
+USAGE_FEATURE = "ADM-01"  # the ADM-06 usage label of every grading call
+DEFAULT_PAGE_LIMIT = 25
+MAX_PAGE_LIMIT = 100
+WORKFLOWS = ("student_exercise", "teacher_lesson_planning")
+DIMENSIONS = ("relevance", "factual_accuracy", "clarity", "safety")
