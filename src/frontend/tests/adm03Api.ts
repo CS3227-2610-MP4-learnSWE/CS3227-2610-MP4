@@ -157,9 +157,7 @@ export function analysis(
         done: state === "complete" ? 3 : 1,
         total: 3,
         step:
-          state === "running"
-            ? { kind: "batch", index: 2, total: 2 }
-            : null,
+          state === "running" ? { kind: "batch", index: 2, total: 2 } : null,
       },
       result: state === "complete" ? COMPLETE_RESULT : null,
       error:
@@ -190,7 +188,9 @@ export async function setup(
   await page.route("**/api/**", (route) =>
     route.fulfill({
       status: 503,
-      json: { detail: { code: "test_unrelated", message: "Unrelated fixture" } },
+      json: {
+        detail: { code: "test_unrelated", message: "Unrelated fixture" },
+      },
     }),
   );
   const auth = await mockAuthApi(page, { user });
@@ -270,7 +270,14 @@ export async function setup(
     const rest = path.slice(ROOT.length);
     if (rest === "/forms") {
       json = {
-        items: [{ id: FORM_ID, title: TITLE, state: "open", response_count: ctx.total }],
+        items: [
+          {
+            id: FORM_ID,
+            title: TITLE,
+            state: "open",
+            response_count: ctx.total,
+          },
+        ],
         next_offset: null,
       };
     } else if (rest === `/forms/${FORM_ID}/response-count`) {
@@ -309,7 +316,9 @@ export async function setup(
     } else if (rest === "/analyses" && method === "POST") {
       status = 201;
       const made = analysis(++ctx.created + 900, "running", {
-        response_count: body.select_all ? ctx.total : (body.response_ids as string[]).length,
+        response_count: body.select_all
+          ? ctx.total
+          : (body.response_ids as string[]).length,
       });
       ctx.analyses.unshift(made);
       json = made;
@@ -319,7 +328,12 @@ export async function setup(
         const at = ctx.analyses.findIndex((a) => a.id === id);
         if (at < 0) {
           status = 404;
-          json = { detail: { code: "analysis_not_found", message: MSG.analysisNotFound } };
+          json = {
+            detail: {
+              code: "analysis_not_found",
+              message: MSG.analysisNotFound,
+            },
+          };
         } else {
           ctx.analyses.splice(at, 1);
           await route.fulfill({ status: 204 }).catch(() => undefined);
@@ -328,11 +342,18 @@ export async function setup(
       } else {
         const queue = ctx.script.get(id);
         const found = queue
-          ? (queue.length > 1 ? queue.shift() : queue[0])
+          ? queue.length > 1
+            ? queue.shift()
+            : queue[0]
           : ctx.analyses.find((a) => a.id === id);
         if (!found) {
           status = 404;
-          json = { detail: { code: "analysis_not_found", message: MSG.analysisNotFound } };
+          json = {
+            detail: {
+              code: "analysis_not_found",
+              message: MSG.analysisNotFound,
+            },
+          };
         } else json = found;
       }
     } else if (/^\/analyses\/[^/]+\/responses\/R\d+$/.test(rest)) {
@@ -344,7 +365,12 @@ export async function setup(
           form_id: FORM_ID,
           respondent: person(1),
           submitted_at: TIME,
-          form_snapshot: { title: TITLE, description: "", association: null, questions: [] },
+          form_snapshot: {
+            title: TITLE,
+            description: "",
+            association: null,
+            questions: [],
+          },
           answers: [],
         },
       };
