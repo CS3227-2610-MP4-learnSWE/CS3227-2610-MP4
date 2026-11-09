@@ -101,7 +101,7 @@ Added by this spec (derived from SHR-01, SHR-02, SHR-04, SHR-05 and the human fe
 - [ ] AC23 The AI step is asynchronous: the create response has AI status `running` with progress; reads report progress; any failed call fails the whole AI step with its specific error while the statistics stay available and unchanged; an AI step `running` over 360 seconds is reported as `analysis_interrupted`.
 - [ ] AC24 Charts render for single-choice, multi-choice and scale questions with a text table alternative, as soon as the analysis exists, including while the AI step runs or after it failed.
 - [ ] AC25 LLM output is rendered as plain text only.
-- [ ] AC26 Every LLM call (map and reduce) is labelled with the usage feature `feedback_analysis` for ADM-06.
+- [ ] AC26 Every LLM call (map and reduce) is labelled with the ADM-06 usage feature `ADM-03` (the value ADM-06 reserves for this feature).
 - [ ] AC27 The response-count endpoint returns the exact number of responses of a form to admins only, with 404 for an unknown form, and does not change ADM-02 endpoints.
 - [ ] AC28 When responses were submitted against different versions of a form, aggregates are grouped by question id using each response's own stored snapshot, with the deterministic rule in plan.md.
 - [ ] AC29 The LLM mock never receives a choice or scale answer (option ids, option labels as answers, or scale values) in any call.
