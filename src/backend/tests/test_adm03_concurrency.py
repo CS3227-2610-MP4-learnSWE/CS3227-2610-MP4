@@ -133,9 +133,9 @@ def test_adm03_ac23_sweeping_frees_the_slot_for_a_new_analysis(admin, llm):
     form, ids = text_form(admin, 3)
     fut, aid = start_blocked(admin, llm, form, ids)
     sql("UPDATE feedback_analyses SET created_at = now() - interval '400 seconds' WHERE id=%s", (aid,))
-    llm.gate.set()
-    nxt = create(admin, form, ids)  # POST itself sweeps stale rows first
+    nxt = create(admin, form, ids)  # POST itself sweeps stale rows first; the gate is still held
     assert nxt.status_code == 201, nxt.text
+    llm.gate.set()  # now both jobs run; the first one's late conditional writes must change nothing
     fut.result(60)
     assert wait_done(admin, nxt.json()["id"])["ai"]["status"] == "complete"
     assert get(admin, aid).json()["ai"]["error"]["code"] == "analysis_interrupted"

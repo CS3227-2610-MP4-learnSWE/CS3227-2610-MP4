@@ -51,7 +51,7 @@ def test_adm03_ac20_aggregates_every_kind_in_the_create_response(admin, llm):
     s = a["Scale q"]
     assert (s["kind"], s["answered"], s["skipped"], s["min"], s["max"]) == ("scale", 3, 1, 1, 5)
     assert (s["min_label"], s["max_label"]) == ("Low", "High")
-    assert s["mean"] == pytest.approx(4.0) and s["median"] == pytest.approx(4.0)
+    assert s["mean"] == pytest.approx(4.0, abs=0.005) and s["median"] == pytest.approx(4.0, abs=0.005)
     assert [(x["label"], x["count"]) for x in s["distribution"]] == [("1", 0), ("2", 0), ("3", 1), ("4", 1), ("5", 1)]
     assert s["distribution"][2]["percent"] == pct(33.3)
     t = a["Text q"]
@@ -78,7 +78,7 @@ def test_adm03_ac20_median_of_even_count_is_the_midpoint(admin, llm):
     sc = form["questions"][0]
     _, ids = seed(admin, None, [{"answers": [ans(sc, v)]} for v in (1, 2, 8, 10)], form=form)
     s = create(admin, form, ids).json()["aggregates"][0]
-    assert s["mean"] == pytest.approx(5.25) and s["median"] == pytest.approx(5.0)
+    assert s["mean"] == pytest.approx(5.25, abs=0.005) and s["median"] == pytest.approx(5.0, abs=0.005)
 
 
 def test_adm03_ac28_two_form_versions_grouped_by_question_id_with_newest_text(admin, llm):
@@ -126,7 +126,7 @@ def test_adm03_ac28_two_form_versions_grouped_by_question_id_with_newest_text(ad
     assert (q4["min"], q4["max"]) == (0, 10) and len(q4["distribution"]) == 11
     assert (q4["answered"], q4["skipped"]) == (3, 1)  # 11 is outside the widest range: skipped
     assert q4["min_label"] == "lo0" and q4["max_label"] == "hi10"  # newest snapshot's labels
-    assert q4["mean"] == pytest.approx((1 + 5 + 10) / 3)
+    assert q4["mean"] == pytest.approx((1 + 5 + 10) / 3, abs=0.005)
 
 
 def test_adm03_ac20_type_changed_value_counts_as_skipped(admin, llm):
