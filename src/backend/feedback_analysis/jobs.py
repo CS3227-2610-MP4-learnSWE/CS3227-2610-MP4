@@ -110,7 +110,8 @@ def _run(analysis_id, llm, progress):
             return
         # An unexpected exception is recorded against the step that was running (kind map).
         progress.update(step=failures.step("map", index, len(batches)), phrase=f"processing batch {index} of {len(batches)}")
-        text, record = _call(llm, map_messages(batch), config.MAP_MAX_TOKENS, admin_id, step, limits)
+        text, record = _call(llm, map_messages(batch), config.MAP_MAX_TOKENS, admin_id, step, limits,
+                              config.MAP_TIMEOUT_SECONDS)
         if record is None:
             try:
                 partials += parse_map_reply(text, batch.labels, selection)

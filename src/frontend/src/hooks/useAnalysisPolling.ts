@@ -15,13 +15,13 @@ import {
 } from "../messages/feedbackAnalysis";
 
 const INTERVAL_MS = 2000;
-const GIVE_UP_MS = 450_000;
+const GIVE_UP_MS = 810_000;
 const MAX_NETWORK_FAILURES = 3;
 
 /**
  * One GET at mount; while the AI step is running and the tab is visible, one more GET 2 s after the previous
  * reply (never two in flight). Stops on complete or failed, after 3 network failures, on an unreadable reply,
- * after 450 s, and on 401.
+ * after 810 s, and on 401.
  */
 export function useAnalysisPolling(analysisId: string) {
   const [analysis, setAnalysis] = useState<Analysis | null>(null);

@@ -12,7 +12,7 @@ export const DELETE_404 =
 export const NETWORK_PROGRESS =
   "Could not reach the server while checking the analysis progress. The analysis is saved and may still be running. Press Retry to check again.";
 export const STOPPED_WAITING =
-  "Stopped waiting after 450 seconds. The server may still be working. Reload this page to check again.";
+  "Stopped waiting after 810 seconds. The server may still be working. Reload this page to check again.";
 export const unreadableStatus = (status: number) =>
   `The server answered the progress check with an unreadable reply (HTTP ${status}). The analysis is saved. Press Retry to check again.`;
 
