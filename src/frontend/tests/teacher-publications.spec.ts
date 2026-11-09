@@ -48,7 +48,7 @@ for (const kind of ["note", "practice_set"] as const) {
       page.getByText(
         kind === "note"
           ? "Notes published. Enrolled students can read them in Study materials."
-          : "Practice set published. Student practice integration is pending.",
+          : "Practice set published. Enrolled students can practise it from Practice.",
         { exact: true },
       ),
     ).toBeVisible();

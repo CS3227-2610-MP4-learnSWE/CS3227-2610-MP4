@@ -178,6 +178,19 @@ test("shr01 AC25 anonymous visitors still reach every role area in labelled demo
   }
 });
 
+test("shr01 AC25 signed-in users see no Demo sample-data pill or switcher", async ({
+  page,
+}) => {
+  await mockAuthApi(page, { user: STUDENT });
+  await page.goto("/student/overview");
+  await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+  await expect(page.getByText("Demo · Sample data")).toHaveCount(0);
+  await expect(page.getByText("Demo (not signed in)")).toHaveCount(0);
+  await expect(page.getByRole("combobox", { name: "Demo role" })).toHaveCount(
+    0,
+  );
+});
+
 test("shr01 AC25 the Demo role switcher still switches areas in demo mode", async ({
   page,
 }) => {
