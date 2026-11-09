@@ -172,7 +172,7 @@ def test_adm03_ac26_every_call_is_labelled_feedback_analysis_for_adm06(admin, mo
     finally:
         llm_client_override_cleanup()
     assert done["ai"]["status"] == "complete"
-    assert reserved == ["feedback_analysis"] * 4
+    assert reserved == ["ADM-03"] * 4
 
 
 def llm_client_override_cleanup():
