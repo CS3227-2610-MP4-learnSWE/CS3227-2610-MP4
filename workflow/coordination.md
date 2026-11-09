@@ -5,7 +5,7 @@ Generator-verifier with an independent test designer and one merged verifier (Va
 ```
 feature ID -> spec-writer -> [human approves spec + plan/contract]
   -> developer (generator, run folder) || test-designer (own worktree)
-  -> test-designer merges the run branch into its worktree and runs the suite
+  -> backend: orchestrator runs `workflow/tools/phase2/phase2.py` (merge run branch into the test worktree, run suite; no agent), then one test-fix pass if tests fail; frontend: test-designer merges and runs the suite
   -> orchestrator merges the tests into the run branch
   -> verifier (code, docs and security review; re-runs the suite)
   -> developer fixes (max 2 rounds) -> [human approves PR]
@@ -30,11 +30,12 @@ The tracker does not install a provider hook or watch launches in the background
 - spec-writer: a feature is chosen from `docs/FeatureList.md`.
 - developer and test-designer: spec and plan marked Approved. Before starting them, the orchestrator records the start commit (`git rev-parse HEAD` on the run branch). They start together; the test-designer is started with worktree isolation and given the start commit, which it resets its worktree to first, because a new worktree may be cut from a different branch.
 - verification: the developer has committed its work and reports ready (existing tests pass, plus typecheck and lint where configured), and the test-designer has committed its tests on its worktree branch.
-- merge of tests: the test-designer has reported its suite results.
+- merge of tests: for backend suites the orchestrator ran `phase2.py` in the background (wait for the completion notification, do not poll) and recorded its report; the test-designer is not started for it. For frontend suites the test-designer has reported its suite results.
+- test-fix pass (backend, before the verifier): if the `phase2.py` report shows failures, start the test-designer once in fix mode with only that report, then run `phase2.py` once more. Failures that remain are passed to the verifier as known. This is a pre-verification cycle, not a revision round, and its cost counts in the run total.
 - verifier: the tests are merged into the run branch. Read-only. It re-checks after each fix round.
 
 ## Isolation
-Enforced by separate folders, not only by instruction. The developer works in the run's folder on the run branch. The test-designer works in its own git worktree on its own branch, from the spec, plan contract and threat model only, so neither can see the other's files. At verification the test-designer merges the run branch into its worktree and runs its tests; only then does the orchestrator merge the test branch into the run branch. The plan's contract (paths, schemas, signatures, error codes) is the only shared interface; a mismatch is reported as a contract defect, not patched by editing a test.
+Enforced by separate folders, not only by instruction. The developer works in the run's folder on the run branch. The test-designer works in its own git worktree on its own branch, from the spec, plan contract and threat model only, so neither can see the other's files. At verification, for backend suites the orchestrator runs `workflow/tools/phase2/phase2.py` (merge the run branch into the test worktree, run the suite, write a report); for frontend suites the test-designer merges and runs its tests. Only then does the orchestrator merge the test branch into the run branch. The plan's contract (paths, schemas, signatures, error codes) is the only shared interface; a mismatch is reported as a contract defect, not patched by editing a test.
 
 ## Spec check gate
 The build phase (starting the developer and the test-designer) does not begin until `python -m speccheck ../../specs/<id>` passes, run from `workflow/tools/speccheck` (give an explicit path, not `.`). The orchestrator runs it after the human approves the spec and plan; a failing finding goes back to the spec-writer. CI re-runs `python -m speccheck --all` for pull requests that touch `workflow/specs` or the tool. Only specs that existed before the rule may be waived in `workflow/specs/speccheck-waivers.txt`. Details: `tools/speccheck/README.md`.

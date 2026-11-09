@@ -19,6 +19,7 @@ Everything about how this project is built. The default agent definitions live i
 | `usage/runs/` | Per-feature-run invocation manifests and Markdown token reports; distinct from workflow comparison experiments. |
 | `tools/token-tracker/` | Token usage tracker for Claude Code and Codex logs; see its README. |
 | `tools/speccheck/` | Spec checker: required sections and labelled items in `spec.md`, `plan.md`, `tasks.md`; run before the build phase; see its README. |
+| `tools/phase2/` | Phase 2 runner for backend suites: merge the run branch into the test worktree, run pytest, write a report; no agent. See its README and `experiments/results/adm01-phase2-script.md`. |
 | `security/threat-model.md` | AI and development-process threats and controls. |
 | `security/test-log.md` | Security test cases, outcomes and fixes. |
 | `checklist.md` | Submission and setup checklist with owners. |
