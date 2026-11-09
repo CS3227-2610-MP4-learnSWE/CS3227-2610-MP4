@@ -7,7 +7,7 @@
 - Deviations from the process: the orchestrator, not the test-designer, merged the test branch and ran the first full suite (test-designer had no database); the spec-writer step was done by the orchestrator itself (no separate row in the manifest).
 - Invocation ID(s): run `2026-11-09-STU03G-01` (orchestrator 1, developer 5, test-designer 3, verifier 4).
 - Model(s) and effort setting: Sonnet 5.5 for all roles in the manifest (the report also lists an Opus model for the verifier agent definition); effort inherited.
-- Feature-run report: `workflow/usage/runs/2026-11-09-STU03G-01/report.md` (13 invocations; see the run total row; list-price estimate in the report, not billed; the orchestrator row spans the whole session).
+- Feature-run report: `workflow/usage/runs/2026-11-09-STU03G-01/report.md` (13 invocations, 282 requests; run total about 27.5M tokens, list-price estimate about 9.12 USD, not billed; the orchestrator row spans the whole session).
 - Resource use: tracker run yes; 2 fix rounds plus one pre-verification fix; 3 verifier passes.
 
 ## 2026-11-09: developer on STU-03-grounding (tasks 3, 4, 5, 9)
