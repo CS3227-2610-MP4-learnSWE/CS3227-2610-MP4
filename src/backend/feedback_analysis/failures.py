@@ -19,9 +19,9 @@ MESSAGES = {
     "nothing_to_analyse": "The {n} selected responses contain no answered questions, so there is nothing to analyse.",
     "form_not_found": "That form is not available. It may have been deleted. Choose another form.",
     "response_not_found": "{k} of the {n} selected responses are not available for this form (they may have been deleted or belong to another form). Reload the list and select again.",
-    "analysis_in_progress": "Another analysis started {s} seconds ago is still running its AI step. A running AI step finishes or fails within 360 seconds. Wait for it, then generate again.",
+    "analysis_in_progress": "Another analysis started {s} seconds ago is still running its AI step. A running AI step finishes or fails within 420 seconds. Wait for it, then generate again.",
     "analysis_not_found": "That analysis is not available. It does not exist or is not in your history.",
-    "analysis_running": "This analysis cannot be deleted yet: its AI step has been running for {s} seconds. It finishes or is marked interrupted within {r} seconds (the limit is 360 seconds). Delete it after that.",
+    "analysis_running": "This analysis cannot be deleted yet: its AI step has been running for {s} seconds. It finishes or is marked interrupted within {r} seconds (the limit is 420 seconds). Delete it after that.",
     "evidence_not_found": "This response cannot be shown. It was deleted, or the reference is not part of this analysis.",
     "internal_error": "An unexpected server error occurred while {step}. The cause was not an invalid request. Reference {ref} identifies it in the server logs.",
     "feedback_response_not_found": "This response was not found. It may already have been deleted, or it does not belong to this form.",
@@ -37,7 +37,7 @@ MESSAGES = {
     "ai_reply_not_json": "The AI reply for {step} was not a single JSON object, so it was rejected. No AI result was saved. Start a new analysis.",
     "ai_reply_invalid": "The AI reply for {step} was rejected because {rule}. No AI result was saved. Start a new analysis.",
     "ai_reply_cut_off": "The AI reply for {step} was cut off at the output limit of {max_tokens} tokens. No AI result was saved. Select fewer responses and start a new analysis.",
-    "analysis_interrupted": "The AI step was interrupted: it had been running for {s} seconds without finishing (the limit is 360 seconds), probably because the server restarted. It had finished {done} of {total} steps. " + _UNAFFECTED + " Start a new analysis.",
+    "analysis_interrupted": "The AI step was interrupted: it had been running for {s} seconds without finishing (the limit is 420 seconds), probably because the server restarted. It had finished {done} of {total} steps. " + _UNAFFECTED + " Start a new analysis.",
 }
 RULES = {
     "unexpected_field": "an unexpected field ({field}) was present",
