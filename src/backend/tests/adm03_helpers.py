@@ -160,6 +160,9 @@ def seed(admin, questions, rows, form=None):
                 "SELECT %s,%s,'student',%s,password_hash,'enabled' FROM \"user\" WHERE id='demo-admin'",
                 (user, name, f"{user}@example.com"))
             conn.execute(
+                "INSERT INTO feedback_recipients(form_id,user_id,display_name_snapshot,role_snapshot,inbox_id,read_at) "
+                "VALUES (%s,%s,%s,'student',%s,NULL)", (form["id"], user, name[:200], str(uuid.uuid4())))
+            conn.execute(
                 "INSERT INTO feedback_responses(id,form_id,user_id,display_name_snapshot,submitted_at,form_snapshot,answers) "
                 "VALUES (%s,%s,%s,%s,%s,%s,%s)",
                 (rid, form["id"], user, name, r.get("submitted_at", T0 + timedelta(minutes=i)),
