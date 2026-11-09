@@ -33,7 +33,7 @@ def test_adm03_ac32_owner_delete_returns_204_and_removes_everything(admin, llm):
 
 def test_adm03_ac32_a_failed_analysis_can_be_deleted_too(admin, llm):
     form, ids = text_form(admin, 2)
-    llm.script = {1: "nonsense"}
+    llm.script = {1: "nonsense", 2: "nonsense"}
     failed = run(admin, form, ids)
     assert failed["ai"]["status"] == "failed"
     assert delete(admin, failed["id"]).status_code == 204 and row_count(failed["id"]) == 0
