@@ -9,7 +9,7 @@ import llm_client
 from llm_client import LlmReply
 from adm02_helpers import actor
 from adm03_fixtures import llm  # noqa: F401
-from adm03_helpers import create, get, listing, run, text_form, wait_done
+from adm03_helpers import SEEDED_USERS, cleanup_from, create, get, listing, run, text_form, wait_done
 
 N_MAP = 3  # 65 distinct free-text answers, at most 30 entries per batch
 POSITIONS = {"first": (1, "batch 1 of 3"), "middle": (2, "batch 2 of 3"), "reduce": (4, "merging themes")}
@@ -18,9 +18,11 @@ VALID_MAP = '{"themes":[{"title":"T","description":"D","evidence":["R1"]}]}'
 
 @pytest.fixture(scope="module")
 def big():
+    mark = len(SEEDED_USERS)
     admin = actor("admin")
     form, ids = text_form(admin, 65)
-    return admin, form, ids
+    yield admin, form, ids
+    cleanup_from(mark)
 
 
 def reduce_json(summary="Summary.", themes=None, suggestions=None):

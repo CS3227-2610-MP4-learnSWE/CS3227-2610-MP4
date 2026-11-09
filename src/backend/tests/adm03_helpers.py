@@ -23,6 +23,22 @@ from adm02_helpers import created, payload, question, uid
 
 BASE = "/api/admin/feedback/analyses"
 POOL = ThreadPoolExecutor(max_workers=16)
+SEEDED_USERS = []  # ids of the respondent users seed() created, removed again by cleanup_from
+
+
+def cleanup_from(mark):
+    """Remove everything seed() inserted since registry position `mark` (FK-safe order; idempotent)."""
+    users = SEEDED_USERS[mark:]
+    del SEEDED_USERS[mark:]
+    if not users:
+        return
+    with psycopg.connect(psycopg_url(), autocommit=True) as conn:
+        forms = [r[0] for r in conn.execute("SELECT DISTINCT form_id FROM feedback_responses WHERE user_id = ANY(%s)", (users,)).fetchall()]
+        forms += [r[0] for r in conn.execute("SELECT DISTINCT form_id FROM feedback_recipients WHERE user_id = ANY(%s)", (users,)).fetchall()]
+        conn.execute("DELETE FROM feedback_analyses WHERE form_id = ANY(%s)", (forms,))
+        conn.execute("DELETE FROM feedback_responses WHERE user_id = ANY(%s)", (users,))
+        conn.execute("DELETE FROM feedback_recipients WHERE user_id = ANY(%s)", (users,))
+        conn.execute('DELETE FROM "user" WHERE id = ANY(%s)', (users,))
 
 # Exact message texts copied from spec.md "Failure messages".
 MSG = {
@@ -154,6 +170,7 @@ def seed(admin, questions, rows, form=None):
     with psycopg.connect(psycopg_url(), autocommit=True) as conn:
         for i, r in enumerate(rows):
             rid, user = str(uuid.uuid4()), "a3u-" + uuid.uuid4().hex
+            SEEDED_USERS.append(user)
             name = r.get("name", f"Resp {i}")
             conn.execute(
                 'INSERT INTO "user" (id,display_name,role,email,password_hash,access_status) '
