@@ -14,7 +14,7 @@ DAY = date(2026, 1, 15)
 START = datetime(2026, 1, 15, 0, 0, tzinfo=timezone.utc)
 METRICS = ("requests", "failures", "rate_limit_failures", "other_failures",
            "input_tokens", "output_tokens", "total_tokens")
-FEATURES = ["STU-03", "TEA-02", "ADM-03"]
+FEATURES = ["STU-03", "TEA-02", "ADM-03", "ADM-01"]
 PATH = "/api/admin/ai-usage"
 QUERY = "?feature=all&start_date=2026-01-15&end_date=2026-01-15"
 
