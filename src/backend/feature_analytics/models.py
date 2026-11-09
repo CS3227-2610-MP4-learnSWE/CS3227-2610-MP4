@@ -76,6 +76,7 @@ class AnalyticsGradingItem(Base):
     response_text: Mapped[str | None] = mapped_column(Text, nullable=True)
     context_text: Mapped[str | None] = mapped_column(Text, nullable=True)
     status: Mapped[str] = mapped_column(Text, server_default="pending")
+    privacy_policy_version: Mapped[str | None] = mapped_column(Text, nullable=True)
     failure_code: Mapped[str | None] = mapped_column(Text, nullable=True)
     graded_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

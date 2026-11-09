@@ -78,7 +78,8 @@ export type ItemStatus =
   | "pending"
   | "graded"
   | "grading_failed"
-  | "content_expired";
+  | "content_expired"
+  | "privacy_blocked";
 export type QualityItem = {
   item_id: number;
   received_at: string;
@@ -117,6 +118,8 @@ export type Quality = {
     pending_count: number | null;
     grading_failed_count: number | null;
     content_expired_count: number | null;
+    privacy_blocked_count: number | null;
+    privacy_mode: "strict" | "local_dlp";
     dimensions: {
       dimension: Dimension;
       average: number | null;
@@ -151,7 +154,8 @@ export type Period = { from: string; to: string };
 
 const DATE = /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/;
 export const DATE_MESSAGE = "Enter dates as YYYY-MM-DD.";
-export const ORDER_MESSAGE = "The start date must be on or before the end date.";
+export const ORDER_MESSAGE =
+  "The start date must be on or before the end date.";
 export const LENGTH_MESSAGE = "The period can be at most 366 days.";
 
 export function validDate(value: string): boolean {
@@ -290,8 +294,7 @@ export const UNAVAILABLE_REASONS: Record<string, (recorded: string) => string> =
   };
 
 export const RUN_FAILURES: Record<string, string> = {
-  ai_rate_limited:
-    "the AI service is rate-limited, try again in a few minutes",
+  ai_rate_limited: "the AI service is rate-limited, try again in a few minutes",
   ai_timeout: "the AI service took too long to respond",
   ai_unavailable: "the AI service is unavailable, try again later",
   context_load_failed: "the stored response data could not be loaded",
@@ -320,9 +323,16 @@ export function loadFailure(subject: string, error: unknown): string {
   return `${subject} could not be loaded: the server returned an unreadable reply. Try again.`;
 }
 
+export const PRIVACY_UNAVAILABLE =
+  "AI grading is unavailable because the local privacy scanner is not ready. Try again later.";
+
 /** Copy for a failed grading start. */
 export function startFailure(error: unknown): string {
   if (error instanceof ApiError) {
+    if (error.code === "privacy_grading_disabled")
+      return "AI grading is disabled because free-text privacy protection has not been approved.";
+    if (error.code === "privacy_scanner_unavailable")
+      return PRIVACY_UNAVAILABLE;
     if (error.code === "network")
       return "Could not reach the server. Reload to check whether grading started.";
     if (error.code === "timeout")

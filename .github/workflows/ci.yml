@@ -44,6 +44,8 @@ jobs:
         with:
           python-version: "3.12"
       - run: uv sync --frozen
+      - name: Offline privacy scanner health and deadline
+        run: uv run --frozen python tools/privacy_smoke.py
       - run: uv run pytest -q
 
   frontend:

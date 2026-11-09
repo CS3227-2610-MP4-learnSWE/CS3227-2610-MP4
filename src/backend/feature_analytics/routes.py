@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 from auth.db import get_session
 from auth.dependencies import AuthUser, current_user
 from errors import ApiError
-from feature_analytics import config, jobs, periods, queries
+from feature_analytics import config, jobs, periods, queries, privacy
 from feature_analytics.models import AnalyticsGradingItem as Item, AnalyticsGradingRun as Run
 from feature_analytics.schemas import GradingRunIn
 from llm_client import LlmClient, get_llm_client
@@ -92,6 +92,10 @@ def create_grading_run(body: GradingRunIn, admin: AuthUser = Depends(admin_user)
                        llm: LlmClient = Depends(get_llm_client), db: Session = Depends(get_session)):
     window = periods.parse_period(body.period_start, body.period_end)
     workflow = periods.parse_workflow(body.workflow)
+    if privacy.privacy_mode() == "strict":
+        raise ApiError(409, "privacy_grading_disabled", "AI grading is disabled because free-text privacy protection has not been approved.")
+    if not privacy.privacy_ready():
+        raise ApiError(503, "privacy_scanner_unavailable", "AI grading is unavailable because the local privacy scanner is not ready. Try again later.")
     _sweep()
     # Serialize admission as well as insertion: an empty first run can finish before
     # another insert, so the active-run index alone cannot enforce the hourly quota.
