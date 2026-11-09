@@ -76,23 +76,46 @@ test("adm03 AC2-4 complete result: sections, labels, evidence chips and plain-te
   await expect(page).toHaveURL(new RegExp(`${URL(1)}/responses/R3$`));
   await expect(page.getByRole("heading", { name: "Response R3", level: 1, exact: true })).toBeVisible();
   expect(ctx.requests.slice(before).filter((r) => r.path.includes("/responses/R3"))).toHaveLength(1);
+  expect(gets(ctx, 1)).toHaveLength(1); // opening a chip sends no analysis request
   await page.getByRole("link", { name: "Back to analysis", exact: true }).click();
   await expect(page).toHaveURL(new RegExp(`${URL(1)}$`));
+  await expect.poll(() => gets(ctx, 1).length).toBe(2); // the result page reloads once
   await page.goBack(); // chips and Back links push entries
   await expect(page).toHaveURL(new RegExp(`${URL(1)}/responses/R3$`));
-  expect(gets(ctx, 1).length).toBeGreaterThanOrEqual(2);
+  await expect(page.getByRole("heading", { name: "Response R3", level: 1 })).toBeVisible();
+  await page.waitForTimeout(300);
+  expect(gets(ctx, 1)).toHaveLength(2); // Back adds no analysis request
 });
 
 test("adm03 evidence opened directly loads the analysis too; unavailable evidence shows only the message", async ({ page }) => {
   const ctx = await setup(page, { analyses: [analysis(1, "complete")] });
   await page.goto(`${URL(1)}/responses/R1`);
   await expect(page.getByRole("heading", { name: "Response R1", level: 1 })).toBeVisible();
+  await expect.poll(() => gets(ctx, 1).length).toBe(1);
   expect(ctx.of("GET", "/responses/R1")).toHaveLength(1);
+  await page.reload();
+  await expect(page.getByRole("heading", { name: "Response R1", level: 1 })).toBeVisible();
+  await expect.poll(() => gets(ctx, 1).length).toBe(2);
+  expect(ctx.of("GET", "/responses/R1")).toHaveLength(2);
   ctx.steps.push({ suffix: "/responses/R9", status: 404, code: "evidence_not_found", message: MSG.evidenceNotFound });
   await page.goto(`${URL(1)}/responses/R9`);
   await expect(page.getByRole("alert").filter({ hasText: MSG.evidenceNotFound })).toBeVisible();
   await expect(page.getByText("Person 1")).toHaveCount(0);
 });
+
+for (const failure of [{ status: 500, code: "internal_error", message: "x" }, { abort: true }] as const) {
+  test(`adm03 evidence opened directly still shows when the extra analysis GET fails (${"abort" in failure ? "abort" : failure.status}): no alert, no retry`, async ({ page }) => {
+    const ctx = await setup(page, { analyses: [analysis(1, "complete")] });
+    ctx.steps.push({ method: "GET", suffix: `/analyses/${uuid(1)}`, ...failure });
+    await page.goto(`${URL(1)}/responses/R1`);
+    await expect(page.getByRole("heading", { name: "Response R1", level: 1 })).toBeVisible();
+    await expect.poll(() => gets(ctx, 1).length).toBe(1);
+    await page.waitForTimeout(500);
+    expect(gets(ctx, 1)).toHaveLength(1);
+    expect(ctx.of("GET", "/responses/R1")).toHaveLength(1);
+    await expect(page.getByRole("alert")).toHaveCount(0);
+  });
+}
 
 for (const [name, error, text] of [
   ["ai_timeout", { code: "ai_timeout", message: MSG.aiTimeout, step: { kind: "batch", index: 2, total: 3 }, details: {} }, MSG.aiTimeout],
