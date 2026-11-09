@@ -44,7 +44,7 @@ Request failures (returned by the create/read endpoints; the UI shows the messag
 - Delete-specific page messages (client side): 404 on delete: "This analysis was already deleted or is not in your history. The list has been refreshed."; network failure: "Could not reach the server while deleting the analysis. It was not confirmed as deleted. Press Delete permanently to try again."; 15 s abort: "The server did not answer within 15 seconds while deleting the analysis. It may or may not be deleted. Press Delete permanently again; if it was already deleted you will be told so."; success status: "Analysis deleted. The original feedback responses and forms were not changed."
 - `evidence_not_found`: "This response cannot be shown. It was deleted, or the reference is not part of this analysis."
 - `internal_error` (500, create or read): "An unexpected server error occurred while {step}. The cause was not an invalid request. Reference {ref} identifies it in the server logs."
-- Session and role: 401 "Your session has expired. Please sign in again."; 403 "You do not have access to this page. Only admin accounts can use feedback analysis."
+- Session and role: 401 "Your session has expired. Sign in again."; 403 "You do not have access to this page. Only admin accounts can use feedback analysis."
 
 AI step failures (stored in the analysis; shown only in the AI section):
 - `ai_timeout`: "The AI service did not answer within {t} seconds (after up to 2 attempts) while processing {step}. The statistics are unaffected. Start a new analysis to run the AI part again."
