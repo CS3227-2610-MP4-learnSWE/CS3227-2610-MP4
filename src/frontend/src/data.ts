@@ -25,6 +25,7 @@ export const navigation: Record<
   ],
   admin: [
     { path: "overview", label: "Analytics", icon: "overview" },
+    { path: "analytics", label: "Feature analytics", icon: "usage" },
     { path: "forms", label: "Feedback forms", icon: "forms" },
     { path: "responses", label: "Feedback insights", icon: "sparkles" },
     { path: "announcements", label: "Announcements", icon: "inbox" },

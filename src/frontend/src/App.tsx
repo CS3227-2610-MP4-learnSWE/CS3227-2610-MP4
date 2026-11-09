@@ -42,6 +42,7 @@ const AdminFeedbackAnalysisResult = lazy(
 const AdminFeedbackAnalysisEvidence = lazy(
   () => import("./pages/AdminFeedbackAnalysisEvidence"),
 );
+const AdminAnalytics = lazy(() => import("./pages/AdminAnalytics"));
 
 function Inbox({ role }: { role: "student" | "teacher" }) {
   const { status } = useAuth();
@@ -246,6 +247,14 @@ export default function App() {
                 }
               />
               <Route path="feedback/*" element={<LiveFeedback admin />} />
+              <Route
+                path="analytics"
+                element={
+                  <LiveAnalysis>
+                    <AdminAnalytics />
+                  </LiveAnalysis>
+                }
+              />
               <Route path="announcements" element={<Announcements />} />
               <Route path="announcements/new" element={<AdminMessaging />} />
               <Route

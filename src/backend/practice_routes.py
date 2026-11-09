@@ -5,6 +5,7 @@ from fastapi.responses import JSONResponse
 import practice_logic as logic
 from attempt_store import Attempt, store
 from errors import ApiError
+from feature_analytics import record_practice_attempt_started, record_practice_attempt_submitted
 from practice_data import KEY_VERSION, PracticeSet
 from practice_schemas import (
     AnswersIn,
@@ -99,7 +100,9 @@ def start_attempt(
 ) -> AttemptOut:
     key = str(parse_uuid(set_id))
     _set_or_404(provider, key, student)
-    return _attempt_out(store.create(student, key))
+    attempt = store.create(student, key)
+    record_practice_attempt_started(user_id=student, practice_set_id=key, attempt_ref=str(attempt.id))
+    return _attempt_out(attempt)
 
 
 @router.get("/attempts/{attempt_id}", response_model=AttemptOut)
@@ -147,7 +150,10 @@ def submit(
         locked.score_total = result.total
         locked.key_version = KEY_VERSION
         locked.correct_question_ids = logic.correct_question_ids(practice_set, locked.answers)
-        return SubmitOut(attempt_id=locked.id, status=locked.status, score=result)
+        response = SubmitOut(attempt_id=locked.id, status=locked.status, score=result)
+    # ADM-01: after the store's commit; `locked.submitted_at` is filled in by the store when the block exits cleanly.
+    record_practice_attempt_submitted(attempt_ref=str(locked.id), submitted_at=locked.submitted_at)
+    return response
 
 
 @router.get("/attempts/{attempt_id}/results", response_model=ResultsOut)

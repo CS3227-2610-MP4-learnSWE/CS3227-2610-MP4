@@ -7,6 +7,8 @@ from sqlalchemy import select
 from pydantic import BaseModel, ConfigDict, Field, StrictInt, StrictStr, ValidationError
 
 from errors import ApiError
+from feature_analytics import GradingContent, record_generation_accepted, record_generation_outcome
+from feature_analytics.recording import REFUSED_BY_LIMITER
 from text_validation import is_postgres_text, normalise_newlines_and_trim
 from llm_client import LlmClient, get_llm_client
 from teacher_access import require_managed_course
@@ -18,6 +20,7 @@ from teacher_access import check_version, commit_deletion, delete_version
 from teacher_notes.generation import extract_source, generate_notes
 
 router = APIRouter(prefix="/api/teacher", tags=["teacher note drafts"])
+NOTES_REQUEST_TEXT = "Create concise study notes grounded only in the supplied source material."
 
 
 def _draft(row: StudyNoteDraft, *, content: bool = False) -> dict:
@@ -36,7 +39,26 @@ def create_note_draft(request: Request, material_id: str, llm: LlmClient = Depen
         media_type = material.media_type
     # Copy scalars and release the session before extraction and external work.
     text = extract_source(source_content, media_type)
-    content = generate_notes(llm, text, teacher_id)
+    # ADM-01: a generation attempt is recorded once, after the AI call, unless the AI service's limiter refused it
+    # (then no generation began). The hooks never raise, so the response is unchanged whatever they do.
+    accepted_at = datetime.now(timezone.utc)
+    counted, success, graded = True, False, None
+    try:
+        content = generate_notes(llm, text, teacher_id)
+        graded = GradingContent(request_text=NOTES_REQUEST_TEXT, response_text=content, context_text=text)
+        payload = _save_note_draft(request, teacher_id, source_id, course_id, title, content)
+        success = True
+        return payload
+    except ApiError as exc:
+        counted = exc.code not in REFUSED_BY_LIMITER
+        raise
+    finally:
+        if counted:
+            attempt_id = record_generation_accepted(workflow="study_notes", user_id=teacher_id, accepted_at=accepted_at)
+            record_generation_outcome(attempt_id, success=success, grading=graded if success else None)
+
+
+def _save_note_draft(request, teacher_id, source_id, course_id, title, content):
     with teacher_session(request) as (session, teacher):
         # Locks linearise access checks with concurrent role/membership changes.
         user = session.scalar(select(User).where(User.id == teacher_id).with_for_update(read=True).execution_options(populate_existing=True))

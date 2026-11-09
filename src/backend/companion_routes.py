@@ -16,6 +16,7 @@ import leak_check
 from attempt_store import Attempt, store
 from companion_schemas import CompanionMessageIn, CompanionReplyOut, ContextIn, SourceOut
 from errors import ApiError
+from feature_analytics import GradingContent, record_chat_request_outcome, record_chat_request_received
 from lesson_provider import LessonProvider, LessonText, get_lesson_provider
 from llm_client import (
     LlmBadResponse,
@@ -116,6 +117,15 @@ def _leak_scope(plan: service.Plan, accessible: list[PracticeSet]) -> tuple[Ques
     return ()
 
 
+def _activity(attempt: Attempt | None, viewed: LessonText | None) -> dict[str, str | None]:
+    """The ADM-01 activity of a request: the practice attempt (its id), the lesson viewed, or neither."""
+    if attempt is not None:
+        return {"activity_type": "practice_attempt", "activity_ref": str(attempt.id)}
+    if viewed is not None:
+        return {"activity_type": "lesson", "activity_ref": str(viewed.id)}
+    return {"activity_type": None, "activity_ref": None}
+
+
 def _log(
     mode: str,
     outcome: str,
@@ -165,42 +175,53 @@ def post_message(
     messages = service.build_messages(plan, message, history, body.context.label)
 
     started = time.monotonic()
+    # ADM-01: one chat request is recorded once it reaches the chatbot; every exit below records one outcome.
+    # The hooks never raise, so the response is the same whatever they do.
+    request_id = record_chat_request_received(user_id=student, **_activity(attempt, viewed))
+    success, graded = False, None
     try:
-        with usage_feature("STU-03"):
-            reply = llm.complete(messages, max_tokens=config.MAX_TOKENS[plan.mode], caller_id=student)
-    except LlmError as exc:
-        error = _map_error(exc)
-        _log(plan.mode, error.code, started, lessons=len(plan.lessons))
-        raise error from None
-    # A model call may outlive logout/disable/archive. Use a new transaction
-    # rather than the dependency's earlier ORM snapshot before releasing text.
-    with Session(engine_for(load_settings().database_url)) as access_db:
-        fresh = current_user(role="student")(session_context(request, access_db))
-        if fresh.id != student:
-            raise unauthenticated()
-    if any(lessons.get_visible(l.id, user) is None for l in plan.lessons):
-        _log(plan.mode, "lesson_not_found", started, lessons=len(plan.lessons))
-        raise ApiError(404, "lesson_not_found", "Lesson not found.")
-    # The leak scope covers only the sets this student can access (set_provider).
-    # Lesson text is student-visible and may equal a choice text, so Lesson mode skips the text check.
-    shown, grounded = reply.text, []
-    if plan.mode == "lesson":
-        # Marker handling first: the leak check must see exactly the text that would be shown.
-        shown, grounded = service.finish_lesson_reply(reply.text, plan.lessons)
-    leak = leak_check.find_leak(shown, _leak_scope(plan, accessible), check_text=plan.mode != "lesson")
-    outcome = "withheld" if leak else "ok"
-    _log(plan.mode, outcome, started, reply.prompt_tokens, reply.completion_tokens, len(plan.lessons))
-    if plan.mode == "lesson":
-        if leak:
+        try:
+            with usage_feature("STU-03"):
+                reply = llm.complete(messages, max_tokens=config.MAX_TOKENS[plan.mode], caller_id=student)
+        except LlmError as exc:
+            error = _map_error(exc)
+            _log(plan.mode, error.code, started, lessons=len(plan.lessons))
+            raise error from None
+        # A model call may outlive logout/disable/archive. Use a new transaction
+        # rather than the dependency's earlier ORM snapshot before releasing text.
+        with Session(engine_for(load_settings().database_url)) as access_db:
+            fresh = current_user(role="student")(session_context(request, access_db))
+            if fresh.id != student:
+                raise unauthenticated()
+        if any(lessons.get_visible(l.id, user) is None for l in plan.lessons):
+            _log(plan.mode, "lesson_not_found", started, lessons=len(plan.lessons))
+            raise ApiError(404, "lesson_not_found", "Lesson not found.")
+        # The leak scope covers only the sets this student can access (set_provider).
+        # Lesson text is student-visible and may equal a choice text, so Lesson mode skips the text check.
+        shown, grounded = reply.text, []
+        if plan.mode == "lesson":
+            # Marker handling first: the leak check must see exactly the text that would be shown.
+            shown, grounded = service.finish_lesson_reply(reply.text, plan.lessons)
+        leak = leak_check.find_leak(shown, _leak_scope(plan, accessible), check_text=plan.mode != "lesson")
+        outcome = "withheld" if leak else "ok"
+        _log(plan.mode, outcome, started, reply.prompt_tokens, reply.completion_tokens, len(plan.lessons))
+        success = True  # a reply that follows the companion's rules, including a refusal, is a successful request
+        if not leak and attempt is not None:
+            # Only a released model reply of a practice attempt is graded (never a canned refusal).
+            graded = GradingContent(request_text=message, response_text=reply.text)
+        if plan.mode == "lesson":
+            if leak:
+                return CompanionReplyOut(
+                    reply=config.LESSON_CANNED_REPLY, mode="lesson", withheld=True, sources=[]
+                )
             return CompanionReplyOut(
-                reply=config.LESSON_CANNED_REPLY, mode="lesson", withheld=True, sources=[]
+                reply=shown,
+                mode="lesson",
+                withheld=False,
+                sources=[SourceOut(lesson_id=l.id, title=l.title) for l in grounded],
             )
-        return CompanionReplyOut(
-            reply=shown,
-            mode="lesson",
-            withheld=False,
-            sources=[SourceOut(lesson_id=l.id, title=l.title) for l in grounded],
-        )
-    if leak:
-        return CompanionReplyOut(reply=config.CANNED_REPLY, mode=plan.mode, withheld=True)
-    return CompanionReplyOut(reply=reply.text, mode=plan.mode, withheld=False)
+        if leak:
+            return CompanionReplyOut(reply=config.CANNED_REPLY, mode=plan.mode, withheld=True)
+        return CompanionReplyOut(reply=reply.text, mode=plan.mode, withheld=False)
+    finally:
+        record_chat_request_outcome(request_id, success=success, grading=graded)

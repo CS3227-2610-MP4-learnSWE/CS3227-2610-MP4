@@ -29,6 +29,7 @@ const LABELS: Record<string, string> = {
   "STU-03": "Student assistant (STU-03)",
   "TEA-02": "Teacher generation (TEA-02)",
   "ADM-03": "Feedback analysis (ADM-03)",
+  "ADM-01": "Feature analytics (ADM-01)",
 };
 const MSG = {
   invalid:
@@ -473,7 +474,7 @@ test("adm06 AC13 refresh and Back/Forward each reload default filters exactly on
   await apply(page).click();
   await expect(table(page).getByRole("row")).toHaveCount(2);
   await page.reload();
-  await expect(table(page).getByRole("row")).toHaveCount(4);
+  await expect(table(page).getByRole("row")).toHaveCount(5);
   expect(ctx.requests).toHaveLength(3);
   await page.locator('a[href="/admin/overview"]').first().click();
   await expect(table(page)).toHaveCount(0);

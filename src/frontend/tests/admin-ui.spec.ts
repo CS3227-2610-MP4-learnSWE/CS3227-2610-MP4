@@ -266,9 +266,10 @@ for (const width of [1365, 390]) {
             end_date: url.searchParams.get("end_date"),
             timezone: "UTC",
             as_of: TIME,
-            rows: ["STU-03", "TEA-02", "ADM-03"].map((feature) => ({
+            rows: ["STU-03", "TEA-02", "ADM-03", "ADM-01"].map((feature) => ({
               feature,
-              coverage_start: feature === "ADM-03" ? null : TIME,
+              coverage_start:
+                feature === "ADM-03" || feature === "ADM-01" ? null : TIME,
               ...Object.fromEntries(
                 [
                   "requests",
