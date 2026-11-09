@@ -237,3 +237,19 @@
 - Invocation: 2026-11-07-ADM04-01-spec-writer-01; source session 01a1b257-d8c5-7bb2-b8ab-68e8818691eb (resolved by orchestrator). Model/effort inherited; exact elapsed and measured tokens/cost are orchestrator/tracker-owned, unavailable in this handoff. No retries or application revision rounds, no tests/application code/commits/live AI.
 - Report: workflow/usage/runs/2026-11-07-ADM04-01/report.md (orchestrator generates and links at closeout). Tracker not run by spec-writer.
 - Blocking: required human approval; no implementation authorization inferred from draft. Complete public HTTP contract; internal function names remain implementation-owned.
+
+## 2026-11-09: developer on ADM-03 (tasks 2 to 8)
+- Done: migration `20261109_adm03_analysis` (single head), `src/backend/feedback_analysis/` (config, models, aggregates, entries, prompts, validate, failures, service, jobs, routes), router registered in main.py; frontend api, messages, polling hook, QuestionResults, DeleteAnalysisDialog, three pages, routes, link on AdminFeedback, scoped styles; DeveloperGuide and UserGuide sections. A scratch smoke run (create, idempotent repeat, poll to complete, evidence, response-count, history, delete, rate-limit failure) passed against the disposable PostgreSQL and was deleted (no feature tests written).
+- Next (agent + task): orchestrator merges test-designer tests; verifier reviews.
+- Files touched: src/backend/feedback_analysis/*, src/backend/alembic/versions/20261109_adm03_feedback_analysis.py, src/backend/main.py, src/frontend/src/{api,messages,hooks/useAnalysisPolling.ts,components/QuestionResults.tsx,components/DeleteAnalysisDialog.tsx,pages/AdminFeedbackAnalysis*.tsx,App.tsx,pages/AdminFeedback.tsx,services/client.ts,styles.css}, docs/DeveloperGuide.md, docs/UserGuide.md.
+- Decisions / open questions (plan deviations, please confirm):
+  1. Usage label: the plan says `usage_feature("feedback_analysis")`, but `llm_client.usage_feature` and the ADM-06 DB check constraints only accept `STU-03`, `TEA-02`, `ADM-03`. I used `ADM-03` (already reserved for this feature in ADM-06). Using `feedback_analysis` would need a shared-client change plus a migration of ADM-06 constraints. AC26 tests asserting the literal `feedback_analysis` will fail until decided.
+  2. `admin_id` is `String(64)` (user ids are strings like `demo-admin`), not UUID as the plan table says.
+  3. The job starts in a daemon thread (`jobs.start`) rather than FastAPI BackgroundTasks, because TestClient would run a BackgroundTask before returning the POST. `run_job(analysis_id, llm=None)`: the route passes the client resolved through `Depends(get_llm_client)` so dependency overrides apply.
+  4. Label-in-reply validation: `parse_map_reply(text, allowed, selection=None)` and `parse_reduce_reply(text, allowed, selection=None)` take an optional third argument so `label_outside_selection` can be told from `label_outside_input`.
+  5. Mean and median are rounded to 2 decimals (plan does not state). `ai.progress.step` is derived from `ai_done`/`ai_total` (no extra column). The server 401/403 messages are unchanged; the page shows the spec's 401/403 texts by status.
+  6. The `ai_not_configured` template (spec text) has neither a step nor a number placeholder.
+  7. `ApiError` in `services/client.ts` gained `detail` (error body) and `request` accepts 204; both are additive.
+- Not done / not run: frontend Playwright (`npm test`, needs servers) and browser checks were not run; no browser or 320/390px visual check. Typecheck and lint pass.
+- Blocking findings: none.
+- Resource use: Tracker run: no (orchestrator owns). Model: Sonnet 5.5. Total tokens: unavailable (not measured by developer). Retries and revision rounds: 0.

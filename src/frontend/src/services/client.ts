@@ -23,13 +23,17 @@ export class ApiError extends Error {
   code: string;
   missing: string[];
   retryAfterSeconds: number | null;
+  /** The whole `detail` object of an error body (message and extra keys), if it was JSON. */
+  detail: Record<string, unknown>;
   constructor(
     status: number,
     code = "",
     missing: string[] = [],
     retryAfterSeconds: number | null = null,
+    detail: Record<string, unknown> = {},
   ) {
     super(code || `HTTP ${status}`);
+    this.detail = detail;
     this.status = status;
     this.code = code;
     this.missing = missing;
@@ -60,6 +64,9 @@ async function errorFrom(response: Response): Promise<ApiError> {
     typeof retry === "number" && Number.isInteger(retry) && retry > 0
       ? retry
       : null,
+    detail && typeof detail === "object"
+      ? (detail as Record<string, unknown>)
+      : {},
   );
 }
 
@@ -127,6 +134,7 @@ export async function request(
       },
       options.timeoutMs ?? REQUEST_TIMEOUT_MS,
       async (response) => {
+        if (response.status === 204) return null;
         let data: unknown;
         try {
           data = await response.json();

@@ -1,4 +1,11 @@
-import { lazy, Suspense, useEffect, useMemo, useState } from "react";
+import {
+  lazy,
+  Suspense,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
 import { Navigate, Route, Routes } from "react-router";
 import {
   Alert,
@@ -21,6 +28,9 @@ import FeedbackInbox from "./pages/FeedbackInbox";
 import RecipientFeedback from "./pages/RecipientFeedback";
 import AdminFeedback from "./pages/AdminFeedback";
 import AdminMessaging from "./pages/AdminMessaging";
+import AdminFeedbackAnalysis from "./pages/AdminFeedbackAnalysis";
+import AdminFeedbackAnalysisResult from "./pages/AdminFeedbackAnalysisResult";
+import AdminFeedbackAnalysisEvidence from "./pages/AdminFeedbackAnalysisEvidence";
 
 // Loaded on demand so the student pages never download the teacher demo data.
 const Teacher = lazy(() => import("./pages/Teacher"));
@@ -52,6 +62,15 @@ function LiveFeedback({ admin = false }: { admin?: boolean }) {
   const { status } = useAuth();
   if (status !== "authenticated") return <Navigate to="/login" replace />;
   return admin ? <AdminFeedback /> : <RecipientFeedback />;
+}
+
+function LiveAnalysis({ children }: { children: ReactNode }) {
+  const { status } = useAuth();
+  return status === "authenticated" ? (
+    children
+  ) : (
+    <Navigate to="/login" replace />
+  );
 }
 
 function Announcements() {
@@ -181,6 +200,30 @@ export default function App() {
               }
             >
               <Route index element={<Navigate to="overview" replace />} />
+              <Route
+                path="feedback/analysis"
+                element={
+                  <LiveAnalysis>
+                    <AdminFeedbackAnalysis />
+                  </LiveAnalysis>
+                }
+              />
+              <Route
+                path="feedback/analysis/:analysisId"
+                element={
+                  <LiveAnalysis>
+                    <AdminFeedbackAnalysisResult />
+                  </LiveAnalysis>
+                }
+              />
+              <Route
+                path="feedback/analysis/:analysisId/responses/:label"
+                element={
+                  <LiveAnalysis>
+                    <AdminFeedbackAnalysisEvidence />
+                  </LiveAnalysis>
+                }
+              />
               <Route path="feedback/*" element={<LiveFeedback admin />} />
               <Route path="announcements" element={<Announcements />} />
               <Route path="announcements/new" element={<AdminMessaging />} />
