@@ -7,7 +7,7 @@ from sqlalchemy import func, select, update
 
 from auth.db import open_session
 from feedback_models import FeedbackResponse
-from llm_client import LlmError, Limits, get_llm_client, usage_feature
+from llm_client import LlmError, LlmReplyCutOff, Limits, get_llm_client, usage_feature
 
 from feedback_analysis import config, failures
 from feedback_analysis.entries import build_entries, sample_and_batch
@@ -64,12 +64,14 @@ def _call(llm, messages, max_tokens, admin_id, step, limits, timeout_seconds=Non
     try:
         with usage_feature(config.USAGE_FEATURE):
             # Only a call with its own limit passes the keyword; other calls use the client's default.
-            extra = {}
+            extra = {"reasoning_effort": config.REASONING_EFFORT}
             if timeout_seconds is not None:
                 extra["timeout_seconds"] = timeout_seconds
             if max_reply_chars is not None:
                 extra["max_reply_chars"] = max_reply_chars
             reply = llm.complete(messages, max_tokens=max_tokens, caller_id=f"admin:{admin_id}", **extra)
+    except LlmReplyCutOff:
+        return None, failures.cut_off(step, max_tokens, empty=True)
     except LlmError as exc:
         return None, failures.from_llm_error(exc, step, limits, sum(len(m.content) for m in messages), timeout_seconds)
     if reply.finish_reason == "length":

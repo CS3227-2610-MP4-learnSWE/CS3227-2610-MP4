@@ -58,6 +58,7 @@ class LlmClient(Protocol):
         caller_id: str,
         timeout_seconds: float | None = None,
         max_reply_chars: int | None = None,
+        reasoning_effort: str | None = None,
     ) -> LlmReply: ...
 
 
@@ -129,6 +130,10 @@ class LlmBadResponse(LlmError):
     pass
 
 
+class LlmReplyCutOff(LlmBadResponse):
+    """No content at all and finish_reason "length": the model used its whole token budget (reasoning) before answering."""
+
+
 class SoclaasClient:
     def __init__(
         self,
@@ -157,8 +162,11 @@ class SoclaasClient:
         caller_id: str,
         timeout_seconds: float | None = None,
         max_reply_chars: int | None = None,
+        reasoning_effort: str | None = None,
     ) -> LlmReply:
-        """Optional per-call overrides; None keeps the defaults.
+        """Optional per-call overrides; None keeps the defaults (and sends nothing extra).
+
+        `reasoning_effort` is sent as the request-body field of that name only when set.
 
         `timeout_seconds` replaces `Limits.timeout_seconds` for this call's attempts. `max_reply_chars` replaces
         MAX_REPLY_CHARS, the length at which the reply text is cut (a structured JSON reply must not be cut).
@@ -176,6 +184,8 @@ class SoclaasClient:
             "messages": [{"role": m.role, "content": m.content} for m in messages],
             "max_tokens": max_tokens,
         }
+        if reasoning_effort is not None:
+            payload["reasoning_effort"] = reasoning_effort
         response = self._send(url, headers, payload, timeout_seconds)
         return self._parse(response, max_reply_chars or MAX_REPLY_CHARS)
 
@@ -262,6 +272,8 @@ class SoclaasClient:
         except (ValueError, KeyError, IndexError, TypeError):
             raise LlmBadResponse("The model service sent an unusable reply.") from None
         if not isinstance(text, str) or not text.strip():
+            if choice.get("finish_reason") == "length":
+                raise LlmReplyCutOff("The model used its whole token budget before answering.")
             raise LlmBadResponse("The model service sent an unusable reply.")
         usage = data.get("usage") if isinstance(data, dict) else None
         usage = usage if isinstance(usage, dict) else {}

@@ -36,7 +36,7 @@ MESSAGES = {
     "ai_input_too_large": "The AI input for {step} was {x} characters, over the limit of {limit}. This is a defect in the batch size, not something you can fix by selecting differently. Reference {ref} identifies it in the server logs.",
     "ai_reply_not_json": "The AI reply for {step} was not a single JSON object, so it was rejected. No AI result was saved. Start a new analysis.",
     "ai_reply_invalid": "The AI reply for {step} was rejected because {rule}. No AI result was saved. Start a new analysis.",
-    "ai_reply_cut_off": "The AI reply for {step} was cut off at the output limit of {max_tokens} tokens. No AI result was saved. Select fewer responses and start a new analysis.",
+    "ai_reply_cut_off": "The AI reply for {step} was cut off at the output limit of {max_tokens} tokens{empty}. No AI result was saved. Select fewer responses and start a new analysis.",
     "analysis_interrupted": "The AI step was interrupted: it had been running for {s} seconds without finishing (the limit is 420 seconds), probably because the server restarted. It had finished {done} of {total} steps. " + _UNAFFECTED + " Start a new analysis.",
 }
 RULES = {
@@ -68,6 +68,8 @@ INVALID_REASONS = {
 
 
 def render(code, **values):
+    if code == "ai_reply_cut_off":
+        values.setdefault("empty", "")
     return MESSAGES[code].format(**values)
 
 
@@ -146,8 +148,10 @@ def responses_deleted(step_, phrase, missing, selected):
                          {"missing": missing, "selected": selected})
 
 
-def cut_off(step_, max_tokens):
-    return _record("ai_reply_cut_off", step_, {"max_tokens": max_tokens}, max_tokens=max_tokens)
+def cut_off(step_, max_tokens, empty=False):
+    """`empty`: the model produced no answer at all because it used its whole token budget before answering."""
+    note = " (the model used its whole token budget before answering)" if empty else ""
+    return _record("ai_reply_cut_off", step_, {"max_tokens": max_tokens}, max_tokens=max_tokens, empty=note)
 
 
 def interrupted(seconds, done, total):
