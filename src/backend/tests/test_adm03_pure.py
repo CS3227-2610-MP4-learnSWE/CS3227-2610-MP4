@@ -123,3 +123,23 @@ def test_adm03_ac15_reduce_rules(validate):
     assert bad(themes=[{"title": "T", "description": "D", "evidence": ["R7"]}]) == "ai_reply_invalid"
     assert bad(themes=[{"title": "T", "description": "D", "evidence": ["R1"]}] * 7) == "ai_reply_invalid"
     assert bad(suggestions=[{"text": "x", "basis": "ai", "evidence": []}] * 9) == "ai_reply_invalid"
+
+
+def long_reduce(desc=250, text=200, summary=400):
+    return {"summary": "s" * summary,
+            "themes": [{"title": f"Theme {i} " + "t" * 60, "description": "d" * desc, "evidence": ["R1"]} for i in range(5)],
+            "suggestions": [{"text": "x" * text, "basis": "feedback", "evidence": ["R1"]} for _ in range(6)]}
+
+
+def test_adm03_ac15_a_long_valid_reduce_reply_of_about_3000_characters_is_accepted(validate):
+    reply = json.dumps(long_reduce())
+    assert len(reply) >= 3000
+    validate.parse_reduce_reply(reply, {"R1"})
+
+
+def test_adm03_ac15_reduce_description_and_suggestion_caps(validate):
+    validate.parse_reduce_reply(json.dumps(long_reduce(desc=250, text=200)), {"R1"})
+    assert code_for(validate.parse_reduce_reply, json.dumps(long_reduce(desc=251)), {"R1"}) == "ai_reply_invalid"
+    assert code_for(validate.parse_reduce_reply, json.dumps(long_reduce(text=201)), {"R1"}) == "ai_reply_invalid"
+    validate.parse_reduce_reply(json.dumps(long_reduce(summary=400)), {"R1"})
+    assert code_for(validate.parse_reduce_reply, json.dumps(long_reduce(summary=401)), {"R1"}) == "ai_reply_invalid"

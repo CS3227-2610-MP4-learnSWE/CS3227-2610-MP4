@@ -56,6 +56,8 @@ class Call:
     max_tokens: int
     caller_id: str
     timeout_seconds: float = None
+    max_reply_chars: int = None
+    reasoning_effort: str = None
 
     @property
     def system_text(self):
@@ -112,8 +114,9 @@ class FakeAnalysisLlm:
             sugg.insert(0, {"text": "Show due dates on the dashboard.", "basis": "feedback", "evidence": ev[:1]})
         return json.dumps({"summary": "Students want clearer deadlines.", "themes": themes, "suggestions": sugg})
 
-    def complete(self, messages, *, max_tokens, caller_id, timeout_seconds=None):
-        c = Call(list(messages), max_tokens, caller_id, timeout_seconds)
+    def complete(self, messages, *, max_tokens, caller_id, timeout_seconds=None,
+                 max_reply_chars=None, reasoning_effort=None):
+        c = Call(list(messages), max_tokens, caller_id, timeout_seconds, max_reply_chars, reasoning_effort)
         with self.lock:
             self.calls.append(c)
             n = len(self.calls)

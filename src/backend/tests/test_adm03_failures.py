@@ -74,6 +74,7 @@ EXCEPTIONS = [
                              + re.escape(". This is a defect in the batch size, not something you can fix by selecting differently. Reference ") + r"\S+"
                              + re.escape(" identifies it in the server logs.")), {}),
     ("cut_off", LlmReply(text=VALID_MAP, finish_reason="length", prompt_tokens=1, completion_tokens=1), "ai_reply_cut_off", None, {}),
+    ("cut_off_empty", LlmReply(text="", finish_reason="length", prompt_tokens=1, completion_tokens=1), "ai_reply_cut_off", None, {}),
     ("not_json", "I think the themes are great.", "ai_reply_not_json",
      exact("The AI reply for {step} was not a single JSON object, so it was rejected. No AI result was saved. Start a new analysis."), {}),
     ("fenced", "```json\n" + VALID_MAP + "\n```", "ai_reply_not_json",
@@ -120,7 +121,7 @@ def cases():
     out = []
     for name, value, code, matcher, details in EXCEPTIONS:
         for pos in POSITIONS:
-            m = cut_off_matcher(pos) if name == "cut_off" else matcher
+            m = cut_off_matcher(pos) if name.startswith("cut_off") else matcher
             out.append(pytest.param(pos, value, code, m, details, id=f"{name}-{pos}"))
     for name, value, matcher in MAP_INVALID:
         for pos in ("first", "middle"):
@@ -196,3 +197,25 @@ def test_adm03_ac2_complete_only_when_every_call_validated(big, llm):
     done = run(admin, form, ids)
     assert done["ai"]["status"] == "complete" and done["ai"]["progress"]["done"] == done["ai"]["progress"]["total"] == 4
     assert len(llm.calls) == 4
+
+
+def test_adm03_ac2_a_long_valid_reduce_reply_completes_the_analysis(big, llm):
+    admin, form, ids = big
+    long_reply = json.dumps({
+        "summary": "s" * 400,
+        "themes": [{"title": f"Theme {i} " + "t" * 60, "description": "d" * 250, "evidence": ["R1"]} for i in range(5)],
+        "suggestions": [{"text": "x" * 200, "basis": "feedback", "evidence": ["R1"]} for _ in range(6)]})
+    assert len(long_reply) >= 3000
+    llm.script = {4: long_reply}
+    done = wait_done(admin, create(admin, form, ids).json()["id"])
+    assert done["ai"]["status"] == "complete", done["ai"]["error"]
+    assert len(done["ai"]["result"]["themes"]) == 5 and len(done["ai"]["result"]["suggestions"]) == 6
+
+
+def test_adm03_ac31_empty_reply_cut_off_message_is_the_registry_text(big, llm):
+    from feedback_analysis import failures
+    admin, form, ids = big
+    llm.script = {4: LlmReply(text="", finish_reason="length", prompt_tokens=1, completion_tokens=1)}
+    err = wait_done(admin, create(admin, form, ids).json()["id"])["ai"]["error"]
+    assert err["code"] == "ai_reply_cut_off"
+    assert err["message"] == failures.render("ai_reply_cut_off", step="merging themes", max_tokens=2000)
