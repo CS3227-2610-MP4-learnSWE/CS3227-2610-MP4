@@ -1,5 +1,9 @@
 # Handoff notes
 
+## 2026-11-10: developer fixes ADM-01 CI formatting
+- Formatted only the three CI-reported files with Prettier; no application behavior changes. Three-file format check passed before user requested no further checks/tests. Full local check also reports unrelated Windows checkout line-ending differences; those files were left untouched.
+- Small maintenance, no workflow agents or usage manifest. Summary: logs/Adm01FormattingFix.md. User personal files preserved.
+
 ## 2026-11-10: orchestrator closes ADM-01 implementation and privacy amendment
 - Done: original analytics feature completed; stronger privacy option1 approved at906a249, implemented independently, tests merged. Final source fix d943f73 and independent cutoff regression ebfbec4 pass; strongest verifier reproduced zero calls after200s and returned PASS, no blocking findings. User explicitly approved the extra cutoff fix after the two-round cap.
 - Checks: current UI102PASS; lint/typecheck/build/spec checker pass. Privacy gate/dispatch/retry77PASS; eight other corrected legacy cases pass; strongest security34PASS; final cutoff2PASS. Prior full-regression coverage was segmented, not an uninterrupted all-green full run; exact seven WindowsTemp errors recovered7PASS. Full evidence: [session log](../logs/Adm01Finish.md).

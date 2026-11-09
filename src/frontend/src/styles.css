@@ -5120,7 +5120,9 @@ td .MuiButton-root {
 .analytics-period .MuiOutlinedInput-notchedOutline {
   border-color: var(--muted);
 }
-.analytics-period .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline {
+.analytics-period
+  .MuiOutlinedInput-root.Mui-focused
+  .MuiOutlinedInput-notchedOutline {
   border-color: var(--blue);
 }
 .analytics-scroll {

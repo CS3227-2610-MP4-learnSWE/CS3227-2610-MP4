@@ -14,12 +14,10 @@ test("adm01 privacy strict mode shows counts and disables grading without extra 
   };
   await page.goto(PATH);
   await expect(
-    page
-      .getByRole("status")
-      .filter({
-        hasText:
-          "AI grading is disabled until free-text privacy protection is approved. Counts and timings remain available.",
-      }),
+    page.getByRole("status").filter({
+      hasText:
+        "AI grading is disabled until free-text privacy protection is approved. Counts and timings remain available.",
+    }),
   ).toBeVisible();
   await expect(
     page.getByRole("button", { name: "Grade ungraded responses", exact: true }),
@@ -62,13 +60,11 @@ for (const status of [409, 503]) {
       .getByRole("button", { name: "Start grading", exact: true })
       .click();
     await expect(
-      page
-        .getByRole("alert")
-        .filter({
-          hasText: disabled
-            ? "AI grading is disabled because free-text privacy protection has not been approved."
-            : unavailable,
-        }),
+      page.getByRole("alert").filter({
+        hasText: disabled
+          ? "AI grading is disabled because free-text privacy protection has not been approved."
+          : unavailable,
+      }),
     ).toBeVisible();
     expect(page.url()).toBe(original);
     expect(mock.count("start")).toBe(1);
