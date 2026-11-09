@@ -61,7 +61,7 @@ Preview screens work without the backend, but Student Practice, the study compan
 
 ## What you can explore
 
-- **Student:** overview, topic/search filtering, sample lessons with reversible completion, MCQ-only whole-set practice submission and results, a floating study companion, inbox read status and a feedback-form preview.
+- **Student:** overview and Progress page with real figures, teacher-published lessons with topic/search filtering and saved completion, a practice picker and MCQ-only whole-set practice on teacher-published sets with results, a floating study companion, and an Inbox with targeted feedback forms and Messages. The anonymous demo shows sample data instead.
 - **Teacher:** learning overview (per-course lesson completion, practice results and commonly missed questions for a chosen period), working private materials library with PDF/UTF-8 uploads, topic assignment and download, working AI content studio with saved draft notes, explicit note and three-MCQ batch editing/conflict recovery, confirmed unpublished draft deletion and deletion of unreferenced sources; immutable note/practice-set publication and a Published content catalogue; inbox with targeted feedback forms and admin messages (sample inbox only in the anonymous demo). One reviewed batch publishes all three questions as one set, without assembly.
 - **Admin:** illustrative analytics, feedback-form builder and audience preview, sample feedback and analysis references, announcement preview, role-filtered people table and illustrative AI usage.
 - **Shared:** responsive navigation, role switching, light/dark mode, keyboard focus, reduced-motion support and direct browser routes.
