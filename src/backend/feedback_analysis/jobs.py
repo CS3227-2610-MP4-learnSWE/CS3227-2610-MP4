@@ -76,7 +76,8 @@ def _call(llm, messages, max_tokens, admin_id, step, limits, timeout_seconds=Non
     except LlmError as exc:
         return None, failures.from_llm_error(exc, step, limits, sum(len(m.content) for m in messages), timeout_seconds)
     if reply.finish_reason == "length":
-        return None, failures.cut_off(step, max_tokens)
+        # No content at all means the model spent its whole token budget before answering.
+        return None, failures.cut_off(step, max_tokens, empty=not reply.text.strip())
     return reply.text, None
 
 
