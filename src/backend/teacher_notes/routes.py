@@ -34,6 +34,7 @@ def _draft(row: StudyNoteDraft, *, content: bool = False) -> dict:
 def create_note_draft(request: Request, material_id: str, llm: LlmClient = Depends(get_llm_client)):
     with teacher_session(request) as (session, teacher):
         material = owned_material(session, teacher, material_id)
+        identity_values = (teacher.id, teacher.email or "", teacher.display_name)
         teacher_id, source_id, course_id, title = teacher.id, material.id, material.course_id, material.title
         source_content = _material_content(session, material.id)
         media_type = material.media_type
@@ -45,7 +46,7 @@ def create_note_draft(request: Request, material_id: str, llm: LlmClient = Depen
     counted, success, graded = True, False, None
     try:
         content = generate_notes(llm, text, teacher_id)
-        graded = GradingContent(request_text=NOTES_REQUEST_TEXT, response_text=content, context_text=text)
+        graded = GradingContent(request_text=NOTES_REQUEST_TEXT, response_text=content)
         payload = _save_note_draft(request, teacher_id, source_id, course_id, title, content)
         success = True
         return payload
@@ -55,7 +56,8 @@ def create_note_draft(request: Request, material_id: str, llm: LlmClient = Depen
     finally:
         if counted:
             attempt_id = record_generation_accepted(workflow="study_notes", user_id=teacher_id, accepted_at=accepted_at)
-            record_generation_outcome(attempt_id, success=success, grading=graded if success else None)
+            record_generation_outcome(attempt_id, success=success, grading=graded if success else None,
+                                      source="teacher_notes", identity_values=identity_values)
 
 
 def _save_note_draft(request, teacher_id, source_id, course_id, title, content):

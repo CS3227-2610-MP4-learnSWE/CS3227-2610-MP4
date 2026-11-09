@@ -4,7 +4,7 @@ import re
 from collections.abc import Sequence
 from dataclasses import dataclass
 
-from feature_analytics import config
+from feature_analytics import config, privacy
 from llm_client import ChatMessage, LlmClient, usage_feature
 
 NO_CONTEXT_REASON = "No authorised context was available."
@@ -109,9 +109,13 @@ def validate_grader_output(raw: str, item: GradingInput) -> list[Grade]:
         if not isinstance(reason, str):
             raise InvalidGraderOutput
         reason = reason.strip()
+        if re.search(r"[<>`]|!?(?:\[[^]]*\]\([^)]*\))|\*\*|^\s*#", reason):
+            raise InvalidGraderOutput
         if not 1 <= len(reason) <= config.REASON_MAX_CHARS or "\x00" in reason or _quotes(reason, sources):
             raise InvalidGraderOutput
         grades.append(Grade(dimension, "unassessable" if score is None else "graded", score, reason))
+    if not privacy.validate_grader_privacy(reasons=tuple(g.reason for g in grades)):
+        raise InvalidGraderOutput
     override = (NO_KEY_REASON if item.generation_workflow == "mcq_batch"
                 else NO_CONTEXT_REASON if not item.context_text else None)
     if override is not None:

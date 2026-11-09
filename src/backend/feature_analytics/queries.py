@@ -2,9 +2,9 @@
 from datetime import date, datetime, timedelta, timezone
 from decimal import ROUND_HALF_UP, Decimal
 
-from sqlalchemy import func, select
+from sqlalchemy import func, select, or_
 
-from feature_analytics import config
+from feature_analytics import config, privacy
 from feature_analytics.models import (
     AnalyticsChatRequest as Chat,
     AnalyticsGenerationAttempt as Generation,
@@ -73,7 +73,7 @@ def generation_unavailable(reason: str) -> list[dict]:
 
 def grades_unavailable(reason: str) -> dict:
     return metric("unavailable", reason, assessed_count=None, pending_count=None, grading_failed_count=None,
-                  content_expired_count=None, dimensions=[])
+                  content_expired_count=None, privacy_blocked_count=None, privacy_mode=privacy.privacy_mode(), dimensions=[])
 
 
 def response_time_unavailable(reason: str) -> dict:
@@ -178,7 +178,7 @@ def _item_scope(workflow: str, window: Window) -> list:
 
 def eligible_clauses(workflow: str, window: Window, now: datetime) -> list:
     """Items a grading run may send: in scope, ungraded, text still stored, not past retention."""
-    return [*_item_scope(workflow, window), Item.status.in_(GRADABLE_STATUSES), Item.request_text.isnot(None),
+    return [*_item_scope(workflow, window), Item.status.in_(GRADABLE_STATUSES), Item.privacy_policy_version == privacy.POLICY_VERSION, Item.request_text.isnot(None),
             Item.response_text.isnot(None), Item.created_at >= now - timedelta(days=config.CONTENT_RETENTION_DAYS)]
 
 
@@ -186,10 +186,10 @@ def _item_rows(db, scope: list, expiry: datetime, limit: int, offset: int) -> di
     total = db.scalar(select(func.count()).select_from(Item).where(*scope))
     page = db.execute(
         select(Item.id, Item.received_at, Item.status, Item.duration_ms, Item.failure_code, Item.graded_at,
-               Item.created_at)
+               Item.created_at, Item.privacy_policy_version)
         .where(*scope).order_by(Item.received_at.desc(), Item.id.desc()).limit(limit).offset(offset)
     ).all()
-    graded_ids = [r.id for r in page if r.status == "graded"]
+    graded_ids = [r.id for r in page if r.status == "graded" and r.privacy_policy_version == privacy.POLICY_VERSION]
     grades: dict[int, dict[str, dict]] = {}
     if graded_ids:
         for g in db.execute(select(Grade.item_id, Grade.dimension, Grade.state, Grade.score, Grade.reason)
@@ -199,11 +199,12 @@ def _item_rows(db, scope: list, expiry: datetime, limit: int, offset: int) -> di
     rows = []
     for r in page:
         expired = r.status in GRADABLE_STATUSES and r.created_at < expiry
-        status = "content_expired" if expired else r.status
+        status = ("privacy_blocked" if r.privacy_policy_version != privacy.POLICY_VERSION
+                  else "content_expired" if expired else r.status)
         by_dimension = grades.get(r.id, {})
         rows.append({
             "item_id": r.id, "received_at": iso(r.received_at), "status": status, "response_time_ms": r.duration_ms,
-            "failure_code": r.failure_code if status == "grading_failed" else None, "graded_at": iso(r.graded_at),
+            "failure_code": r.failure_code if status in ("grading_failed", "privacy_blocked") else None, "graded_at": iso(r.graded_at),
             "grades": [by_dimension[d] for d in config.DIMENSIONS if d in by_dimension] if status == "graded" else [],
         })
     return {"total": total, "limit": limit, "offset": offset, "rows": rows}
@@ -216,17 +217,19 @@ def quality_grades(db, workflow: str, window: Window, limit: int, offset: int) -
     scope = _item_scope(workflow, window)
     expiry = datetime.now(timezone.utc) - timedelta(days=config.CONTENT_RETENTION_DAYS)
     fresh, old = Item.created_at >= expiry, Item.created_at < expiry
-    assessed, pending, failed, expired = db.execute(
-        select(func.count().filter(Item.status == "graded"),
-               func.count().filter(Item.status == "pending", fresh),
-               func.count().filter(Item.status == "grading_failed", fresh),
-               func.count().filter(Item.status.in_(GRADABLE_STATUSES), old))
+    current = Item.privacy_policy_version == privacy.POLICY_VERSION
+    assessed, pending, failed, expired, blocked = db.execute(
+        select(func.count().filter(Item.status == "graded", current),
+               func.count().filter(Item.status == "pending", fresh, current),
+               func.count().filter(Item.status == "grading_failed", fresh, current),
+               func.count().filter(Item.status.in_(GRADABLE_STATUSES), old, current),
+               func.count().filter(or_(Item.status == "privacy_blocked", Item.privacy_policy_version.is_distinct_from(privacy.POLICY_VERSION))))
         .where(*scope)
     ).one()
     stats = {}
     for dimension, state, n, total in db.execute(
         select(Grade.dimension, Grade.state, func.count(), func.coalesce(func.sum(Grade.score), 0))
-        .join(Item, Item.id == Grade.item_id).where(*scope, Item.status == "graded")
+        .join(Item, Item.id == Grade.item_id).where(*scope, Item.status == "graded", current)
         .group_by(Grade.dimension, Grade.state)
     ).all():
         stats[(dimension, state)] = (n, total)
@@ -237,7 +240,7 @@ def quality_grades(db, workflow: str, window: Window, limit: int, offset: int) -
             "dimension": dimension, "average": round(score_sum / graded, 2) if graded else None,
             "graded_count": graded, "unassessable_count": stats.get((dimension, "unassessable"), (0, 0))[0]})
     counts = dict(assessed_count=assessed, pending_count=pending, grading_failed_count=failed,
-                  content_expired_count=expired, dimensions=dimensions)
+                  content_expired_count=expired, privacy_blocked_count=blocked, privacy_mode=privacy.privacy_mode(), dimensions=dimensions)
     grades = metric("available", None, **counts) if assessed else metric("not_applicable", "none_graded", **counts)
     return {"grades": grades, "items": _item_rows(db, scope, expiry, limit, offset)}
 

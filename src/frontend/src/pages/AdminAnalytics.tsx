@@ -285,6 +285,7 @@ const STATUS_LABELS: Record<api.ItemStatus, string> = {
   graded: "Graded",
   grading_failed: "Could not be graded",
   content_expired: "Content no longer retained; not graded",
+  privacy_blocked: "Excluded by privacy protection",
 };
 
 function ItemsTable({ items }: { items: api.Items }) {
@@ -473,6 +474,8 @@ function QualityBody({
 }
 
 function runMessage(run: api.Run): string {
+  if (run.failure_code === "privacy_scanner_unavailable")
+    return api.PRIVACY_UNAVAILABLE;
   if (api.isActive(run))
     return `Grading is running: ${run.items_graded} of ${run.items_total} responses graded.`;
   if (run.status === "completed")
@@ -771,17 +774,41 @@ export default function AdminAnalytics() {
           aria-labelledby={`analytics-tab-${workflow}`}
           className="analytics-tabpanel"
         >
+          {quality?.ok && quality.data.grades.privacy_mode === "strict" && (
+            <p role="status">
+              AI grading is disabled until free-text privacy protection is
+              approved. Counts and timings remain available.
+            </p>
+          )}
+          {quality?.ok &&
+            quality.data.grades.privacy_blocked_count !== null && (
+              <p>
+                {quality.data.grades.privacy_blocked_count} responses excluded
+                by privacy protection.
+              </p>
+            )}
           <div className="analytics-grading">
             <Button
               variant="outlined"
               onClick={() => setConfirming(true)}
-              disabled={startPending || running}
+              disabled={
+                startPending ||
+                running ||
+                (quality?.ok && quality.data.grades.privacy_mode === "strict")
+              }
             >
               Grade ungraded responses
             </Button>
             {startError && <Alert severity="error">{startError}</Alert>}
             {run && (
-              <p role="status" className="analytics-run">
+              <p
+                role={
+                  run.failure_code === "privacy_scanner_unavailable"
+                    ? "alert"
+                    : "status"
+                }
+                className="analytics-run"
+              >
                 {runMessage(run)}
               </p>
             )}

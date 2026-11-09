@@ -206,7 +206,7 @@ def post_message(
         outcome = "withheld" if leak else "ok"
         _log(plan.mode, outcome, started, reply.prompt_tokens, reply.completion_tokens, len(plan.lessons))
         success = True  # a reply that follows the companion's rules, including a refusal, is a successful request
-        if not leak and attempt is not None and plan.mode != "explain":
+        if not leak and attempt is not None:
             # Explain mode deliberately sees released answer keys and solutions. Count its
             # successful reply, but never retain or send that text for analytics grading.
             graded = GradingContent(request_text=message, response_text=reply.text)
@@ -225,4 +225,6 @@ def post_message(
             return CompanionReplyOut(reply=config.CANNED_REPLY, mode=plan.mode, withheld=True)
         return CompanionReplyOut(reply=reply.text, mode=plan.mode, withheld=False)
     finally:
-        record_chat_request_outcome(request_id, success=success, grading=graded)
+        record_chat_request_outcome(request_id, success=success, grading=graded,
+                                    source="student_hint" if plan.mode == "hint" else "student_explanation",
+                                    identity_values=(user.id, user.email or "", user.display_name))

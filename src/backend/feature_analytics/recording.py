@@ -10,8 +10,8 @@ from sqlalchemy import select, text
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from auth.db import open_session
-from feature_analytics import config
-from feature_analytics.grading_text import GradingContent, prepare_for_storage
+from feature_analytics import config, privacy
+from feature_analytics.grading_text import GradingContent
 from feature_analytics.models import (
     AnalyticsChatRequest,
     AnalyticsGenerationAttempt,
@@ -112,12 +112,16 @@ def record_chat_request_received(*, user_id: str, activity_type: str | None = No
 
 
 def _add_item(db, *, workflow: str, source_type: str, source_id: int, generation_workflow: str | None,
-              received_at: datetime, duration_ms: int, content: GradingContent) -> None:
-    stored = prepare_for_storage(content)
+              received_at: datetime, duration_ms: int, content: GradingContent, source: str,
+              identity_values: tuple[str, ...]) -> None:
+    result = privacy.prepare_grading_content(source=source, content=content, identity_values=identity_values)
+    stored = result.content
     db.add(AnalyticsGradingItem(
         workflow=workflow, source_type=source_type, source_id=source_id, generation_workflow=generation_workflow,
-        received_at=received_at, duration_ms=duration_ms, request_text=stored.request_text,
-        response_text=stored.response_text, context_text=stored.context_text, status="pending",
+        received_at=received_at, duration_ms=duration_ms, request_text=stored.request_text if stored else None,
+        response_text=stored.response_text if stored else None, context_text=stored.context_text if stored else None,
+        status="pending" if stored else "privacy_blocked", failure_code=result.code,
+        privacy_policy_version=result.policy_version,
     ))
 
 
@@ -129,7 +133,8 @@ def _finish(row, success: bool, completed_at: datetime | None, started_field: st
 
 
 def record_chat_request_outcome(request_id: int | None, *, success: bool, grading: GradingContent | None = None,
-                                completed_at: datetime | None = None) -> None:
+                                completed_at: datetime | None = None, source: str = "legacy",
+                                identity_values: tuple[str, ...] = ()) -> None:
     if request_id is None:
         return
     try:
@@ -144,7 +149,7 @@ def record_chat_request_outcome(request_id: int | None, *, success: bool, gradin
             if wanted:
                 try:  # a failed grading item must not undo the recorded outcome
                     _add_item(db, workflow="student_exercise", source_type="chat_request", source_id=request_id,
-                              generation_workflow=None, received_at=received_at, duration_ms=duration, content=grading)
+                              generation_workflow=None, received_at=received_at, duration_ms=duration, content=grading, source=source, identity_values=identity_values)
                     db.commit()
                 except Exception as exc:  # noqa: BLE001
                     db.rollback()
@@ -208,7 +213,8 @@ def record_generation_accepted(*, workflow: str, user_id: str, accepted_at: date
 
 
 def record_generation_outcome(attempt_id: int | None, *, success: bool, grading: GradingContent | None = None,
-                              completed_at: datetime | None = None) -> None:
+                              completed_at: datetime | None = None, source: str = "legacy",
+                              identity_values: tuple[str, ...] = ()) -> None:
     if attempt_id is None:
         return
     try:
@@ -224,7 +230,7 @@ def record_generation_outcome(attempt_id: int | None, *, success: bool, grading:
                 try:
                     _add_item(db, workflow="teacher_lesson_planning", source_type="generation_attempt",
                               source_id=attempt_id, generation_workflow=workflow, received_at=accepted_at,
-                              duration_ms=duration, content=grading)
+                              duration_ms=duration, content=grading, source=source, identity_values=identity_values)
                     db.commit()
                 except Exception as exc:  # noqa: BLE001
                     db.rollback()

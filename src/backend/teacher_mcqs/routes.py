@@ -62,7 +62,7 @@ def create_mcq_draft(request: Request, material_id: str, llm: LlmClient = Depend
     finally:
         if counted:
             attempt_id = record_generation_accepted(workflow="mcq_batch", user_id=teacher_id, accepted_at=accepted_at)
-            record_generation_outcome(attempt_id, success=success, grading=graded if success else None)
+            record_generation_outcome(attempt_id, success=success, grading=graded if success else None, source="teacher_mcq")
 
 
 def _save_mcq_draft(request, teacher_id, source_id, course_id, title, questions):
