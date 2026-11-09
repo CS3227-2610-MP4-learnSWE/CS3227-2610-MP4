@@ -1,4 +1,12 @@
-import { lazy, Suspense, useEffect, useMemo, useState } from "react";
+import {
+  lazy,
+  Suspense,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import { Navigate, Route, Routes } from "react-router";
 import {
   Alert,
@@ -25,6 +33,15 @@ import AdminMessaging from "./pages/AdminMessaging";
 // Loaded on demand so the student pages never download the teacher demo data.
 const Teacher = lazy(() => import("./pages/Teacher"));
 const Admin = lazy(() => import("./pages/Admin"));
+const AdminFeedbackAnalysis = lazy(
+  () => import("./pages/AdminFeedbackAnalysis"),
+);
+const AdminFeedbackAnalysisResult = lazy(
+  () => import("./pages/AdminFeedbackAnalysisResult"),
+);
+const AdminFeedbackAnalysisEvidence = lazy(
+  () => import("./pages/AdminFeedbackAnalysisEvidence"),
+);
 
 function Inbox({ role }: { role: "student" | "teacher" }) {
   const { status } = useAuth();
@@ -48,10 +65,33 @@ function TeacherFeedbackIndex({
   );
 }
 
+/** True once the user was signed in during this visit, so a mid-visit expiry is left to AuthContext's redirect. */
+function useWasAuthenticated() {
+  const { status } = useAuth();
+  const was = useRef(false);
+  if (status === "authenticated") was.current = true;
+  return was.current;
+}
+
 function LiveFeedback({ admin = false }: { admin?: boolean }) {
   const { status } = useAuth();
-  if (status !== "authenticated") return <Navigate to="/login" replace />;
+  const was = useWasAuthenticated();
+  if (status === "anonymous" && !was) return <Navigate to="/login" replace />;
+  if (status !== "authenticated") return null;
   return admin ? <AdminFeedback /> : <RecipientFeedback />;
+}
+
+/**
+ * Lazy pages. Role checks are RequireRole's; a session that expires while the page is open is left to
+ * AuthContext (it navigates with the expiry notice). Only a visit that starts anonymous is sent to sign in here.
+ */
+function LiveAnalysis({ children }: { children: ReactNode }) {
+  const { status } = useAuth();
+  const was = useWasAuthenticated();
+  if (status === "anonymous" && !was) return <Navigate to="/login" replace />;
+  return (
+    <Suspense fallback={<p role="status">Loading�</p>}>{children}</Suspense>
+  );
 }
 
 function Announcements() {
@@ -181,6 +221,30 @@ export default function App() {
               }
             >
               <Route index element={<Navigate to="overview" replace />} />
+              <Route
+                path="feedback/analysis"
+                element={
+                  <LiveAnalysis>
+                    <AdminFeedbackAnalysis />
+                  </LiveAnalysis>
+                }
+              />
+              <Route
+                path="feedback/analysis/:analysisId"
+                element={
+                  <LiveAnalysis>
+                    <AdminFeedbackAnalysisResult />
+                  </LiveAnalysis>
+                }
+              />
+              <Route
+                path="feedback/analysis/:analysisId/responses/:label"
+                element={
+                  <LiveAnalysis>
+                    <AdminFeedbackAnalysisEvidence />
+                  </LiveAnalysis>
+                }
+              />
               <Route path="feedback/*" element={<LiveFeedback admin />} />
               <Route path="announcements" element={<Announcements />} />
               <Route path="announcements/new" element={<AdminMessaging />} />

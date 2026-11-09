@@ -51,7 +51,14 @@ class LlmReply:
 
 class LlmClient(Protocol):
     def complete(
-        self, messages: Sequence[ChatMessage], *, max_tokens: int, caller_id: str
+        self,
+        messages: Sequence[ChatMessage],
+        *,
+        max_tokens: int,
+        caller_id: str,
+        timeout_seconds: float | None = None,
+        max_reply_chars: int | None = None,
+        reasoning_effort: str | None = None,
     ) -> LlmReply: ...
 
 
@@ -123,6 +130,10 @@ class LlmBadResponse(LlmError):
     pass
 
 
+class LlmReplyCutOff(LlmBadResponse):
+    """No content at all and finish_reason "length": the model used its whole token budget (reasoning) before answering."""
+
+
 class SoclaasClient:
     def __init__(
         self,
@@ -144,8 +155,22 @@ class SoclaasClient:
         self._http = httpx.Client(transport=transport, timeout=limits.timeout_seconds)
 
     def complete(
-        self, messages: Sequence[ChatMessage], *, max_tokens: int, caller_id: str
+        self,
+        messages: Sequence[ChatMessage],
+        *,
+        max_tokens: int,
+        caller_id: str,
+        timeout_seconds: float | None = None,
+        max_reply_chars: int | None = None,
+        reasoning_effort: str | None = None,
     ) -> LlmReply:
+        """Optional per-call overrides; None keeps the defaults (and sends nothing extra).
+
+        `reasoning_effort` is sent as the request-body field of that name only when set.
+
+        `timeout_seconds` replaces `Limits.timeout_seconds` for this call's attempts. `max_reply_chars` replaces
+        MAX_REPLY_CHARS, the length at which the reply text is cut (a structured JSON reply must not be cut).
+        """
         s = self._settings
         if not s.complete:
             raise LlmNotConfigured("The model service is not configured.")
@@ -159,8 +184,10 @@ class SoclaasClient:
             "messages": [{"role": m.role, "content": m.content} for m in messages],
             "max_tokens": max_tokens,
         }
-        response = self._send(url, headers, payload)
-        return self._parse(response)
+        if reasoning_effort is not None:
+            payload["reasoning_effort"] = reasoning_effort
+        response = self._send(url, headers, payload, timeout_seconds)
+        return self._parse(response, max_reply_chars or MAX_REPLY_CHARS)
 
     def _admit(self, caller_id: str) -> None:
         with self._lock:
@@ -173,13 +200,23 @@ class SoclaasClient:
             self._minute.record(caller_id)
             self._day.record(caller_id)
 
-    def _send(self, url: str, headers: dict[str, str], payload: dict) -> httpx.Response:
+    def _send(
+        self, url: str, headers: dict[str, str], payload: dict, timeout_seconds: float | None = None
+    ) -> httpx.Response:
         attempts = self._limits.max_retries + 1
+        extra = {} if timeout_seconds is None else {"timeout": timeout_seconds}
         for attempt in range(attempts):
             last = attempt == attempts - 1
             attempt_id = self._reserve()
             try:
-                response = self._http.post(url, headers=headers, json=payload)
+                response = self._http.post(url, headers=headers, json=payload, **extra)
+                if "reasoning_effort" in payload and response.status_code in (400, 422):
+                    # The gateway rejected the optional field (some models do): retry once without it, accounted
+                    # like any other attempt (own reservation).
+                    self._finish(attempt_id, "other_failure", response)
+                    payload = {k: v for k, v in payload.items() if k != "reasoning_effort"}
+                    attempt_id = self._reserve()
+                    response = self._http.post(url, headers=headers, json=payload, **extra)
             except httpx.TimeoutException:
                 self._finish(attempt_id, "other_failure")
                 if last:
@@ -234,7 +271,7 @@ class SoclaasClient:
             pass
 
     @staticmethod
-    def _parse(response: httpx.Response) -> LlmReply:
+    def _parse(response: httpx.Response, max_chars: int = MAX_REPLY_CHARS) -> LlmReply:
         try:
             data = response.json()
             choice = data["choices"][0]
@@ -242,12 +279,14 @@ class SoclaasClient:
         except (ValueError, KeyError, IndexError, TypeError):
             raise LlmBadResponse("The model service sent an unusable reply.") from None
         if not isinstance(text, str) or not text.strip():
+            if choice.get("finish_reason") == "length":
+                raise LlmReplyCutOff("The model used its whole token budget before answering.")
             raise LlmBadResponse("The model service sent an unusable reply.")
         usage = data.get("usage") if isinstance(data, dict) else None
         usage = usage if isinstance(usage, dict) else {}
         finish = choice.get("finish_reason")
         return LlmReply(
-            text=text.strip()[:MAX_REPLY_CHARS],
+            text=text.strip()[:max_chars],
             finish_reason=finish if isinstance(finish, str) else None,
             prompt_tokens=_int_or_none(usage.get("prompt_tokens")),
             completion_tokens=_int_or_none(usage.get("completion_tokens")),

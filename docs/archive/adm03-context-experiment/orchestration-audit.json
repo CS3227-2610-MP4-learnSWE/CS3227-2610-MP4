@@ -1,0 +1,23 @@
+{
+  "window_start": "2026-11-07T13:41:35.193Z",
+  "window_finish": "2026-11-09T00:04:10.1947014+08:00",
+  "session_id": "01a1b63e-3a7b-7e73-8d26-532cdbd26d11",
+  "record_filter": "response_item/function_call wait_agent and matching function_call_output",
+  "calls": 115,
+  "outcomes": {
+    "timed_out": 77,
+    "completed": 35,
+    "interrupted": 2,
+    "aborted": 1
+  },
+  "limitation": "No token attribution to individual waits; absent/unclassified outputs not assumed timed out.",
+  "other_recorded_root_function_calls": {
+    "spawn_agent": 18,
+    "send_message": 32,
+    "request_user_input_async": 1
+  },
+  "orchestrator_model_requests": 329,
+  "orchestrator_tokens": 63241788,
+  "orchestrator_share_pct": 48.77025469969554,
+  "no_raw_log": "Only aggregate telemetry; raw provider logs remain local."
+}

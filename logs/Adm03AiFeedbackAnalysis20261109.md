@@ -1,0 +1,11 @@
+# ADM-03 AI feedback analysis (9 Nov 2026)
+
+Single orchestrator session, Variant B, fresh start on `feat/adm03-ai-feedback-analysis` after archiving the failed context-management experiment (`docs/archive/adm03-context-experiment/`, tag `archive/adm03-context-experiment`).
+
+- Spec: written and revised five times from user feedback (no 20-response cap, Select all, instant backend statistics, permanent history, exact failure messages, owner delete with confirmation); approved with defaults. Integration facts for the shared SoC client and ADM-02 data shapes were checked against the code by the orchestrator before approval (the old attempt failed partly on an unchecked client contract).
+- Build: developer and test-designer in parallel; test-designer's worktree could not run tests (Application Control blocked its `.venv`), so the orchestrator merged its tests and ran the suites in the main folder. Fixes: lazy-loaded pages (eager imports slowed existing browser specs), test-helper cleanup of seeded accounts, rulings recorded in `plan.md`.
+- Verification: round 1 FAIL (create race), round 2 PASS at `57e5e12`. Backend 1827 passed; related browser specs 166 passed.
+- Also done at the user's request: ADM-02 draft error names the field, ADM-04 flaky wrong-role test (branch `fix/adm02-draft-field-hint-adm04-flaky-test`, `b92b468`).
+- Later the same day: user amendments (indefinite retention; admin delete of responses); live SoCLaaS tests found the base URL in `.env` pointed at the website (user fixed it), the configured model `x-test-2` is a slow reasoning model (limits raised, `reasoning_effort` low, `max_reply_chars`, one job-level retry, no call after 600 s); llama3.1:8b and gemma4:26b were not usable; the shared client gained optional per-call options. Verifier round 3 failed on job worst-case time; user approved an extra round; confirmation PASS.
+- Usage report: `workflow/usage/runs/2026-11-09-ADM03-01/report.md` (35 invocations, 166.0M tokens, list-price estimate 46.77 USD, unbilled). Orchestrator row spans the whole session; per-invocation times are bounds.
+- Not done: real-backend Playwright; `.env` still needs `SOCLAAS_BASE_URL` set per teammate (the user updated theirs).
