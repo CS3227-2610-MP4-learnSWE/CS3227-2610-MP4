@@ -148,3 +148,32 @@ def test_adm01_privacy_midrun_failure_preserves_prior_grade_and_untouched_pendin
     assert item_row(current)["response_text"] is None
     assert item_row(untouched)["status"] == "pending"
     assert item_row(untouched)["response_text"] == "Untouched response."
+
+
+def test_adm01_privacy_scan_crossing_ai_start_cutoff_sends_nothing_and_leaves_item_pending(
+        analytics_admin, grader, tracked_users, ready_scanner, monkeypatch):
+    from feature_analytics import jobs
+
+    win = new_window()
+    item = pending(tracked_users, win, response_text="Consider the loop invariant.")
+    original = item_row(item)
+    clock, reads, scanned = [199.9], [], []
+
+    def now():
+        reads.append(clock[0])
+        return 0.0 if len(reads) == 1 else clock[0]
+
+    def scan(text):
+        scanned.append(text)
+        clock[0] = 200.1
+        return ()
+
+    monkeypatch.setattr(jobs, "_now", now)
+    monkeypatch.setattr(privacy, "scan_person_spans", scan)
+    result = run_to_end(analytics_admin, win)
+    assert scanned, "The dispatch scan must occur after the initial 199.9-second check"
+    assert grader.calls == [], "No SoC call may start after the scan advances time past 200 seconds"
+    assert (result["status"], result["failure_code"], result["items_graded"], result["items_failed"]) == (
+        "completed", None, 0, 0)
+    assert item_row(item) == original
+    assert grades_of(item) == {}
