@@ -1,6 +1,6 @@
 # Spec: STU-03-grounding Study companion grounded in published lessons
 
-Status: Draft, awaiting approval by the user (student-role owner). Nothing here has been built or tested. Addendum to `workflow/specs/STU-03/` (first slice: hint, explain, help), which stays in force for everything not changed here. This spec closes the "grounding" and "page context from lesson content" gaps that the first slice listed under its "Out of scope".
+Status: Approved by the user (student-role owner) on 2026-11-09, "Approve as drafted" (recommendations on open questions 1 to 8 accepted). Nothing here has been built or tested. Addendum to `workflow/specs/STU-03/` (first slice: hint, explain, help), which stays in force for everything not changed here. This spec closes the "grounding" and "page context from lesson content" gaps that the first slice listed under its "Out of scope".
 
 ## Goal
 From the user stories: a student gets guided explanations "grounded in authorised published materials, with source references that do not expose protected solutions" (US-STU-03-01), and the companion's page context "includes relevant authorised, student-visible lesson or question content, not just the URL" (US-STU-03-05). Today only practice-set questions and a fixed help text reach the model; lessons never do.

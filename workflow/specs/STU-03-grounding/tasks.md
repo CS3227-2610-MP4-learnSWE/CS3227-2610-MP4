@@ -4,7 +4,7 @@ Variant B. Nothing starts until the user approves `spec.md` and `plan.md` and an
 
 | # | Task | Owner agent | Depends on | Status |
 |---|---|---|---|---|
-| 0 | Review `spec.md` and `plan.md`, answer open questions 1 to 8, approve (human) | user | draft | todo |
+| 0 | Review `spec.md` and `plan.md`, answer open questions 1 to 8, approve (human) | user | draft | done |
 | 1 | Backend tests: AC1 to AC8, AC10 to AC20, AC23 (route and logic, fake LLM, lesson rows), unit tests for `lesson_match` and `find_leak(check_text=False)`; update only old-shape assertions in existing STU-03 tests and list them | test-designer | 0 | todo |
 | 2 | Frontend tests: AC5, AC21, AC22 (Playwright with the `companionApi.ts` mock extended with `sources`; no backend) | test-designer | 0 | todo |
 | 3 | Implement `lesson_provider.py`, `lesson_match.py`, the additive `check_text` option in `leak_check.py`, and the config constants | developer | 0 | todo |

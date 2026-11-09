@@ -1,6 +1,6 @@
 # Plan: STU-03-grounding Study companion grounded in published lessons
 
-Status: Draft, awaiting approval together with `spec.md`. Addendum to `workflow/specs/STU-03/plan.md`: everything there stays as is (identity through the session, error body shape, shared client, check order, rate limits) except the changes below. The developer and the test-designer work from this contract alone.
+Status: Approved by the user on 2026-11-09 together with `spec.md`. Addendum to `workflow/specs/STU-03/plan.md`: everything there stays as is (identity through the session, error body shape, shared client, check order, rate limits) except the changes below. The developer and the test-designer work from this contract alone.
 
 ## Data model
 No new tables, no migration. Read-only access to `published_lesson` (`study_lessons/models.py`: `id`, `course_id`, `title` up to 200, `content` 1 to 2,000 characters, `withdrawn_at`) and `course_membership`, through the existing rule in `study_lessons/access.py`. Chat history is not stored (out of scope).
