@@ -32,9 +32,15 @@ def student(tracked):
     return user
 
 
+def marker_tag():
+    # Numeric-heavy random hex tags can resemble phone numbers and be redacted.
+    # Alphabetic labels keep ordering markers stable without bypassing privacy checks.
+    return uid()[:8].translate(str.maketrans("0123456789abcdef", "abcdefghijklmnop"))
+
+
 def seed(tracked, w, n, *, tag=None, user=None, workflow="student_exercise", first_minute=1, **kw):
     """n pending items received at w.at(1..n). Returns [(item_id, marker)]; marker is in the response text."""
-    tag = tag or uid()[:8]
+    tag = tag or marker_tag()
     user = user or (student(tracked) if workflow == "student_exercise" else actor("teacher"))
     if workflow != "student_exercise" and user not in tracked:
         tracked.append(user)
@@ -654,7 +660,7 @@ def test_adm01_ac33_the_active_run_rule_is_checked_before_the_quota(analytics_ad
 
 def test_adm01_ac21_ac34_a_run_calls_the_ai_once_per_item_newest_first_and_stores_four_grades_each(analytics_admin, grader, tracked_users):
     w = new_window()
-    tag = uid()[:8]
+    tag = marker_tag()
     items = seed(tracked_users, w, 3, tag=tag, context_text="Practice question stem")
     grader.script = {1: grader_json({"relevance": 5, "clarity": 3}, {"relevance": "Directly addresses the request."})}
     done = run_to_end(analytics_admin, w)
@@ -673,7 +679,7 @@ def test_adm01_ac21_ac34_a_run_calls_the_ai_once_per_item_newest_first_and_store
 
 def test_adm01_ac34_a_run_takes_at_most_twenty_items_the_newest_ones(analytics_admin, grader, tracked_users):
     w = new_window()
-    tag = uid()[:8]
+    tag = marker_tag()
     items = seed(tracked_users, w, 25, tag=tag)
     run = start_run(analytics_admin, w)
     assert run["items_total"] == 20
@@ -687,7 +693,7 @@ def test_adm01_ac34_a_run_takes_at_most_twenty_items_the_newest_ones(analytics_a
 
 def test_adm01_ac34_only_items_of_the_chosen_workflow_and_period_are_sent(analytics_admin, grader, tracked_users):
     w, elsewhere = new_window(), new_window()
-    tag = uid()[:8]
+    tag = marker_tag()
     seed(tracked_users, w, 2, tag=tag)
     outside = seed(tracked_users, elsewhere, 1, tag="OUT" + tag)
     teacher_item = seed(tracked_users, w, 1, tag="TCH" + tag, workflow="teacher_lesson_planning")
@@ -815,7 +821,7 @@ INVALID_REPLIES = {
 def test_adm01_ac21_ac23_invalid_output_marks_only_that_item_grading_failed_and_stores_nothing_from_it(
         name, analytics_admin, grader, tracked_users):
     w = new_window()
-    tag = uid()[:8]
+    tag = marker_tag()
     items = seed(tracked_users, w, 2, tag=tag)  # call 1 sees the newest item (index 1)
     grader.script = {1: INVALID_REPLIES[name]}
     done = run_to_end(analytics_admin, w)

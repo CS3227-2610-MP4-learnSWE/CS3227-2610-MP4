@@ -1,5 +1,9 @@
 # Handoff notes
 
+## 2026-11-10: developer fixes flaky analytics ordering markers
+- Alphabetic test marker tags prevent random numeric hex labels from matching phone-number redaction. Ordering/count assertions and production privacy protection unchanged.
+- No tests run at user request. Small maintenance; logs/Adm01BackendCiMarkerFix.md.
+
 ## 2026-11-10: developer fixes backend CI scanner isolation
 - Fixed startup health probing through the monkeypatched scanner seam and isolated real-model smoke checks from intentionally poisoned process-lifetime scanner state. Existing recognition/timing assertions remain; no Linux skip added.
 - No tests run, as requested. Small maintenance; no agents/workflow run. Summary: logs/Adm01BackendCiFix.md.
