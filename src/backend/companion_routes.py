@@ -206,8 +206,9 @@ def post_message(
         outcome = "withheld" if leak else "ok"
         _log(plan.mode, outcome, started, reply.prompt_tokens, reply.completion_tokens, len(plan.lessons))
         success = True  # a reply that follows the companion's rules, including a refusal, is a successful request
-        if not leak and attempt is not None:
-            # Only a released model reply of a practice attempt is graded (never a canned refusal).
+        if not leak and attempt is not None and plan.mode != "explain":
+            # Explain mode deliberately sees released answer keys and solutions. Count its
+            # successful reply, but never retain or send that text for analytics grading.
             graded = GradingContent(request_text=message, response_text=reply.text)
         if plan.mode == "lesson":
             if leak:
