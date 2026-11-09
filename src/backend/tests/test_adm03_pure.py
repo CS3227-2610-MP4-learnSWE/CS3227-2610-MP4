@@ -42,9 +42,9 @@ def test_adm03_ac31_every_ai_failure_names_its_step_or_a_number(failures):
 
 @pytest.mark.parametrize("code,values,text", [
     ("analysis_running", dict(s=100, r=260),
-     "This analysis cannot be deleted yet: its AI step has been running for 100 seconds. It finishes or is marked interrupted within 260 seconds (the limit is 420 seconds). Delete it after that."),
+     "This analysis cannot be deleted yet: its AI step has been running for 100 seconds. It finishes or is marked interrupted within 260 seconds (the limit is 780 seconds). Delete it after that."),
     ("analysis_in_progress", dict(s=12),
-     "Another analysis started 12 seconds ago is still running its AI step. A running AI step finishes or fails within 420 seconds. Wait for it, then generate again."),
+     "Another analysis started 12 seconds ago is still running its AI step. A running AI step finishes or fails within 780 seconds. Wait for it, then generate again."),
     ("too_many_responses", dict(n=501),
      "You selected 501 responses, but one analysis can cover at most 500. Select fewer responses."),
     ("response_not_found", dict(k=2, n=5),
@@ -53,8 +53,8 @@ def test_adm03_ac31_every_ai_failure_names_its_step_or_a_number(failures):
      "The 4 selected responses contain no answered questions, so there is nothing to analyse."),
     ("internal_error", dict(step="deleting the analysis", ref="abc123"),
      "An unexpected server error occurred while deleting the analysis. The cause was not an invalid request. Reference abc123 identifies it in the server logs."),
-    ("analysis_interrupted", dict(s=500, done=2, total=4),
-     "The AI step was interrupted: it had been running for 500 seconds without finishing (the limit is 420 seconds), probably because the server restarted. It had finished 2 of 4 steps. The statistics are unaffected. Start a new analysis."),
+    ("analysis_interrupted", dict(s=900, done=2, total=4),
+     "The AI step was interrupted: it had been running for 900 seconds without finishing (the limit is 780 seconds), probably because the server restarted. It had finished 2 of 4 steps. The statistics are unaffected. Start a new analysis."),
 ])
 def test_adm03_ac31_render_gives_the_exact_spec_text(failures, code, values, text):
     assert failures.render(code, **values) == text

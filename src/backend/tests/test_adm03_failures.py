@@ -12,7 +12,9 @@ from adm03_fixtures import llm  # noqa: F401
 from adm03_helpers import SEEDED_USERS, cleanup_from, create, get, listing, run, text_form, wait_done
 
 N_MAP = 3  # 65 distinct free-text answers, at most 30 entries per batch
-POSITIONS = {"first": (1, "batch 1 of 3"), "middle": (2, "batch 2 of 3"), "reduce": (4, "merging themes")}
+# (first call number of the step, step text, steps finished before it)
+POSITIONS = {"first": (1, "batch 1 of 3", 0), "middle": (2, "batch 2 of 3", 1), "reduce": (4, "merging themes", 3)}
+RETRIED = {"ai_reply_cut_off", "ai_reply_not_json", "ai_reply_invalid"}  # model-output problems get one more attempt
 VALID_MAP = '{"themes":[{"title":"T","description":"D","evidence":["R1"]}]}'
 
 
@@ -60,8 +62,8 @@ EXCEPTIONS = [
      exact("The AI service replied that it is busy (HTTP 429) while processing {step}. Try again in 7 seconds."),
      {"retry_after_seconds": 7}),
     ("timeout", llm_client.LlmTimeout("slow"), "ai_timeout",
-     lambda step: exact("The AI service did not answer within 15 seconds (after up to 2 attempts) while processing {step}. The statistics are unaffected. Start a new analysis to run the AI part again.".replace("within 15 seconds", "within " + ("40" if step == "merging themes" else "15") + " seconds"))(step),
-     {"timeout_seconds": 15, "attempts": 2}),
+     lambda step: exact("The AI service did not answer within 15 seconds (after up to 2 attempts) while processing {step}. The statistics are unaffected. Start a new analysis to run the AI part again.".replace("within 15 seconds", "within " + ("60" if step == "merging themes" else "30") + " seconds"))(step),
+     {"timeout_seconds": 30, "attempts": 2}),
     ("upstream", llm_client.LlmUpstreamError("5xx"), "ai_unavailable",
      exact("The AI service could not be reached or returned a server error while processing {step}, after up to 2 attempts. The statistics are unaffected. Start a new analysis once the service is back."),
      {"attempts": 2}),
@@ -86,8 +88,10 @@ FIELD = r"[\w\.\[\]]*"
 
 
 def cut_off_matcher(position):
-    limit = 2000 if position == "reduce" else 800
-    return exact("The AI reply for {step} was cut off at the output limit of " + str(limit) + " tokens. No AI result was saved. Select fewer responses and start a new analysis.")
+    limit = 3000 if position == "reduce" else 1600
+    return lambda step: re.compile(re.escape(f"The AI reply for {step} was cut off at the output limit of {limit} tokens")
+                                   + r"( \(the model used its whole token budget before answering\))?"
+                                   + re.escape(". No AI result was saved. Select fewer responses and start a new analysis."))
 
 
 MAP_INVALID = [
@@ -139,24 +143,32 @@ def cases():
 @pytest.mark.parametrize("pos,value,code,matcher,details", cases())
 def test_adm03_ac6_15_31_ai_failure_has_exact_stored_message_step_details_and_stops(big, llm, pos, value, code, matcher, details):
     admin, form, ids = big
-    n, step_text = POSITIONS[pos]
-    llm.script = {n: value}
+    n, step_text, finished = POSITIONS[pos]
+    retried = code in RETRIED
+    llm.script = {n: value, n + 1: value} if retried else {n: value}
     r = create(admin, form, ids)
     assert r.status_code == 201, r.text
     done = wait_done(admin, r.json()["id"])
     err = done["ai"]["error"]
     assert done["ai"]["status"] == "failed" and done["ai"]["result"] is None
     assert err["code"] == code, err
-    assert matcher(step_text).fullmatch(err["message"]), err["message"]
+    if retried:  # the second attempt's failure is stored, with the attempt count
+        base = matcher(step_text).pattern.split(r"\.\ No\ AI\ result")[0]
+        assert re.match(base, err["message"]), err["message"]
+        assert "after 2 attempts" in err["message"], err["message"]
+        assert err["details"]["attempts"] == 2 and err["details"]["first_attempt_code"] == code, err["details"]
+    else:
+        assert matcher(step_text).fullmatch(err["message"]), err["message"]
+        assert "after 2 attempts" not in err["message"] or code in ("ai_timeout", "ai_unavailable")
     if code != "ai_not_configured":
         want = {"batch": {"kind": "batch", "index": n, "total": N_MAP}, "reduce": {"kind": "merge", "index": None, "total": None}}
         assert err["step"] == want["batch" if pos != "reduce" else "reduce"]
-    if code == "ai_timeout":  # the actual per-call limit: 15 s for a batch, 40 s for the merge
-        details = {**details, "timeout_seconds": 40 if pos == "reduce" else 15}
+    if code == "ai_timeout":  # the actual per-call limit: 30 s for a batch, 60 s for the merge
+        details = {**details, "timeout_seconds": 60 if pos == "reduce" else 30}
     for k, v in details.items():
         assert err["details"][k] == v, err["details"]
-    assert done["ai"]["progress"]["done"] == n - 1  # a partial result is never presented as complete
-    assert len(llm.calls) == n  # no later call after the failure
+    assert done["ai"]["progress"]["done"] == finished  # a partial result is never presented as complete
+    assert len(llm.calls) == n + (1 if retried else 0)  # exactly the attempts of the failing step, no later call
     again = get(admin, done["id"]).json()
     assert again["ai"] == done["ai"] and again["aggregates"] == done["aggregates"]
     item = listing(admin)["items"][0]
@@ -171,7 +183,7 @@ def test_adm03_ac6_15_31_ai_failure_has_exact_stored_message_step_details_and_st
 @pytest.mark.parametrize("pos", list(POSITIONS))
 def test_adm03_ac31_unexpected_job_exception_is_internal_error_with_a_logged_reference(big, llm, pos, caplog):
     admin, form, ids = big
-    n, step_text = POSITIONS[pos]
+    n, step_text, _ = POSITIONS[pos]
     llm.script = {n: RuntimeError("SECRET-INTERNAL-DETAIL response text")}
     with caplog.at_level(logging.DEBUG):
         done = wait_done(admin, create(admin, form, ids).json()["id"])
@@ -213,9 +225,77 @@ def test_adm03_ac2_a_long_valid_reduce_reply_completes_the_analysis(big, llm):
 
 
 def test_adm03_ac31_empty_reply_cut_off_message_is_the_registry_text(big, llm):
-    from feedback_analysis import failures
     admin, form, ids = big
-    llm.script = {4: LlmReply(text="", finish_reason="length", prompt_tokens=1, completion_tokens=1)}
+    empty = LlmReply(text="", finish_reason="length", prompt_tokens=1, completion_tokens=1)
+    llm.script = {4: empty, 5: empty}
     err = wait_done(admin, create(admin, form, ids).json()["id"])["ai"]["error"]
     assert err["code"] == "ai_reply_cut_off"
-    assert err["message"] == failures.render("ai_reply_cut_off", step="merging themes", max_tokens=2000)
+    assert "output limit of 3000 tokens (the model used its whole token budget before answering)" in err["message"]
+
+
+# ---- fifth pass: one more attempt for model-output problems only ----
+
+BAD_REPLIES = ["not json at all", "", '{"themes":[],"x":1}']
+
+
+@pytest.mark.parametrize("bad", BAD_REPLIES)
+@pytest.mark.parametrize("pos", ["first", "middle", "reduce"])
+def test_adm03_ac15_second_attempt_succeeds_after_a_bad_first_reply(big, llm, pos, bad):
+    admin, form, ids = big
+    n, _, _ = POSITIONS[pos]
+    bad_text = bad if pos != "reduce" else bad.replace('"themes":[]', '"summary":"s","themes":[],"suggestions":[]')
+    llm.script = {n: bad_text}  # the next call (attempt 2 of the same step) falls back to the valid default
+    done = wait_done(admin, create(admin, form, ids).json()["id"])
+    assert done["ai"]["status"] == "complete" and done["ai"]["error"] is None, done["ai"]["error"]
+    assert len(llm.calls) == 5  # 3 map steps + 1 reduce + one extra attempt
+    assert llm.calls[n - 1].all_text == llm.calls[n].all_text  # same prompt for the second attempt
+    assert done["ai"]["progress"]["done"] == done["ai"]["progress"]["total"] == 4  # progress counts steps, not attempts
+
+
+def test_adm03_ac15_cut_off_first_attempt_is_retried(big, llm):
+    admin, form, ids = big
+    llm.script = {1: LlmReply(text="", finish_reason="length", prompt_tokens=1, completion_tokens=1)}
+    done = wait_done(admin, create(admin, form, ids).json()["id"])
+    assert done["ai"]["status"] == "complete" and len(llm.calls) == 5
+
+
+NOT_RETRIED = [
+    ("rate_minute", llm_client.LlmRateLimited("student_minute", 12)), ("rate_day", llm_client.LlmRateLimited("student_day", 99)),
+    ("busy", llm_client.LlmBusy(7)), ("timeout", llm_client.LlmTimeout("slow")),
+    ("upstream", llm_client.LlmUpstreamError("5xx")), ("not_configured", llm_client.LlmNotConfigured("none")),
+    ("too_large", llm_client.LlmInputTooLarge("big")), ("internal", RuntimeError("boom")),
+]
+
+
+@pytest.mark.parametrize("name,exc", NOT_RETRIED, ids=[x[0] for x in NOT_RETRIED])
+@pytest.mark.parametrize("pos", ["first", "reduce"])
+def test_adm03_ac31_errors_that_are_not_model_output_are_never_retried(big, llm, pos, name, exc):
+    admin, form, ids = big
+    n, _, _ = POSITIONS[pos]
+    llm.script = {n: exc}
+    done = wait_done(admin, create(admin, form, ids).json()["id"])
+    assert done["ai"]["status"] == "failed"
+    assert len(llm.calls) == n  # exactly one call for the failing step
+    assert done["ai"]["error"]["details"].get("first_attempt_code") is None
+    if name not in ("timeout", "upstream"):
+        assert "after 2 attempts" not in done["ai"]["error"]["message"]
+
+
+def test_adm03_ac46_responses_deleted_is_not_retried(admin, llm):
+    from adm03_helpers import release, start_blocked
+    from adm02_helpers import ADMIN as ADM02
+    from auth_helpers import call
+    form, ids = text_form(admin, 65)
+    fut, aid = start_blocked(admin, llm, form, ids)
+    assert call("DELETE", f"{ADM02}/forms/{form['id']}/responses/{ids[40]}", admin).status_code == 204
+    release(llm, fut)
+    done = wait_done(admin, aid)
+    assert done["ai"]["error"]["code"] == "ai_responses_deleted"
+    assert len(llm.calls) < 4 and done["ai"]["error"]["details"].get("first_attempt_code") is None
+
+
+def test_adm03_ac31_reduce_prompt_asks_for_a_summary_of_at_most_350_characters(big, llm):
+    admin, form, ids = big
+    wait_done(admin, create(admin, form, ids).json()["id"])
+    red = llm.of("reduce")[0]
+    assert "350" in red.system_text + red.user_text

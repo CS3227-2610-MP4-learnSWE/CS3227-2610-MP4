@@ -9,7 +9,7 @@ from adm03_helpers import (BASE, MSG, create, expect, get, listing, release, row
                            table_counts, text_form, wait_done)
 
 RUNNING = re.compile(r"This analysis cannot be deleted yet: its AI step has been running for (\d+) seconds\. "
-                     r"It finishes or is marked interrupted within (\d+) seconds \(the limit is 420 seconds\)\. Delete it after that\.")
+                     r"It finishes or is marked interrupted within (\d+) seconds \(the limit is 780 seconds\)\. Delete it after that\.")
 
 
 def delete(user, aid):
@@ -60,17 +60,17 @@ def test_adm03_ac35_running_analysis_is_refused_with_409_then_deletable_when_fin
     m = RUNNING.fullmatch(d["message"])
     assert m, d["message"]
     s, rem = int(m.group(1)), int(m.group(2))
-    assert d["ran_seconds"] == s and d["remaining_seconds"] == rem == max(0, 420 - s) and s < 60
+    assert d["ran_seconds"] == s and d["remaining_seconds"] == rem == max(0, 780 - s) and s < 60
     assert row_count(aid) == 1 and get(admin, aid).json()["ai"]["status"] == "running"
     release(llm, fut)
     wait_done(admin, aid)
     assert delete(admin, aid).status_code == 204 and row_count(aid) == 0
 
 
-def test_adm03_ac35_a_running_row_older_than_420_s_is_swept_to_interrupted_then_deletable(admin, llm):
+def test_adm03_ac35_a_running_row_older_than_780_s_is_swept_to_interrupted_then_deletable(admin, llm):
     form, ids = text_form(admin, 3)
     fut, aid = start_blocked(admin, llm, form, ids)
-    sql("UPDATE feedback_analyses SET created_at = now() - interval '500 seconds' WHERE id=%s", (aid,))
+    sql("UPDATE feedback_analyses SET created_at = now() - interval '900 seconds' WHERE id=%s", (aid,))
     assert delete(admin, aid).status_code == 204
     assert row_count(aid) == 0
     release(llm, fut)
@@ -91,7 +91,7 @@ def test_adm03_ac36_delete_leaves_responses_forms_and_usage_counters_unchanged(a
 def test_adm03_ac37_late_job_write_after_delete_changes_nothing(admin, llm):
     form, ids = text_form(admin, 3)
     fut, aid = start_blocked(admin, llm, form, ids)
-    sql("UPDATE feedback_analyses SET created_at = now() - interval '500 seconds' WHERE id=%s", (aid,))
+    sql("UPDATE feedback_analyses SET created_at = now() - interval '900 seconds' WHERE id=%s", (aid,))
     assert get(admin, aid).json()["ai"]["error"]["code"] == "analysis_interrupted"
     assert delete(admin, aid).status_code == 204
     posted = release(llm, fut)  # the job now finishes every remaining call and tries to write
