@@ -320,7 +320,12 @@ test("shr01 AC22 companion history from a signed-in session is gone after logout
   await mockAuthApi(page, { user: STUDENT });
   await page.route("**/api/companion/messages", (route) =>
     route.fulfill({
-      json: { reply: "Think about it.", mode: "hint", withheld: false },
+      json: {
+        reply: "Think about it.",
+        mode: "hint",
+        withheld: false,
+        sources: [],
+      },
     }),
   );
   await page.goto("/student/overview");
