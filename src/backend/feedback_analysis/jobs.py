@@ -49,11 +49,12 @@ def _load(analysis_id):
 
 
 def run_job(analysis_id, llm=None):
+    progress = {"step": failures.step("start"), "phrase": "starting the AI step"}
     try:
-        _run(analysis_id, llm)
+        _run(analysis_id, llm, progress)
     except Exception as exc:  # noqa: BLE001 - the job must always end in a stored state
         try:
-            _fail(analysis_id, failures.internal(failures.step("start"), "running the AI step", exc))
+            _fail(analysis_id, failures.internal(progress["step"], progress["phrase"], exc))
         except Exception:  # noqa: BLE001
             log.error("analysis %s could not store its failure, class=%s", analysis_id, type(exc).__name__)
 
@@ -70,7 +71,7 @@ def _call(llm, messages, max_tokens, admin_id, step, limits):
     return reply.text, None
 
 
-def _run(analysis_id, llm):
+def _run(analysis_id, llm, progress):
     loaded = _load(analysis_id)
     if loaded is None:
         return
@@ -81,6 +82,8 @@ def _run(analysis_id, llm):
     partials = []
     for index, batch in enumerate(batches, 1):
         step = failures.step("batch", index, len(batches))
+        # An unexpected exception is recorded against the step that was running (kind map).
+        progress.update(step=failures.step("map", index, len(batches)), phrase=f"processing batch {index} of {len(batches)}")
         text, record = _call(llm, map_messages(batch), config.MAP_MAX_TOKENS, admin_id, step, limits)
         if record is None:
             try:
@@ -93,6 +96,7 @@ def _run(analysis_id, llm):
         if not _write(analysis_id, ai_done=FeedbackAnalysis.ai_done + 1):
             return
     step = failures.step("merge")
+    progress.update(step=failures.step("reduce"), phrase="merging themes")
     partials = fit_partials(partials)
     text, record = _call(llm, reduce_messages(aggregates, partials), config.REDUCE_MAX_TOKENS, admin_id, step, limits)
     if record is None:

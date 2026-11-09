@@ -61,6 +61,8 @@ def parse_create(raw):
     if request_id is None:
         raise invalid("request_id")
     has_ids, has_all = "response_ids" in body, "select_all" in body
+    if has_all and body["select_all"] is not True:
+        raise invalid("select_all")
     if has_ids and has_all:
         raise invalid("both")
     if not has_ids and not has_all:

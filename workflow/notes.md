@@ -253,3 +253,8 @@
 - Not done / not run: frontend Playwright (`npm test`, needs servers) and browser checks were not run; no browser or 320/390px visual check. Typecheck and lint pass.
 - Blocking findings: none.
 - Resource use: Tracker run: no (orchestrator owns). Model: Sonnet 5.5. Total tokens: unavailable (not measured by developer). Retries and revision rounds: 0.
+
+## 2026-11-09: developer on ADM-03, revision round 1
+- Done: (1) create validation: `select_all` present and not true gives "select_all must be true" before the "not both" check (service.parse_create). (2) Job keeps one `progress` record updated in the job loop (map batch k of n, reduce); an unexpected exception stores `internal_error` with that step (`kind` map/reduce, phrases "processing batch k of n"/"merging themes"); "starting the AI step" only before the first call. Synchronous 500 paths already name their step.
+- Results: `-k adm03` 183 passed; ADM-02 and ADM-04 tests 192 passed. My leftover full pytest run was killed.
+- Files: src/backend/feedback_analysis/service.py, jobs.py.
