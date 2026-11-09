@@ -245,7 +245,7 @@ test("adm03 a complete or failed analysis is read once and never polled", async 
 
 test("adm03 a 401 while loading sends the user to sign in with the session message and clears the data", async ({ page }) => {
   const ctx = await setup(page, { analyses: [analysis(1, "complete")] });
-  ctx.steps.push({ suffix: `/analyses/${uuid(1)}`, status: 401, code: "unauthorized", message: "x" });
+  ctx.steps.push({ suffix: `/analyses/${uuid(1)}`, status: 401, code: "unauthenticated", message: "x" });
   await page.goto(URL(1));
   await expect(page.getByText(MSG.expired)).toBeVisible();
   await expect(page.getByText("How clear were the deadlines?")).toHaveCount(0);

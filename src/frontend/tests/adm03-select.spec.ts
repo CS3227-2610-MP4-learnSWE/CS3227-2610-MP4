@@ -139,7 +139,7 @@ for (const [name, step, message] of [
   ["no_responses", { status: 422, code: "no_responses", message: "This form has no submitted responses, so there is nothing to analyse." }, "This form has no submitted responses, so there is nothing to analyse."],
   ["too_many_responses", { status: 422, code: "too_many_responses", message: "You selected 501 responses, but one analysis can cover at most 500. Select fewer responses." }, "You selected 501 responses, but one analysis can cover at most 500. Select fewer responses."],
   ["form_not_found", { status: 404, code: "form_not_found", message: "That form is not available. It may have been deleted. Choose another form." }, "That form is not available. It may have been deleted. Choose another form."],
-  ["401", { status: 401, code: "unauthorized", message: "x" }, MSG.expired],
+  ["401", { status: 401, code: "unauthenticated", message: "x" }, MSG.expired],
   ["403", { status: 403, code: "forbidden", message: "x" }, MSG.forbidden],
 ] as const) {
   test(`adm03 Generate failure ${name} shows its exact message and keeps the selection`, async ({ page }) => {
