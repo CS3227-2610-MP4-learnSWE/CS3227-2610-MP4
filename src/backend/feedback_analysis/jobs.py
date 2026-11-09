@@ -45,7 +45,7 @@ def _load(analysis_id):
         ids = [UUID(v) for v in row.label_map.values()]
         responses = db.scalars(select(FeedbackResponse).where(FeedbackResponse.id.in_(ids))).all()
         labels = {v: k for k, v in row.label_map.items()}
-        return row.admin_id, list(row.aggregates), set(row.label_map), responses, labels
+        return row.admin_id, list(row.aggregates), set(row.label_map), responses, labels, row.ai_total
 
 
 def run_job(analysis_id, llm=None):
@@ -75,8 +75,11 @@ def _run(analysis_id, llm, progress):
     loaded = _load(analysis_id)
     if loaded is None:
         return
-    admin_id, aggregates, selection, responses, labels = loaded
+    admin_id, aggregates, selection, responses, labels, ai_total = loaded
     batches, _used, _total = sample_and_batch(build_entries(responses, labels))
+    if len(batches) + 1 != ai_total:
+        # A cited response was deleted after creation, so the stored step count no longer matches: stop with a reference.
+        raise RuntimeError("stored snapshot no longer matches the stored step count")
     llm = llm or get_llm_client()
     limits = Limits()
     partials = []
@@ -107,4 +110,4 @@ def _run(analysis_id, llm, progress):
     if record is not None:
         _fail(analysis_id, record)
         return
-    _write(analysis_id, ai_status="complete", ai_result=result, ai_done=len(batches) + 1, ai_completed_at=now())
+    _write(analysis_id, ai_status="complete", ai_result=result, ai_done=ai_total, ai_completed_at=now())

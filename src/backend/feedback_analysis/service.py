@@ -71,8 +71,6 @@ def parse_create(raw):
         raise invalid("expected_only")
     ids = expected = None
     if has_all:
-        if body["select_all"] is not True:
-            raise invalid("select_all")
         if "expected_count" in body:
             expected = body["expected_count"]
             if type(expected) is not int or not 0 <= expected <= config.MAX_RESPONSES:
@@ -187,39 +185,44 @@ def create(db, admin_id, raw):
             raise error("nothing_to_analyse", n=len(rows))
         entries = build_entries(rows, labels)
         batches, used, total = sample_and_batch(entries)
-        row = FeedbackAnalysis(
+        build = lambda: FeedbackAnalysis(  # noqa: E731 - rebuilt for a retry after a rolled-back insert
             id=uuid4(), admin_id=admin_id, request_id=request_id, form_id=form_id,
             mode="explicit" if ids is not None else "select_all", expected_count=expected, response_count=len(rows),
             label_map={label: rid for rid, label in labels.items()},
             label_dates={labels[str(r.id)]: utc_timestamp(r.submitted_at) for r in rows},
             aggregates=aggregates, free_text_total=total, free_text_used=used, ai_status="running",
             ai_done=0, ai_total=len(batches) + 1, created_at=now())
-        obj = analysis_object(row, title)
     except (ApiError, SQLAlchemyError):
         raise
     except Exception as exc:
         record = failures.internal(None, stage, exc)
         raise error("internal_error", {"reference": record.details["reference"]}, step=stage, ref=record.details["reference"]) from None
-    return _insert(db, admin_id, request_id, row, obj)
+    return _insert(db, admin_id, request_id, build, title)
 
 
-def _insert(db, admin_id, request_id, row, obj):
-    db.add(row)
-    try:
-        db.commit()
-    except IntegrityError:
-        db.rollback()
+def _insert(db, admin_id, request_id, build, title):
+    """Insert under a per-admin lock so concurrent creates are decided in order; the partial unique index is the backstop."""
+    for attempt in range(2):
+        sweep_stale(db, admin_id)  # commits, so the lock is taken after it
+        db.execute(select(func.pg_advisory_xact_lock(func.hashtext(f"feedback_analysis:{admin_id}"))))
         previous = _existing(db, admin_id, request_id)
         if previous is not None:
             result = analysis_object(previous, _title(db, previous.form_id))
             db.commit()
             return result, None
-        running = db.scalar(select(FeedbackAnalysis.created_at).where(FeedbackAnalysis.admin_id == admin_id, FeedbackAnalysis.ai_status == "running"))
-        db.rollback()
-        if running is None:
-            raise
-        raise error("analysis_in_progress", s=seconds_since(running)) from None
-    return obj, row.id
+        running = db.scalar(select(FeedbackAnalysis.created_at).where(
+            FeedbackAnalysis.admin_id == admin_id, FeedbackAnalysis.ai_status == "running"))
+        if running is not None:
+            db.rollback()
+            raise error("analysis_in_progress", s=seconds_since(running))
+        row = build()
+        db.add(row)
+        try:
+            db.commit()
+            return analysis_object(row, title), row.id
+        except IntegrityError:
+            db.rollback()
+    raise error("analysis_in_progress", s=0)
 
 
 # ---- reads -----------------------------------------------------------------------------------------------------

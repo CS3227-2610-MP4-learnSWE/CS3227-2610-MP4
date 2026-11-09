@@ -269,3 +269,7 @@
 - 401: ADM-03 pages add no 401 message (removed SESSION_EXPIRED); polling/api code lets the shared client see code `unauthenticated`. `LiveAnalysis` only redirects a visit that starts anonymous (spec "anonymous goes to sign in" needs it because RequireRole allows demo access); a session that expires while open is left to AuthContext, which navigates with the expiry notice.
 - Back: the dedupe was not the cause (the pending entry is cleared on completion). The test goes Back before the second mount's GET is recorded. The GET and evidence read now start in a layout effect, and "Back to analysis" starts the result read on click.
 - Playwright (mocked): adm03 x3 files, tea06-inbox, adm02-feedback, adm06-usage: 164 passed, 0 failed.
+
+## 2026-11-09: developer on ADM-03, verifier round 1 fixes
+- service._insert: per-admin `pg_advisory_xact_lock` after sweep, then same-request lookup, running check (409) and insert; unique index is the backstop (one retry, then 409). Scratch check: 8 concurrent distinct request_ids gave only 201/409; same request_id twice gave 200+201. Removed click prefetch; evidence page opened directly sends one optional GET analysis (failure shows nothing, no retry). Oversize body reason added to spec.md line 34, plan rulings and registry. parse_create dead check removed; DeveloperGuide path fixed; job stops with internal_error if recomputed batches no longer match stored ai_total.
+- Results: `-k adm03` 183 passed; ADM-02/04 192 passed; adm03 Playwright 51 passed; tsc, eslint, prettier clean.

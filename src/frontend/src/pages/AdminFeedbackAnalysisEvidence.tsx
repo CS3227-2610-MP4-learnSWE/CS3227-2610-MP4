@@ -1,10 +1,11 @@
 import { useCallback, useLayoutEffect, useState } from "react";
-import { Link, useParams } from "react-router";
+import { Link, useLocation, useParams } from "react-router";
 import { Button } from "@mui/material";
 import { PageHeading, Panel } from "../components/ui";
 import {
   getAnalysis,
   getEvidence,
+  type Analysis,
   type Evidence,
 } from "../services/feedbackAnalysisApi";
 import { loadMessage, localTime } from "../messages/feedbackAnalysis";
@@ -28,6 +29,9 @@ export default function AdminFeedbackAnalysisEvidence() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [attempt, setAttempt] = useState(0);
+  // Opened directly (first entry of this tab): the analysis is read too, independently of the evidence.
+  const direct = useLocation().key === "default";
+  const [analysis, setAnalysis] = useState<Analysis | null>(null);
   const retry = useCallback(() => setAttempt((n) => n + 1), []);
   // Layout effect: the read leaves as soon as the page mounts.
   useLayoutEffect(() => {
@@ -43,16 +47,24 @@ export default function AdminFeedbackAnalysisEvidence() {
       current = false;
     };
   }, [analysisId, label, attempt]);
+  useLayoutEffect(() => {
+    if (!direct) return;
+    let current = true;
+    setAnalysis(null);
+    getAnalysis(analysisId).then(
+      (value) => current && setAnalysis(value),
+      () => undefined, // optional context only: a failure shows nothing and is not retried
+    );
+    return () => {
+      current = false;
+    };
+  }, [analysisId, direct]);
   const unavailable = error.startsWith("This response cannot be shown");
   return (
     <div className="feedback-analysis">
       <PageHeading title={`Response ${label}`} />
       <p>
-        <Link
-          to={`/admin/feedback/analysis/${analysisId}`}
-          // Start the result page's read at the click, so it leaves even if the user goes Back at once.
-          onClick={() => void getAnalysis(analysisId).catch(() => undefined)}
-        >
+        <Link to={`/admin/feedback/analysis/${analysisId}`}>
           Back to analysis
         </Link>
       </p>
@@ -62,6 +74,12 @@ export default function AdminFeedbackAnalysisEvidence() {
           <p role="alert">{error}</p>
           {!unavailable && <Button onClick={retry}>Retry</Button>}
         </div>
+      )}
+      {data && analysis && (
+        <p>
+          From the analysis of {analysis.form_title}, generated{" "}
+          {localTime(analysis.created_at)}.
+        </p>
       )}
       {data && (
         <Panel>

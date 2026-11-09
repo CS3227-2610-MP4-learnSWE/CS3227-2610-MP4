@@ -42,7 +42,7 @@ async def raw_body(request: Request) -> bytes:
     async for chunk in request.stream():
         body.extend(chunk)
         if len(body) > 262144:
-            raise service.invalid("neither")
+            raise service.invalid("too_large")
     return bytes(body)
 
 

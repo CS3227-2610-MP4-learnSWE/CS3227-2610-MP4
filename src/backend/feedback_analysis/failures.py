@@ -58,6 +58,7 @@ INVALID_REASONS = {
     "ids_type": "response_ids must be a list of ids", "ids_value": "response_ids contains a value that is not a valid id",
     "both": "send either response_ids or select_all, not both", "neither": "send response_ids or select_all set to true",
     "select_all": "select_all must be true", "expected": "expected_count must be a whole number from 0 to 500",
+    "too_large": "the request body is larger than 256 KiB",
     "expected_only": "expected_count is only allowed with select_all",
     "limit": "limit must be a whole number from 1 to 50", "offset": "offset must be a whole number from 0 to 100000",
 }
