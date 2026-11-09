@@ -31,3 +31,5 @@ No live SoC calls, developer .env edits, direct master commits, merge or deploym
 [Finish-run usage](../workflow/usage/runs/2026-11-09-ADM01-finish-02/report.md). [Initial interrupted build](../workflow/usage/runs/2026-11-09-ADM01-01/report.md).
 
 Final strongest review PASS; PR/team review and remote CI remain separate. User requested test completion notifications rather than repeated polling; no further broad tests were run.
+
+PR opened: [https://github.com/CS3227-2610-MP4-learnSWE/CS3227-2610-MP4/pull/43](https://github.com/CS3227-2610-MP4-learnSWE/CS3227-2610-MP4/pull/43). Remote CI and team review pending; no merge or deployment. Connector PR creation returned403; existing Git authentication created the PR successfully without exposing credentials.
