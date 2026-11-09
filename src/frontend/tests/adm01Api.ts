@@ -67,8 +67,18 @@ export function usageBody(url: URL): Json {
         successful: 12,
         unsuccessful: 3,
         rows: [
-          { user_id: "u-3f9a1c2b", name: "Alice Tan", successful: 5, unsuccessful: 1 },
-          { user_id: "u-77aa01de", name: "Bob Lim", successful: 7, unsuccessful: 2 },
+          {
+            user_id: "u-3f9a1c2b",
+            name: "Alice Tan",
+            successful: 5,
+            unsuccessful: 1,
+          },
+          {
+            user_id: "u-77aa01de",
+            name: "Bob Lim",
+            successful: 7,
+            unsuccessful: 2,
+          },
         ],
         rows_truncated: false,
       },
@@ -128,8 +138,14 @@ export function generationBody(url: URL): Json {
 const GRADES = (n: number) =>
   DIM_NAMES.map((dimension, i) => ({
     dimension,
-    state: dimension === "factual_accuracy" && n % 2 === 0 ? "unassessable" : "graded",
-    score: dimension === "factual_accuracy" && n % 2 === 0 ? null : 3 + ((n + i) % 3),
+    state:
+      dimension === "factual_accuracy" && n % 2 === 0
+        ? "unassessable"
+        : "graded",
+    score:
+      dimension === "factual_accuracy" && n % 2 === 0
+        ? null
+        : 3 + ((n + i) % 3),
     reason:
       dimension === "factual_accuracy" && n % 2 === 0
         ? "No authorised context was available."
@@ -154,7 +170,8 @@ export function itemRows(offset: number, limit: number, total: number): Json[] {
 }
 
 export function qualityBody(url: URL, total = 2): Json {
-  const workflow = (url.searchParams.get("workflow") ?? "student_exercise") as Workflow;
+  const workflow = (url.searchParams.get("workflow") ??
+    "student_exercise") as Workflow;
   const limit = Number(url.searchParams.get("limit") ?? 25);
   const offset = Number(url.searchParams.get("offset") ?? 0);
   const teacher = workflow === "teacher_lesson_planning";
@@ -173,10 +190,30 @@ export function qualityBody(url: URL, total = 2): Json {
       privacy_blocked_count: 0,
       privacy_mode: "local_dlp",
       dimensions: [
-        { dimension: "relevance", average: 4.25, graded_count: 12, unassessable_count: 0 },
-        { dimension: "factual_accuracy", average: 3.5, graded_count: 6, unassessable_count: 6 },
-        { dimension: "clarity", average: 4.0, graded_count: 12, unassessable_count: 0 },
-        { dimension: "safety", average: 5.0, graded_count: 12, unassessable_count: 0 },
+        {
+          dimension: "relevance",
+          average: 4.25,
+          graded_count: 12,
+          unassessable_count: 0,
+        },
+        {
+          dimension: "factual_accuracy",
+          average: 3.5,
+          graded_count: 6,
+          unassessable_count: 6,
+        },
+        {
+          dimension: "clarity",
+          average: 4.0,
+          graded_count: 12,
+          unassessable_count: 0,
+        },
+        {
+          dimension: "safety",
+          average: 5.0,
+          graded_count: 12,
+          unassessable_count: 0,
+        },
       ],
     },
     response_time: {
@@ -312,7 +349,8 @@ export class AnalyticsMock {
     if (method === "GET" && path === `${API}/generation`) return "generation";
     if (method === "GET" && path === `${API}/quality`) return "quality";
     if (method === "POST" && path === `${API}/grading-runs`) return "start";
-    if (method === "GET" && path.startsWith(`${API}/grading-runs/`)) return "run";
+    if (method === "GET" && path.startsWith(`${API}/grading-runs/`))
+      return "run";
     return null;
   }
 
@@ -333,8 +371,16 @@ export class AnalyticsMock {
       return body;
     }
     if (kind === "start") return run(this.startRun);
-    const state = this.runStates.length > 1 ? this.runStates.shift()! : this.runStates[0] ?? {};
-    return run({ status: "running", items_graded: 1, started_at: "2026-11-09T05:00:01Z", ...state });
+    const state =
+      this.runStates.length > 1
+        ? this.runStates.shift()!
+        : (this.runStates[0] ?? {});
+    return run({
+      status: "running",
+      items_graded: 1,
+      started_at: "2026-11-09T05:00:01Z",
+      ...state,
+    });
   }
 
   async handle(route: Route) {
@@ -342,7 +388,10 @@ export class AnalyticsMock {
     const url = new URL(request.url());
     const kind = this.classify(request.method(), url.pathname);
     if (!kind) {
-      await route.fulfill({ status: 404, json: { detail: { code: "not_found", message: "no route" } } });
+      await route.fulfill({
+        status: 404,
+        json: { detail: { code: "not_found", message: "no route" } },
+      });
       return;
     }
     let body: unknown = null;
@@ -354,13 +403,16 @@ export class AnalyticsMock {
     const recorded: Recorded = { kind, url, method: request.method(), body };
     this.requests.push(recorded);
     const step = this.steps[kind].shift() ?? {};
-    if (step.hold) await new Promise<void>((resolve) => this.waiting.push(resolve));
+    if (step.hold)
+      await new Promise<void>((resolve) => this.waiting.push(resolve));
     if (step.abort) {
       await route.abort("connectionrefused").catch(() => undefined);
       return;
     }
     if (step.malformed) {
-      await route.fulfill({ contentType: "application/json", body: "not-json" }).catch(() => undefined);
+      await route
+        .fulfill({ contentType: "application/json", body: "not-json" })
+        .catch(() => undefined);
       return;
     }
     const failing = step.status && step.status >= 400;
@@ -370,7 +422,12 @@ export class AnalyticsMock {
         json:
           step.json ??
           (failing
-            ? { detail: { code: step.code ?? "error", message: step.message ?? "ignored private server error" } }
+            ? {
+                detail: {
+                  code: step.code ?? "error",
+                  message: step.message ?? "ignored private server error",
+                },
+              }
             : this.defaultBody(kind, url)),
         headers: { "cache-control": "no-store" },
       })
@@ -387,7 +444,9 @@ export async function setup(
   const auth = await mockAuthApi(page, {
     user: options.user === undefined ? ADMIN : options.user,
   });
-  await page.route("**/api/health", (route) => route.fulfill({ json: { status: "ok" } }));
+  await page.route("**/api/health", (route) =>
+    route.fulfill({ json: { status: "ok" } }),
+  );
   // All unrelated admin calls stay isolated from any developer backend.
   await page.route("**/api/admin/**", (route) =>
     route.fulfill({ json: { accounts: [], courses: [] } }),
