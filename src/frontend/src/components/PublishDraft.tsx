@@ -150,7 +150,7 @@ export default function PublishDraft({
           ? "Already published. Showing the existing version."
           : kind === "note"
             ? "Notes published. Enrolled students can read them in Study materials."
-            : "Practice set published. Student practice integration is pending.",
+            : "Practice set published. Enrolled students can practise it from Practice.",
       );
     } catch (reason) {
       if (owner !== epoch.current) return;
