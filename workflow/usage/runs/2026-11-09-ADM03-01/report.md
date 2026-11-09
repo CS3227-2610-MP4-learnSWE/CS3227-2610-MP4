@@ -8,12 +8,12 @@ Token usage = uncached input + cache reads + cache writes + output. Reasoning is
 
 | Record | Feature run ID | Invocation ID | Role | Model(s) | Effort | Elapsed | Requests | Token usage | Cost (USD) |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| invocation | 2026-11-09-ADM03-01 | 2026-11-09-ADM03-01-orchestrator-01 | orchestrator | claude-sonnet-5-5 | inherited | 3:22:02 | 185 | 43761053 | 6.656409 |
+| invocation | 2026-11-09-ADM03-01 | 2026-11-09-ADM03-01-orchestrator-01 | orchestrator | claude-sonnet-5-5 | inherited | 5:54:33 | 264 | 78372065 | 16.432121 |
 | invocation | 2026-11-09-ADM03-01 | 2026-11-09-ADM03-01-spec-writer-01 | spec-writer | claude-sonnet-5-5 | default | 0:07:02 | 9 | 304451 | 0.376644 |
 | invocation | 2026-11-09-ADM03-01 | 2026-11-09-ADM03-01-spec-writer-02 | spec-writer | claude-sonnet-5-5 | default | 0:03:28 | 3 | 229509 | 0.360056 |
 | invocation | 2026-11-09-ADM03-01 | 2026-11-09-ADM03-01-spec-writer-03 | spec-writer | claude-sonnet-5-5 | default | 0:07:18 | 5 | 455601 | 0.180647 |
 | invocation | 2026-11-09-ADM03-01 | 2026-11-09-ADM03-01-spec-writer-04 | spec-writer | claude-sonnet-5-5 | default | 0:05:57 | 4 | 505611 | 0.706358 |
-| invocation | 2026-11-09-ADM03-01 | 2026-11-09-ADM03-01-spec-writer-05 | spec-writer | claude-sonnet-5-5 | default | 0:02:06 | 3 | 438020 | 0.234356 |
+| invocation | 2026-11-09-ADM03-01 | 2026-11-09-ADM03-01-spec-writer-05 | spec-writer | claude-sonnet-5-5 | default | 2:26:33 | 3 | 438020 | 0.234356 |
 | invocation | 2026-11-09-ADM03-01 | 2026-11-09-ADM03-01-developer-01 | developer | claude-sonnet-5-5 | default | 0:49:06 | 75 | 11078983 | 2.492345 |
 | invocation | 2026-11-09-ADM03-01 | 2026-11-09-ADM03-01-test-designer-01 | test-designer | claude-sonnet-5-5 | default | 0:42:49 | 33 | 3727891 | 1.730687 |
 | invocation | 2026-11-09-ADM03-01 | 2026-11-09-ADM03-01-test-designer-02 | test-designer | claude-sonnet-5-5 | default | 0:02:35 | 13 | 2401870 | 0.716800 |
@@ -26,7 +26,21 @@ Token usage = uncached input + cache reads + cache writes + output. Reasoning is
 | invocation | 2026-11-09-ADM03-01 | 2026-11-09-ADM03-01-test-designer-07 | test-designer | claude-sonnet-5-5 | default | 0:24:54 | 4 | 804942 | 0.599521 |
 | invocation | 2026-11-09-ADM03-01 | 2026-11-09-ADM03-01-developer-04 | developer | claude-sonnet-5-5 | default | 0:23:17 | 13 | 3353804 | 1.042607 |
 | invocation | 2026-11-09-ADM03-01 | 2026-11-09-ADM03-01-verifier-01 | verifier | claude-opus-5-5 | default | 0:22:17 | 13 | 543702 | 0.582500 |
-| invocation | 2026-11-09-ADM03-01 | 2026-11-09-ADM03-01-developer-05 | developer | claude-sonnet-5-5 | default | 0:05:38 | 13 | 3555407 | 1.112737 |
-| invocation | 2026-11-09-ADM03-01 | 2026-11-09-ADM03-01-test-designer-08 | test-designer | claude-sonnet-5-5 | default | 0:05:38 | 12 | 2546387 | 0.852403 |
-| invocation | 2026-11-09-ADM03-01 | 2026-11-09-ADM03-01-verifier-02 | verifier | claude-opus-5-5 | default | 0:00:37 | 2 | 130194 | 0.400294 |
-| feature_run_total | 2026-11-09-ADM03-01 |  | TOTAL | claude-opus-5-5; claude-sonnet-5-5 |  | 3:22:02 | 432 | 83569418 | 20.811058 |
+| invocation | 2026-11-09-ADM03-01 | 2026-11-09-ADM03-01-developer-05 | developer | claude-sonnet-5-5 | default | 0:27:25 | 13 | 3555407 | 1.112737 |
+| invocation | 2026-11-09-ADM03-01 | 2026-11-09-ADM03-01-test-designer-08 | test-designer | claude-sonnet-5-5 | default | 0:30:53 | 12 | 2546387 | 0.852403 |
+| invocation | 2026-11-09-ADM03-01 | 2026-11-09-ADM03-01-verifier-02 | verifier | claude-opus-5-5 | default | 2:15:12 | 2 | 130194 | 0.400294 |
+| invocation | 2026-11-09-ADM03-01 | 2026-11-09-ADM03-01-developer-06 | developer | claude-sonnet-5-5 | default | 0:18:21 | 43 | 13610393 | 2.617404 |
+| invocation | 2026-11-09-ADM03-01 | 2026-11-09-ADM03-01-spec-writer-06 | spec-writer | claude-sonnet-5-5 | default | 0:03:28 | 7 | 1179057 | 0.739280 |
+| invocation | 2026-11-09-ADM03-01 | 2026-11-09-ADM03-01-test-designer-09 | test-designer | claude-sonnet-5-5 | default | 0:14:53 | 10 | 2306428 | 0.921801 |
+| invocation | 2026-11-09-ADM03-01 | 2026-11-09-ADM03-01-developer-07 | developer | claude-sonnet-5-5 | default | 0:07:24 | 13 | 4663300 | 0.638808 |
+| invocation | 2026-11-09-ADM03-01 | 2026-11-09-ADM03-01-test-designer-10 | test-designer | claude-sonnet-5-5 | default | 0:07:24 | 8 | 1975267 | 0.837636 |
+| invocation | 2026-11-09-ADM03-01 | 2026-11-09-ADM03-01-developer-08 | developer | claude-sonnet-5-5 | default | 0:25:04 | 16 | 6057839 | 0.793430 |
+| invocation | 2026-11-09-ADM03-01 | 2026-11-09-ADM03-01-test-designer-11 | test-designer | claude-sonnet-5-5 | default | 0:32:34 | 4 | 1016369 | 0.736933 |
+| invocation | 2026-11-09-ADM03-01 | 2026-11-09-ADM03-01-developer-09 | developer | claude-sonnet-5-5 | default | 0:07:30 | 9 | 3560597 | 1.396263 |
+| invocation | 2026-11-09-ADM03-01 | 2026-11-09-ADM03-01-developer-10 | developer | claude-sonnet-5-5 | default | 1:11:51 | 10 | 4103157 | 1.503770 |
+| invocation | 2026-11-09-ADM03-01 | 2026-11-09-ADM03-01-test-designer-12 | test-designer | claude-sonnet-5-5 | default | 1:11:51 | 19 | 5201470 | 2.638084 |
+| invocation | 2026-11-09-ADM03-01 | 2026-11-09-ADM03-01-verifier-03 | verifier | claude-opus-5-5 | default | 0:30:30 | 4 | 323731 | 0.627917 |
+| invocation | 2026-11-09-ADM03-01 | 2026-11-09-ADM03-01-developer-11 | developer | claude-sonnet-5-5 | default | 0:05:30 | 5 | 2101773 | 1.256526 |
+| invocation | 2026-11-09-ADM03-01 | 2026-11-09-ADM03-01-test-designer-13 | test-designer | claude-sonnet-5-5 | default | 0:05:30 | 5 | 1440838 | 0.897869 |
+| invocation | 2026-11-09-ADM03-01 | 2026-11-09-ADM03-01-verifier-04 | verifier | claude-opus-5-5 | default | 0:00:34 | 3 | 293339 | 0.575931 |
+| feature_run_total | 2026-11-09-ADM03-01 |  | TOTAL | claude-opus-5-5; claude-sonnet-5-5 |  | 5:54:33 | 667 | 166013988 | 46.768420 |
