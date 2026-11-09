@@ -13,9 +13,10 @@ export interface CompanionRequestBody {
   message: string;
   history: { role: "user" | "assistant"; text: string }[];
   context: {
-    page: "practice" | "other";
+    page: "practice" | "lesson" | "other";
     set_id?: string | null;
     attempt_id?: string | null;
+    lesson_id?: string | null;
     label?: string | null;
   };
 }
@@ -38,13 +39,28 @@ export interface RecordedCompanionRequest {
   raw: string | null;
 }
 
-/** A successful reply body. */
+/** A source reference built by the server (STU-03-grounding): lesson id and title only. */
+export interface CompanionSource {
+  lesson_id: string;
+  title: string;
+}
+
+/** A successful reply body. `sources` is always present (STU-03-grounding plan). */
 export function companionOk(
   reply: string,
-  mode: "hint" | "explain" | "help" = "hint",
+  mode: "hint" | "explain" | "help" | "lesson" = "hint",
   withheld = false,
+  sources: CompanionSource[] = [],
 ): CompanionReply {
-  return { status: 200, json: { reply, mode, withheld } };
+  return { status: 200, json: { reply, mode, withheld, sources } };
+}
+
+/** A grounded Lesson-mode reply with its source references. */
+export function companionGrounded(
+  reply: string,
+  sources: CompanionSource[],
+): CompanionReply {
+  return companionOk(reply, "lesson", false, sources);
 }
 
 /** A standard error body; `message` carries a marker the widget must not show. */
