@@ -88,7 +88,7 @@ def _context_text(plan: Plan) -> str:
         return HELP_TEXT
     if plan.mode == "lesson":
         return "\n\n".join(
-            f'Lesson "{l.title}":\n{prompts.LESSON_OPEN}\n{l.content}\n{prompts.LESSON_CLOSE}'
+            f'Lesson "{l.title}":\n{prompts.LESSON_OPEN}\n{l.content[: config.LESSON_MAX_CHARS]}\n{prompts.LESSON_CLOSE}'
             for l in plan.lessons
         )
     lines: list[str] = []
