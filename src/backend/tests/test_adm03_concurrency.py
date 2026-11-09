@@ -139,3 +139,27 @@ def test_adm03_ac23_sweeping_frees_the_slot_for_a_new_analysis(admin, llm):
     fut.result(60)
     assert wait_done(admin, nxt.json()["id"])["ai"]["status"] == "complete"
     assert get(admin, aid).json()["ai"]["error"]["code"] == "analysis_interrupted"
+
+
+def test_adm03_ac19_31_burst_of_distinct_submits_is_only_201_or_409_and_rows_match(admin, llm):
+    """The job fails at once, so the running row may end between the insert attempt and the follow-up lookup."""
+    import llm_client
+
+    def rows():
+        return sql("SELECT count(*) FROM feedback_analyses WHERE admin_id=%s", (str(admin),))[0][0]
+    form, ids = text_form(admin, 2)
+    llm.script = {n: llm_client.LlmNotConfigured("x") for n in range(1, 400)}
+    for _ in range(10):
+        before = rows()
+        futures = [POOL.submit(create, admin, form, ids) for _ in range(8)]
+        replies = [f.result(60) for f in futures]
+        created_ok = [r for r in replies if r.status_code == 201]
+        for r in replies:
+            assert r.status_code in (201, 409), (r.status_code, r.text)
+            if r.status_code == 409:
+                assert r.json()["detail"]["code"] == "analysis_in_progress"
+        assert created_ok, [r.text for r in replies]
+        for r in created_ok:
+            wait_done(admin, r.json()["id"])
+        assert rows() - before == len(created_ok)
+        assert len({r.json()["id"] for r in created_ok}) == len(created_ok)
