@@ -67,9 +67,9 @@ def test_adm03_ac21_batches_fit_the_per_call_budget_and_reduce_gets_no_raw_answe
     for c in maps:
         assert len(c.system_text) <= 1500 and len(c.user_text) <= 9000
         assert len(c.system_text) + len(c.user_text) <= 10500 and len(c.entries()) <= 30
-        assert c.max_tokens == 800 and c.timeout_seconds is None and c.reasoning_effort == "low" and (c.max_reply_chars is None or c.max_reply_chars <= 2000) and c.system_text.startswith("TASK: MAP")
+        assert c.max_tokens == 1600 and c.timeout_seconds == 30.0 and c.reasoning_effort == "low" and (c.max_reply_chars is None or c.max_reply_chars <= 2000) and c.system_text.startswith("TASK: MAP")
     red = llm.of("reduce")[0]
-    assert len(red.system_text) <= 1200 and len(red.user_text) <= 9000 and red.max_tokens == 2000 and red.timeout_seconds == 40.0 and red.reasoning_effort == "low" and red.max_reply_chars == 8000
+    assert len(red.system_text) <= 1200 and len(red.user_text) <= 9000 and red.max_tokens == 3000 and red.timeout_seconds == 60.0 and red.reasoning_effort == "low" and red.max_reply_chars == 8000
     assert "answer0" not in red.all_text and "lorem" not in red.all_text
 
 
