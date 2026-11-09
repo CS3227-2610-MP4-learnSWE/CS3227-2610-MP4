@@ -198,12 +198,10 @@ test("tea05 AC2/AC4/AC12 the calculation note lists every rule in order and is a
 }) => {
   await ready(page);
   await expect(noteHeading(page)).toBeVisible();
-  const items = page
-    .locator("li")
-    .filter({
-      hasText:
-        /^(Students are the people|A lesson counts|Completion rate for a lesson|Practice results include|A question is missed|Periods use UTC)/,
-    });
+  const items = page.locator("li").filter({
+    hasText:
+      /^(Students are the people|A lesson counts|Completion rate for a lesson|Practice results include|A question is missed|Periods use UTC)/,
+  });
   await expect(items).toHaveCount(NOTE_BULLETS.length);
   for (const [i, text] of NOTE_BULLETS.entries())
     await expect(items.nth(i)).toHaveText(text);
@@ -251,9 +249,7 @@ test("tea05 AC17 a signed-in teacher sees Welcome back with their display name a
   page,
 }) => {
   await ready(page);
-  await expect(
-    page.getByText(/^Welcome back, Tess Teacher\. /),
-  ).toBeVisible();
+  await expect(page.getByText(/^Welcome back, Tess Teacher\. /)).toBeVisible();
   await expect(page.getByText("Jamie")).toHaveCount(0);
 });
 
@@ -811,9 +807,7 @@ test("tea05 AC13 a pending result of the previous account cannot appear after an
   ctx.release();
   await expect.poll(() => ctx.completed.length).toBe(2);
   await expect(page.getByText("FIRST-ACCOUNT-PRIVATE-COURSE")).toHaveCount(0);
-  await expect(
-    page.getByText(/^Welcome back, Olive Other\. /),
-  ).toBeVisible();
+  await expect(page.getByText(/^Welcome back, Olive Other\. /)).toBeVisible();
   await expectNoSecretsInBrowser(page, [
     "FIRST-ACCOUNT-PRIVATE-COURSE",
     "Intro to SE",
