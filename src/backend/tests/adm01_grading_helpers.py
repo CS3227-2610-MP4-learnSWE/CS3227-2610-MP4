@@ -100,7 +100,7 @@ def gen_row(user, workflow, at, outcome="success", duration_ms=3000):
 
 
 def chat_item(user, at, *, request_text="Please give me a hint", response_text="Think about the idea.",
-              context_text="Practice question stem", status="pending", duration_ms=1500, created_days_ago=0,
+              context_text="", status="pending", duration_ms=1500, created_days_ago=0,
               ref=None, failure_code=None):
     """A successful student practice chat request plus its stored grading item. Returns (chat_id, item_id)."""
     rid = chat_row(user, at, "success", activity_ref=ref, duration_ms=duration_ms)
@@ -109,11 +109,13 @@ def chat_item(user, at, *, request_text="Please give me a hint", response_text="
                "('student_exercise','chat_request',%s,%s,%s,%s,%s,%s,%s,%s, now() - make_interval(days => %s::int)) "
                "RETURNING id", (rid, at, duration_ms, request_text, response_text, context_text, status,
                                 failure_code, created_days_ago))[0][0]
+    sql("UPDATE analytics_grading_item SET privacy_policy_version=%s WHERE id=%s",
+        ("adm01-local-dlp-v1", item))
     return rid, item
 
 
 def gen_item(user, at, *, generation_workflow="study_notes", request_text="Generate notes",
-             response_text="Core ideas: one responsibility per function.", context_text="Source file text",
+             response_text="Core ideas: one responsibility per function.", context_text="",
              status="pending", duration_ms=3000, created_days_ago=0, failure_code=None):
     """A successful TEA-02 generation attempt plus its stored grading item. Returns (attempt_id, item_id)."""
     aid = gen_row(user, generation_workflow, at, "success", duration_ms)
@@ -123,6 +125,8 @@ def gen_item(user, at, *, generation_workflow="study_notes", request_text="Gener
                "now() - make_interval(days => %s::int)) RETURNING id",
                (aid, generation_workflow, at, duration_ms, request_text, response_text, context_text, status,
                 failure_code, created_days_ago))[0][0]
+    sql("UPDATE analytics_grading_item SET privacy_policy_version=%s WHERE id=%s",
+        ("adm01-local-dlp-v1", item))
     return aid, item
 
 

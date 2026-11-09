@@ -170,6 +170,8 @@ export function qualityBody(url: URL, total = 2): Json {
       pending_count: 5,
       grading_failed_count: 1,
       content_expired_count: 0,
+      privacy_blocked_count: 0,
+      privacy_mode: "local_dlp",
       dimensions: [
         { dimension: "relevance", average: 4.25, graded_count: 12, unassessable_count: 0 },
         { dimension: "factual_accuracy", average: 3.5, graded_count: 6, unassessable_count: 6 },

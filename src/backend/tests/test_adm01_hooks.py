@@ -182,7 +182,7 @@ def test_adm01_ac4_a_successful_practice_reply_stores_one_redacted_grading_item_
     assert len(items) == 1
     _, workflow, source_type, req, resp, ctx, status = items[0]
     assert (workflow, source_type, status) == ("student_exercise", "chat_request", "pending")
-    assert "x@y.example.com" not in req and resp == "Think about loops." and ctx == "Stem only"
+    assert "x@y.example.com" not in req and resp == "Think about loops." and ctx in (None, "")
     assert sql("SELECT source_id FROM analytics_grading_item WHERE id=%s", (items[0][0],)) == [(practice,)]
 
 
@@ -215,7 +215,8 @@ def test_adm01_ac23_the_stored_grading_context_never_carries_answer_keys_or_expl
         submit(aid, s)
     assert practice_msg(s, "Why?", attempt_id=aid).status_code == 200
     if mode == "explain":
-        assert chat_items(s) == []
+        assert all(row[6] == "privacy_blocked" and all(t is None for t in row[3:6])
+                   for row in chat_items(s))
         return
     (item,) = chat_items(s)
     stored = " ".join(t or "" for t in item[3:6])
@@ -237,7 +238,8 @@ def test_adm01_ac23_a_released_post_submission_solution_is_counted_but_never_sto
     assert response.json()["mode"] == "explain" and response.json()["withheld"] is False
     assert EXPLANATIONS[0] in response.json()["reply"]
     assert [row[1] for row in chat_rows(s)] == ["success"]
-    assert chat_items(s) == []
+    assert all(row[6] == "privacy_blocked" and all(t is None for t in row[3:6])
+               for row in chat_items(s))
 
 
 @pytest.mark.parametrize("exception,status", [
@@ -582,7 +584,7 @@ def test_adm01_ac2_generation_responds_exactly_as_before_when_the_analytics_data
 
 # ---- AC23 / SHR-02: MCQ grading text carries stems and choices only
 
-def test_adm01_ac23_an_mcq_generation_stores_stems_and_choices_but_never_the_key_or_explanation(tea):
+def test_adm01_ac23_an_mcq_generation_excludes_even_stems_and_choices_from_grading(tea):
     app, fake, since = tea
     marker = "KEYMARK" + uid()[:8]
     source = upload(app, f"Source solution and answer key: {marker}".encode())
@@ -592,9 +594,10 @@ def test_adm01_ac23_an_mcq_generation_stores_stems_and_choices_but_never_the_key
     stored = " ".join(t or "" for t in item[2:5])
     assert item[1] == "mcq_batch"
     assert item[4] is None  # the full source may itself contain solutions or answer keys
+    assert all(value is None for value in item[2:5])
     for row in rows:
-        assert row["question"] in stored
-        assert all(choice in stored for choice in row["choices"])
+        assert row["question"] not in stored
+        assert all(choice not in stored for choice in row["choices"])
     assert marker not in stored and "explanation" not in stored.lower()
     assert "correct_choice_index" not in stored and "correct answer" not in stored.lower()
 

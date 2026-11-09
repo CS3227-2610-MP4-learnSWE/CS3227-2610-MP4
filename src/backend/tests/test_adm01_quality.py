@@ -954,10 +954,10 @@ def test_adm01_ac24_every_mcq_batch_item_is_unassessable_for_factual_accuracy(co
 
 
 @pytest.mark.parametrize("workflow,generation_workflow", [("student_exercise", None), ("teacher_lesson_planning", "study_notes")])
-def test_adm01_ac24_with_context_and_not_mcq_the_ai_score_is_kept(workflow, generation_workflow, analytics_admin, grader, tracked_users):
+def test_adm01_ac24_context_is_always_excluded_and_factual_accuracy_is_unassessable(workflow, generation_workflow, analytics_admin, grader, tracked_users):
     state, score, _ = factual_after_run(analytics_admin, grader, tracked_users, workflow=workflow, context="Authorised context",
                                         generation_workflow=generation_workflow or "study_notes")
-    assert (state, score) == ("graded", 5)
+    assert (state, score) == ("unassessable", None)
 
 
 def test_adm01_ac24_the_other_dimensions_of_a_forced_item_are_untouched(analytics_admin, grader, tracked_users):
@@ -1111,7 +1111,7 @@ def test_adm01_ac23_the_prompt_is_a_fixed_system_rubric_and_one_user_message_wit
     assert [m.role for m in c.messages] == ["system", "user"]  # no tools, no other roles
     assert c.block("request").strip() == "REQ-TXT how do I start"
     assert c.block("response").strip() == "RESP-TXT begin with a test"
-    assert c.block("context").strip() == "CTX-TXT the question stem"
+    assert "CTX-TXT the question stem" not in c.all_text
     system = c.system_text.lower()
     assert "untrusted" in system and "json" in system and "ignore" in system
     for dimension in ("relevance", "factual accuracy", "clarity", "safety"):
