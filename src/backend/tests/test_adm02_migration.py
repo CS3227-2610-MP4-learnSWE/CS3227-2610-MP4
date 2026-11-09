@@ -34,7 +34,7 @@ def test_adm02_ac06_22_additive_upgrade_preserves_users_progress_and_usage(isola
            "('adm02-preserve-attempt','adm02-preserve','intro-se-1','in_progress')")
     baseline = {table: db.sql(f'SELECT t::text FROM "{table}" t ORDER BY t::text')
                 for table in ("user", "course_membership", "practice_attempt", "ai_usage_coverage")}
-    db.migrate("upgrade", "head")
+    db.migrate("upgrade", "20261107_adm02_feedback")
     for table, before in baseline.items():
         assert db.sql(f'SELECT t::text FROM "{table}" t ORDER BY t::text') == before
     for table in ("feedback_forms", "feedback_recipients", "feedback_response_drafts", "feedback_responses"):

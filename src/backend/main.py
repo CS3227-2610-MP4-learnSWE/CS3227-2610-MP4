@@ -8,6 +8,7 @@ import practice_routes
 import progress_routes
 from feedback import router as feedback_router
 from feedback_analysis.routes import router as feedback_analysis_router
+from feature_analytics.routes import router as feature_analytics_router
 from messaging import router as messaging_router
 from admin_access.routes import router as admin_router
 from ai_usage.routes import router as ai_usage_router
@@ -27,6 +28,7 @@ app.include_router(admin_router)
 app.include_router(ai_usage_router)
 app.include_router(feedback_router)
 app.include_router(feedback_analysis_router)
+app.include_router(feature_analytics_router)
 app.include_router(messaging_router)
 app.include_router(practice_routes.router)
 app.include_router(teacher_router)

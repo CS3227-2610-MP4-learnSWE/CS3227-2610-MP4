@@ -4,6 +4,7 @@ export const FEATURE_LABELS = {
   "STU-03": "Student assistant (STU-03)",
   "TEA-02": "Teacher generation (TEA-02)",
   "ADM-03": "Feedback analysis (ADM-03)",
+  "ADM-01": "Feature analytics (ADM-01)",
 } as const;
 export type Feature = keyof typeof FEATURE_LABELS;
 export type Filters = {

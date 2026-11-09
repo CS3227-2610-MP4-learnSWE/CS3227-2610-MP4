@@ -457,7 +457,15 @@ def test_shr01_sec_auth_12_invalid_samesite_combinations_are_503(monkeypatch, sa
 
 
 def test_shr01_sec_auth_12_database_unavailable_is_503_and_never_unauthenticated_fallback(monkeypatch):
+    import psycopg
+
     s = new_student()
+    # Exercise the real SQLAlchemy/HTTP failure path without waiting for the OS's
+    # TCP timeout on every route. A distinct URL avoids existing pooled connections.
+    def connection_refused(*args, **kwargs):
+        raise psycopg.OperationalError("database unavailable")
+
+    monkeypatch.setattr(psycopg, "connect", connection_refused)
     monkeypatch.setenv("DATABASE_URL", "postgresql+psycopg://nobody:nopass@127.0.0.1:1/none")
     exercise_all_auth_paths(s)
     # No session cookie never reaches the database: 401 is correct (check order), never access.
