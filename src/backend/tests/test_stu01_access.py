@@ -179,7 +179,14 @@ def test_stu01_ac6_error_bodies_leak_no_internals():
 
 
 def test_stu01_ac6_database_failure_is_503_without_sample_data(monkeypatch):
+    import psycopg
+
     cid, s, (lid, _) = world()
+    # Keep the fail-closed HTTP checks deterministic instead of testing TCP timeouts.
+    def connection_refused(*args, **kwargs):
+        raise psycopg.OperationalError("database unavailable")
+
+    monkeypatch.setattr(psycopg, "connect", connection_refused)
     monkeypatch.setenv("DATABASE_URL", "postgresql+psycopg://nobody:nopass@127.0.0.1:1/none")
     for method, path, body in endpoints(cid, lid):
         r = call(method, path, s, body)
