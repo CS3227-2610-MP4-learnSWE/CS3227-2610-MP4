@@ -90,7 +90,7 @@ Criteria copied or narrowed from the user stories carry their story reference. A
 - [ ] AC36: The message box holds at most 1,000 characters (text beyond that is not added, as the browser cuts a long paste), shows a count "n / 1000" under the box, and when the limit is reached shows a note that the limit was reached and extra text was not added; the note goes away once the message is shorter. Added after the first live use; tested in `tests/companion-limit.spec.ts` (written by the orchestrator, not the independent test-designer).
 
 ## Out of scope
-- Retrieval from teacher-published lessons with source links (needs STU-01). The grounding and source-reference criteria of US-STU-03-01 and US-STU-03-05 are therefore not met in this slice; the companion says its help is general, not course material.
+- Retrieval from teacher-published lessons with source links (needs STU-01). Built later by the addendum in `workflow/specs/STU-03-grounding/`. The grounding and source-reference criteria of US-STU-03-01 and US-STU-03-05 are therefore not met in this slice; the companion says its help is general, not course material.
 - Page context from lesson content (only practice sets and the fixed help text are context).
 - Chat history that survives reload, cross-device or per-account persistence (US-STU-03-04 history scoping beyond the browser session).
 - Streaming replies.

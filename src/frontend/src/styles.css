@@ -3427,6 +3427,19 @@ td .MuiButton-root {
 .companion-window .chat-message p {
   white-space: pre-wrap;
 }
+.companion-window .chat-message p.companion-sources {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 14px;
+  white-space: normal;
+}
+.companion-sources a {
+  color: var(--blue);
+  overflow-wrap: anywhere;
+}
 .companion-compose {
   display: flex;
   gap: 8px;
