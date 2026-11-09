@@ -1,4 +1,4 @@
-feature_run_id,invocation_id,role,effort,tool,session_id,agent_id,started_at,finished_at
+﻿feature_run_id,invocation_id,role,effort,tool,session_id,agent_id,started_at,finished_at
 2026-11-09-ADM03-01,2026-11-09-ADM03-01-orchestrator-01,orchestrator,inherited,claude,6ce5b321-c558-40b6-b1f5-8dc30860215c,,2026-11-09T12:16:00+08:00,
 2026-11-09-ADM03-01,2026-11-09-ADM03-01-spec-writer-01,spec-writer,default,claude,6ce5b321-c558-40b6-b1f5-8dc30860215c,a3e2f7df9b4102a19,2026-11-09T12:18:45+08:00,2026-11-09T12:21:37+08:00
 2026-11-09-ADM03-01,2026-11-09-ADM03-01-spec-writer-02,spec-writer,default,claude,6ce5b321-c558-40b6-b1f5-8dc30860215c,a3e2f7df9b4102a19,2026-11-09T12:25:47+08:00,2026-11-09T12:28:54+08:00
@@ -12,4 +12,4 @@ feature_run_id,invocation_id,role,effort,tool,session_id,agent_id,started_at,fin
 2026-11-09-ADM03-01,2026-11-09-ADM03-01-developer-02,developer,default,claude,6ce5b321-c558-40b6-b1f5-8dc30860215c,aeaa1e431bb6d6a60,2026-11-09T13:36:29+08:00,2026-11-09T13:52:11+08:00
 2026-11-09-ADM03-01,2026-11-09-ADM03-01-test-designer-04,test-designer,default,claude,6ce5b321-c558-40b6-b1f5-8dc30860215c,a6ca6d989946b112f,2026-11-09T13:36:29+08:00,2026-11-09T13:36:53+08:00
 2026-11-09-ADM03-01,2026-11-09-ADM03-01-developer-03,developer,default,claude,6ce5b321-c558-40b6-b1f5-8dc30860215c,aeaa1e431bb6d6a60,2026-11-09T13:52:11+08:00,2026-11-09T14:02:17+08:00
-2026-11-09-ADM03-01,2026-11-09-ADM03-01-test-designer-05,test-designer,default,claude,6ce5b321-c558-40b6-b1f5-8dc30860215c,a6ca6d989946b112f,2026-11-09T14:02:17+08:00,
+2026-11-09-ADM03-01,2026-11-09-ADM03-01-test-designer-05,test-designer,default,claude,6ce5b321-c558-40b6-b1f5-8dc30860215c,a6ca6d989946b112f,2026-11-09T14:02:17+08:00,2026-11-09T14:03:46+08:00
