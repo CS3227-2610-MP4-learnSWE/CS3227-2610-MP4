@@ -1,4 +1,4 @@
-import type { Aggregate } from "../api/feedbackAnalysis";
+import type { Aggregate } from "../services/feedbackAnalysisApi";
 
 type Row = { key: string; label: string; count: number; percent: number };
 

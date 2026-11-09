@@ -16,7 +16,7 @@ import {
   listResponses,
   responseCount,
   type HistoryItem,
-} from "../api/feedbackAnalysis";
+} from "../services/feedbackAnalysisApi";
 import {
   DELETE_404,
   DELETED_STATUS,
@@ -149,7 +149,7 @@ export default function AdminFeedbackAnalysis() {
 
   const generate = async () => {
     if (pending) return;
-    if (!selectAll && ticked.size === 0) {
+    if (!formId || (!selectAll && ticked.size === 0)) {
       setGenerateError(SELECTION_REQUIRED);
       return;
     }
@@ -182,7 +182,8 @@ export default function AdminFeedbackAnalysis() {
     setDeleteTarget(null);
     setStatus(alreadyGone ? DELETE_404 : DELETED_STATUS);
     if (!remaining.length && nextOffset !== null) void loadHistory(0);
-    setTimeout(() => heading.current?.focus(), 0);
+    // After the dialog has returned focus to its (removed) trigger.
+    setTimeout(() => heading.current?.focus(), 100);
   };
 
   return (
@@ -219,25 +220,27 @@ export default function AdminFeedbackAnalysis() {
             {formId && (
               <>
                 <div className="analysis-actions">
-                  {count.loading ? <span>Counting responses...</span> : null}
-                  <FormControlLabel
-                    control={
-                      <Checkbox
-                        checked={selectAll}
-                        disabled={total === null || total === 0}
-                        onChange={(e) =>
-                          changeSelection(new Set(), e.target.checked)
-                        }
-                      />
-                    }
-                    label={
-                      selectAll
-                        ? `All ${total} responses selected`
-                        : total === null
-                          ? "Select all responses"
-                          : `Select all ${total} responses`
-                    }
-                  />
+                  {total === null ? <span>Counting responses...</span> : null}
+                  {total !== 0 && (
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          checked={selectAll}
+                          disabled={total === null || total === 0}
+                          onChange={(e) =>
+                            changeSelection(new Set(), e.target.checked)
+                          }
+                        />
+                      }
+                      label={
+                        selectAll
+                          ? `All ${total} responses selected`
+                          : total === null
+                            ? "Select all responses"
+                            : `Select all ${total} responses`
+                      }
+                    />
+                  )}
                   <Button onClick={() => changeSelection(new Set())}>
                     Clear selection
                   </Button>
@@ -253,7 +256,9 @@ export default function AdminFeedbackAnalysis() {
                   <LoadError message={count.error} retry={count.retry} />
                 )}
                 <p>{selected} selected</p>
-                {responses.loading && <p role="status">Loading responses...</p>}
+                {(responses.loading || count.loading) && (
+                  <p role="status">Loading responses...</p>
+                )}
                 {responses.error && (
                   <LoadError
                     message={responses.error}
@@ -305,11 +310,7 @@ export default function AdminFeedbackAnalysis() {
           <Panel>
             <h2>Generate</h2>
             {generateError && <p role="alert">{generateError}</p>}
-            <Button
-              variant="contained"
-              onClick={generate}
-              disabled={pending || !formId}
-            >
+            <Button variant="contained" onClick={generate} disabled={pending}>
               {pending ? "Starting..." : "Generate analysis"}
             </Button>
           </Panel>

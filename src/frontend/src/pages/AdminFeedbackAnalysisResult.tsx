@@ -5,7 +5,7 @@ import { PageHeading, Panel } from "../components/ui";
 import QuestionResults from "../components/QuestionResults";
 import DeleteAnalysisDialog from "../components/DeleteAnalysisDialog";
 import { useAnalysisPolling } from "../hooks/useAnalysisPolling";
-import type { Analysis } from "../api/feedbackAnalysis";
+import type { Analysis } from "../services/feedbackAnalysisApi";
 import {
   DELETE_404,
   DELETED_STATUS,
@@ -42,11 +42,19 @@ function AiSection({ analysis }: { analysis: Analysis }) {
           <p role="status">
             AI analysis running. Step {done} of {total}: {stepText(step)}.
           </p>
-          <progress
+          <div
+            role="progressbar"
             aria-label="AI analysis progress"
-            value={done}
-            max={total}
-          />
+            aria-valuemin={0}
+            aria-valuenow={done}
+            aria-valuemax={total}
+            className="analysis-bar-track"
+          >
+            <span
+              className="analysis-bar"
+              style={{ width: `${total ? (done * 100) / total : 0}%` }}
+            />
+          </div>
         </>
       )}
       {ai.status === "failed" && ai.error && (

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Link, useParams } from "react-router";
 import { Button } from "@mui/material";
 import { PageHeading, Panel } from "../components/ui";
-import { getEvidence, type Evidence } from "../api/feedbackAnalysis";
+import { getEvidence, type Evidence } from "../services/feedbackAnalysisApi";
 import { loadMessage, localTime } from "../messages/feedbackAnalysis";
 
 const answerText = (

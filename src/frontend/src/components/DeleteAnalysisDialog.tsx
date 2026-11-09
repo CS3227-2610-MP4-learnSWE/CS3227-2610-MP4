@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
   Button,
   Dialog,
@@ -6,7 +6,7 @@ import {
   DialogContent,
   DialogTitle,
 } from "@mui/material";
-import { deleteAnalysis } from "../api/feedbackAnalysis";
+import { deleteAnalysis } from "../services/feedbackAnalysisApi";
 import {
   DELETE_404,
   deleteMessage,
@@ -34,6 +34,9 @@ export default function DeleteAnalysisDialog({
 }) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
+  const cancel = useRef<HTMLButtonElement>(null);
+  // Rendered into its own empty container so the page behind stays in the accessibility tree (focus is still trapped).
+  const [container, setContainer] = useState<HTMLDivElement | null>(null);
   const confirm = async () => {
     if (pending) return;
     setPending(true);
@@ -51,43 +54,51 @@ export default function DeleteAnalysisDialog({
     }
   };
   return (
-    <Dialog
-      open
-      onClose={() => !pending && onClose()}
-      disableEscapeKeyDown={pending}
-      role="alertdialog"
-      aria-labelledby="delete-analysis-title"
-      aria-describedby="delete-analysis-body"
-    >
-      <DialogTitle id="delete-analysis-title">
-        Delete this analysis permanently?
-      </DialogTitle>
-      <DialogContent id="delete-analysis-body">
-        <p>
-          Form: {target.form_title}. Created {localTime(target.created_at)}.
-          Responses analysed: {target.response_count}.
-        </p>
-        <p>
-          This permanently deletes the analysis: its statistics and charts, the
-          AI summary, themes and suggestions, and the links to supporting
-          responses. This cannot be undone.
-        </p>
-        <p>The original feedback responses and forms are not deleted.</p>
-        {error && <p role="alert">{error}</p>}
-      </DialogContent>
-      <DialogActions>
-        <Button autoFocus onClick={onClose} disabled={pending}>
-          Cancel
-        </Button>
-        <Button
-          color="error"
-          variant="contained"
-          onClick={confirm}
-          disabled={pending}
+    <div ref={setContainer}>
+      {container && (
+        <Dialog
+          container={container}
+          open
+          onClose={() => !pending && onClose()}
+          disableEscapeKeyDown={pending}
+          slotProps={{
+            transition: { onEntered: () => cancel.current?.focus() },
+          }}
+          role="alertdialog"
+          aria-labelledby="delete-analysis-title"
+          aria-describedby="delete-analysis-body"
         >
-          {pending ? "Deleting..." : "Delete permanently"}
-        </Button>
-      </DialogActions>
-    </Dialog>
+          <DialogTitle id="delete-analysis-title">
+            Delete this analysis permanently?
+          </DialogTitle>
+          <DialogContent id="delete-analysis-body">
+            <p>
+              Form: {target.form_title}. Created {localTime(target.created_at)}.
+              Responses analysed: {target.response_count}.
+            </p>
+            <p>
+              This permanently deletes the analysis: its statistics and charts,
+              the AI summary, themes and suggestions, and the links to
+              supporting responses. This cannot be undone.
+            </p>
+            <p>The original feedback responses and forms are not deleted.</p>
+            {error && <p role="alert">{error}</p>}
+          </DialogContent>
+          <DialogActions>
+            <Button autoFocus ref={cancel} onClick={onClose} disabled={pending}>
+              Cancel
+            </Button>
+            <Button
+              color="error"
+              variant="contained"
+              onClick={confirm}
+              disabled={pending}
+            >
+              {pending ? "Deleting..." : "Delete permanently"}
+            </Button>
+          </DialogActions>
+        </Dialog>
+      )}
+    </div>
   );
 }

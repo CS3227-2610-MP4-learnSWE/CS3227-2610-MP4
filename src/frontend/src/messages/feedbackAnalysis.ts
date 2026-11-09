@@ -1,5 +1,5 @@
 import { ApiError } from "../services/client";
-import type { Step } from "../api/feedbackAnalysis";
+import type { Step } from "../services/feedbackAnalysisApi";
 
 export const SESSION_EXPIRED =
   "Your session has expired. Please sign in again.";

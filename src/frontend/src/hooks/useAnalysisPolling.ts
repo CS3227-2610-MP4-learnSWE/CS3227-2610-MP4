@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { getAnalysis, type Analysis } from "../api/feedbackAnalysis";
+import { getAnalysis, type Analysis } from "../services/feedbackAnalysisApi";
 import { ApiError } from "../services/client";
 import {
   loadMessage,

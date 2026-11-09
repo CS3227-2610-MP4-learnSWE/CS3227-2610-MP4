@@ -28,13 +28,19 @@ import FeedbackInbox from "./pages/FeedbackInbox";
 import RecipientFeedback from "./pages/RecipientFeedback";
 import AdminFeedback from "./pages/AdminFeedback";
 import AdminMessaging from "./pages/AdminMessaging";
-import AdminFeedbackAnalysis from "./pages/AdminFeedbackAnalysis";
-import AdminFeedbackAnalysisResult from "./pages/AdminFeedbackAnalysisResult";
-import AdminFeedbackAnalysisEvidence from "./pages/AdminFeedbackAnalysisEvidence";
 
 // Loaded on demand so the student pages never download the teacher demo data.
 const Teacher = lazy(() => import("./pages/Teacher"));
 const Admin = lazy(() => import("./pages/Admin"));
+const AdminFeedbackAnalysis = lazy(
+  () => import("./pages/AdminFeedbackAnalysis"),
+);
+const AdminFeedbackAnalysisResult = lazy(
+  () => import("./pages/AdminFeedbackAnalysisResult"),
+);
+const AdminFeedbackAnalysisEvidence = lazy(
+  () => import("./pages/AdminFeedbackAnalysisEvidence"),
+);
 
 function Inbox({ role }: { role: "student" | "teacher" }) {
   const { status } = useAuth();
@@ -67,7 +73,7 @@ function LiveFeedback({ admin = false }: { admin?: boolean }) {
 function LiveAnalysis({ children }: { children: ReactNode }) {
   const { status } = useAuth();
   return status === "authenticated" ? (
-    children
+    <Suspense fallback={<p role="status">Loading�</p>}>{children}</Suspense>
   ) : (
     <Navigate to="/login" replace />
   );

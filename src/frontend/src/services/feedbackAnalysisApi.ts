@@ -1,4 +1,4 @@
-import { ApiError, request } from "../services/client";
+import { ApiError, getSessionGeneration, request } from "./client";
 
 const BASE = "/api/admin/feedback";
 const options = {
@@ -107,8 +107,19 @@ const isAnalysis = (v: Record<string, unknown>) =>
   Array.isArray(v.labels) &&
   isObject(v.ai);
 
-const get = (path: string) =>
-  request("GET", `${BASE}${path}`, undefined, options);
+// Identical GETs that are still pending share one request (React StrictMode replays effects in development).
+const pending = new Map<string, Promise<unknown>>();
+const get = (path: string) => {
+  const key = `${getSessionGeneration()}:${path}`;
+  let call = pending.get(key);
+  if (!call) {
+    call = request("GET", `${BASE}${path}`, undefined, options).finally(() =>
+      pending.delete(key),
+    );
+    pending.set(key, call);
+  }
+  return call;
+};
 const id = encodeURIComponent;
 
 export const listForms = async () =>
