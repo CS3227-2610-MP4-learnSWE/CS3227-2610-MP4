@@ -55,6 +55,8 @@ test("adm03 AC38 dialog: role, texts, initial focus on Cancel, focus trap, Escap
   const ctx = await setup(page, { analyses: many(2) });
   await page.goto(PAGE);
   const trigger = deleteRow(page).first();
+  await expect(trigger).toBeVisible();
+  await expect.poll(() => ctx.requests.filter((r) => r.path.endsWith("/forms") || r.path.endsWith("/analyses")).length).toBe(2);
   const before = ctx.requests.length;
   await trigger.click();
   await expect(dialog(page)).toBeVisible();
@@ -181,7 +183,7 @@ test("adm03 AC38 delete 404 closes the dialog, removes the row and shows the del
 
 test("adm03 AC38 delete 401 sends the user to sign in", async ({ page }) => {
   const ctx = await setup(page, { analyses: many(1) });
-  ctx.steps.push({ method: "DELETE", status: 401, code: "unauthorized", message: "x" });
+  ctx.steps.push({ method: "DELETE", status: 401, code: "unauthenticated", message: "x" });
   await page.goto(PAGE);
   await deleteRow(page).first().click();
   await confirm(page).click();
