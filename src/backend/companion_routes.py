@@ -183,9 +183,11 @@ def post_message(
         raise ApiError(404, "lesson_not_found", "Lesson not found.")
     # The leak scope covers only the sets this student can access (set_provider).
     # Lesson text is student-visible and may equal a choice text, so Lesson mode skips the text check.
-    leak = leak_check.find_leak(
-        reply.text, _leak_scope(plan, accessible), check_text=plan.mode != "lesson"
-    )
+    shown, grounded = reply.text, []
+    if plan.mode == "lesson":
+        # Marker handling first: the leak check must see exactly the text that would be shown.
+        shown, grounded = service.finish_lesson_reply(reply.text, plan.lessons)
+    leak = leak_check.find_leak(shown, _leak_scope(plan, accessible), check_text=plan.mode != "lesson")
     outcome = "withheld" if leak else "ok"
     _log(plan.mode, outcome, started, reply.prompt_tokens, reply.completion_tokens, len(plan.lessons))
     if plan.mode == "lesson":
@@ -193,9 +195,8 @@ def post_message(
             return CompanionReplyOut(
                 reply=config.LESSON_CANNED_REPLY, mode="lesson", withheld=True, sources=[]
             )
-        text, grounded = service.finish_lesson_reply(reply.text, plan.lessons)
         return CompanionReplyOut(
-            reply=text,
+            reply=shown,
             mode="lesson",
             withheld=False,
             sources=[SourceOut(lesson_id=l.id, title=l.title) for l in grounded],

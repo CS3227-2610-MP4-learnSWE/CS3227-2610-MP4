@@ -16,6 +16,7 @@ from companion_schemas import HistoryItem
 from errors import ApiError
 from lesson_provider import LessonText
 from llm_client import ChatMessage
+from text_normalise import strip_format
 from practice_data import KEY_VERSION, PracticeSet, Question
 
 Mode = Literal["hint", "explain", "help", "lesson"]
@@ -88,7 +89,8 @@ def _context_text(plan: Plan) -> str:
         return HELP_TEXT
     if plan.mode == "lesson":
         return "\n\n".join(
-            f'Lesson "{l.title}":\n{prompts.LESSON_OPEN}\n{l.content[: config.LESSON_MAX_CHARS]}\n{prompts.LESSON_CLOSE}'
+            f"{prompts.LESSON_OPEN}\nLesson \"{_safe(l.title)}\":\n"
+            f"{_safe(l.content[: config.LESSON_MAX_CHARS])}\n{prompts.LESSON_CLOSE}"
             for l in plan.lessons
         )
     lines: list[str] = []
@@ -108,15 +110,30 @@ def _context_text(plan: Plan) -> str:
     return "\n".join(lines).strip()
 
 
+_WRAP = r"[*_`~]*"
+_MARKER_RE = re.compile(
+    _WRAP + r"not\s*_\s*in\s*_\s*lesson" + _WRAP + r"\s*:" + _WRAP, re.IGNORECASE
+)
+
+
+def _safe(text: str) -> str:
+    """Stop lesson text from closing or faking the delimited data block."""
+    for delimiter in (prompts.LESSON_OPEN, prompts.LESSON_CLOSE):
+        text = re.sub(re.escape(delimiter.split(" (")[0]), "[removed]", text, flags=re.IGNORECASE)
+    return text
+
+
 def finish_lesson_reply(text: str, lessons: Sequence[LessonText]) -> tuple[str, list[LessonText]]:
-    """Apply the NOT_IN_LESSON marker: a leading marker gives the limitation sentence and no sources."""
-    marker = config.NOT_IN_LESSON_MARKER
-    stripped = text.strip()
-    if stripped.casefold().startswith(marker.casefold()):
-        rest = stripped[len(marker) :].strip()
+    """Apply the NOT_IN_LESSON marker: a leading marker gives the limitation sentence and no sources.
+
+    Text is matched after NFKC and format-character removal (full-width spellings count), ignoring
+    case, spacing and markdown wrapping. Every marker is removed; it never reaches the student."""
+    normal = strip_format(text).strip()
+    leading = _MARKER_RE.match(normal) is not None
+    rest = _MARKER_RE.sub("", normal).strip()
+    if leading:
         return f"{config.LIMITATION_SENTENCE} {rest}".strip(), []
-    cleaned = re.sub(re.escape(marker), "", text, flags=re.IGNORECASE)
-    return cleaned, list(lessons)
+    return rest, list(lessons)
 
 
 def build_messages(
