@@ -209,3 +209,31 @@ test("ADM-02 audience role floating label remains inside visible dialog content"
   });
   expect(clipped).toBe(false);
 });
+
+test("ADM-02 a rejected draft save names the field to fix and focuses it", async ({
+  page,
+}) => {
+  const ctx = await setup(page, ADMIN);
+  await page.goto("/admin/feedback/new");
+  await page
+    .getByRole("textbox", { name: "Form title", exact: true })
+    .fill("Hint form");
+  await page.getByRole("button", { name: "Add question", exact: true }).click();
+  ctx.steps.push({
+    method: "POST",
+    status: 422,
+    code: "invalid_feedback_questions",
+  });
+  await page.getByRole("button", { name: "Save draft", exact: true }).click();
+  const message = page.getByRole("alert").filter({ hasText: "Add 1 to 30" });
+  await expect(message).toContainText(
+    'Fix "Question 1 prompt": enter the question text.',
+  );
+  await expect(
+    page.getByRole("textbox", { name: "Question 1 prompt", exact: true }),
+  ).toBeFocused();
+  await page
+    .getByRole("textbox", { name: "Question 1 prompt", exact: true })
+    .fill("Now filled");
+  await expect(message).toHaveCount(0);
+});
