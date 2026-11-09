@@ -46,9 +46,18 @@ function Forms() {
         title="Feedback forms"
         description="Prepare surveys, choose recipients and review their submitted feedback."
         action={
-          <Button component={Link} to="/admin/feedback/new" variant="contained">
-            New feedback form
-          </Button>
+          <>
+            <Button component={Link} to="/admin/feedback/analysis">
+              Feedback analysis
+            </Button>
+            <Button
+              component={Link}
+              to="/admin/feedback/new"
+              variant="contained"
+            >
+              New feedback form
+            </Button>
+          </>
         }
       />
       <Panel>

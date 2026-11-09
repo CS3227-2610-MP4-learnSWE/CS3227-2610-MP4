@@ -5015,3 +5015,64 @@ td .MuiButton-root {
     padding: 16px;
   }
 }
+.feedback-analysis-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: minmax(0, 1fr);
+}
+.feedback-analysis .analysis-checklist {
+  max-height: 360px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+.feedback-analysis .analysis-checklist label,
+.feedback-analysis h3,
+.feedback-analysis td,
+.feedback-analysis li {
+  overflow-wrap: anywhere;
+}
+.feedback-analysis .analysis-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.feedback-analysis table {
+  border-collapse: collapse;
+  width: 100%;
+}
+.feedback-analysis th,
+.feedback-analysis td {
+  border-bottom: 1px solid var(--line);
+  padding: 6px 8px;
+  text-align: left;
+}
+.feedback-analysis .analysis-bar-track {
+  display: inline-block;
+  width: 120px;
+  max-width: 40%;
+  height: 10px;
+  margin-right: 8px;
+  background: var(--blue-soft);
+  border: 1px solid var(--line);
+  vertical-align: middle;
+}
+.feedback-analysis .analysis-bar {
+  display: block;
+  height: 100%;
+  background: var(--blue);
+}
+.feedback-analysis .analysis-history {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.feedback-analysis .analysis-evidence a {
+  margin-right: 8px;
+}
+@media (min-width: 1000px) {
+  .feedback-analysis-grid {
+    grid-template-columns: minmax(0, 1fr) 360px;
+  }
+}

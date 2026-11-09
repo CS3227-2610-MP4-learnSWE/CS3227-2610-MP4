@@ -334,3 +334,14 @@ Analytics and the legacy feedback-analysis, form and usage demos retain their sa
 
 
 When choosing announcement recipients, moving to another result page keeps that page selected until you change the search or audience role. Search updates after a short pause in typing; selected recipients remain selected across pages and searches.
+
+## ADM-03: AI feedback analysis
+
+Admins can analyse feedback responses under **Feedback > Feedback analysis**.
+
+1. Choose a feedback form, tick responses (or use **Select all**, up to 500 responses) and press **Generate analysis**.
+2. The result page shows statistics immediately, under "Question results" with a text table for every question. These numbers are computed by the server, not by AI.
+3. Below, the "AI analysis" section shows progress while it runs, then a summary, recurring issues and suggestions. Findings link to the response they cite (for example R3); open it to check the evidence. Suggestions marked "AI suggestion (no supporting feedback)" are not reported findings. If the AI step fails, the section shows the exact reason and the statistics stay correct; start a new analysis to try again. Check supporting responses before acting; analysis changes nothing.
+4. "Previous analyses" lists your earlier analyses (20 at a time, "Load more analyses"). They are kept until you delete one with the delete button and confirm. Deleting removes only the analysis, not the feedback responses, forms or AI usage counts. An analysis whose AI step is still running cannot be deleted yet.
+
+Free-text answers are sent to the AI without names or ids, but respondents may type names themselves. With more than about 300 distinct free-text answers a sample is used and the result says so.
