@@ -115,7 +115,7 @@ _PATTERNS = tuple(re.compile(p, re.I | re.M) for p in (
     r"\b(?:bearer|basic)\s+[A-Za-z0-9+/=_\-.]+",
     r"\beyJ[A-Za-z0-9_-]*\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+",
     r"\b[a-z][a-z0-9+.-]*://[^\s/@:]+:[^\s/@]+@[^\s]+",
-    r"\b(?:password|passwd|pwd|secret|token|api[_ -]?key)\s*[:=]\s*(?:\"[^\"]*\"|'[^']*'|[^\s,;]+)",
+    r"\b(?:password|passwd|pwd|secret|token|api[_\s-]?key)\s*(?:[:=]|\bis\b)\s*(?:\"[^\"]*\"|'[^']*'|[^\s,;]+)",
     r"\b(?:sk-|sk_|pk_|ghp_|github_pat_|AKIA)[A-Za-z0-9_-]+",
     r"[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,24}",
     r"\b[uU]-[A-Za-z0-9_-]+\b",
