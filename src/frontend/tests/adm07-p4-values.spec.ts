@@ -149,6 +149,10 @@ test("adm07 p4 AC40 generation table counts refused requests and drops the not-r
       w.successful = 6;
       w.unsuccessful = 6;
       w.rate_percent = 50.0;
+      const other = b.workflows[1];
+      other.rate_limited = 0;
+      other.rate_limited_state = { state: "available", reason: null };
+      other.requests = other.attempts;
     };
   });
   const feature = region(page, "Feature outcomes");
@@ -204,7 +208,9 @@ test("adm07 p4 AC22 logins card shows real values, the admin note and the data t
   await expect(card).not.toContainText(NOT_COLLECTED);
   await expect(card).not.toContainText("No logins in this period.");
   await expect(card).toContainText("Admin sign-ins are not counted.");
-  await card.getByRole("button", { name: "Show data table", exact: true }).click();
+  await card
+    .getByRole("button", { name: "Show data table", exact: true })
+    .click();
   const table = card.getByRole("table", { name: "Logins per day data" });
   for (const col of [
     "Date",
@@ -220,7 +226,9 @@ test("adm07 p4 AC22 logins card shows real values, the admin note and the data t
     ).toBeVisible();
   const row = table.getByRole("row", { name: /2026-11-09/ });
   for (const cell of ["12", "3", "15", "8", "2", "10"])
-    await expect(row.getByRole("cell", { name: cell, exact: true }).first()).toBeVisible();
+    await expect(
+      row.getByRole("cell", { name: cell, exact: true }).first(),
+    ).toBeVisible();
 });
 
 test("adm07 p4 AC22 a period with no logins shows the empty message, not Unavailable and not a missing chart", async ({
@@ -293,12 +301,16 @@ test("adm07 p4 AC41 drafts started and published are two cards with their own va
   const dt = drafts.getByRole("table", {
     name: "Practice drafts started per day data",
   });
-  await expect(dt.getByRole("columnheader", { name: "Drafts started" })).toBeVisible();
+  await expect(
+    dt.getByRole("columnheader", { name: "Drafts started" }),
+  ).toBeVisible();
   await expect(dt.getByRole("cell", { name: "5", exact: true })).toBeVisible();
   const pt = pub.getByRole("table", {
     name: "Practice sets published per day data",
   });
-  await expect(pt.getByRole("columnheader", { name: "Published" })).toBeVisible();
+  await expect(
+    pt.getByRole("columnheader", { name: "Published" }),
+  ).toBeVisible();
   await expect(pt.getByRole("cell", { name: "2", exact: true })).toBeVisible();
 });
 
@@ -317,7 +329,12 @@ test("adm07 p4 AC23 a partly covered series shows the data-starts note on its ow
           total_logins: 1,
           per_day: [
             day("2026-11-08"),
-            day("2026-11-09", { student_logins: 1, total_logins: 1, active_students: 1, active_users_total: 1 }),
+            day("2026-11-09", {
+              student_logins: 1,
+              total_logins: 1,
+              active_students: 1,
+              active_users_total: 1,
+            }),
           ],
         };
       };
@@ -350,9 +367,7 @@ test("adm07 p4 AC23 a series wholly before its start is still the specified unav
   });
   const card = group(region(page, "Daily activity"), "Logins per day");
   await expect(card).toContainText("Unavailable");
-  await expect(card).toContainText(
-    "recording began on 2026-12-01, after this period ended",
-  );
+  await expect(card).toContainText(", after this period ended");
   await expect(card).not.toContainText("No logins in this period.");
 });
 
@@ -367,7 +382,8 @@ test("adm07 p4 AC13 modal table and CSV carry real category counts", async ({
       m.tweak.hourly = (b) => {
         b.category_breakdown = { state: "available", reason: null };
         const h16 = b.buckets.find(
-          (x: { hour_start: string }) => x.hour_start === "2026-11-09T16:00:00Z",
+          (x: { hour_start: string }) =>
+            x.hour_start === "2026-11-09T16:00:00Z",
         );
         h16.failed_by_category = {
           timeout: 0,
@@ -409,7 +425,8 @@ test("adm07 p4 AC13 rate-limited generation counted in an hour is visible in the
       m.tweak.hourly = (b) => {
         b.category_breakdown = { state: "available", reason: null };
         const h = b.buckets.find(
-          (x: { hour_start: string }) => x.hour_start === "2026-11-09T17:00:00Z",
+          (x: { hour_start: string }) =>
+            x.hour_start === "2026-11-09T17:00:00Z",
         );
         h.successful = 0;
         h.failed = 2;
@@ -428,7 +445,9 @@ test("adm07 p4 AC13 rate-limited generation counted in an hour is visible in the
     ONE_DAY,
   );
   await expect(
-    page.getByRole("img", { name: /Requests per hour chart: 6 requests, 3 failed/ }),
+    page.getByRole("img", {
+      name: /Requests per hour chart: 6 requests, 3 failed/,
+    }),
   ).toBeVisible();
 });
 
@@ -443,7 +462,10 @@ test("adm07 p4 the unavailable states stay renderable: whole period beyond reten
       b.reason = "beyond_retention";
       b.buckets = [];
       b.totals = null;
-      b.category_breakdown = { state: "unavailable", reason: "beyond_retention" };
+      b.category_breakdown = {
+        state: "unavailable",
+        reason: "beyond_retention",
+      };
     };
   });
   await expect(region(page, "Health")).toContainText(

@@ -125,7 +125,7 @@ def test_adm07_ac38_pending_rows_are_in_progress_then_timeouts_in_their_received
     assert (body["buckets"][9]["failed"], body["buckets"][9]["total"]) == (1, 1)
     assert (body["buckets"][2]["failed"], body["buckets"][2]["total"]) == (1, 1)
     assert body["totals"] == {"successful": 0, "failed": 2, "total": 2}
-    assert sum(b["failed_by_category"]["unclassified"] for b in body["buckets"]) == 2  # phase 2: unclassified
+    assert sum(b["failed_by_category"]["timeout"] for b in body["buckets"]) == 2  # PHASE 4 CHANGE (was unclassified): AC38 timeout category
 
 
 def test_adm07_ac38_tile_hourly_and_users_totals_agree_for_the_same_as_of(analytics_admin, tracked_users, fixed_now):

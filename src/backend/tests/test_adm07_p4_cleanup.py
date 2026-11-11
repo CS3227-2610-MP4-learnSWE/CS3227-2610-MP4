@@ -40,8 +40,10 @@ def db():
 
 def attempt(iso, feature, age, outcome):
     ident = uuid.uuid4()
-    iso.sql("INSERT INTO ai_service_attempts (id, feature, started_at, outcome) VALUES (%s,%s,%s,%s)",
-            (ident, feature, datetime.now(UTC) - age, outcome))
+    started = datetime.now(UTC) - age
+    finished = None if outcome == "pending" else started + timedelta(seconds=5)  # ck_ai_attempt_finished
+    iso.sql("INSERT INTO ai_service_attempts (id, feature, started_at, finished_at, outcome) VALUES (%s,%s,%s,%s,%s)",
+            (ident, feature, started, finished, outcome))
     return ident
 
 
