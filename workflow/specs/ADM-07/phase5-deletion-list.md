@@ -19,3 +19,7 @@ Source: read-only verifier inventory, 2026-11-11, branch feat/analytics-feedback
 - What should `/admin/ai-usage` do after deletion: 404, or redirect to `/admin/analytics`? (Not stated in spec or plan.)
 - Approve deleting items 1-5 once the test-assertion mapping is done, or delete only the pages/routes now and keep the old specs and old browser tests until the mapping is verified.
 - ADM-06 AC12 in retained-criteria says ADM-03 is uninstrumented; check against code before relying on it.
+
+## Gate F decisions recorded
+- 2026-11-11, human: `/admin/ai-usage` redirects to `/admin/analytics` after the old page is deleted.
+- Still open: delete old browser tests and specs only after the assertion mapping is verified (recommended), or remove pages/routes now.
