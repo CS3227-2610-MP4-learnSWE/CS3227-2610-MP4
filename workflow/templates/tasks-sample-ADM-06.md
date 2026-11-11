@@ -1,6 +1,6 @@
 # Tasks: ADM-06 AI usage monitoring (sample)
 
-Sample only, to show the standing tasks 6 and 7 filled in for a feature that reads stored records. It is not an approved task list; the spec-writer produces the real one in `workflow/specs/ADM-06/`.
+Sample only, to show the standing tasks 6 and 7 filled in for a feature that reads stored records. It is not an approved task list; the spec-writer produces the real one in `workflow/specs/<id>/`.
 
 | # | Task | Owner agent | Depends on | Status |
 |---|---|---|---|---|

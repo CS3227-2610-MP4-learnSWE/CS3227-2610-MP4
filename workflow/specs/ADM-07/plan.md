@@ -1,6 +1,6 @@
 # Plan: ADM-07 Analytics hub
 
-Contract for the developer and the test-designer, who work in parallel without seeing each other. Spec: `spec.md`. Conventions are those of ADM-01 (`workflow/specs/ADM-01/plan.md`): router prefix `/api/admin/analytics`, error body `{"detail": {"code", "message"}}`, timestamps ISO 8601 UTC with `Z`, `user_id` is `varchar(64)`, `Cache-Control: no-store` from the existing `/api/admin/*` middleware, admin auth via the shared dependency, hooks use `open_session()` and never raise. Where this plan names an existing symbol it comes from the ADM-01/ADM-06 plans; the developer confirms it by reading code and reports differences in `workflow/notes.md` instead of guessing.
+Contract for the developer and the test-designer, who work in parallel without seeing each other. Spec: `spec.md`. Conventions are those of ADM-01 (the removed ADM-01 plan): router prefix `/api/admin/analytics`, error body `{"detail": {"code", "message"}}`, timestamps ISO 8601 UTC with `Z`, `user_id` is `varchar(64)`, `Cache-Control: no-store` from the existing `/api/admin/*` middleware, admin auth via the shared dependency, hooks use `open_session()` and never raise. Where this plan names an existing symbol it comes from the ADM-01/ADM-06 plans; the developer confirms it by reading code and reports differences in `workflow/notes.md` instead of guessing.
 
 ## Phases
 | Phase | Backend | Frontend |

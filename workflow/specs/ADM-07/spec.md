@@ -50,7 +50,7 @@ An admin opens one page, `/admin/analytics`, titled "Feature Analytics", and see
 - The advisory notice, workflow tabs ("Student exercises", "Teacher lesson planning"), quality grades, response time, session activity, associated activity time, the assessed-responses table with pagination, and the admin-started grading run (button, confirmation, progress, privacy states). Behaviour, limits and privacy rules are exactly those of ADM-01 including its approved privacy amendment (local privacy gate, strict mode, blocked items); they are listed in "Retained criteria" and the UI table.
 
 ### Retained criteria (not rewritten; existing tests keep covering them)
-Backend criteria of ADM-01 (`workflow/specs/ADM-01/spec.md`, AC1-AC39, as amended by `privacy-amendment.md`) and ADM-06 (`workflow/specs/ADM-06/spec.md`, AC1-AC12) stay in force for the kept endpoints. Mapping:
+Backend criteria of ADM-01 (spec removed in phase 5; final text in `retained-criteria.md`, AC1-AC39, as amended by the privacy amendment) and ADM-06 (spec removed in phase 5; final text in `retained-criteria.md`, AC1-AC12) stay in force for the kept endpoints. Mapping:
 
 | Old criteria | Stays on | New id here | Change |
 |---|---|---|---|

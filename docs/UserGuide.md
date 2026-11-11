@@ -52,7 +52,7 @@ The former **Practice sets** builder has been removed. Its old URL opens the con
 - **Courses** creates courses with a title of 1–200 characters and a default **General** topic for teacher publishing. To assign a teacher or enrol a student, return to Users, choose their account, select a Course and choose **Grant course access**. New accounts begin with no assignments; teachers can manage only assigned courses. Disabled accounts can still have assignments edited. Admin accounts do not receive course assignments.
 - **Disable account** requires confirmation and ends all sessions while keeping records and assignments. **Enable account** permits a fresh login; old sessions do not return. **Archive account** requires confirmation and is permanent: login is blocked, sessions/assignments are removed, and the email remains reserved. Learning/authorship records are retained. You cannot disable/archive yourself, and the last enabled admin is protected.
 - **Remove course access** requires confirmation. Subsequent content requests are denied, but completion/authorship records remain; granting access again restores their visibility under existing feature rules. AI results are withheld if account/session access is lost while generation runs. Teacher generation also rechecks current course access; the student companion's legacy practice fixtures are not course-grounded retrieval.
-- **AI usage** requires an admin sign-in and reports recorded service attempts, failure categories and available token measurements. Collection must be activated after migration/restart; incomplete history and missing measurements are shown as unavailable. See ADM-06 below.
+- **AI usage** requires an admin sign-in and reports recorded service attempts, failure categories and available token measurements. Collection must be activated after migration/restart; incomplete history and missing measurements are shown as unavailable. See ADM-07 below.
 
 ### Set up local admin sign-in (PowerShell)
 
@@ -196,56 +196,6 @@ How the figures are calculated:
 
 Limits: figures show current enrolment and current completion records only; history of un-marked completions or removed students is not reconstructed. Only totals are shown (never student names, scores per student or answer keys), and with a very small class a total can still reveal one student's progress to the teacher of that course. Built-in sample practice sets are not included. Up to 30 report requests per minute are accepted per teacher. No AI is used.
 
-## Admin AI usage monitoring (ADM-06)
-
-### Before testing
-
-- Complete [ADM-06 local setup](DeveloperGuide.md#adm-06-local-setup).
-- Use an enabled admin account. Demo shortcuts do not sign you in.
-- Open **http://127.0.0.1:5173/login**.
-
-### Manual test checklist
-
-Report text is inset from the panel border. Long explanations wrap inside their columns; scroll the table horizontally to see all metrics.
-
-| Step | Action | Expected result |
-|---|---|---|
-| 1 | Sign in as admin. Open **AI usage**. | Filters and feature rows. Default: All features, last seven UTC dates. |
-| 2 | Select **Student assistant (STU-03)**. Click **Apply filters**. | One student-assistant row. |
-| 3 | Select **Teacher generation (TEA-02)**. Apply. | One row combining notes and MCQ calls. |
-| 4 | Select **Feedback analysis (ADM-03)**. Apply. | **Unavailable**: collection is not enabled. |
-| 5 | Set Start date after End date. Apply. | Date-range error. Correct the dates and apply again. |
-| 6 | Try more than 31 days, then a future End date. | Both selections rejected. |
-| 7 | Change filters, refresh, then navigate away and Back. | Default filters and a fresh report each time. |
-| 8 | Log out. Sign in as student or teacher. Open `/admin/ai-usage`. | Redirect to your own role's home. No admin report. |
-
-### Check real request counts
-
-1. Configure SoC credentials for chat/generation. Real calls use SoC quota.
-2. After activation's next **00:00 UTC** (08:00 Singapore), set both dates to the current UTC date.
-3. Select STU-03 or TEA-02. Record its Requests value.
-4. In another browser profile, send one student chat message or generate teacher notes/MCQs.
-5. Return as admin. Click **Apply filters**.
-
-Expected results:
-
-- Requests increases by one per provider attempt. A retry adds another attempt.
-- Provider failures increase Failures. Provider 429s also increase Rate-limit failures.
-- Local validation/quota rejection does not increase counts.
-- Tokens appear only when that measurement was recorded for every call. Total tokens are never calculated from the other columns.
-- Complete coverage with no calls shows zero counts and unavailable tokens.
-- Earlier history, partial coverage and interrupted recording show **Unavailable** with a reason.
-- Credentials, prompts, replies and user identities are excluded.
-
-**Need results immediately?** Run the [ADM-06 automated tests](DeveloperGuide.md#adm-06-automated-tests). They use mocks: no waiting or live AI.
-
-### Recovery checks
-
-- Stop the backend with Ctrl+C. Apply filters. Expect an error with **Retry**.
-- Restart the backend. Click **Retry**. The last applied selection loads; unsent edits stay in the fields.
-- Requests time out after 15 seconds. No automatic retry.
-- Session expiry returns to sign-in with "Your session has expired. Sign in again." Logout clears the report.
-
 ## ADM-02: targeted feedback forms
 
 Sign in with a real account to use feedback. Anonymous demo inbox messages remain labelled sample data and do not send or save feedback.
@@ -323,12 +273,11 @@ The Inbox separates **Feedback requests** from **Messages**. Unread messages hav
 
 ### Shared design across the admin workspace
 
-Feedback forms, Users, Courses and AI usage follow the shared admin design: outlined labelled fields, distinct section headings, padded panels and clear keyboard focus in light and dark themes. Narrow screens stack the panels and wrap long names and identifiers.
+Feedback forms, Users and Courses follow the shared admin design: outlined labelled fields, distinct section headings, padded panels and clear keyboard focus in light and dark themes. Narrow screens stack the panels and wrap long names and identifiers.
 
 - **Feedback forms:** the editor groups Form details, Association and Questions. The saved-form view separates its overview and question list. Review audience separates recipient search from selection, shows the selected count across searches/pages and presents the exact recipients before publication.
 - **Users:** Find accounts and Create account appear side by side on wider screens and stack on smaller screens. Account details and access-removal confirmations retain their existing actions and keyboard behavior.
 - **Courses:** Create course is separate from Available courses. Manage course access in Users remains the route to enrolments and teacher assignments.
-- **AI usage:** Report filters are separate from the Service-call report. The reporting range is still UTC; collection timestamps display in local time. Wide results scroll within their own keyboard-focusable area. Missing measurements remain explicitly unavailable.
 
 Analytics and the legacy feedback-analysis, form and usage demos retain their sample-only notices. This visual update does not activate live analytics or AI feedback analysis. ADM-04's composer and recipient Inbox retain their existing design.
 
@@ -350,20 +299,9 @@ Free-text answers are sent to the AI without names or ids, but respondents may t
 
 On a response's detail page (Feedback > Responses > a response), the **Delete response** button opens a confirmation. Confirming permanently deletes that response only: the form, the respondent's account and stored analyses are not changed, and no message is sent. If the form is open, the respondent can submit it again. Links in stored analyses that cite the deleted response show that it is no longer available. If an analysis's AI step is still running when a selected response is deleted, that AI step stops with a message saying so; its statistics stay as they were.
 
-## ADM-01: Feature analytics (admins)
-
-Open **Feature analytics** in the admin menu (`/admin/analytics`; the older "Analytics" item is a separate sample dashboard). Only admins can use it. Dates are UTC.
-
-1. **Reporting period.** Enter "From date" and "To date" (at most 366 days, start on or before end) and press **Apply period**. The default is the last 30 days. Invalid dates are reported under the field and nothing is sent. The period and the selected workflow are kept in the page address, so Refresh, Back and Forward restore them.
-2. **Feature usage.** Successful and unsuccessful chatbot requests per student, with a Students total and an All users total. A request counts as successful when the chatbot returned a reply that follows the companion's rules (a refusal to give an answer counts as successful); errors, rate limits and timeouts are unsuccessful. The Teachers rows read "Unavailable: this activity is not recorded" because there is no teacher chatbot. Below, practice-set completion: attempts started in the period and how many were submitted by its end.
-3. **Generation reliability.** Attempts, successes and the success rate of Study notes and MCQ batches. A request refused by the AI service's rate limit is not an attempt.
-4. **AI quality and session activity.** Choose **Student exercises** or **Teacher lesson planning**. Grades (relevance, factual accuracy, clarity, safety, 1 to 5) are advisory AI assessments of the most recent responses. The panel also shows assessed, waiting, failed and expired response counts. Response time, messages per session and elapsed time from "Practice attempt started" to "Practice attempt submitted" are descriptive measurements, not quality grades. Teacher lesson planning has no sessions, so those two read "Unavailable". Post-submission companion explanations count in usage, but are excluded from grading because they can contain solutions.
-5. **Grade ungraded responses.** Opens a confirmation. Starting sends up to 20 eligible, locally sanitised responses to the SoC LLM. Only pre-submission hints and teacher study-note output qualify; explanations, all MCQ batches and source/context prose are excluded. The panel reports privacy exclusions without content previews. Local English name recognition and credential/identifier rules redact detected values, but can miss names, arbitrary secrets and unmarked solution prose. Context is always empty, so factual accuracy is unassessable. Progress updates about every 3 seconds; use **Check progress** if a check fails. One run can be active, with at most 10 starts per hour. Only sanitised text is retained for analytics, for at most seven days; grading deletes it immediately. If the local scanner is unavailable, grading cannot start and no quota is consumed; counts and timings remain available. An explicit strict server mode disables free-text grading entirely.
-
-Analytics only cover requests made after this feature was installed ("recording began on ..."); a period that starts earlier shows "Unavailable". If one panel fails to load, only that panel shows its message with a Retry button.
 ## ADM-07: Feature Analytics hub (admins)
 
-Open **Feature Analytics** in the admin menu (`/admin/analytics`). The older ADM-01 page is still available at `/admin/feature-analytics-legacy` (no menu link). Dates are UTC; chart times use your browser time zone. Everything shown comes from recorded events; nothing is sample data, and no chat text is shown.
+Open **Feature Analytics** in the admin menu (`/admin/analytics`). The old "AI usage" menu item and `/admin/ai-usage` address now lead to this page. Dates are UTC; chart times use your browser time zone. Everything shown comes from recorded events; nothing is sample data, and no chat text is shown.
 
 - **Period:** choose Today (UTC), Last 7 days (default), Last 30 days or a custom range (at most 366 days, end date not in the future). The period is kept in the web address. "Refresh" reloads every section.
 - **Health:** six tiles. Chatbot and generation failure rates show a status chip (Low sample under 20 requests, Healthy below 2%, Warning 2% to 5%, Critical above 5%). Response time tiles show median and p95 for All, Successful or Failed requests. Requests that finished less than 2 minutes ago without an outcome are shown as "in progress"; after 2 minutes they count as timeouts. Three hourly charts (requests, failure rate, peak hours) can be expanded and downloaded as CSV.
@@ -371,3 +309,5 @@ Open **Feature Analytics** in the admin menu (`/admin/analytics`). The older ADM
 - **Partial periods:** if a period starts before data was recorded, the numbers cover only the recorded part and the section says "Data starts on {date}".
 - **Feature outcomes:** attempts started and submitted per day, attempts per student, chatbot requests by user (students; teachers are unavailable), and generation reliability.
 - **AI usage** (up to 31 days ending today) and **Quality** (grades, response time, grading runs) are the former AI usage and ADM-01 sections. SoC LLM quotas are not reported, so the service limits are shown as unavailable.
+- **AI usage details:** Choose a feature (All features, Student assistant, Teacher generation, Feedback analysis) to filter the table. Requests count each provider attempt, so a retry adds another. Provider failures increase Failures and provider 429s also increase Rate-limit failures; local validation or quota rejections are not counted. Tokens appear only when recorded for every call and total tokens are never computed from the other columns. Earlier history, partial coverage and interrupted recording show "Unavailable" with a reason, and Feedback analysis shows that collection is not enabled. Credentials, prompts, replies and user identities are never shown. A student or teacher who opens an admin address is sent to their own home.
+- **Quality and grading:** choose Student exercises or Teacher lesson planning. Grades (relevance, factual accuracy, clarity, safety, 1 to 5) are advisory AI assessments. "Grade ungraded responses" opens a confirmation and then sends up to 20 locally sanitised, eligible responses to the SoC LLM; only pre-submission hints and teacher study-note output qualify, and the panel reports privacy exclusions without previews. Local name and credential detection can miss some values. Progress updates about every 3 seconds; use Check progress after a network failure. If a panel fails to load, only that panel shows its message and a Retry button.

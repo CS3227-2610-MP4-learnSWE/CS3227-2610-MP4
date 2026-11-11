@@ -1,5 +1,11 @@
 # Handoff notes
 
+## 2026-11-11: developer, ADM-07 phase 5 deletion (Gate F)
+- Done: hub CSS (reasons 14px, caption span fits region); deleted AdminFeatureAnalyticsLegacy (page, lazy import, route) and unused `defaultPeriod`; `/admin/ai-usage` is now `Navigate replace` to `/admin/analytics`; deleted AdminAiUsage, its Admin.tsx case, nav entry and `.ai-usage-*` CSS; deleted adm01-analytics, adm01-privacy, adm06-usage specs and adm01Api.ts (adm07Api.ts now imports ./adm07Fixtures); removed ADM-06 test, ai-usage route mock and visual row from admin-ui.spec.ts; deleted workflow/specs/ADM-01 and ADM-06 (speccheck ADM-07 OK); fixed links; docs updated; retained-criteria ADM-06 AC12 corrected (mapping section 5).
+- Kept: services/aiUsage.ts, backend ai-usage and /usage include_rows, all backend tests and helpers.
+- Open: backend suite not run (DB tests skip in this environment: test_adm07_access.py 135 skipped); ADM-07 spec/plan/tasks still mention feature-analytics-legacy as historical design; plan.md conventions point to the removed ADM-01 plan (in git history).
+- Files touched: see commits on feat/analytics-feedback-consolidation after e5c1308.
+
 ## 2026-11-11: orchestrator, ADM-07 phase 5 planning (Gate F pending)
 - Gate E passed. Wrote `workflow/specs/ADM-07/retained-criteria.md` (spec-writer; speccheck OK) and `workflow/specs/ADM-07/phase5-deletion-list.md` (verifier inventory). Nothing deleted. Decisions for Gate F are listed at the end of the deletion list (`/admin/ai-usage` after removal: 404 or redirect; whether to delete old browser tests and specs before the assertion mapping is confirmed). Usage: [report](usage/runs/2026-11-11-ADM07-04/report.md).
 
@@ -83,7 +89,7 @@
 
 ## 2026-11-10: orchestrator resumes ADM-01 after provider interruption
 - Recovered usage closeout: [finish-run report](usage/runs/2026-11-09-ADM01-finish-02/report.md), generated with 8 invocation rows and run total. Interrupted return timestamps are last-observed bounds, not exact returns; current resumed parent row is an interim snapshot and will be regenerated at closeout. Initial parent start corrected from actual provider metadata to include first observed usage.
-- User approved stronger local privacy option1 on2026-11-10 after plain-language explanation. [Amendment](specs/ADM-01/privacy-amendment.md) approved at906a249; localNER/credential detection, sanitized storage and rescan, source exclusions and bounded residual risks. Independent developer/test-designer launched from that commit; designer worktree `../CS3227-ADM01-privacy-tests`. User requests minimal token use: focused reads/tests and brief handoffs. Existing post-submit solution bug fixed b5bcfc7 after RED0f87230;156hook/companion tests pass, strongest read-only recheck confirms fix.
+- User approved stronger local privacy option1 on2026-11-10 after plain-language explanation. Amendment (spec folder removed in ADM-07 phase 5; criteria in specs/ADM-07/retained-criteria.md) approved at906a249; localNER/credential detection, sanitized storage and rescan, source exclusions and bounded residual risks. Independent developer/test-designer launched from that commit; designer worktree `../CS3227-ADM01-privacy-tests`. User requests minimal token use: focused reads/tests and brief handoffs. Existing post-submit solution bug fixed b5bcfc7 after RED0f87230;156hook/companion tests pass, strongest read-only recheck confirms fix.
 - Backend suffix finished:1265passed,7WindowsTemp setup errors; exact7recoveredPASS12.85s withfreshowned --basetemp, assertions unchanged. Earlier independent affected suite: 618 passed; browser evidence: 153 cases covered with final focused20 passed. No uninterrupted green full-suite claim.
 - Preserve unrelated user change to `.gitignore` (personal presentation drafts) and ignored presentation files. No master push, merge, deployment or live AI calls.
 - Next: implement/test approved privacy amendment independently, merge tests for verification, strongest review, then final usage/status/log/PR closeout. No further approval needed for option1 implementation.

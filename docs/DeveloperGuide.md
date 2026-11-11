@@ -380,7 +380,7 @@ Spec and contract: `workflow/specs/STU-02-published-sets/`. No migration of its 
 - Tests: the fixture set lives in the tests (`tests/fake_sets.py`, a `FakeSetProvider` installed with `app.dependency_overrides[set_provider.get_set_provider]`); database tests insert published rows.
 - Frontend: `config.ts` is deleted. `services/practice.ts` has `listPracticeSets`; `services/practiceMessages.ts` holds the exact picker and not-available texts; `pages/PracticePicker.tsx` is the picker; `pages/Practice.tsx` takes `setId` from `/student/practice/SETID` (via `Student.tsx`); `PracticeContext.loadSet(setId)` resets all state when the set id changes and tracks `unavailable` ("load" for a 404 or 422 on load, "later" for a 404 `set_not_found` at save, submit or results) and `forbidden`; `StudyCompanion` sends the URL's set id and the submitted attempt id only when the practice state belongs to that set.
 
-## ADM-06 operational AI usage
+## ADM-07: AI usage recording and report (formerly ADM-06)
 
 ### ADM-06 local setup
 
@@ -471,7 +471,7 @@ npm ci
 npm run dev
 ```
 
-Open **http://127.0.0.1:5173/login**. Follow the [ADM-06 manual checklist](UserGuide.md#manual-test-checklist).
+Open **http://127.0.0.1:5173/login**. Open **Feature Analytics** and scroll to the AI usage section (see the ADM-07 User Guide section).
 
 - Initial seven-day results can be **Unavailable**. No backfill.
 - For numeric totals, select dates starting after activation's next UTC midnight.
@@ -509,35 +509,14 @@ uv run pytest -q tests/test_adm06_transport.py tests/test_adm06_usage.py tests/t
 
 Expected: **77 passed**, with no skipped database tests. Covers attempts/retries, tokens, unavailable data, permissions, concurrency and migration. Use a fresh terminal for normal development afterward.
 
-**Browser — 40 ADM-06 cases.** Stop frontends on ports 5173 and 5174 first. Playwright starts its own servers. Backend not required.
-
-Windows:
-
-```powershell
-Set-Location (git rev-parse --show-toplevel)
-Set-Location src\frontend
-npm.cmd ci
-npx.cmd playwright install chromium
-npm.cmd test -- tests/adm06-usage.spec.ts --project=mocked --workers=2 --output=test-results/adm06-guide
-```
-
-macOS/Linux:
-
-```bash
-cd "$(git rev-parse --show-toplevel)/src/frontend"
-npm ci
-npx playwright install chromium
-npm test -- tests/adm06-usage.spec.ts --project=mocked --workers=2 --output=test-results/adm06-guide
-```
-
-Expected: **40 passed**. Covers filters, messages, retry, timeout, access, history, logout and mobile layout. Linux missing browser libraries? Run `npx playwright install --with-deps chromium`.
+Browser coverage of the AI usage section lives in `tests/adm07-retained-aiusage.spec.ts` (run with `npm test -- tests/adm07-retained-aiusage.spec.ts --project=mocked` in `src/frontend`).
 
 ### ADM-06 implementation notes
 
-- Report layout: scoped panel padding, 14–16px text and fixed wrapping columns. Caption text stays within the visible scroll region using its inline-size container; table semantics and accessible name remain unchanged.
+- Report layout (hub AI usage section): reasons 14px, caption 16px; the caption text sits in a span capped to the scroll region width (`.analytics-caption-fit`, inline-size container), so table semantics and accessible name are unchanged. The report is read by `services/aiUsage.ts` from `GET /api/admin/ai-usage`.
 - `ai_usage`: metadata only. No prompts, replies, credentials or user identifiers.
 - Production: `SoclaasClient` + `DatabaseAttemptObserver`. Each retry gets a record. Standalone test clients may omit the observer; production clients must not.
-- `usage_feature`: server-owned context; resets after each call. STU-03 and TEA-02 integrated; ADM-03 disabled; ADM-01 (grading) is an allowed label with no activation toggle.
+- `usage_feature`: server-owned context; resets after each call. STU-03, TEA-02, ADM-03 and ADM-01 calls are recorded by the shared observer under their own labels; the report shows ADM-03 and ADM-01 as `not_enabled` until their coverage is activated (ADM-01 grading is an allowed label with no activation toggle).
 - Mapping: `usage.prompt_tokens` → input; `usage.completion_tokens` → output; `usage.total_tokens` → total. Independent recorded values only; live availability unverified.
 - Tokens: nonnegative signed-64-bit integers. Invalid/missing fields stay null; report totals above JavaScript's safe integer range become unavailable.
 - Provider 2xx = service success, even if feature validation later fails. 429 = rate-limit failure; other non-2xx/transport errors = other failure.
@@ -548,7 +527,7 @@ Expected: **40 passed**. Covers filters, messages, retry, timeout, access, histo
 - Browser: memory only; clears on session/navigation/new request; 15-second timeout; no automatic retry.
 - Coverage: forward-only. No backfill, retention deletion or gap-recovery tool. Downgrade removes usage metadata.
 - Production deployment: GitHub Actions; replace every worker before activation.
-- Full contract: [ADM-06 spec and plan](../workflow/specs/ADM-06/).
+- Contract: the retained ADM-06 criteria are in `workflow/specs/ADM-07/retained-criteria.md` (the old ADM-06 spec was removed in ADM-07 phase 5).
 
 ## TEA-05: teacher learning overview
 
@@ -655,7 +634,7 @@ The ADM-04 styles scope input outlines and surfaces to messaging/inbox. Do not r
 
 ### Admin screen design baseline
 
-`workflow/ui-design.md` governs the remaining admin surfaces as well as ADM-04. `Admin.tsx` scopes the live access/course/usage pages and legacy previews with `.admin-surface`; `AdminFeedback.tsx` independently scopes the form routes. Portal dialogs opt into `.admin-dialog`, so input styling also applies outside the page DOM. Do not apply these classes to the ADM-04 composer or recipient inbox.
+`workflow/ui-design.md` governs the remaining admin surfaces as well as ADM-04. `Admin.tsx` scopes the live access/course pages and legacy previews with `.admin-surface`; `AdminFeedback.tsx` independently scopes the form routes. Portal dialogs opt into `.admin-dialog`, so input styling also applies outside the page DOM. Do not apply these classes to the ADM-04 composer or recipient inbox.
 
 The scoped rules in `styles.css` define neutral panels, outlined MUI fields, readable metadata and responsive layouts. MUI notched-outline fieldsets receive an explicit border, margin and padding so the global fieldset reset cannot erase them. Account discovery/results precede creation in DOM order and stack below 1100px; recipient lists scroll within 280px. Feedback editor sections retain the native disabled fieldset and existing submission/navigation guards.
 
@@ -692,9 +671,9 @@ Admin-only. Spec and contract: `workflow/specs/ADM-03/`. Backend package `src/ba
 - **Tolerant `reasoning_effort`.** If the gateway answers a 400 or 422 to a request that carries `reasoning_effort` (HTTP 400 or 422 only; some models reject the field), `SoclaasClient` retries once without it, with its own reservation like any other attempt; requests without the field are unchanged. Live run with the final limits (model x-test-2, reasoning effort low): map 11.0 s and 5.3 s valid after one map retry, reduce 19.1 s valid after one retry (a first reduce was rejected by the strict `summary` length rule); 86.9 s total, 5 live calls; model variance is real (about 1 in 3 calls failed: one empty reply at 1600 reasoning tokens, one over-long summary).
 - **Job retry (`jobs._run_step`).** One place runs each map and the reduce step: a model-output failure (`ai_reply_cut_off`, `ai_reply_not_json`, `ai_reply_invalid`; `failures.RETRYABLE`) gets one more attempt of the same step Before every attempt, first attempts included, `_run_step` checks the job's age with `jobs._now()` (tests replace this function): from `AI_START_CUTOFF_SECONDS` (600) no call starts and the step fails with `ai_time_limit`. Other failures are final. After two failures the second one is stored with `details.attempts = 2`, `first_attempt_code` and the suffix "The step failed after 2 attempts." (`failures.after_two_attempts`). Progress counts steps. Quota: up to 22 AI calls per analysis, so about 13 analyses a day within the 300-call quota; a call started before 600 s ends within 121 s, so the job ends by 721 s, under the 780 s sweep bound. The reduce prompt asks for a summary of at most 350 characters (validator limit 400).
 
-## ADM-01: feature analytics
+## ADM-07: backend analytics (formerly ADM-01)
 
-Admin-only. Spec and contract: `workflow/specs/ADM-01/`. Backend package `src/backend/feature_analytics/`, frontend `pages/AdminAnalytics.tsx`, `services/featureAnalytics.ts`, `hooks/useAnalyticsLoad.ts`. Routes under `/api/admin/analytics` (`GET /usage`, `/generation`, `/quality`, `POST /grading-runs`, `GET /grading-runs/{id}`); `Cache-Control: no-store` comes from the existing `/api/admin/*` middleware.
+Admin-only. Contract: retained criteria in `workflow/specs/ADM-07/retained-criteria.md` (the old ADM-01 spec was removed in ADM-07 phase 5). Backend package `src/backend/feature_analytics/`, frontend `pages/AdminAnalytics.tsx`, `services/featureAnalytics.ts`, `hooks/useAnalyticsLoad.ts`. Routes under `/api/admin/analytics` (`GET /usage`, `/generation`, `/quality`, `POST /grading-runs`, `GET /grading-runs/{id}`); `Cache-Control: no-store` comes from the existing `/api/admin/*` middleware.
 
 - **Recording hooks** (`recording.py`, re-exported by the package): `record_chat_request_received/outcome`, `record_practice_attempt_started/submitted`, `record_generation_accepted/outcome`. Each uses its own `open_session()`, never raises (logs the hook name and exception class only) and never logs text. Call sites: `companion_routes.post_message` (after validation and context resolution, before `llm.complete`; the outcome is recorded in a `finally`; a refusal reply counts as success; only un-withheld practice-attempt hints are eligible for sanitised grading text; explanations create excluded metadata with NULL text), `practice_routes.start_attempt` (after `store.create` commits) and `submit` (after the `with store.lock(...)` block exits cleanly, using `locked.submitted_at`, which the store fills in before the commit returns), and `teacher_notes` / `teacher_mcqs` `create_*_draft` (after the AI call: an `ApiError` with code `llm_rate_limited` or `llm_busy`, which `llm_errors.generation_error` makes of the client's limiter errors, is not an attempt; every other exit records one attempt and one outcome). MCQ batches create privacy-blocked metadata only; neither stems nor choices enter the scanner or grader. Teacher note requests use the fixed application template; upload/source context is never retained.
 - **Tables** (migration `20261109_adm01_analytics`, also extending the ADM-06 `ck_ai_*_feature` constraints and coverage seed for the `ADM-01` usage label): `analytics_meta` (`recording_started_at`; earlier periods are `unavailable/period_before_recording`), `analytics_session`, `analytics_chat_request`, `analytics_practice_attempt`, `analytics_generation_attempt`, `analytics_grading_item`, `analytics_grade`, `analytics_grading_run`. A session is one user and one practice attempt with at most 30 minutes between messages; one open session per user (partial unique index, assigned under `pg_advisory_xact_lock`). Submission takes the same per-user lock before attempt/session row locks; a delayed pre-submission chat attaches to a closed session rather than reopening the completed activity.
@@ -703,7 +682,7 @@ Admin-only. Spec and contract: `workflow/specs/ADM-01/`. Backend package `src/ba
 - **Provisioning and restore ordering.** Run `uv sync --frozen` at build time (spaCy 3.8.18, official MIT `en_core_web_sm` 3.8.0 wheel SHA256 `1932429db727d4bff3deed6b34cfc05df17794f4a52eeb26cf8928f7c1a0fb85`). The model data tree has a fixed platform-independent digest checked before warmup and an offline name-recognition health fixture. Run `uv run --frozen python tools/privacy_smoke.py` on Linux before serving; CI enforces health and 500 ms representative/near-cap scans. Apply `uv run alembic upgrade head` before service start: additive revision `20261110_adm01_privacy` purges all legacy analytics text and grade reasons and blocks old items. After any backup restore, stop serving/worker processes, apply migrations, then run `uv run python -c "from feature_analytics.jobs import purge_legacy_items; purge_legacy_items()"` before restart (also sweeps on analytics run reads/start). This never erases learning/source records. Historical backup retention is operator-owned and unavailable here; application migration does not erase backups. Observed Linux Docker provisioning: representative scans 7.07 / 3.16 / 3.76 ms, near-cap scan 48.93 ms, peak RSS 179,524 KiB (one warm process; performance and detection are workload-dependent). Windows Application Control currently blocks the installed thinc native DLL in this workspace, so the local scanner remains unavailable there; do not bypass that policy.
 - **Grading run** (`grading.py`, `jobs.py`): same shape as ADM-03's job. The route takes `llm: LlmClient = Depends(get_llm_client)` (tests fake it with `app.dependency_overrides[llm_client.get_llm_client]`), starts a daemon thread with its own sessions and conditional writes, one call per item inside `usage_feature("ADM-01")` with `caller_id="admin-grading:<admin id>"`, 30 s per call, no call after 200 s of monotonic time (`jobs._now`), job bound 300 s, sweep of runs older than 900 s (`run_expired`, run in the three routes that read runs). Model output must be exactly four `{score, reason}` objects; a reason that repeats 30+ consecutive characters of the data, or any schema deviation, marks the item `grading_failed`. Factual accuracy is always forced to `unassessable` because context is empty. At most 20 items per run, one active run (partial unique index), 10 runs per rolling hour. A global analytics admission advisory lock serializes the active-run and hourly-quota checks through the creation commit, including concurrent starts whose first run finishes immediately.
 - **Frontend.** `useAnalyticsLoad` keeps one read per key, shared across React StrictMode's simulated remount, aborted on key change or unmount. The page is wrapped like `LiveAnalysis` so an anonymous visitor goes to `/login` (replace) without any analytics request. The live wrapper immediately unmounts account data when authentication is lost, leaving mid-visit expiry navigation to AuthContext. The quality panel shows assessed, waiting, failed and expired counts. A grading-start 409 triggers one quality reload to discover the active run; if it has already finished, a new run can be started.
-- **Tests.** Existing ADM-06 tests and Playwright fixtures list four features (`ADM-01` is a valid usage label); the ADM-01 tests are `tests/test_adm01_*.py` and `adm01-analytics.spec.ts`.
+- **Tests.** Existing ADM-06 tests and Playwright fixtures list four features (`ADM-01` is a valid usage label); the backend tests are `tests/test_adm01_*.py` (browser tests for the Quality section are `tests/adm07-retained.spec.ts`).
 ## ADM-07: Feature Analytics hub (phase 2 and phase 4)
 
 Spec: `workflow/specs/ADM-07/`. Phase 2 read existing ADM-01 tables; phase 4 (below) adds the event tables.
@@ -714,5 +693,5 @@ Spec: `workflow/specs/ADM-07/`. Phase 2 read existing ADM-01 tables; phase 4 (be
 - **Reads:** `/health`, `/hourly`, `/generation` read the request log with the 120-second in-progress rule, the 30-day retention floor and the start keys (`data_starts_on`); the rate-limited tile counts `rate_limited` rows from `request_log_categories_started_at`; `/daily` logins, drafts started and published read their tables. Chatbot per-user counts still come from `analytics_chat_request`.
 - **Retention:** `retention.purge_expired()` deletes request-log rows older than `PURGE_REQUEST_LOG_DAYS` (30) and login events older than `PURGE_LOGIN_EVENT_DAYS` (400) in batches of `PURGE_BATCH`; it runs at app startup and at most once per `PURGE_INTERVAL_S` per process after an outcome hook. Draft-started and published rows are kept.
 - **AI usage cleanup (one-off, destructive):** `uv run python -m ai_usage.cleanup --dry-run` prints per feature the pending attempts older than 24 hours and the coverage change; `--apply --approved-by <name>` deletes exactly those rows permanently (no archive, no restore) and, for each affected feature, clears `incomplete_since` and sets `covered_since` to the next UTC midnight (never earlier). Terminal rows are never deleted. Run `--dry-run` on the target database and review it before `--apply`; it is not an Alembic revision.
-- **Frontend:** `pages/AdminAnalytics.tsx` is the hub; the previous page is `pages/AdminFeatureAnalyticsLegacy.tsx` (unchanged, to be deleted in phase 5, so some quality code is duplicated in `components/analytics/QualitySection.tsx` until then). Blocks use `hooks/useAnalyticsBlock.ts` (wraps `useAnalyticsLoad`); charts are hand-written SVG (`components/analytics/charts.tsx`); `lib/` has period, local-time bucketing and CSV helpers. Each load sends 7 GETs (6 when AI usage does not apply).
+- **Frontend:** `pages/AdminAnalytics.tsx` is the hub; the previous page and its `/admin/feature-analytics-legacy` route were deleted in phase 5, and `/admin/ai-usage` is a `Navigate replace` to `/admin/analytics`; the old `pages/AdminAiUsage.tsx` and its nav entry are gone (the AI usage section is `components/analytics/AiUsageSection.tsx`). Blocks use `hooks/useAnalyticsBlock.ts` (wraps `useAnalyticsLoad`); charts are hand-written SVG (`components/analytics/charts.tsx`); `lib/` has period, local-time bucketing and CSV helpers. Each load sends 7 GETs (6 when AI usage does not apply).
 - **SoC LLM limits (observed 2026-11-11, not documented quotas):** with `qwen3.6:35b`, `max_tokens` of 100 to 100 000 were accepted; a 160 000-character prompt (26 687 tokens) was accepted; an 8 000-token completion ended with `finish_reason` "length"; no rate-limit headers; the model list reports a 131 072-token context window. Requests-per-minute and daily quotas were not tested. Unconfirmed hypothesis: reasoning tokens may consume the `max_tokens` budget (the earlier remembered 2 000 or 5 000 limit was not reproduced).
