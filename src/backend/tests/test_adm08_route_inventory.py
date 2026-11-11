@@ -50,13 +50,21 @@ def application_routes():
     from main import app
 
     found = set()
-    for route in app.routes:
-        path = getattr(route, "path", "")
-        if not any(path == p or path.startswith(p + "/") for p in PREFIXES):
-            continue
-        for method in getattr(route, "methods", None) or ():
-            if method not in ("HEAD", "OPTIONS"):
-                found.add((method, path))
+
+    def walk(routes):
+        for route in routes:
+            inner = getattr(route, "original_router", None)
+            if inner is not None:
+                walk(inner.routes)
+                continue
+            path = getattr(route, "path", "")
+            if not any(path == p or path.startswith(p + "/") for p in PREFIXES):
+                continue
+            for method in getattr(route, "methods", None) or ():
+                if method not in ("HEAD", "OPTIONS"):
+                    found.add((method, path))
+
+    walk(app.routes)
     return found
 
 
