@@ -175,7 +175,7 @@ export default function HealthStrip({
   const note = (tile: Tile): ReactNode =>
     !shared && tile.data_starts_on ? (
       <p className="analytics-hub-tile-detail">
-        Data starts on {tile.data_starts_on}.
+        {startsNote(tile.data_starts_on)}
       </p>
     ) : null;
   const threshold = health.low_sample_threshold;
