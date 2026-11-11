@@ -108,12 +108,15 @@ function metric(value: unknown): value is Metric {
         value.reason === null;
 }
 
-export async function readUsage(filters: Filters): Promise<UsageReport> {
+export async function readUsage(
+  filters: Filters,
+  signal?: AbortSignal,
+): Promise<UsageReport> {
   const data = await request(
     "GET",
     `/api/admin/ai-usage?${new URLSearchParams(filters)}`,
     undefined,
-    { timeoutMs: 15_000, distinguishTimeout: true, cache: "no-store" },
+    { timeoutMs: 15_000, distinguishTimeout: true, cache: "no-store", signal },
   );
   const features =
     filters.feature === "all" ? Object.keys(FEATURE_LABELS) : [filters.feature];

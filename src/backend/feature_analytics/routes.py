@@ -44,14 +44,17 @@ def _header(window: periods.Window, db: Session) -> dict:
 
 
 @router.get("/usage")
-def usage(period_start: str | None = None, period_end: str | None = None, _: AuthUser = Depends(admin_user),
-          db: Session = Depends(get_session)):
+def usage(period_start: str | None = None, period_end: str | None = None, include_rows: str | None = None,
+          _: AuthUser = Depends(admin_user), db: Session = Depends(get_session)):
     window = periods.parse_period(period_start, period_end)
+    rows = periods.parse_include_rows(include_rows)
+    chatbot = _read(db, lambda: queries.chat_counts(db, window, rows), queries.chatbot_unavailable("read_failed"))
+    practice = _read(db, lambda: queries.practice_completion(db, window), queries.practice_unavailable("read_failed"))
     return {
         **_header(window, db),
-        "chatbot": _read(db, lambda: queries.chat_counts(db, window), queries.chatbot_unavailable("read_failed")),
-        "practice_completion": _read(db, lambda: queries.practice_completion(db, window),
-                                     queries.practice_unavailable("read_failed")),
+        "data_starts_on": queries.latest_start(chatbot["student"], practice),
+        "chatbot": chatbot,
+        "practice_completion": practice,
     }
 
 
@@ -59,10 +62,8 @@ def usage(period_start: str | None = None, period_end: str | None = None, _: Aut
 def generation(period_start: str | None = None, period_end: str | None = None, _: AuthUser = Depends(admin_user),
                db: Session = Depends(get_session)):
     window = periods.parse_period(period_start, period_end)
-    return {
-        **_header(window, db),
-        "workflows": _read(db, lambda: queries.generation_rates(db, window), queries.generation_unavailable("read_failed")),
-    }
+    workflows = _read(db, lambda: queries.generation_rates(db, window), queries.generation_unavailable("read_failed"))
+    return {**_header(window, db), "data_starts_on": queries.latest_start(*workflows), "workflows": workflows}
 
 
 @router.get("/quality")
@@ -75,16 +76,81 @@ def quality(workflow: str | None = None, period_start: str | None = None, period
     _sweep()
     page = _read(db, lambda: queries.quality_grades(db, kind, window, page_limit, page_offset),
                  {"grades": queries.grades_unavailable("read_failed"), "items": queries.items_empty(page_limit, page_offset)})
+    response_time = _read(db, lambda: queries.response_times(db, kind, window),
+                          queries.response_time_unavailable("read_failed"))
+    sessions = _read(db, lambda: queries.session_stats(db, kind, window), queries.sessions_unavailable("read_failed"))
+    activity = _read(db, lambda: queries.activity_time_stats(db, kind, window),
+                     queries.activity_unavailable("read_failed"))
     return {
-        "workflow": kind, **_header(window, db), "grades": page["grades"],
-        "response_time": _read(db, lambda: queries.response_times(db, kind, window),
-                               queries.response_time_unavailable("read_failed")),
-        "sessions": _read(db, lambda: queries.session_stats(db, kind, window), queries.sessions_unavailable("read_failed")),
-        "activity_time": _read(db, lambda: queries.activity_time_stats(db, kind, window),
-                               queries.activity_unavailable("read_failed")),
+        "workflow": kind, **_header(window, db),
+        "data_starts_on": queries.latest_start(page["grades"], response_time, sessions, activity),
+        "grades": page["grades"], "response_time": response_time, "sessions": sessions, "activity_time": activity,
         "items": page["items"],
         "active_run": _read(db, lambda: queries.active_run(db), None),
     }
+
+
+@router.get("/health")
+def health(period_start: str | None = None, period_end: str | None = None, _: AuthUser = Depends(admin_user),
+           db: Session = Depends(get_session)):
+    window = periods.parse_period(period_start, period_end)
+    as_of = queries.begin_request()
+    tiles = {
+        "chatbot_failure": _read(db, lambda: queries.health_chatbot(db, window),
+                                 queries.failure_unavailable("read_failed")),
+        "generation_failure": _read(db, lambda: queries.health_generation(db, window),
+                                    queries.failure_unavailable("read_failed", includes_rate_limited=False)),
+        "rate_limited": _read(db, lambda: queries.health_rate_limited(db, window),
+                              queries.rate_limited_unavailable("read_failed")),
+        "chatbot_response_time": _read(db, lambda: queries.health_chatbot_response_time(db, window),
+                                       queries.response_time_tile_unavailable("read_failed")),
+        "generation_response_time": _read(db, lambda: queries.health_generation_response_time(db, window),
+                                          queries.response_time_tile_unavailable("read_failed")),
+        "practice_completion": _read(db, lambda: queries.practice_completion(db, window),
+                                     queries.practice_unavailable("read_failed")),
+    }
+    return {**_header(window, db), "data_starts_on": queries.latest_start(*tiles.values()),
+            "as_of": queries.iso(as_of), "low_sample_threshold": config.LOW_SAMPLE_REQUESTS, **tiles}
+
+
+@router.get("/hourly")
+def hourly(period_start: str | None = None, period_end: str | None = None, _: AuthUser = Depends(admin_user),
+           db: Session = Depends(get_session)):
+    window = periods.parse_period(period_start, period_end)
+    as_of = queries.begin_request()
+    body = _read(db, lambda: queries.hourly(db, window), queries.hourly_unavailable("read_failed"))
+    return {**_header(window, db), "as_of": queries.iso(as_of), **body}
+
+
+@router.get("/daily")
+def daily(period_start: str | None = None, period_end: str | None = None, _: AuthUser = Depends(admin_user),
+          db: Session = Depends(get_session)):
+    window = periods.parse_period(period_start, period_end)
+    return {
+        **_header(window, db),
+        "logins": _read(db, lambda: queries.daily_logins(db, window),
+                        queries.daily_series_unavailable("logins", "read_failed")),
+        "practice_drafts_started": _read(db, lambda: queries.daily_practice_drafts_started(db, window),
+                                         queries.daily_series_unavailable("practice_drafts_started", "read_failed")),
+        "practice_published": _read(db, lambda: queries.daily_practice_published(db, window),
+                                    queries.daily_series_unavailable("practice_published", "read_failed")),
+        "attempts_funnel": _read(db, lambda: queries.daily_attempts_funnel(db, window),
+                                 queries.funnel_unavailable("read_failed")),
+        "attempts_per_student": _read(db, lambda: queries.daily_attempts_per_student(db, window),
+                                      queries.per_student_unavailable("read_failed")),
+    }
+
+
+@router.get("/chatbot-users")
+def chatbot_users(period_start: str | None = None, period_end: str | None = None, role: str | None = None,
+                  sort: str | None = None, order: str | None = None, limit: str | None = None,
+                  offset: str | None = None, _: AuthUser = Depends(admin_user), db: Session = Depends(get_session)):
+    window = periods.parse_period(period_start, period_end)
+    kind, column, direction, page_limit, page_offset = periods.parse_chatbot_users_query(role, sort, order, limit, offset)
+    as_of = queries.begin_request()
+    body = _read(db, lambda: queries.chatbot_users(db, window, kind, column, direction, page_limit, page_offset),
+                 queries.chatbot_users_unavailable("read_failed", kind, column, direction, page_limit, page_offset))
+    return {**_header(window, db), "as_of": queries.iso(as_of), **body}
 
 
 @router.post("/grading-runs", status_code=202)

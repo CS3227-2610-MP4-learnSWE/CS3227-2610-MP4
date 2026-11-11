@@ -1,10 +1,15 @@
 """Read side of ADM-01: each function returns one metric object as in plan.md. No stored text is ever selected for output."""
-from datetime import date, datetime, timedelta, timezone
+import dataclasses
+from collections import Counter
+from contextvars import ContextVar
+from datetime import date, datetime, time, timedelta, timezone
 from decimal import ROUND_HALF_UP, Decimal
 
-from sqlalchemy import func, select, or_
+from sqlalchemy import and_, func, or_, select
 
 from feature_analytics import config, privacy
+from feature_analytics.health import (
+    finished_state, median_half_up, percentile_nearest_rank, rate_percent, round_half_up, severity)
 from feature_analytics.models import (
     AnalyticsChatRequest as Chat,
     AnalyticsGenerationAttempt as Generation,
@@ -25,8 +30,8 @@ ACTIVE_STATUSES = ("queued", "running")
 GRADABLE_STATUSES = ("pending", "grading_failed")
 
 
-def metric(state: str, reason: str | None, **fields) -> dict:
-    return {"state": state, "reason": reason, **fields}
+def metric(state: str, reason: str | None, data_starts_on: str | None = None, **fields) -> dict:
+    return {"state": state, "reason": reason, "data_starts_on": data_starts_on, **fields}
 
 
 def iso(value: datetime | None) -> str | None:
@@ -50,8 +55,49 @@ def recording_started_on(db) -> date:
     return (parsed if parsed.tzinfo else parsed.replace(tzinfo=timezone.utc)).astimezone(timezone.utc).date()
 
 
-def _before_recording(db, window: Window) -> bool:
-    return window.period_start < recording_started_on(db)
+@dataclasses.dataclass(frozen=True)
+class Cover:
+    """What part of a period a source covers: `window` starts at the effective start; `reason` is set when none of it does."""
+
+    window: Window
+    starts_on: str | None  # ISO date of the first covered day when the period starts earlier, else None
+    reason: str | None
+
+
+def _cover(db, window: Window, floor: datetime | None = None) -> Cover:
+    """Partial coverage (ADM-07): the metric covers [max(period start, recording start, floor), period end]."""
+    source = datetime.combine(recording_started_on(db), time.min, tzinfo=timezone.utc)
+    start = max(window.start_utc, source, floor or window.start_utc)
+    if start >= window.end_utc_exclusive:
+        reason = "beyond_retention" if floor is not None and floor >= source else BEFORE_RECORDING
+        return Cover(window, None, reason)
+    if start == window.start_utc:
+        return Cover(window, None, None)
+    return Cover(dataclasses.replace(window, start_utc=start), start.date().isoformat(), None)
+
+
+def latest_start(*metrics: dict | None) -> str | None:
+    """The latest data_starts_on among metric objects (ISO dates compare as text)."""
+    found = [m["data_starts_on"] for m in metrics if m and m.get("data_starts_on")]
+    return max(found) if found else None
+
+
+_request_now: ContextVar[datetime | None] = ContextVar("analytics_request_now", default=None)
+
+
+def utcnow() -> datetime:
+    return datetime.now(timezone.utc)
+
+
+def begin_request() -> datetime:
+    """Take the one server timestamp of this request; every in-progress decision of the request uses it."""
+    now = utcnow()
+    _request_now.set(now)
+    return now
+
+
+def _now() -> datetime:
+    return _request_now.get() or utcnow()
 
 
 # ---- unavailable shapes (also used by the routes for read_failed) ----
@@ -66,9 +112,14 @@ def practice_unavailable(reason: str) -> dict:
     return metric("unavailable", reason, started=None, submitted=None, percentage=None)
 
 
+# Phase 2: limiter refusals are not recorded, so requests equal attempts and the rate-limited count is unavailable.
+RATE_LIMITED_NOT_COLLECTED = {"state": "unavailable", "reason": "not_collected"}
+
+
 def generation_unavailable(reason: str) -> list[dict]:
-    return [metric("unavailable", reason, workflow=w, label=label, attempts=None, successful=None,
-                   unsuccessful=None, rate_percent=None) for w, label in GENERATION_LABELS.items()]
+    return [metric("unavailable", reason, workflow=w, label=label, attempts=None, requests=None, rate_limited=None,
+                   rate_limited_state=RATE_LIMITED_NOT_COLLECTED, successful=None, unsuccessful=None,
+                   rate_percent=None) for w, label in GENERATION_LABELS.items()]
 
 
 def grades_unavailable(reason: str) -> dict:
@@ -108,24 +159,27 @@ def _display_names(db, user_ids: list[str]) -> dict[str, str | None]:
         return {}
 
 
-def chat_counts(db, window: Window) -> dict:
-    if _before_recording(db, window):
-        return chatbot_unavailable(BEFORE_RECORDING)
+def chat_counts(db, window: Window, include_rows: bool = True) -> dict:
+    cover = _cover(db, window)
+    if cover.reason:
+        return chatbot_unavailable(cover.reason)
+    window = cover.window
     ok = func.count().filter(Chat.outcome == "success")
     rows = db.execute(
         select(Chat.user_id, ok, func.count())
         .where(Chat.role == "student", *_in_window(Chat.received_at, window)).group_by(Chat.user_id)
     ).all()
-    names = _display_names(db, [r[0] for r in rows])
+    names = _display_names(db, [r[0] for r in rows]) if include_rows else {}
     entries = [{"user_id": u, "name": names.get(u), "successful": s, "unsuccessful": n - s} for u, s, n in rows]
     entries.sort(key=lambda e: (e["name"] is None, (e["name"] or "").casefold(), e["user_id"]))
-    student = metric("available", None, successful=sum(e["successful"] for e in entries),
+    shown = entries[:config.ROW_CAP_PER_ROLE] if include_rows else []
+    student = metric("available", None, cover.starts_on, successful=sum(e["successful"] for e in entries),
                      unsuccessful=sum(e["unsuccessful"] for e in entries),
-                     rows=entries[:config.ROW_CAP_PER_ROLE], rows_truncated=len(entries) > config.ROW_CAP_PER_ROLE)
+                     rows=shown, rows_truncated=include_rows and len(entries) > config.ROW_CAP_PER_ROLE)
     teacher = metric("unavailable", "no_source", successful=None, unsuccessful=None, rows=[], rows_truncated=False)
     first = next((g for g in (student, teacher) if g["state"] != "available"), None)
     if first is None:
-        total = metric("available", None, successful=student["successful"] + teacher["successful"],
+        total = metric("available", None, cover.starts_on, successful=student["successful"] + teacher["successful"],
                        unsuccessful=student["unsuccessful"] + teacher["unsuccessful"])
     else:
         total = metric(first["state"], first["reason"], successful=None, unsuccessful=None)
@@ -133,38 +187,44 @@ def chat_counts(db, window: Window) -> dict:
 
 
 def practice_completion(db, window: Window) -> dict:
-    if _before_recording(db, window):
-        return practice_unavailable(BEFORE_RECORDING)
+    cover = _cover(db, window)
+    if cover.reason:
+        return practice_unavailable(cover.reason)
     started, submitted = db.execute(
         select(func.count(),
                func.count().filter(Attempt.submitted_at.isnot(None), Attempt.submitted_at < window.end_utc_exclusive))
-        .where(*_in_window(Attempt.started_at, window))
+        .where(*_in_window(Attempt.started_at, cover.window))
     ).one()
     if started == 0:
-        return metric("not_applicable", "no_practice_attempts", started=0, submitted=0, percentage=None)
-    return metric("available", None, started=started, submitted=submitted,
+        return metric("not_applicable", "no_practice_attempts", cover.starts_on, started=0, submitted=0, percentage=None)
+    return metric("available", None, cover.starts_on, started=started, submitted=submitted,
                   percentage=round(submitted / started * 100, 1))
 
 
 # ---- generation ----
 
 def generation_rates(db, window: Window) -> list[dict]:
-    if _before_recording(db, window):
-        return generation_unavailable(BEFORE_RECORDING)
+    cover = _cover(db, window)
+    if cover.reason:
+        return generation_unavailable(cover.reason)
     found = {
         w: (n, ok) for w, n, ok in db.execute(
             select(Generation.workflow, func.count(), func.count().filter(Generation.outcome == "success"))
-            .where(*_in_window(Generation.accepted_at, window)).group_by(Generation.workflow)
+            .where(*_in_window(Generation.accepted_at, cover.window)).group_by(Generation.workflow)
         ).all()
     }
     result = []
     for workflow, label in GENERATION_LABELS.items():
         attempts, successful = found.get(workflow, (0, 0))
         if attempts == 0:
-            result.append(metric("not_applicable", "no_generation_attempts", workflow=workflow, label=label,
-                                 attempts=0, successful=0, unsuccessful=0, rate_percent=None))
+            result.append(metric("not_applicable", "no_generation_attempts", cover.starts_on, workflow=workflow, label=label,
+                                 attempts=0, requests=0, rate_limited=None,
+                                 rate_limited_state=RATE_LIMITED_NOT_COLLECTED, successful=0, unsuccessful=0,
+                                 rate_percent=None))
         else:
-            result.append(metric("available", None, workflow=workflow, label=label, attempts=attempts,
+            result.append(metric("available", None, cover.starts_on, workflow=workflow, label=label, attempts=attempts,
+                                 requests=attempts, rate_limited=None,
+                                 rate_limited_state=RATE_LIMITED_NOT_COLLECTED,
                                  successful=successful, unsuccessful=attempts - successful,
                                  rate_percent=round(successful / attempts * 100, 1)))
     return result
@@ -212,9 +272,10 @@ def _item_rows(db, scope: list, expiry: datetime, limit: int, offset: int) -> di
 
 def quality_grades(db, workflow: str, window: Window, limit: int, offset: int) -> dict:
     """{"grades": ..., "items": ...} for one workflow and period."""
-    if _before_recording(db, window):
-        return {"grades": grades_unavailable(BEFORE_RECORDING), "items": items_empty(limit, offset)}
-    scope = _item_scope(workflow, window)
+    cover = _cover(db, window)
+    if cover.reason:
+        return {"grades": grades_unavailable(cover.reason), "items": items_empty(limit, offset)}
+    scope = _item_scope(workflow, cover.window)
     expiry = datetime.now(timezone.utc) - timedelta(days=config.CONTENT_RETENTION_DAYS)
     fresh, old = Item.created_at >= expiry, Item.created_at < expiry
     current = Item.privacy_policy_version == privacy.POLICY_VERSION
@@ -241,13 +302,16 @@ def quality_grades(db, workflow: str, window: Window, limit: int, offset: int) -
             "graded_count": graded, "unassessable_count": stats.get((dimension, "unassessable"), (0, 0))[0]})
     counts = dict(assessed_count=assessed, pending_count=pending, grading_failed_count=failed,
                   content_expired_count=expired, privacy_blocked_count=blocked, privacy_mode=privacy.privacy_mode(), dimensions=dimensions)
-    grades = metric("available", None, **counts) if assessed else metric("not_applicable", "none_graded", **counts)
+    grades = (metric("available", None, cover.starts_on, **counts) if assessed
+              else metric("not_applicable", "none_graded", cover.starts_on, **counts))
     return {"grades": grades, "items": _item_rows(db, scope, expiry, limit, offset)}
 
 
 def response_times(db, workflow: str, window: Window) -> dict:
-    if _before_recording(db, window):
-        return response_time_unavailable(BEFORE_RECORDING)
+    cover = _cover(db, window)
+    if cover.reason:
+        return response_time_unavailable(cover.reason)
+    window = cover.window
     if workflow == "student_exercise":
         model = Chat
         scope = [Chat.role == "student", Chat.activity_type == "practice_attempt",
@@ -263,9 +327,9 @@ def response_times(db, workflow: str, window: Window) -> dict:
         .where(*scope)
     ).one()
     if not count:
-        return metric("not_applicable", "no_eligible_records", successful_count=0, mean_ms=None, median_ms=None,
-                      failed_or_incomplete_count=failed)
-    return metric("available", None, successful_count=count, mean_ms=_half_up(mean), median_ms=_half_up(median),
+        return metric("not_applicable", "no_eligible_records", cover.starts_on, successful_count=0, mean_ms=None,
+                      median_ms=None, failed_or_incomplete_count=failed)
+    return metric("available", None, cover.starts_on, successful_count=count, mean_ms=_half_up(mean), median_ms=_half_up(median),
                   failed_or_incomplete_count=failed)
 
 
@@ -276,17 +340,19 @@ def _student_sessions(window: Window) -> list:
 def session_stats(db, workflow: str, window: Window) -> dict:
     if workflow != "student_exercise":
         return sessions_unavailable("no_source")
-    if _before_recording(db, window):
-        return sessions_unavailable(BEFORE_RECORDING)
+    cover = _cover(db, window)
+    if cover.reason:
+        return sessions_unavailable(cover.reason)
+    window = cover.window
     sessions = db.scalar(select(func.count()).select_from(Session).where(*_student_sessions(window)))
     if not sessions:
-        return metric("not_applicable", "no_eligible_records", session_count=0, average_messages_per_session=None,
-                      user_messages=0, ai_messages=0)
+        return metric("not_applicable", "no_eligible_records", cover.starts_on, session_count=0,
+                      average_messages_per_session=None, user_messages=0, ai_messages=0)
     user_messages, ai_messages = db.execute(
         select(func.count(), func.count().filter(Chat.outcome == "success"))
         .where(Chat.session_id.in_(select(Session.id).where(*_student_sessions(window))))
     ).one()
-    return metric("available", None, session_count=sessions,
+    return metric("available", None, cover.starts_on, session_count=sessions,
                   average_messages_per_session=round((user_messages + ai_messages) / sessions, 2),
                   user_messages=user_messages, ai_messages=ai_messages)
 
@@ -294,8 +360,10 @@ def session_stats(db, workflow: str, window: Window) -> dict:
 def activity_time_stats(db, workflow: str, window: Window) -> dict:
     if workflow != "student_exercise":
         return activity_unavailable("no_source")
-    if _before_recording(db, window):
-        return activity_unavailable(BEFORE_RECORDING)
+    cover = _cover(db, window)
+    if cover.reason:
+        return activity_unavailable(cover.reason)
+    window = cover.window
     events = {"start_event": "Practice attempt started", "end_event": "Practice attempt submitted"}
     rows = db.execute(
         select(Session.id, Session.activity_ref, Attempt.started_at, Attempt.submitted_at)
@@ -305,7 +373,8 @@ def activity_time_stats(db, workflow: str, window: Window) -> dict:
     included = [r for r in rows if r.started_at is not None and r.submitted_at is not None]
     excluded = len(rows) - len(included)
     if not included:
-        return metric("not_applicable", "no_eligible_records", linked_session_count=0, distinct_activity_count=0,
+        return metric("not_applicable", "no_eligible_records", cover.starts_on, linked_session_count=0,
+                      distinct_activity_count=0,
                       excluded_session_count=excluded, average_messages_per_session=None,
                       average_activity_seconds=None, **events)
     per_session = {
@@ -316,7 +385,7 @@ def activity_time_stats(db, workflow: str, window: Window) -> dict:
         ).all()
     }
     seconds = {r.activity_ref: (r.submitted_at - r.started_at).total_seconds() for r in included}
-    return metric("available", None, linked_session_count=len(included), distinct_activity_count=len(seconds),
+    return metric("available", None, cover.starts_on, linked_session_count=len(included), distinct_activity_count=len(seconds),
                   excluded_session_count=excluded,
                   average_messages_per_session=round(sum(per_session.get(r.id, 0) for r in included) / len(included), 2),
                   average_activity_seconds=round(sum(seconds.values()) / len(seconds), 1), **events)
@@ -336,3 +405,291 @@ def run_object(row) -> dict:
 def active_run(db) -> dict | None:
     row = db.scalars(select(Run).where(Run.status.in_(ACTIVE_STATUSES)).order_by(Run.id.desc()).limit(1)).first()
     return None if row is None else run_object(row)
+
+
+# ---- ADM-07 hub: health, hourly, daily and per-user reads (phase 2: existing tables only) ----
+
+HOUR = timedelta(hours=1)
+IN_PROGRESS = "in_progress"
+
+
+def _utc_date(value: datetime) -> date:
+    return value.astimezone(timezone.utc).date()
+
+
+def _requests(db, at_column, model, scope: list, window: Window, now: datetime) -> list[tuple[datetime, str, int | None]]:
+    """(time, state, duration_ms) of each request of a source, with the in-progress rule applied at `now`."""
+    rows = db.execute(
+        select(at_column, model.outcome, model.duration_ms).where(*scope, *_in_window(at_column, window))
+    ).all()
+    expired_ms = config.IN_PROGRESS_EXPIRY_S * 1000
+    result = []
+    for at, outcome, duration in rows:
+        state = finished_state(outcome, at, now)
+        result.append((at, state, expired_ms if outcome == "pending" and state == "failure" else duration))
+    return result
+
+
+def _chat_requests(db, window: Window, now: datetime) -> list:
+    return _requests(db, Chat.received_at, Chat, [Chat.role == "student"], window, now)
+
+
+def _generation_requests(db, window: Window, now: datetime) -> list:
+    return _requests(db, Generation.accepted_at, Generation, [], window, now)
+
+
+def failure_unavailable(reason: str, **extra) -> dict:
+    return metric("unavailable", reason, total=None, failed=None, in_progress=None, rate_percent=None,
+                  severity=None, **extra)
+
+
+def _failure_tile(requests: list, starts_on: str | None, empty_reason: str, **extra) -> dict:
+    in_progress = sum(1 for _, state, _ in requests if state == IN_PROGRESS)
+    total = len(requests) - in_progress
+    failed = sum(1 for _, state, _ in requests if state == "failure")
+    if total == 0:
+        return metric("not_applicable", empty_reason, starts_on, total=0, failed=0, in_progress=in_progress,
+                      rate_percent=None, severity=None, **extra)
+    return metric("available", None, starts_on, total=total, failed=failed, in_progress=in_progress,
+                  rate_percent=rate_percent(failed, total), severity=severity(failed, total), **extra)
+
+
+def health_chatbot(db, window: Window) -> dict:
+    cover = _cover(db, window)
+    if cover.reason:
+        return failure_unavailable(cover.reason)
+    return _failure_tile(_chat_requests(db, cover.window, _now()), cover.starts_on, "no_chat_requests")
+
+
+def health_generation(db, window: Window) -> dict:
+    cover = _cover(db, window)
+    if cover.reason:
+        return failure_unavailable(cover.reason, includes_rate_limited=False)
+    return _failure_tile(_generation_requests(db, cover.window, _now()), cover.starts_on,
+                         "no_generation_attempts", includes_rate_limited=False)
+
+
+def rate_limited_unavailable(reason: str) -> dict:
+    return metric("unavailable", reason, since=None, count=None, total_requests=None)
+
+
+def health_rate_limited(db, window: Window) -> dict:
+    """Phase 2: limiter refusals are not recorded yet, so the tile is unavailable rather than zero."""
+    return rate_limited_unavailable("not_collected")
+
+
+def _time_set(values: list[int]) -> dict:
+    ordered = sorted(values)
+    return {"count": len(ordered), "median_ms": median_half_up(ordered), "p95_ms": percentile_nearest_rank(ordered, 95)}
+
+
+def response_time_tile_unavailable(reason: str) -> dict:
+    empty = {"count": None, "median_ms": None, "p95_ms": None}
+    return metric("unavailable", reason, **{name: dict(empty) for name in ("all", "successful", "failed")})
+
+
+def _response_time_tile(requests: list, starts_on: str | None, empty_reason: str) -> dict:
+    """Three sets over finished requests with a duration; in-progress rows and rows without a duration are in none."""
+    ok = [d for _, state, d in requests if state == "success" and d is not None]
+    bad = [d for _, state, d in requests if state == "failure" and d is not None]
+    sets = {"all": _time_set(ok + bad), "successful": _time_set(ok), "failed": _time_set(bad)}
+    if not ok and not bad:
+        return metric("not_applicable", empty_reason, starts_on, **sets)
+    return metric("available", None, starts_on, **sets)
+
+
+def health_chatbot_response_time(db, window: Window) -> dict:
+    cover = _cover(db, window)
+    if cover.reason:
+        return response_time_tile_unavailable(cover.reason)
+    return _response_time_tile(_chat_requests(db, cover.window, _now()), cover.starts_on, "no_chat_requests")
+
+
+def health_generation_response_time(db, window: Window) -> dict:
+    cover = _cover(db, window)
+    if cover.reason:
+        return response_time_tile_unavailable(cover.reason)
+    return _response_time_tile(_generation_requests(db, cover.window, _now()), cover.starts_on,
+                               "no_generation_attempts")
+
+
+# ---- hourly ----
+
+CATEGORIES = ("timeout", "rate_limited", "invalid_output", "upstream", "unclassified")
+
+
+def hourly_unavailable(reason: str) -> dict:
+    return metric("unavailable", reason, in_progress=None, retention_days=config.HOURLY_RETENTION_DAYS,
+                  category_breakdown={"state": "unavailable", "reason": "not_collected"}, totals=None, buckets=[])
+
+
+def hourly(db, window: Window) -> dict:
+    """One bucket per UTC hour from the effective start; phase 2 counts chatbot and generation requests together."""
+    now = _now()
+    floor = now.replace(minute=0, second=0, microsecond=0) - timedelta(days=config.HOURLY_RETENTION_DAYS)
+    cover = _cover(db, window, floor)
+    if cover.reason:
+        return hourly_unavailable(cover.reason)
+    start = cover.window.start_utc
+    count = (window.end_utc_exclusive - start) // HOUR
+    successful, failed = [0] * count, [0] * count
+    in_progress = 0
+    for at, state, _ in _chat_requests(db, cover.window, now) + _generation_requests(db, cover.window, now):
+        if state == IN_PROGRESS:
+            in_progress += 1
+        else:
+            (successful if state == "success" else failed)[(at - start) // HOUR] += 1
+    buckets = []
+    for i in range(count):
+        total = successful[i] + failed[i]
+        by_category = dict.fromkeys(CATEGORIES, 0)
+        by_category["unclassified"] = failed[i]  # categories are not recorded before phase 4
+        buckets.append({"hour_start": iso(start + i * HOUR), "successful": successful[i], "failed": failed[i],
+                        "total": total, "failure_rate_percent": rate_percent(failed[i], total),
+                        "failed_by_category": by_category})
+    return metric("available", None, cover.starts_on, in_progress=in_progress,
+                  retention_days=config.HOURLY_RETENTION_DAYS,
+                  category_breakdown={"state": "unavailable", "reason": "not_collected"},
+                  totals={"successful": sum(successful), "failed": sum(failed),
+                          "total": sum(successful) + sum(failed)},
+                  buckets=buckets)
+
+
+# ---- daily ----
+
+_SERIES_TOTALS = {"logins": "total_logins", "practice_drafts_started": "total", "practice_published": "total"}
+
+
+def daily_series_unavailable(name: str, reason: str) -> dict:
+    return metric("unavailable", reason, since=None, per_day=[], **{_SERIES_TOTALS[name]: None})
+
+
+def funnel_unavailable(reason: str) -> dict:
+    return metric("unavailable", reason, started_total=None, submitted_by_period_end=None, per_day=[])
+
+
+def per_student_unavailable(reason: str) -> dict:
+    return metric("unavailable", reason, per_day=[])
+
+
+def daily_logins(db, window: Window) -> dict:
+    return daily_series_unavailable("logins", "not_collected")
+
+
+def daily_practice_drafts_started(db, window: Window) -> dict:
+    return daily_series_unavailable("practice_drafts_started", "not_collected")
+
+
+def daily_practice_published(db, window: Window) -> dict:
+    return daily_series_unavailable("practice_published", "not_collected")
+
+
+def _days(first: date, last: date) -> list[date]:
+    return [first + timedelta(days=i) for i in range((last - first).days + 1)]
+
+
+def daily_attempts_funnel(db, window: Window) -> dict:
+    cover = _cover(db, window)
+    if cover.reason:
+        return funnel_unavailable(cover.reason)
+    w = cover.window
+    rows = db.execute(
+        select(Attempt.started_at, Attempt.submitted_at)
+        .where(or_(and_(*_in_window(Attempt.started_at, w)), and_(*_in_window(Attempt.submitted_at, w))))
+    ).all()
+    started, submitted = Counter(), Counter()
+    started_total = submitted_by_end = 0
+    for began, finished in rows:
+        if w.start_utc <= began < w.end_utc_exclusive:
+            started[_utc_date(began)] += 1
+            started_total += 1
+            submitted_by_end += finished is not None and finished < w.end_utc_exclusive
+        if finished is not None and w.start_utc <= finished < w.end_utc_exclusive:
+            submitted[_utc_date(finished)] += 1
+    per_day = [{"date": d.isoformat(), "started": started[d], "submitted": submitted[d]}
+               for d in _days(_utc_date(w.start_utc), window.period_end)]
+    fields = dict(started_total=started_total, submitted_by_period_end=submitted_by_end, per_day=per_day)
+    if started_total == 0:
+        return metric("not_applicable", "no_practice_attempts", cover.starts_on, **fields)
+    return metric("available", None, cover.starts_on, **fields)
+
+
+def daily_attempts_per_student(db, window: Window) -> dict:
+    cover = _cover(db, window)
+    if cover.reason:
+        return per_student_unavailable(cover.reason)
+    w = cover.window
+    rows = db.execute(select(Attempt.started_at, Attempt.user_id).where(*_in_window(Attempt.started_at, w))).all()
+    per_user: dict[date, Counter] = {}
+    for began, user_id in rows:
+        per_user.setdefault(_utc_date(began), Counter())[user_id] += 1
+    per_day = []
+    for day in _days(_utc_date(w.start_utc), window.period_end):
+        counts = sorted(per_user.get(day, Counter()).values())
+        middle = len(counts) // 2
+        median = (None if not counts else float(counts[middle]) if len(counts) % 2
+                  else round_half_up((counts[middle - 1] + counts[middle]) / 2, 1))
+        distribution = {str(n): counts.count(n) for n in (1, 2, 3, 4)}
+        distribution["5_plus"] = sum(1 for n in counts if n >= 5)
+        per_day.append({"date": day.isoformat(), "active_students": len(counts), "median_attempts": median,
+                        "distribution": distribution})
+    if not rows:
+        return metric("not_applicable", "no_practice_attempts", cover.starts_on, per_day=per_day)
+    return metric("available", None, cover.starts_on, per_day=per_day)
+
+
+# ---- chatbot users ----
+
+def chatbot_users_unavailable(reason: str, role: str, sort: str, order: str, limit: int, offset: int) -> dict:
+    return metric("unavailable", reason, in_progress=None, role=role, sort=sort, order=order, limit=limit,
+                  offset=offset, totals={"successful": None, "unsuccessful": None},
+                  all_users_total=metric("unavailable", reason, successful=None, unsuccessful=None),
+                  total_users=None, rows=[])
+
+
+def _sort_users(entries: list[dict], sort: str, order: str) -> list[dict]:
+    """Primary column in `order`; ties by name (case-insensitive, nulls last) then user id. Python sorts are stable."""
+    reverse = order == "desc"
+    entries.sort(key=lambda e: e["user_id"])
+    entries.sort(key=lambda e: (e["name"] is None, (e["name"] or "").casefold()))
+    if sort == "name":
+        named = sorted((e for e in entries if e["name"] is not None), key=lambda e: e["name"].casefold(),
+                       reverse=reverse)
+        return named + [e for e in entries if e["name"] is None]
+    if sort == "failure_rate":
+        entries.sort(key=lambda e: -e["unsuccessful"])
+        entries.sort(key=lambda e: e["unsuccessful"] / (e["successful"] + e["unsuccessful"]), reverse=reverse)
+    else:
+        entries.sort(key=lambda e: e[sort], reverse=reverse)
+    return entries
+
+
+def chatbot_users(db, window: Window, role: str, sort: str, order: str, limit: int, offset: int) -> dict:
+    shape = (role, sort, order, limit, offset)
+    if role == "teacher":
+        return chatbot_users_unavailable("no_source", *shape)
+    cover = _cover(db, window)
+    if cover.reason:
+        return chatbot_users_unavailable(cover.reason, *shape)
+    now = _now()
+    counts: dict[str, list[int]] = {}
+    in_progress = 0
+    for user_id, at, outcome in db.execute(
+        select(Chat.user_id, Chat.received_at, Chat.outcome)
+        .where(Chat.role == "student", *_in_window(Chat.received_at, cover.window))
+    ).all():
+        state = finished_state(outcome, at, now)
+        if state == IN_PROGRESS:
+            in_progress += 1
+        else:
+            counts.setdefault(user_id, [0, 0])[state == "failure"] += 1
+    names = _display_names(db, list(counts))
+    entries = [{"user_id": u, "name": names.get(u), "successful": s, "unsuccessful": f,
+                "failure_rate_percent": rate_percent(f, s + f)} for u, (s, f) in counts.items()]
+    page = _sort_users(entries, sort, order)[offset:offset + limit]
+    return metric("available", None, cover.starts_on, in_progress=in_progress, role=role, sort=sort, order=order,
+                  limit=limit, offset=offset,
+                  totals={"successful": sum(s for s, _ in counts.values()),
+                          "unsuccessful": sum(f for _, f in counts.values())},
+                  all_users_total=metric("unavailable", "no_source", successful=None, unsuccessful=None),
+                  total_users=len(entries), rows=page)

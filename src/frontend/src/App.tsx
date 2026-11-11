@@ -43,6 +43,9 @@ const AdminFeedbackAnalysisEvidence = lazy(
   () => import("./pages/AdminFeedbackAnalysisEvidence"),
 );
 const AdminAnalytics = lazy(() => import("./pages/AdminAnalytics"));
+const AdminFeatureAnalyticsLegacy = lazy(
+  () => import("./pages/AdminFeatureAnalyticsLegacy"),
+);
 
 function Inbox({ role }: { role: "student" | "teacher" }) {
   const { status } = useAuth();
@@ -253,6 +256,14 @@ export default function App() {
                 element={
                   <LiveAnalysis>
                     <AdminAnalytics />
+                  </LiveAnalysis>
+                }
+              />
+              <Route
+                path="feature-analytics-legacy"
+                element={
+                  <LiveAnalysis>
+                    <AdminFeatureAnalyticsLegacy />
                   </LiveAnalysis>
                 }
               />
