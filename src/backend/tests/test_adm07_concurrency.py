@@ -11,7 +11,7 @@ from adm01_fixtures import privacy_scanner, analytics_admin, analytics_student, 
 from adm01_grading_helpers import attempt_row, chat_row, gen_row, new_window
 from adm01_helpers import url
 from adm02_helpers import actor, race, uid
-from adm07_helpers import DAILY, HEALTH, HOURLY, NEW_ENDPOINTS, USERS, fixed_now  # noqa: F401
+from adm07_helpers import DAILY, HEALTH, HOURLY, NEW_ENDPOINTS, USERS, fixed_now, mirror_all  # noqa: F401
 from auth_helpers import call
 
 
@@ -24,6 +24,7 @@ def seed(tracked):
     gen_row(t, "study_notes", w.at(10), "success")
     gen_row(t, "mcq_batch", w.at(11), "failure")
     attempt_row(s, "att-" + uid(), w.at(20), w.at(30))
+    mirror_all()  # phase 4 reads the request log
     return w
 
 

@@ -36,12 +36,13 @@ def test_adm07_ac39_generation_whole_period_before_recording_stays_unavailable(a
         assert row["state"] == "unavailable" and row["reason"] == "period_before_recording"
 
 
-def test_adm07_phase2_generation_rate_limited_is_not_collected(analytics_admin):
+def test_adm07_phase4_generation_rate_limited_is_collected_and_zero_when_none(analytics_admin):
+    """PHASE 4 CHANGE (was rate_limited null / rate_limited_state not_collected)."""
     w = new_window()
     for row in ok(BASE + "/generation", analytics_admin, w)["workflows"]:
-        assert row["rate_limited"] is None
-        assert row["rate_limited_state"] == {"state": "unavailable", "reason": "not_collected"}
-        assert row["requests"] == row["attempts"]
+        assert row["rate_limited"] == 0
+        assert row["rate_limited_state"]["state"] == "available"
+        assert row["requests"] == row["attempts"] + row["rate_limited"]
 
 
 def test_adm07_ac39_quality_counts_only_the_covered_part_and_sets_data_starts_on(analytics_admin, tracked_users, recording_start):

@@ -6,10 +6,10 @@ from datetime import datetime, timedelta, timezone
 
 import pytest
 
-from adm01_fixtures import privacy_scanner, analytics_admin, recording_start, tracked_users  # noqa: F401
+from adm01_fixtures import privacy_scanner, analytics_admin, tracked_users  # noqa: F401
 from adm01_grading_helpers import chat_row, gen_row, new_window
 from adm02_helpers import actor
-from adm07_helpers import HOURLY, fixed_now, get, hour_labels, ok, stamp  # noqa: F401
+from adm07_helpers import HOURLY, fixed_now, recording_start, mirror_all, get, hour_labels, ok, stamp  # noqa: F401
 from auth_helpers import call
 
 CATS = {"timeout", "rate_limited", "invalid_output", "upstream", "unclassified"}
@@ -94,7 +94,7 @@ def test_adm07_ac11_failure_rate_is_rounded_half_up_to_one_decimal(analytics_adm
     assert hourly(analytics_admin, w)["buckets"][0]["failure_rate_percent"] == 6.3
 
 
-def test_adm07_ac13_phase2_category_breakdown_is_unavailable_and_failures_are_unclassified(analytics_admin, tracked_users):
+def test_adm07_ac13_phase4_category_breakdown_is_available_and_backfilled_style_failures_are_unclassified(analytics_admin, tracked_users):
     w = new_window()
     s, t = student(tracked_users), teacher(tracked_users)
     chat_row(s, w.at(1), "failure")
@@ -102,7 +102,9 @@ def test_adm07_ac13_phase2_category_breakdown_is_unavailable_and_failures_are_un
     gen_row(t, "study_notes", w.at(3), "failure")
     chat_row(s, w.at(4), "success")
     body = hourly(analytics_admin, w)
-    assert body["category_breakdown"] == {"state": "unavailable", "reason": "not_collected"}
+    # PHASE 4 CHANGE (was: unavailable/not_collected): categories are real from request_log_categories_started_at.
+    # Rows seeded without a hook carry the migration-backfill category `unclassified`, so the counts below stay.
+    assert body["category_breakdown"]["state"] == "available" and body["category_breakdown"]["reason"] is None
     b = body["buckets"][0]
     assert b["failed"] == 3 and b["failed_by_category"]["unclassified"] == 3
     assert all(b["failed_by_category"][c] == 0 for c in CATS - {"unclassified"})
@@ -123,7 +125,7 @@ def test_adm07_ac38_pending_rows_are_in_progress_then_timeouts_in_their_received
     assert (body["buckets"][9]["failed"], body["buckets"][9]["total"]) == (1, 1)
     assert (body["buckets"][2]["failed"], body["buckets"][2]["total"]) == (1, 1)
     assert body["totals"] == {"successful": 0, "failed": 2, "total": 2}
-    assert sum(b["failed_by_category"]["unclassified"] for b in body["buckets"]) == 2  # phase 2: unclassified
+    assert sum(b["failed_by_category"]["timeout"] for b in body["buckets"]) == 2  # PHASE 4 CHANGE (was unclassified): AC38 timeout category
 
 
 def test_adm07_ac38_tile_hourly_and_users_totals_agree_for_the_same_as_of(analytics_admin, tracked_users, fixed_now):
@@ -213,4 +215,5 @@ def test_adm07_ac12_rows_older_than_the_retention_floor_are_ignored(analytics_ad
     url_ = f"{HOURLY}?period_start={today - timedelta(days=40)}&period_end={today}"
     before = call("GET", url_, analytics_admin).json()["totals"]
     chat_row(s, datetime.now(UTC) - timedelta(days=30, hours=2), "failure")
+    mirror_all()  # phase 4 reads the request log; the row is older than the retention floor either way
     assert call("GET", url_, analytics_admin).json()["totals"] == before

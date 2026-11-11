@@ -7,10 +7,10 @@ from decimal import Decimal
 
 import pytest
 
-from adm01_fixtures import privacy_scanner, analytics_admin, recording_start, tracked_users  # noqa: F401
+from adm01_fixtures import privacy_scanner, analytics_admin, tracked_users  # noqa: F401
 from adm01_grading_helpers import attempt_row, chat_row, gen_row, new_window
 from adm02_helpers import actor, uid
-from adm07_helpers import (HEALTH, bulk_chat, chat_null_duration_failure, fixed_now, get, ok, stamp)  # noqa: F401
+from adm07_helpers import (HEALTH, recording_start, mirror_all, bulk_chat, chat_null_duration_failure, fixed_now, get, ok, stamp)  # noqa: F401
 from auth_helpers import call, sql
 
 
@@ -126,7 +126,7 @@ def test_adm07_ac5_exact_top_level_shape_and_empty_period_states(analytics_admin
     assert c["state"] == "not_applicable" and c["reason"] == "no_chat_requests"
     assert c["severity"] is None and c["rate_percent"] is None and c["total"] == 0 and c["failed"] == 0
     assert g["state"] == "not_applicable" and g["reason"] == "no_generation_attempts"
-    assert g["severity"] is None and g["rate_percent"] is None and g["includes_rate_limited"] is False
+    assert g["severity"] is None and g["rate_percent"] is None and g["includes_rate_limited"] is True  # PHASE 4 CHANGE (was False)
     pc = body["practice_completion"]
     assert pc["state"] == "not_applicable" and pc["reason"] == "no_practice_attempts" and pc["percentage"] is None
     for key, reason in (("chatbot_response_time", "no_chat_requests"), ("generation_response_time", "no_generation_attempts")):
@@ -136,14 +136,15 @@ def test_adm07_ac5_exact_top_level_shape_and_empty_period_states(analytics_admin
             assert rt[name] == {"count": 0, "median_ms": None, "p95_ms": None}
 
 
-def test_adm07_ac5_phase2_rate_limited_is_unavailable_not_collected_never_zero(analytics_admin):
+def test_adm07_ac10_phase4_rate_limited_with_no_requests_is_available_zero(analytics_admin):
+    """PHASE 4 CHANGE (was unavailable/not_collected): a collected metric with nothing to count is a real 0."""
     w = new_window()
     rl = health(analytics_admin, w)["rate_limited"]
-    assert rl["state"] == "unavailable" and rl["reason"] == "not_collected"
-    assert rl["since"] is None and rl["count"] is None and rl["total_requests"] is None
+    assert rl["state"] == "available" and rl["reason"] is None
+    assert rl["count"] == 0 and rl["total_requests"] == 0 and rl["since"] is not None
 
 
-def test_adm07_ac5_generation_failure_counts_attempts_only_and_reports_includes_rate_limited_false(analytics_admin, tracked_users):
+def test_adm07_ac5_generation_failure_without_rate_limited_requests_reports_includes_rate_limited_true(analytics_admin, tracked_users):
     w = new_window()
     t = teacher(tracked_users)
     gen_row(t, "study_notes", w.at(1), "success")
@@ -152,7 +153,7 @@ def test_adm07_ac5_generation_failure_counts_attempts_only_and_reports_includes_
     g = health(analytics_admin, w)["generation_failure"]
     assert g["state"] == "available"
     assert (g["total"], g["failed"], g["in_progress"]) == (3, 1, 0)
-    assert g["includes_rate_limited"] is False and g["severity"] == "low_sample" and g["rate_percent"] == 33.3
+    assert g["includes_rate_limited"] is True  # PHASE 4 CHANGE (was False) and g["severity"] == "low_sample" and g["rate_percent"] == 33.3
 
 
 def test_adm07_ac5_practice_completion_equals_the_usage_report_definition(analytics_admin, tracked_users):
@@ -186,6 +187,7 @@ def test_adm07_ac5_one_failing_read_makes_only_that_metric_read_failed(failing, 
         raise RuntimeError("simulated read failure")
 
     monkeypatch.setattr(queries, failing, boom)
+    mirror_all()
     r = call("GET", f"/api/admin/analytics/health?period_start={w.start}&period_end={w.end}", analytics_admin)
     assert r.status_code == 200, r.text
     assert "simulated read failure" not in r.text
