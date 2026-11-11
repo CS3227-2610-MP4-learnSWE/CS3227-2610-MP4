@@ -1,5 +1,20 @@
 # Handoff notes
 
+## 2026-11-11: orchestrator, ADM-07 phase 5 planning (Gate F pending)
+- Gate E passed. Wrote `workflow/specs/ADM-07/retained-criteria.md` (spec-writer; speccheck OK) and `workflow/specs/ADM-07/phase5-deletion-list.md` (verifier inventory). Nothing deleted. Decisions for Gate F are listed at the end of the deletion list (`/admin/ai-usage` after removal: 404 or redirect; whether to delete old browser tests and specs before the assertion mapping is confirmed). Usage: [report](usage/runs/2026-11-11-ADM07-04/report.md).
+
+## 2026-11-11: spec-writer on ADM-07 (P5-1 retained criteria)
+- Done: wrote `workflow/specs/ADM-07/retained-criteria.md` with the final ADM-01 (AC1-AC39, privacy amendment rules) and ADM-06 (AC1-AC12) criteria that stay true, each with covering test file names and its ADM-07 effect (kept or changed), plus a table of superseded criteria and reasons (ADM-01 AC40-AC45, AC12 first sentence, AC4 clause, AC15/17/18, ADM-06 AC13). No other spec or code touched.
+- Next (developer/orchestrator, P5-2 onward): confirm the per-criterion test mapping (file-name level only) before deleting tests; keep or port `adm01-privacy.spec.ts`; `/usage` removal needs `/health` and `/chatbot-users` tests covering AC4-AC13 first.
+- Files touched: workflow/specs/ADM-07/retained-criteria.md, workflow/notes.md
+- Invocation ID(s) for this handoff: n/a (orchestrator records)
+- Model(s) and effort setting: Sonnet 5.5, low effort
+- Elapsed wall-clock time: n/a
+- Feature-run report path: orchestrator to add
+- Decisions / open questions: ADM-06 AC12 says ADM-03 is uninstrumented; may be stale, verify against code.
+- Blocking findings: none
+- Resource use: Tracker run: no (orchestrator owns); Model: Sonnet 5.5; Total tokens: unavailable; Cost: unavailable; Retries: 0
+
 ## 2026-11-11: orchestrator, ADM-07 phase 4 ready for Gate E
 - Run 2026-11-11-ADM07-03 on feat/analytics-feedback-consolidation (not pushed). Developer d907964/0c3f382/052e17f/07495fd, round-1 fix 5e90062; tests merged (1a017eb); verifier round 1 found 1 blocking (request_log_started_at set to migration time hid the 30-day backfill); plan.md line 21 amended by the orchestrator (3bb8b50) and fixed. Round 2: product code PASS, backend ADM-07/01/06 1129 passed plus one wrong test assertion (now fixed, test_adm07_p4_reports.py 42 passed), host suites 954 passed, Playwright mocked 205 passed, typecheck and lint clean.
 - Please decide at Gate E: confirm the plan line-21 amendment; check real data on the hub; P4-10c (human): run `ai_usage.cleanup --dry-run` on the target database, review counts, then `--apply --approved-by <name>`. Not run by any agent. The migration has not been run on the real/dev database either.
