@@ -145,16 +145,27 @@ export default function AdminFeedbackAnalysis() {
     changeSelection(new Set());
   };
   // `?form=` (the "Analyse this form" shortcut) is matched against the admin's own list, never sent to the server.
-  const linkedForm = new URLSearchParams(location.search).get("form");
+  const linkedForms = new URLSearchParams(location.search).getAll("form");
+  // Repeated `form` parameters are ignored: treated as a form that is not available.
+  const linkedForm =
+    linkedForms.length === 0
+      ? null
+      : linkedForms.length === 1
+        ? linkedForms[0]
+        : "";
   const [linkMissing, setLinkMissing] = useState(false);
   const linkHandled = useRef(false);
   useEffect(() => {
     if (linkedForm === null || linkHandled.current || !forms.data) return;
     linkHandled.current = true;
     const wanted = linkedForm.toLowerCase();
-    const match = forms.data.items.find(
-      (form) => form.state !== "draft" && form.id.toLowerCase() === wanted,
-    );
+    const match =
+      linkedForms.length === 1
+        ? forms.data.items.find(
+            (form) =>
+              form.state !== "draft" && form.id.toLowerCase() === wanted,
+          )
+        : undefined;
     if (match) chooseForm(match.id);
     else setLinkMissing(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
