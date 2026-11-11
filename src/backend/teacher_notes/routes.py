@@ -7,7 +7,10 @@ from sqlalchemy import select
 from pydantic import BaseModel, ConfigDict, Field, StrictInt, StrictStr, ValidationError
 
 from errors import ApiError
-from feature_analytics import GradingContent, record_generation_accepted, record_generation_outcome
+from feature_analytics import (
+    GradingContent, categorize_llm_error, record_generation_accepted, record_generation_outcome,
+    record_generation_rate_limited,
+)
 from feature_analytics.recording import REFUSED_BY_LIMITER
 from text_validation import is_postgres_text, normalise_newlines_and_trim
 from llm_client import LlmClient, get_llm_client
@@ -43,7 +46,7 @@ def create_note_draft(request: Request, material_id: str, llm: LlmClient = Depen
     # ADM-01: a generation attempt is recorded once, after the AI call, unless the AI service's limiter refused it
     # (then no generation began). The hooks never raise, so the response is unchanged whatever they do.
     accepted_at = datetime.now(timezone.utc)
-    counted, success, graded = True, False, None
+    counted, success, graded, category = True, False, None, None
     try:
         content = generate_notes(llm, text, teacher_id)
         graded = GradingContent(request_text=NOTES_REQUEST_TEXT, response_text=content)
@@ -52,12 +55,19 @@ def create_note_draft(request: Request, material_id: str, llm: LlmClient = Depen
         return payload
     except ApiError as exc:
         counted = exc.code not in REFUSED_BY_LIMITER
+        category = categorize_llm_error(exc)
+        if not counted:
+            record_generation_rate_limited(workflow="study_notes")
+        raise
+    except Exception as exc:
+        category = categorize_llm_error(exc)
         raise
     finally:
         if counted:
             attempt_id = record_generation_accepted(workflow="study_notes", user_id=teacher_id, accepted_at=accepted_at)
             record_generation_outcome(attempt_id, success=success, grading=graded if success else None,
-                                      source="teacher_notes", identity_values=identity_values)
+                                      source="teacher_notes", identity_values=identity_values,
+                                      failure_category=category)
 
 
 def _save_note_draft(request, teacher_id, source_id, course_id, title, content):

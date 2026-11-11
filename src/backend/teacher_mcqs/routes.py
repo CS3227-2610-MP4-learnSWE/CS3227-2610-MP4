@@ -7,7 +7,8 @@ from sqlalchemy import delete, select
 
 from errors import ApiError
 from feature_analytics import (
-    GradingContent, format_mcq_batch_for_grading, record_generation_accepted, record_generation_outcome,
+    GradingContent, categorize_llm_error, format_mcq_batch_for_grading, record_generation_accepted,
+    record_generation_outcome, record_generation_rate_limited, record_practice_draft_started,
 )
 from feature_analytics.recording import REFUSED_BY_LIMITER
 from llm_client import LlmClient, get_llm_client
@@ -47,7 +48,7 @@ def create_mcq_draft(request: Request, material_id: str, llm: LlmClient = Depend
     text = extract_source(source_content, media_type)
     # ADM-01: see create_note_draft. The grading text is stems and choices only, never a key or explanation.
     accepted_at = datetime.now(timezone.utc)
-    counted, success, graded = True, False, None
+    counted, success, graded, category = True, False, None, None
     try:
         questions = generate_mcqs(llm, text, teacher_id)
         graded = GradingContent(
@@ -55,14 +56,23 @@ def create_mcq_draft(request: Request, material_id: str, llm: LlmClient = Depend
             response_text=format_mcq_batch_for_grading([(q["question"], q["choices"]) for q in questions]))
         payload = _save_mcq_draft(request, teacher_id, source_id, course_id, title, questions)
         success = True
+        # ADM-07: creating the batch is the set's first save; the hook never raises and the table is insert-if-absent.
+        record_practice_draft_started(practice_set_id=payload["id"], teacher_id=teacher_id)
         return payload
     except ApiError as exc:
         counted = exc.code not in REFUSED_BY_LIMITER
+        category = categorize_llm_error(exc)
+        if not counted:
+            record_generation_rate_limited(workflow="mcq_batch")
+        raise
+    except Exception as exc:
+        category = categorize_llm_error(exc)
         raise
     finally:
         if counted:
             attempt_id = record_generation_accepted(workflow="mcq_batch", user_id=teacher_id, accepted_at=accepted_at)
-            record_generation_outcome(attempt_id, success=success, grading=graded if success else None, source="teacher_mcq")
+            record_generation_outcome(attempt_id, success=success, grading=graded if success else None, source="teacher_mcq",
+                                      failure_category=category)
 
 
 def _save_mcq_draft(request, teacher_id, source_id, course_id, title, questions):
