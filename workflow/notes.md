@@ -1,5 +1,12 @@
 # Handoff notes
 
+## 2026-11-11: orchestrator, ADM-07 phase 4 ready for Gate E
+- Run 2026-11-11-ADM07-03 on feat/analytics-feedback-consolidation (not pushed). Developer d907964/0c3f382/052e17f/07495fd, round-1 fix 5e90062; tests merged (1a017eb); verifier round 1 found 1 blocking (request_log_started_at set to migration time hid the 30-day backfill); plan.md line 21 amended by the orchestrator (3bb8b50) and fixed. Round 2: product code PASS, backend ADM-07/01/06 1129 passed plus one wrong test assertion (now fixed, test_adm07_p4_reports.py 42 passed), host suites 954 passed, Playwright mocked 205 passed, typecheck and lint clean.
+- Please decide at Gate E: confirm the plan line-21 amendment; check real data on the hub; P4-10c (human): run `ai_usage.cleanup --dry-run` on the target database, review counts, then `--apply --approved-by <name>`. Not run by any agent. The migration has not been run on the real/dev database either.
+- Non-blocking: read floor is cut to the hour while the purge cutoff is exact (one-hour edge on the oldest bucket). Draft/published teacher FKs do not cascade on user delete (login FK does); recorded in DeveloperGuide.
+- Phase 5 (deleting old features/specs/tests) not started and needs Gate F.
+- Usage: [report](usage/runs/2026-11-11-ADM07-03/report.md).
+
 ## 2026-11-11: developer revision 1 on ADM-07 phase 4
 - Fixed blocking: `request_log_started_at` = later of `recording_started_at` and migration time minus 30 days (categories and login keys stay migration time; draft/published keys earliest backfilled time). Verified on a throwaway schema (recording start 60 days back gives key 30 days back; re-run, downgrade, upgrade fine). One constant `PURGE_REQUEST_LOG_DAYS` now serves the read floor and the purge (`HOURLY_RETENTION_DAYS` removed). UserGuide wording corrected; DeveloperGuide records start keys and the FK decision (login FK cascades, draft/published teacher FKs do not). ADM-07 backend: 425 passed (merged-in test-designer tests not run here). No tests edited; frontend untouched.
 
