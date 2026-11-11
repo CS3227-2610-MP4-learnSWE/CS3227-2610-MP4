@@ -58,6 +58,53 @@ async function fetchSource(
   return (old) => ({ ...old, followUp: ready(value) });
 }
 
+type Update = (old: HubCounts) => HubCounts;
+type Shared = {
+  promise: Promise<Update>;
+  controller: AbortController;
+  users: number;
+  timer?: ReturnType<typeof setTimeout>;
+};
+// Count requests in flight, keyed by session and source. Own namespace: never merged with the Responses chooser's request.
+const inflight = new Map<string, Shared>();
+
+/** Joins the request in flight for a source (or starts one). Release aborts it only if nobody re-joins in the same tick. */
+function join(source: CountSource, fresh: boolean) {
+  const key = `${getSessionGeneration()}:hub-count:${source}`;
+  let entry = inflight.get(key);
+  if (entry && fresh) {
+    entry.controller.abort();
+    inflight.delete(key);
+    entry = undefined;
+  }
+  if (!entry) {
+    const controller = new AbortController();
+    const created: Shared = {
+      controller,
+      users: 0,
+      promise: fetchSource(source, controller.signal).finally(() => {
+        if (inflight.get(key) === created) inflight.delete(key);
+      }),
+    };
+    entry = created;
+    inflight.set(key, entry);
+  }
+  entry.users++;
+  clearTimeout(entry.timer);
+  const owned = entry;
+  return {
+    promise: owned.promise,
+    signal: owned.controller.signal,
+    release: () => {
+      owned.users--;
+      if (!owned.users)
+        owned.timer = setTimeout(() => {
+          if (!owned.users) owned.controller.abort();
+        }, 0);
+    },
+  };
+}
+
 /**
  * Loads the three tab counts once per hub mount and refetches one source after a count-changing mutation
  * (latest wins). Failures are silent: a count that never loaded stays hidden, a loaded one keeps its value.
@@ -71,17 +118,18 @@ export default function HubCountsProvider({
   const [counts, setCounts] = useState<HubCounts>(initialCounts);
   useEffect(() => {
     const generation = getSessionGeneration();
-    const controllers: Partial<Record<CountSource, AbortController>> = {};
+    const holds: Partial<Record<CountSource, ReturnType<typeof join>>> = {};
     let alive = true;
-    const load = (source: CountSource) => {
-      controllers[source]?.abort();
-      const controller = new AbortController();
-      controllers[source] = controller;
+    const load = (source: CountSource, fresh: boolean) => {
+      holds[source]?.release();
+      const hold = join(source, fresh);
+      holds[source] = hold;
       const current = () =>
         alive &&
-        !controller.signal.aborted &&
+        holds[source] === hold &&
+        !hold.signal.aborted &&
         generation === getSessionGeneration();
-      fetchSource(source, controller.signal).then(
+      hold.promise.then(
         (apply) => current() && setCounts(apply),
         () => {
           if (!current()) return;
@@ -96,14 +144,16 @@ export default function HubCountsProvider({
         },
       );
     };
-    (["forms", "analyses", "followup"] as CountSource[]).forEach(load);
+    (["forms", "analyses", "followup"] as CountSource[]).forEach((source) =>
+      load(source, false),
+    );
     const unsubscribe = subscribeHubCountChange((topic) =>
-      load(sourceOf[topic]),
+      load(sourceOf[topic], true),
     );
     return () => {
       alive = false;
       unsubscribe();
-      Object.values(controllers).forEach((c) => c?.abort());
+      Object.values(holds).forEach((hold) => hold?.release());
     };
   }, []);
   return (
