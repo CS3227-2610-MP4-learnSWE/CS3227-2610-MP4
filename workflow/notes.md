@@ -580,3 +580,6 @@
 - Ran: `npm run typecheck` and `npx eslint src` clean; Playwright (mocked) adm02-feedback, adm02-review, adm03-select, adm03-result, adm03-history-delete, adm03-response-delete, adm04-messaging, adm04-redesign (159 passed after P3-4), admin-ui, app, adm05-access, adm07-redirect, shell-confirmation, adm04-inbox (72 passed after the hub); backend with `TEA01_TEST_DATABASE_URL` set to the `.env` database URL (disposable schema): test_adm04_messaging, test_adm04_concurrency, test_adm04_unread, test_adm02_feedback 187 passed. Throwaway smoke checks (hub entry, counts, chooser, shortcut, not-found; count endpoint 200/401/403/422 and decrease after a reply; seed refuse and idempotent) passed and were deleted. Not run: the full backend suite, the remaining Playwright files, adm03 backend suites.
 - Blocking findings: none.
 - Resource use: n/a for the developer role here (orchestrator owns tracking).
+
+## ADM-08 developer revision round 1
+D1 (StrictMode double count GETs, deferred-abort shared guard in HubCountsProvider), D2 (aria-current on every hub URL in Shell), D4 (repeated form param = unavailable) fixed. Remaining adm08 Playwright failures (14) observed: response-detail AC13 expects 1 GET (spec now 2, D3), AC15 reduced-motion, and journey/AC29 tests not analysed; tests untouched.
