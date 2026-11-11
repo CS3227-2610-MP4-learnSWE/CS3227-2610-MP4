@@ -1,5 +1,12 @@
 # Handoff notes
 
+## 2026-11-11: orchestrator, ADM-07 phase 2 ready for Gate C
+- Done (run 2026-11-11-ADM07-02, branch feat/analytics-feedback-consolidation, not pushed): developer 219e59b/8887da4/1a6d8eb, tests merged (80770b2, test-designer fixes c10eb3a), revision round 1 459315f (any 401 from a hub request ends the session). Verifier PASS, no blocking findings. Hub at `/admin/analytics`, old page at `/admin/feature-analytics-legacy`.
+- Checks: backend ADM-07/ADM-01/ADM-06 954 passed; Playwright mocked adm07+adm01 188 passed; typecheck and lint clean. Full backend suite and the non-mocked Playwright project were not run. Hub verified only against mocked APIs so far.
+- Non-blocking verifier items (left for later): unused P4 constants in `feature_analytics/config.py` (remove or use at P4-5); inline even-count median in `queries.daily_attempts_per_student`; `HealthStrip.tsx:178` note drops "Earlier days in this period are not included."
+- Next: Gate C, user tries the hub in the browser. No P4 task started, nothing old deleted, `ai_usage.cleanup` not run.
+- Usage: [report](usage/runs/2026-11-11-ADM07-02/report.md).
+
 ## 2026-11-11: developer revision 1 on ADM-07 (401 handling)
 - Cause: the shared API layer only ends the session on a 401 with code `unauthenticated`; the test sends a bare 401. Fix: `request` option `anyUnauthorized` (set for every analytics and AI usage read, grading start and run reads), so any 401 from the hub ends the session. adm07 + adm01 Playwright (mocked): 188 passed; typecheck, lint, prettier clean. AC32 keyboard test passed in this run.
 
