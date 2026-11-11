@@ -536,8 +536,14 @@ def test_adm07_ac36_backfilled_rows_from_3_days_ago_count_in_health_hourly_and_g
     notes = lambda b: {x["workflow"]: x for x in b["workflows"]}["study_notes"]  # noqa: E731
     assert notes(after[GENERATION])["attempts"] == notes(before[GENERATION])["attempts"] + 1
     floor = (datetime.now(UTC) - timedelta(days=30)).date().isoformat()
-    for body in after.values():  # a 7-day period lies wholly inside the backfill floor
-        assert body["data_starts_on"] is None or body["data_starts_on"] <= floor
+    # A 7-day period lies wholly inside the backfill floor. /health's top level is the latest of its tiles
+    # (plan.md line 103) and the rate-limited tile starts at the migration time (today), so it is checked per tile.
+    for tile in ("chatbot_failure", "generation_failure"):
+        assert h1[tile].get("data_starts_on") is None or h1[tile]["data_starts_on"] <= floor
+    today_iso = datetime.now(UTC).date().isoformat()
+    assert h1["data_starts_on"] == today_iso
+    for key in (HOURLY, GENERATION):
+        assert after[key]["data_starts_on"] is None or after[key]["data_starts_on"] <= floor
 
 
 def test_adm07_ac36_rows_older_than_30_days_stay_out_of_every_report(analytics_admin, tracked_users, backfilled_start):
