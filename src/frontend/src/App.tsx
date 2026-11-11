@@ -256,6 +256,10 @@ export default function App() {
                   </LiveAnalysis>
                 }
               />
+              <Route
+                path="ai-usage"
+                element={<Navigate to="/admin/analytics" replace />}
+              />
               <Route path="announcements" element={<Announcements />} />
               <Route path="announcements/new" element={<AdminMessaging />} />
               <Route
