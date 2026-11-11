@@ -494,3 +494,66 @@ def test_adm07_ac35_outcome_hooks_run_the_purge_at_most_once_per_interval(monkey
         rid = recording.record_chat_request_received(user_id=str(s))
         recording.record_chat_request_outcome(rid, success=True)
     assert len(calls) <= 1  # PURGE_INTERVAL_S = 3600 per process (monotonic)
+
+
+# ================================================================== plan amendment: backfilled history counts
+
+@pytest.fixture
+def backfilled_start(meta):
+    """The state right after the migration on a database with old recording: request_log_started_at is the
+    backfill floor (now - 30 days), categories start at the migration time (now)."""
+    from adm07_helpers import P4RecordingStart
+
+    holder = P4RecordingStart()
+    holder.set(datetime(2020, 1, 1, tzinfo=UTC))
+    meta.set("request_log_started_at", datetime.now(UTC) - timedelta(days=30))
+    meta.set("request_log_categories_started_at", datetime.now(UTC))
+    yield
+    holder.restore()
+
+
+def last_7_days():
+    today = datetime.now(UTC).date()
+    return type("W", (), {"params": {"period_start": (today - timedelta(days=6)).isoformat(),
+                                     "period_end": today.isoformat()}})()
+
+
+def test_adm07_ac36_backfilled_rows_from_3_days_ago_count_in_health_hourly_and_generation(
+        analytics_admin, tracked_users, backfilled_start):
+    ago = datetime.now(UTC) - timedelta(days=3)
+    s, t = student(tracked_users), teacher(tracked_users)
+    w = last_7_days()
+    before = {p: ok(p, analytics_admin, w) for p in (HEALTH, HOURLY, GENERATION)}
+    chat_row(s, ago, "success")
+    chat_row(s, ago + timedelta(minutes=1), "failure")
+    gen_row(t, "study_notes", ago, "success")
+    after = {p: ok(p, analytics_admin, w) for p in (HEALTH, HOURLY, GENERATION)}
+    h0, h1 = before[HEALTH], after[HEALTH]
+    assert h1["chatbot_failure"]["total"] == h0["chatbot_failure"]["total"] + 2
+    assert h1["chatbot_failure"]["failed"] == h0["chatbot_failure"]["failed"] + 1
+    assert h1["generation_failure"]["total"] == h0["generation_failure"]["total"] + 1
+    assert after[HOURLY]["totals"]["total"] == before[HOURLY]["totals"]["total"] + 3
+    notes = lambda b: {x["workflow"]: x for x in b["workflows"]}["study_notes"]  # noqa: E731
+    assert notes(after[GENERATION])["attempts"] == notes(before[GENERATION])["attempts"] + 1
+    floor = (datetime.now(UTC) - timedelta(days=30)).date().isoformat()
+    for body in after.values():  # a 7-day period lies wholly inside the backfill floor
+        assert body["data_starts_on"] is None or body["data_starts_on"] <= floor
+
+
+def test_adm07_ac36_rows_older_than_30_days_stay_out_of_every_report(analytics_admin, tracked_users, backfilled_start):
+    s = student(tracked_users)
+    today = datetime.now(UTC).date()
+    w = type("W", (), {"params": {"period_start": (today - timedelta(days=45)).isoformat(),
+                                  "period_end": today.isoformat()}})()
+    before = ok(HOURLY, analytics_admin, w)
+    chat_row(s, datetime.now(UTC) - timedelta(days=31), "failure")
+    after = ok(HOURLY, analytics_admin, w)
+    assert after["totals"] == before["totals"]
+    assert after["data_starts_on"] is not None  # partial coverage from the floor, not from the migration time
+
+
+def test_adm07_ac10_ac13_categories_still_start_at_the_migration_time_so_backfilled_history_has_no_real_categories(
+        analytics_admin, backfilled_start, meta):
+    rl = ok(HEALTH, analytics_admin, last_7_days())["rate_limited"]
+    assert rl["since"] == datetime.now(UTC).date().isoformat()
+    assert rl["data_starts_on"] == datetime.now(UTC).date().isoformat()
