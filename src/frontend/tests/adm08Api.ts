@@ -524,6 +524,23 @@ export async function settle(ctx: Ctx) {
     )
     .toBeGreaterThanOrEqual(3);
 }
+/**
+ * Full reload, then wait until the hub remount has issued AND received all
+ * three count GETs (forms, analyses, follow-up), so later snapshots and
+ * deltas exclude mount-time requests.
+ */
+export async function reloadSettled(page: Page, ctx: Ctx, url: string) {
+  const mark = {
+    f: ctx.formsCountGets().length,
+    a: ctx.analysesCountGets().length,
+    u: ctx.followUpGets().length,
+  };
+  await page.goto(url);
+  await expect.poll(() => ctx.formsCountGets().length).toBeGreaterThanOrEqual(mark.f + 1);
+  await expect.poll(() => ctx.analysesCountGets().length).toBeGreaterThanOrEqual(mark.a + 1);
+  await expect.poll(() => ctx.followUpGets().length).toBeGreaterThanOrEqual(mark.u + 1);
+  await page.waitForLoadState("networkidle");
+}
 /** Selected tab name or null. */
 export async function selectedTab(page: Page) {
   const selected = tablist(page).getByRole("tab", { selected: true });

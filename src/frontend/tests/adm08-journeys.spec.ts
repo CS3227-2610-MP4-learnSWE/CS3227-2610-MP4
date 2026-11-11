@@ -20,6 +20,7 @@ import {
   noStorage,
   open,
   pickerText,
+  reloadSettled,
   settle,
   setup,
   statusWith,
@@ -526,8 +527,7 @@ test("adm08 AC29 publish and close each add exactly one forms-list GET; Forms ba
   await expect(badge(page, "Forms")).toHaveText("2");
   expect(await deltas(ctx, before)).toEqual({ f: 1, a: 0, u: 0 });
   before = snap(ctx);
-  await page.goto(`${HUB}/forms/${FORM_ID}`);
-  await settle(ctx);
+  await reloadSettled(page, ctx, `${HUB}/forms/${FORM_ID}`);
   before = snap(ctx);
   await button(page, "Close collection").click();
   await page
@@ -589,8 +589,7 @@ test("adm08 AC29 generate analysis and analysis delete each add exactly one anal
   await expect(badge(page, "Analysis")).toHaveText("2");
   await settled(page);
   expect(await deltas(ctx, before)).toEqual({ f: 0, a: 1, u: 0 });
-  await page.goto(`${HUB}/analysis/${ANALYSIS_ID}`);
-  await settle(ctx);
+  await reloadSettled(page, ctx, `${HUB}/analysis/${ANALYSIS_ID}`);
   before = snap(ctx);
   await button(page, "Delete analysis").click();
   await confirmDelete(page).click();
