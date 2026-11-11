@@ -174,38 +174,6 @@ test("ADM-02 admin baseline response dates remain semantic and names lead long I
   ).toBeVisible();
 });
 
-test("ADM-06 admin baseline separates filters from unavailable report and retains retry", async ({
-  page,
-}) => {
-  await setup(page, ADMIN);
-  let fail = true;
-  let calls = 0;
-  await page.route("**/api/admin/ai-usage?**", (route) => {
-    calls++;
-    if (fail)
-      return route.fulfill({
-        status: 503,
-        json: { detail: { code: "usage_unavailable" } },
-      });
-    return route.fulfill({ json: {} });
-  });
-  await page.goto("/admin/ai-usage");
-  await expect(
-    page.getByRole("heading", { name: "Report filters", exact: true }),
-  ).toBeVisible();
-  await expect(
-    page.getByRole("heading", { name: "Service-call report", exact: true }),
-  ).toBeVisible();
-  await outlined(page, "Start date (UTC)");
-  await expect(page.getByRole("alert")).toBeVisible();
-  expect(calls).toBe(1);
-  fail = false;
-  await page.getByRole("button", { name: "Retry", exact: true }).click();
-  await expect.poll(() => calls).toBe(2);
-  await page.setViewportSize({ width: 320, height: 850 });
-  await noOverflow(page);
-});
-
 for (const path of ["overview", "forms", "responses", "usage"]) {
   test(`admin preview ${path} retains sample scope at 320px`, async ({
     page,
@@ -257,34 +225,6 @@ for (const width of [1365, 390]) {
           },
         }),
       );
-      await page.route("**/api/admin/ai-usage?**", (route) => {
-        const url = new URL(route.request().url());
-        return route.fulfill({
-          json: {
-            feature: "all",
-            start_date: url.searchParams.get("start_date"),
-            end_date: url.searchParams.get("end_date"),
-            timezone: "UTC",
-            as_of: TIME,
-            rows: ["STU-03", "TEA-02", "ADM-03", "ADM-01"].map((feature) => ({
-              feature,
-              coverage_start:
-                feature === "ADM-03" || feature === "ADM-01" ? null : TIME,
-              ...Object.fromEntries(
-                [
-                  "requests",
-                  "failures",
-                  "rate_limit_failures",
-                  "other_failures",
-                  "input_tokens",
-                  "output_tokens",
-                  "total_tokens",
-                ].map((key) => [key, { value: null, reason: "not_enabled" }]),
-              ),
-            })),
-          },
-        });
-      });
       const folder = "node_modules/.cache/admin-ui-visuals";
       await mkdir(folder, { recursive: true });
       for (const [name, path] of [
@@ -295,7 +235,6 @@ for (const width of [1365, 390]) {
         ["form", `/admin/feedback/${FORM_ID}`],
         ["responses", `/admin/feedback/${FORM_ID}/responses`],
         ["response", `/admin/feedback/${FORM_ID}/responses/${RESPONSE_ID}`],
-        ["usage", "/admin/ai-usage"],
         ["analytics", "/admin/overview"],
         ["analysis", "/admin/responses"],
       ]) {

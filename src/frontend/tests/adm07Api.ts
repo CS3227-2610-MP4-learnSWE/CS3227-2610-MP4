@@ -1,6 +1,6 @@
 import { type Page, type Route } from "@playwright/test";
 import { ADMIN, mockAuthApi, type AuthApiMock, type User } from "./authApi";
-import { generationBody, qualityBody, run, type Run } from "./adm01Api";
+import { generationBody, qualityBody, run, type Run } from "./adm07Fixtures";
 
 /**
  * Stateful mock of the ADM-07 hub API (contract: workflow/specs/ADM-07/plan.md, phase 2).
