@@ -46,6 +46,15 @@ def median_half_up(sorted_values: Sequence[int]) -> int | None:
     return sorted_values[mid] if n % 2 else (sorted_values[mid - 1] + sorted_values[mid] + 1) // 2
 
 
+def median_one_decimal(sorted_values: Sequence[int]) -> float | None:
+    """Middle value (mean of the two middle values for an even count) with one decimal."""
+    n = len(sorted_values)
+    if n == 0:
+        return None
+    mid = n // 2
+    return float(sorted_values[mid]) if n % 2 else round_half_up((sorted_values[mid - 1] + sorted_values[mid]) / 2, 1)
+
+
 def finished_state(outcome: str, received_at: datetime, now: datetime) -> str:
     """'success', 'failure' or 'in_progress'. A pending row younger than the expiry is in progress; an older one is a timeout failure."""
     if outcome == "success":

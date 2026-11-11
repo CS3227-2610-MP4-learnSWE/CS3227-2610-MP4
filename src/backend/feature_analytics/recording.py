@@ -6,25 +6,54 @@ A failed hook returns None and leaves the host request untouched.
 import logging
 from datetime import datetime, timedelta, timezone
 
-from sqlalchemy import select, text
+from sqlalchemy import select, text, update
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from auth.db import open_session
-from feature_analytics import config, privacy
+from errors import ApiError
+from feature_analytics import config, privacy, retention
 from feature_analytics.grading_text import GradingContent
 from feature_analytics.models import (
     AnalyticsChatRequest,
     AnalyticsGenerationAttempt,
     AnalyticsGradingItem,
+    AnalyticsLoginEvent,
     AnalyticsPracticeAttempt,
+    AnalyticsPracticeDraftStarted,
+    AnalyticsPracticePublished,
+    AnalyticsRequestLog,
     AnalyticsSession,
 )
+from llm_client import LlmBadResponse, LlmError, LlmRateLimited, LlmBusy, LlmTimeout, LlmUpstreamError
 
 log = logging.getLogger("feature_analytics")
 ACTIVITY_TYPES = ("practice_attempt", "lesson")
 GENERATION_WORKFLOWS = ("study_notes", "mcq_batch")
 # TEA-02 error codes of a request the AI service's limiter refused: not a generation attempt (plan decision 8).
 REFUSED_BY_LIMITER = ("llm_rate_limited", "llm_busy")
+FAILURE_CATEGORIES = ("timeout", "rate_limited", "invalid_output", "upstream", "unclassified")
+GENERATION_KINDS = {"study_notes": "generation_notes", "mcq_batch": "generation_mcq"}
+# The API error codes that host routes raise for each category (the routes map LlmError to ApiError before the hook sees it).
+_CODE_CATEGORY = {
+    "rate_limited": "rate_limited", "llm_rate_limited": "rate_limited", "llm_busy": "rate_limited",
+    "llm_timeout": "timeout", "llm_bad_response": "invalid_output", "invalid_ai_output": "invalid_output",
+    "llm_upstream_error": "upstream", "llm_not_configured": "upstream", "llm_unavailable": "upstream",
+}
+
+
+def categorize_llm_error(exc: BaseException) -> str:
+    """Failure category of the exception that ended an AI request (spec AC34)."""
+    if isinstance(exc, (LlmRateLimited, LlmBusy)):
+        return "rate_limited"
+    if isinstance(exc, LlmTimeout):
+        return "timeout"
+    if isinstance(exc, LlmBadResponse):  # includes LlmReplyCutOff
+        return "invalid_output"
+    if isinstance(exc, LlmError):  # upstream, not configured, other
+        return "upstream"
+    if isinstance(exc, ApiError):
+        return _CODE_CATEGORY.get(exc.code, "unclassified")
+    return "unclassified"
 
 
 def _failed(hook: str, exc: Exception) -> None:
@@ -104,6 +133,7 @@ def record_chat_request_received(*, user_id: str, activity_type: str | None = No
             db.add(row)
             db.flush()
             request_id = row.id
+            db.add(AnalyticsRequestLog(kind="chatbot", source_id=request_id, occurred_at=received, outcome="pending"))
             db.commit()
             return request_id
     except Exception as exc:  # noqa: BLE001 - a hook never breaks the host request
@@ -125,16 +155,23 @@ def _add_item(db, *, workflow: str, source_type: str, source_id: int, generation
     ))
 
 
-def _finish(row, success: bool, completed_at: datetime | None, started_field: str) -> None:
+def _finish(db, row, success: bool, completed_at: datetime | None, started_field: str, kind: str,
+            failure_category: str | None) -> None:
+    """Set the outcome of a pending row and of its request-log row in the caller's transaction (first outcome only)."""
     done = _when(completed_at)
     row.completed_at = done
     row.duration_ms = _elapsed_ms(getattr(row, started_field), done)
     row.outcome = "success" if success else "failure"
+    category = None if success else (failure_category if failure_category in FAILURE_CATEGORIES else "unclassified")
+    db.execute(update(AnalyticsRequestLog).where(
+        AnalyticsRequestLog.kind == kind, AnalyticsRequestLog.source_id == row.id,
+        AnalyticsRequestLog.outcome == "pending",
+    ).values(outcome=row.outcome, failure_category=category, duration_ms=row.duration_ms))
 
 
 def record_chat_request_outcome(request_id: int | None, *, success: bool, grading: GradingContent | None = None,
                                 completed_at: datetime | None = None, source: str = "legacy",
-                                identity_values: tuple[str, ...] = ()) -> None:
+                                identity_values: tuple[str, ...] = (), failure_category: str | None = None) -> None:
     if request_id is None:
         return
     try:
@@ -142,7 +179,7 @@ def record_chat_request_outcome(request_id: int | None, *, success: bool, gradin
             row = db.get(AnalyticsChatRequest, request_id, with_for_update=True)
             if row is None or row.outcome != "pending":
                 return  # only the first outcome counts
-            _finish(row, success, completed_at, "received_at")
+            _finish(db, row, success, completed_at, "received_at", "chatbot", failure_category)
             wanted = success and grading is not None and row.activity_type == "practice_attempt"
             received_at, duration = row.received_at, row.duration_ms
             db.commit()
@@ -154,6 +191,7 @@ def record_chat_request_outcome(request_id: int | None, *, success: bool, gradin
                 except Exception as exc:  # noqa: BLE001
                     db.rollback()
                     _failed("record_chat_request_outcome.item", exc)
+        retention.purge_if_due()
     except Exception as exc:  # noqa: BLE001
         _failed("record_chat_request_outcome", exc)
 
@@ -205,6 +243,8 @@ def record_generation_accepted(*, workflow: str, user_id: str, accepted_at: date
             db.add(row)
             db.flush()
             attempt_id = row.id
+            db.add(AnalyticsRequestLog(kind=GENERATION_KINDS[workflow], source_id=attempt_id,
+                                       occurred_at=row.accepted_at, outcome="pending"))
             db.commit()
             return attempt_id
     except Exception as exc:  # noqa: BLE001
@@ -214,7 +254,7 @@ def record_generation_accepted(*, workflow: str, user_id: str, accepted_at: date
 
 def record_generation_outcome(attempt_id: int | None, *, success: bool, grading: GradingContent | None = None,
                               completed_at: datetime | None = None, source: str = "legacy",
-                              identity_values: tuple[str, ...] = ()) -> None:
+                              identity_values: tuple[str, ...] = (), failure_category: str | None = None) -> None:
     if attempt_id is None:
         return
     try:
@@ -222,7 +262,7 @@ def record_generation_outcome(attempt_id: int | None, *, success: bool, grading:
             row = db.get(AnalyticsGenerationAttempt, attempt_id, with_for_update=True)
             if row is None or row.outcome != "pending":
                 return
-            _finish(row, success, completed_at, "accepted_at")
+            _finish(db, row, success, completed_at, "accepted_at", GENERATION_KINDS[row.workflow], failure_category)
             wanted = success and grading is not None
             accepted_at, duration, workflow = row.accepted_at, row.duration_ms, row.workflow
             db.commit()
@@ -235,5 +275,59 @@ def record_generation_outcome(attempt_id: int | None, *, success: bool, grading:
                 except Exception as exc:  # noqa: BLE001
                     db.rollback()
                     _failed("record_generation_outcome.item", exc)
+        retention.purge_if_due()
     except Exception as exc:  # noqa: BLE001
         _failed("record_generation_outcome", exc)
+
+
+def record_generation_rate_limited(*, workflow: str, occurred_at: datetime | None = None) -> None:
+    """A request the limiter refused: one request-log row, no attempt and no grading item."""
+    try:
+        if workflow not in GENERATION_KINDS:
+            return
+        with open_session() as db:
+            db.add(AnalyticsRequestLog(kind=GENERATION_KINDS[workflow], source_id=None, occurred_at=_when(occurred_at),
+                                       outcome="failure", failure_category="rate_limited"))
+            db.commit()
+    except Exception as exc:  # noqa: BLE001
+        _failed("record_generation_rate_limited", exc)
+
+
+def record_login(*, user_id: str, role: str, occurred_at: datetime | None = None) -> None:
+    """One event per successful student or teacher sign-in; any other role is ignored."""
+    try:
+        if role not in ("student", "teacher"):
+            return
+        with open_session() as db:
+            db.add(AnalyticsLoginEvent(user_id=user_id, role=role, occurred_at=_when(occurred_at)))
+            db.commit()
+    except Exception as exc:  # noqa: BLE001
+        _failed("record_login", exc)
+
+
+def _insert_once(model, hook: str, **values) -> None:
+    try:
+        with open_session() as db:
+            db.execute(pg_insert(model).values(**values).on_conflict_do_nothing(index_elements=["practice_set_id"]))
+            db.commit()
+    except Exception as exc:  # noqa: BLE001
+        _failed(hook, exc)
+
+
+def record_practice_draft_started(*, practice_set_id: str, teacher_id: str, started_at: datetime | None = None) -> None:
+    if not 1 <= len(str(practice_set_id)) <= 100:
+        return
+    _insert_once(AnalyticsPracticeDraftStarted, "record_practice_draft_started",
+                 practice_set_id=str(practice_set_id), teacher_id=teacher_id, started_at=_when(started_at))
+
+
+def record_practice_published(*, practice_set_id: str, teacher_id: str, published_at: datetime | None = None) -> None:
+    if not 1 <= len(str(practice_set_id)) <= 100:
+        return
+    _insert_once(AnalyticsPracticePublished, "record_practice_published",
+                 practice_set_id=str(practice_set_id), teacher_id=teacher_id, published_at=_when(published_at))
+
+
+def purge_expired_request_log(now: datetime | None = None) -> int:
+    """Delete request-log rows past retention; returns the count (0 on failure)."""
+    return retention.purge_expired(now)["request_log"]

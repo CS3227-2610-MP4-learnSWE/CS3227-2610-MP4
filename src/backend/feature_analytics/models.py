@@ -107,3 +107,38 @@ class AnalyticsGradingRun(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class AnalyticsRequestLog(Base):
+    """ADM-07: one row per chatbot or generation request. No user id and no text by design."""
+    __tablename__ = "analytics_request_log"
+    id: Mapped[int] = mapped_column(_BIG, primary_key=True, autoincrement=True)
+    kind: Mapped[str] = mapped_column(Text)
+    source_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
+    occurred_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    outcome: Mapped[str] = mapped_column(Text, server_default="pending")
+    failure_category: Mapped[str | None] = mapped_column(Text, nullable=True)
+    duration_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class AnalyticsLoginEvent(Base):
+    __tablename__ = "analytics_login_event"
+    id: Mapped[int] = mapped_column(_BIG, primary_key=True, autoincrement=True)
+    user_id: Mapped[str] = mapped_column(String(64), ForeignKey("user.id", ondelete="CASCADE"))
+    role: Mapped[str] = mapped_column(Text)
+    occurred_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
+class AnalyticsPracticeDraftStarted(Base):
+    __tablename__ = "analytics_practice_draft_started"
+    practice_set_id: Mapped[str] = mapped_column(Text, primary_key=True)
+    teacher_id: Mapped[str] = mapped_column(String(64), ForeignKey("user.id"))
+    started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
+class AnalyticsPracticePublished(Base):
+    __tablename__ = "analytics_practice_published"
+    practice_set_id: Mapped[str] = mapped_column(Text, primary_key=True)
+    teacher_id: Mapped[str] = mapped_column(String(64), ForeignKey("user.id"))
+    published_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
