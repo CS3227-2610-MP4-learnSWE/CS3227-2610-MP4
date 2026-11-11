@@ -5156,9 +5156,23 @@ td .MuiButton-root {
 .analytics-reason {
   display: block;
   margin-top: 4px;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 400;
   color: var(--muted);
+}
+.analytics-caption-fit {
+  container-type: inline-size;
+}
+.analytics-caption-fit caption {
+  padding: 0 0 16px;
+  font-size: 16px;
+  line-height: 1.6;
+  text-align: left;
+}
+.analytics-caption-fit caption > span {
+  display: block;
+  max-width: 100cqi;
+  overflow-wrap: anywhere;
 }
 .analytics-list {
   margin: 0;

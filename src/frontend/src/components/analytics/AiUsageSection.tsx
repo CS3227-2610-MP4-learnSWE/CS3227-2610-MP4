@@ -109,15 +109,17 @@ export default function AiUsageSection({
                   <p role="status">No AI service calls in this period.</p>
                 )}
                 <div
-                  className="table-scroll analytics-scroll"
+                  className="table-scroll analytics-scroll analytics-caption-fit"
                   role="region"
                   aria-label="AI usage results"
                   tabIndex={0}
                 >
                   <table aria-label="AI usage by feature">
                     <caption>
-                      Service-call attempts, including retries. Dates are UTC.
-                      Local quota rejections are excluded.
+                      <span>
+                        Service-call attempts, including retries. Dates are UTC.
+                        Local quota rejections are excluded.
+                      </span>
                     </caption>
                     <thead>
                       <tr>
