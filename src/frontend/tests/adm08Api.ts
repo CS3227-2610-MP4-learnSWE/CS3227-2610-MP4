@@ -497,8 +497,8 @@ export const tablist = (page: Page) =>
 export const tab = (page: Page, name: string) =>
   tablist(page).getByRole("tab", { name, exact: true });
 export const TABS = ["Forms", "Responses", "Analysis", "Follow-up"] as const;
-export const heading = (page: Page, name: string) =>
-  page.getByRole("heading", { name, exact: true, level: 1 });
+export const heading = (page: Page, name: string, level = 1) =>
+  page.getByRole("heading", { name, exact: true, level });
 export const alertWith = (page: Page, text: string) =>
   page.getByRole("alert").filter({ hasText: text });
 export const statusWith = (page: Page, text: string) =>

@@ -165,7 +165,7 @@ test("adm08 J3 Responses: chooser to list to detail, Choose another form, Back s
     .getByRole("combobox", { name: "Feedback form", exact: true })
     .selectOption({ label: `${TITLE} · Open · Responses: 2` });
   await expect(page).toHaveURL(new RegExp(`${HUB}/responses/${FORM_ID}$`));
-  await expect(heading(page, "Submitted responses")).toBeVisible();
+  await expect(heading(page, "Submitted responses", 2)).toBeVisible();
   const row = link(page, `Response ${RESPONSE_ID} · ${STUDENT.display_name} · ${TIME}`);
   await row.click();
   await expect(page).toHaveURL(new RegExp(`${HUB}/responses/${FORM_ID}/${RESPONSE_ID}$`));
@@ -191,7 +191,7 @@ test("adm08 J3 the response list in the hub has Choose another form before the S
   await arrange(page);
   await open(page, `${HUB}/responses/${FORM_ID}`);
   const choose = await link(page, "Choose another form").boundingBox();
-  const head = await heading(page, "Submitted responses").boundingBox();
+  const head = await heading(page, "Submitted responses", 2).boundingBox();
   expect(choose!.y).toBeLessThan(head!.y);
 });
 
@@ -304,7 +304,7 @@ test("adm08 AC27 tab click goes to /analysis with no query and no preselection; 
 test("adm08 AC27 the link is absent on the old route", async ({ page }) => {
   await arrange(page);
   await page.goto(`/admin/feedback/${FORM_ID}/responses`);
-  await expect(heading(page, "Submitted responses")).toBeVisible();
+  await expect(heading(page, "Submitted responses", 2)).toBeVisible();
   await expect(link(page, "Analyse this form")).toHaveCount(0);
 });
 
@@ -328,7 +328,7 @@ test("adm08 J4 response delete: dialog, one DELETE on double click, replace to t
   ctx.release();
   await expect(page).toHaveURL(new RegExp(`${HUB}/responses/${FORM_ID}$`));
   await expect(statusWith(page, DONE_RESPONSE)).toBeVisible();
-  await expect(heading(page, "Submitted responses")).toBeFocused();
+  await expect(heading(page, "Submitted responses", 2)).toBeFocused();
   expect(ctx.of("DELETE")).toHaveLength(1);
   await page.goBack();
   await expect(page).not.toHaveURL(new RegExp(`${RESPONSE_ID}$`));
@@ -371,7 +371,7 @@ test("adm08 J5 Analysis: select, Select all, Generate replaces to /analysis/{id}
   await page.getByRole("link", { name: new RegExp(`^${TITLE}, .+, \\d+ responses, AI complete$`) }).click();
   await expect(page).toHaveURL(new RegExp(`${HUB}/analysis/${ANALYSIS_ID}$`));
   const gets = () => ctx.of("GET", `/analyses/${ANALYSIS_ID}`).length;
-  expect(gets()).toBe(1);
+  await expect.poll(gets).toBe(1);
   await link(page, "Response R3").click();
   await expect(page).toHaveURL(new RegExp(`${HUB}/analysis/${ANALYSIS_ID}/responses/R3$`));
   await expect(heading(page, "Response R3")).toBeVisible();
@@ -667,6 +667,8 @@ for (const [name, fail] of [
     await expect.poll(() => ctx.of("POST", "/publish").length).toBe(1);
     await settled(page);
     expect(await deltas(ctx, before)).toEqual({ f: 0, a: 0, u: 0 });
+    await page.keyboard.press("Escape"); // the modal stays open after the failure and hides the tab
+    await expect(dialog).toHaveCount(0);
     await expect(badge(page, "Forms")).toHaveText("1");
   });
 }
