@@ -1,5 +1,8 @@
 # Handoff notes
 
+## 2026-11-12: orchestrator, ADM-07 phase 6 closeout
+- Wrote `logs/Adm07AnalyticsHub.md` (summary and suggested PR text); branch pushed for a PR into `master` (no `gh` CLI here, PR opened by the human from the compare link). Usage: [report](usage/runs/2026-11-11-ADM07-06/report.md). Still human: `ai_usage.cleanup` dry-run/apply (P4-10c), team review and merge.
+
 ## 2026-11-11: orchestrator, ADM-07 phase 5 done (Gate F decisions applied)
 - Run 2026-11-11-ADM07-05: assertions mapped and ported first (`phase5-test-mapping.md`, `adm07-retained*.spec.ts`, `adm07-redirect.spec.ts`), then deleted: legacy page, old AI usage page and nav, adm01/adm06 browser tests, ADM-01/ADM-06 specs; `/admin/ai-usage` redirects to `/admin/analytics`. Verifier PASS (backend 1130 passed, Playwright mocked 242 passed, typecheck/lint clean). Retained-criteria mapping corrected; speccheck OK.
 - Security cases (verifier): redirect nested under RequireRole admin; `/api/admin/ai-usage` admin-only with no-store and rate limit; no legacy page rendered.

@@ -1,0 +1,2 @@
+feature_run_id,invocation_id,role,effort,tool,session_id,agent_id,started_at,finished_at
+2026-11-11-ADM07-06,2026-11-11-ADM07-06-orchestrator-01,orchestrator,inherited,claude,c8510304-1c49-45dc-9093-1e1487c6b8b8,,2026-11-11T16:17:00+08:00,2026-11-12T00:15:36+08:00
