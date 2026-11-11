@@ -141,6 +141,14 @@ export default function Shell({
               className={({ isActive }) =>
                 `nav-item ${isActive || (item.landing && section === item.path) ? "active" : ""}`
               }
+              ref={(el) => {
+                // A landing item stays current on every URL of its section, not only its landing path.
+                if (!el || !item.landing) return;
+                if (section === item.path)
+                  el.setAttribute("aria-current", "page");
+                else if (!el.classList.contains("active"))
+                  el.removeAttribute("aria-current");
+              }}
               onClick={() => setOpen(false)}
               aria-label={item.path === "inbox" ? "Inbox" : undefined}
               aria-description={
