@@ -87,6 +87,8 @@ def test_adm07_ac36_upgrade_creates_the_four_tables_and_the_five_meta_keys(isola
     assert set(META_KEYS) <= keys
     now = datetime.now(UTC)
     for key in META_KEYS:
+        if key in ("request_log_started_at", "practice_draft_started_started_at", "practice_published_started_at"):
+            continue  # PLAN AMENDMENT 2026-11-11: not the migration time; checked in the dedicated tests below
         value = datetime.fromisoformat(isolated.sql("SELECT value FROM analytics_meta WHERE key=%s", (key,))[0][0])
         assert abs((now - value.astimezone(UTC)).total_seconds()) < 600, key  # "migration time in UTC, ISO 8601"
 
@@ -239,3 +241,42 @@ def test_adm07_ac4_request_log_rows_hold_only_enumerated_text():
     assert kinds <= {"chatbot", "generation_notes", "generation_mcq"}
     cats = {r[0] for r in sql("SELECT DISTINCT failure_category FROM analytics_request_log") if r[0] is not None}
     assert cats <= {"timeout", "rate_limited", "invalid_output", "upstream", "unclassified"}
+
+
+# ================================================================== plan amendment: request_log_started_at
+
+def _meta_time(iso, key):
+    return datetime.fromisoformat(iso.sql("SELECT value FROM analytics_meta WHERE key=%s", (key,))[0][0]).astimezone(UTC)
+
+
+def test_adm07_ac36_request_log_start_is_the_backfill_floor_when_recording_began_earlier(isolated):
+    prior_head(isolated)
+    isolated.sql("UPDATE analytics_meta SET value=%s WHERE key='recording_started_at'",
+                 (datetime(2020, 1, 1, tzinfo=UTC).isoformat(),))
+    isolated.migrate("upgrade", "head")
+    now = datetime.now(UTC)
+    floor = now - timedelta(days=30)
+    assert abs((_meta_time(isolated, "request_log_started_at") - floor).total_seconds()) < 900
+    assert abs((_meta_time(isolated, "request_log_categories_started_at") - now).total_seconds()) < 900
+    assert abs((_meta_time(isolated, "login_events_started_at") - now).total_seconds()) < 900
+
+
+def test_adm07_ac36_request_log_start_is_recording_start_when_that_is_later_than_the_floor(isolated):
+    prior_head(isolated)
+    recorded = (datetime.now(UTC) - timedelta(days=5)).replace(microsecond=0)
+    isolated.sql("UPDATE analytics_meta SET value=%s WHERE key='recording_started_at'", (recorded.isoformat(),))
+    isolated.migrate("upgrade", "head")
+    assert abs((_meta_time(isolated, "request_log_started_at") - recorded).total_seconds()) < 2
+    now = datetime.now(UTC)
+    assert abs((_meta_time(isolated, "request_log_categories_started_at") - now).total_seconds()) < 900
+
+
+def test_adm07_ac36_backfilled_rows_are_not_before_the_request_log_start(isolated):
+    prior_head(isolated)
+    isolated.sql("UPDATE analytics_meta SET value=%s WHERE key='recording_started_at'",
+                 (datetime(2020, 1, 1, tzinfo=UTC).isoformat(),))
+    populate(isolated)
+    isolated.migrate("upgrade", "head")
+    start = _meta_time(isolated, "request_log_started_at")
+    earliest = isolated.sql("SELECT min(occurred_at) FROM analytics_request_log")[0][0]
+    assert earliest >= start - timedelta(seconds=5)

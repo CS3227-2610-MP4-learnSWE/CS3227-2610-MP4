@@ -212,14 +212,15 @@ test("adm07 AC29 a period longer than 31 days sends six requests and explains th
     undefined,
     `${HUB}?from=2026-01-01&to=2026-03-15`,
   );
-  expect(mock.count()).toBe(6);
-  expect(mock.count("aiusage")).toBe(0);
   await expect(
     page.getByText(
       "AI usage covers at most 31 days ending today or earlier. Choose a shorter period to see AI usage.",
       { exact: true },
     ),
   ).toBeVisible();
+  await expect(usersTable(page)).toBeVisible(); // every block has rendered before requests are counted
+  expect(mock.count()).toBe(6);
+  expect(mock.count("aiusage")).toBe(0);
 });
 
 // ================================================================== KPI tiles (AC5-AC8)
