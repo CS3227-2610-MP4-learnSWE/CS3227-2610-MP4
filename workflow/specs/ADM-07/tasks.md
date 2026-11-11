@@ -47,8 +47,8 @@ Phases follow `workflow/specs/CONSOL-01/migration-plan.md`. Phase 3 (Feedback hu
 ## Phase 5: delete old (Gate F: review the deletion list first)
 | # | Task | Owner agent | Depends on | Status |
 |---|---|---|---|---|
-| P5-1 | Copy final ADM-01 (with privacy amendment) and ADM-06 acceptance criteria into `workflow/specs/ADM-07/retained-criteria.md` before any deletion | spec-writer | Gate E | todo |
-| P5-2 | Deletion list: legacy page, `AdminAiUsage` page and nav link, `/usage` row logic if unused, old specs; move or keep every test that covers retained backend behaviour (never weaken) | developer, verifier | P5-1 | todo |
+| P5-1 | Copy final ADM-01 (with privacy amendment) and ADM-06 acceptance criteria into `workflow/specs/ADM-07/retained-criteria.md` before any deletion | spec-writer | Gate E | done (Gate F decisions 2026-11-11; phase 5 verified) |
+| P5-2 | Deletion list: legacy page, `AdminAiUsage` page and nav link, `/usage` row logic if unused, old specs; move or keep every test that covers retained backend behaviour (never weaken) | developer, verifier | P5-1 | done (Gate F decisions 2026-11-11; phase 5 verified) |
 
 ## Phase 6: docs and closeout
 | # | Task | Owner agent | Depends on | Status |

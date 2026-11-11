@@ -3,7 +3,7 @@
 ## 2026-11-11: developer, ADM-07 phase 5 deletion (Gate F)
 - Done: hub CSS (reasons 14px, caption span fits region); deleted AdminFeatureAnalyticsLegacy (page, lazy import, route) and unused `defaultPeriod`; `/admin/ai-usage` is now `Navigate replace` to `/admin/analytics`; deleted AdminAiUsage, its Admin.tsx case, nav entry and `.ai-usage-*` CSS; deleted adm01-analytics, adm01-privacy, adm06-usage specs and adm01Api.ts (adm07Api.ts now imports ./adm07Fixtures); removed ADM-06 test, ai-usage route mock and visual row from admin-ui.spec.ts; deleted workflow/specs/ADM-01 and ADM-06 (speccheck ADM-07 OK); fixed links; docs updated; retained-criteria ADM-06 AC12 corrected (mapping section 5).
 - Kept: services/aiUsage.ts, backend ai-usage and /usage include_rows, all backend tests and helpers.
-- Open: backend suite not run (DB tests skip in this environment: test_adm07_access.py 135 skipped); ADM-07 spec/plan/tasks still mention feature-analytics-legacy as historical design; plan.md conventions point to the removed ADM-01 plan (in git history).
+- Open: ADM-07 spec/plan/tasks still mention feature-analytics-legacy as historical design; plan.md conventions point to the removed ADM-01 plan (in git history).
 - Files touched: see commits on feat/analytics-feedback-consolidation after e5c1308.
 
 ## 2026-11-11: orchestrator, ADM-07 phase 5 planning (Gate F pending)
