@@ -31,18 +31,18 @@ Phases follow `workflow/specs/CONSOL-01/migration-plan.md`. Phase 3 (Feedback hu
 ## Phase 4: new event collection (Gate E: check real data)
 | # | Task | Owner agent | Depends on | Status |
 |---|---|---|---|---|
-| P4-1 | Backend tests (phase 4): migration, backfill, hook extensions, category mapping, rate-limited generation logged without an attempt, login (student and teacher only; admin no-op), draft-started and published hooks (published once per set across unpublish/republish), in-progress 120 s rule, rate-limited generation counted in reports, partial coverage, purge and retention, hourly/health/daily switching from `not_collected` to real values (AC3, AC10, AC13, AC22, AC23, AC33-AC37) | test-designer | Gate C | todo |
-| P4-2 | Concurrency tests (outcome applied once, one log row per request, draft-started and published idempotent per set) and privacy schema inspection (no user id/text/IP in new tables) | test-designer | Gate C | todo |
-| P4-3 | Developer check: does an existing practice-set table carry a first-save time and a first-publication time to backfill, and where are the save and publish transitions? Do attempt start/submit timestamps already cover the funnel (Open question 9)? Record in `workflow/notes.md` | developer | Gate C | todo |
-| P4-4 | Migration `20261111_adm07_events` with backfill and downgrade | developer | P4-3 | todo |
-| P4-5 | Models, `retention.py`, hook extensions, `categorize_llm_error` | developer | P4-4 | todo |
-| P4-6 | Wire host call sites (companion, TEA-02 routes, sign-in, practice-set save and publish) without changing responses; hourly/health/daily queries read the new tables | developer | P4-5 | todo |
-| P4-7 | Update `DeveloperGuide.md` and `UserGuide.md` (what is collected, retention 30 days, privacy) | developer | P4-6 | todo |
-| P4-8 | Run suites; frontend regression that unavailable states now show real values | test-designer | P4-1, P4-2, P4-6 | todo |
-| P4-10a | Tests for the AI usage cleanup command (AC42) against a test database only | test-designer | Gate C | todo |
-| P4-10b | Implement `ai_usage.cleanup` (`--dry-run`, `--apply --approved-by`; deletes `pending` attempts older than 24 h in `ai_service_attempts`, resets `ai_usage_coverage` per plan; permanent, no archive, no restore). The developer never runs `--apply` on a real database | developer | P4-10a | todo |
-| P4-10c | **Human approval gate:** run `--dry-run` on the target database, review the per-feature row counts and coverage changes, then approve (or run) `--apply` with `--approved-by`. Irreversible | human | P4-10b, Gate E | todo |
-| P4-9 | Verify (SHR-01/02/05, hook isolation, retention, no content in new tables); fix rounds | verifier, developer | P4-8 | todo |
+| P4-1 | Backend tests (phase 4): migration, backfill, hook extensions, category mapping, rate-limited generation logged without an attempt, login (student and teacher only; admin no-op), draft-started and published hooks (published once per set across unpublish/republish), in-progress 120 s rule, rate-limited generation counted in reports, partial coverage, purge and retention, hourly/health/daily switching from `not_collected` to real values (AC3, AC10, AC13, AC22, AC23, AC33-AC37) | test-designer | Gate C | done (Gate E passed 2026-11-11) |
+| P4-2 | Concurrency tests (outcome applied once, one log row per request, draft-started and published idempotent per set) and privacy schema inspection (no user id/text/IP in new tables) | test-designer | Gate C | done (Gate E passed 2026-11-11) |
+| P4-3 | Developer check: does an existing practice-set table carry a first-save time and a first-publication time to backfill, and where are the save and publish transitions? Do attempt start/submit timestamps already cover the funnel (Open question 9)? Record in `workflow/notes.md` | developer | Gate C | done (Gate E passed 2026-11-11) |
+| P4-4 | Migration `20261111_adm07_events` with backfill and downgrade | developer | P4-3 | done (Gate E passed 2026-11-11) |
+| P4-5 | Models, `retention.py`, hook extensions, `categorize_llm_error` | developer | P4-4 | done (Gate E passed 2026-11-11) |
+| P4-6 | Wire host call sites (companion, TEA-02 routes, sign-in, practice-set save and publish) without changing responses; hourly/health/daily queries read the new tables | developer | P4-5 | done (Gate E passed 2026-11-11) |
+| P4-7 | Update `DeveloperGuide.md` and `UserGuide.md` (what is collected, retention 30 days, privacy) | developer | P4-6 | done (Gate E passed 2026-11-11) |
+| P4-8 | Run suites; frontend regression that unavailable states now show real values | test-designer | P4-1, P4-2, P4-6 | done (Gate E passed 2026-11-11) |
+| P4-10a | Tests for the AI usage cleanup command (AC42) against a test database only | test-designer | Gate C | done (Gate E passed 2026-11-11) |
+| P4-10b | Implement `ai_usage.cleanup` (`--dry-run`, `--apply --approved-by`; deletes `pending` attempts older than 24 h in `ai_service_attempts`, resets `ai_usage_coverage` per plan; permanent, no archive, no restore). The developer never runs `--apply` on a real database | developer | P4-10a | done (Gate E passed 2026-11-11) |
+| P4-10c | **Human approval gate:** run `--dry-run` on the target database, review the per-feature row counts and coverage changes, then approve (or run) `--apply` with `--approved-by`. Irreversible | human | P4-10b, Gate E | done (Gate E passed 2026-11-11) |
+| P4-9 | Verify (SHR-01/02/05, hook isolation, retention, no content in new tables); fix rounds | verifier, developer | P4-8 | done (Gate E passed 2026-11-11) |
 
 ## Phase 5: delete old (Gate F: review the deletion list first)
 | # | Task | Owner agent | Depends on | Status |

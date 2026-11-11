@@ -1,0 +1,4 @@
+feature_run_id,invocation_id,role,effort,tool,session_id,agent_id,started_at,finished_at
+2026-11-11-ADM07-04,2026-11-11-ADM07-04-orchestrator-01,orchestrator,inherited,claude,c8510304-1c49-45dc-9093-1e1487c6b8b8,,2026-11-11T20:40:36+08:00,
+2026-11-11-ADM07-04,2026-11-11-ADM07-04-spec-writer-01,spec-writer,inherited,claude,c8510304-1c49-45dc-9093-1e1487c6b8b8,,2026-11-11T20:40:36+08:00,
+2026-11-11-ADM07-04,2026-11-11-ADM07-04-verifier-01,verifier,inherited,claude,c8510304-1c49-45dc-9093-1e1487c6b8b8,,2026-11-11T20:40:36+08:00,
