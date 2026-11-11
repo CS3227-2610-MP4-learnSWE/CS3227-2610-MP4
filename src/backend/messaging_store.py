@@ -41,12 +41,27 @@ def eligible(db, role):
     return db.scalars(select(User).where(User.role == role, User.access_status == "enabled", User.archived_at.is_(None))).all()
 
 
+def replyable():
+    """SQL conditions for an account a feedback reply can be sent to (one rule for the reply and the follow-up count)."""
+    return (User.role.in_(("student", "teacher")), User.access_status == "enabled", User.archived_at.is_(None))
+
+
 def response_recipient(db, response_id):
     response = db.get(FeedbackResponse, valid.identifier(response_id))
-    user = db.get(User, response.user_id) if response else None
-    if user is None or user.role not in {"student", "teacher"} or user.access_status != "enabled" or user.archived_at is not None:
+    user = db.scalar(select(User).where(User.id == response.user_id, *replyable())) if response else None
+    if user is None:
         raise fail("RECIPIENT_UNAVAILABLE")
     return response, user
+
+
+def unanswered_response_count(db):
+    """Feedback responses from reachable respondents that no sent feedback_response message answers yet."""
+    answered = select(AdminMessage.id).where(
+        AdminMessage.kind == "feedback_response", AdminMessage.source_feedback_response_id == FeedbackResponse.id
+    )
+    return db.scalar(
+        select(func.count()).select_from(FeedbackResponse).join(User, User.id == FeedbackResponse.user_id).where(*replyable(), ~answered.exists())
+    )
 
 
 def create_preview(db, actor, body):

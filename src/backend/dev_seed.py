@@ -14,6 +14,7 @@ STEPS = (
     "auth.seed",                # sign-in credentials from SEED_*_EMAIL / SEED_*_PASSWORD
     "study_lessons.seed",       # sample lessons
     "teacher_publications.seed",  # a published practice set
+    "feedback_dev_seed",           # one open feedback form with a response per seeded student
     "feature_analytics.seed_dev",  # a week of activity for the Feature Analytics hub
     ("ai_usage.activate", "--feature", "STU-03", "--feature", "TEA-02"),  # AI usage counting on from now
 )
