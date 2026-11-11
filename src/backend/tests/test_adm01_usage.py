@@ -87,7 +87,10 @@ def test_adm01_ac5_the_usage_report_has_exactly_the_documented_top_level_shape(a
     w = new_window()
     chat_row(student(tracked_users), w.at(1))
     body = usage(analytics_admin, w)
-    assert set(body) == {"period_start", "period_end", "recording_started_on", "chatbot", "practice_completion"}
+    # ADM-07 P2-5: the kept endpoint gains `data_starts_on` (partial coverage); no other top-level change.
+    assert set(body) == {"period_start", "period_end", "recording_started_on", "data_starts_on", "chatbot",
+                         "practice_completion"}
+    assert body["data_starts_on"] is None
     assert set(body["chatbot"]) == {"student", "teacher", "total"}
     assert (body["period_start"], body["period_end"]) == (w.start, w.end)
     assert re.fullmatch(r"\d{4}-\d{2}-\d{2}", body["recording_started_on"])
@@ -358,7 +361,11 @@ def test_adm01_ac12_a_period_starting_before_recording_is_unavailable_for_every_
     assert pc["started"] is None and pc["submitted"] is None and pc["percentage"] is None
 
 
-def test_adm01_ac12_the_recording_date_itself_is_covered_and_the_day_before_is_not(analytics_admin, tracked_users, recording_start):
+def test_adm01_ac12_the_recording_date_itself_is_covered_and_the_day_before_is_partly_covered(analytics_admin, tracked_users, recording_start):
+    """ADM-07 P2-5 update. Reason: ADM-07 AC39 (decided partial coverage) replaces the whole-metric
+    `period_before_recording` rule of ADM-01 AC12 when only the START of the period precedes recording.
+    The period starting one day before recording is now computed from the recording date and carries
+    `data_starts_on`; a period ENDING before recording is still `unavailable` (kept below)."""
     from datetime import timedelta
 
     w = new_window(2)
@@ -369,12 +376,19 @@ def test_adm01_ac12_the_recording_date_itself_is_covered_and_the_day_before_is_n
     assert inside["recording_started_on"] == w.start
     assert inside["chatbot"]["student"]["state"] == "available"
     assert inside["chatbot"]["student"]["successful"] == 1
+    assert inside["data_starts_on"] is None
     day_before = (w.first - timedelta(days=1)).isoformat()
-    outside = call("GET", url(USAGE, period_start=day_before, period_end=w.end), analytics_admin).json()
-    assert outside["recording_started_on"] == w.start
-    assert outside["chatbot"]["student"]["state"] == "unavailable"
-    assert outside["chatbot"]["student"]["reason"] == "period_before_recording"
-    assert outside["practice_completion"]["state"] == "unavailable"
+    chat_row(a, w.start_dt - timedelta(hours=2), "failure", activity_type=None)  # before recording: not counted
+    partial = call("GET", url(USAGE, period_start=day_before, period_end=w.end), analytics_admin).json()
+    assert partial["recording_started_on"] == w.start and partial["data_starts_on"] == w.start
+    assert partial["chatbot"]["student"]["state"] == "available"
+    assert (partial["chatbot"]["student"]["successful"], partial["chatbot"]["student"]["unsuccessful"]) == (1, 0)
+    assert partial["practice_completion"]["state"] in ("available", "not_applicable")
+    before_all = call("GET", url(USAGE, period_start=(w.first - timedelta(days=5)).isoformat(),
+                                 period_end=day_before), analytics_admin).json()
+    assert before_all["chatbot"]["student"]["state"] == "unavailable"
+    assert before_all["chatbot"]["student"]["reason"] == "period_before_recording"
+    assert before_all["practice_completion"]["state"] == "unavailable"
 
 
 @pytest.mark.parametrize("failing,still_ok", [("chat_counts", "practice_completion"),
