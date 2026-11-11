@@ -40,7 +40,9 @@ def test_adm01_ac14_ac18_both_workflows_are_always_listed_in_order_even_with_no_
     assert [x["workflow"] for x in body["workflows"]] == ["study_notes", "mcq_batch"]
     assert [x["label"] for x in body["workflows"]] == ["Study notes", "MCQ batches"]
     assert (body["period_start"], body["period_end"]) == (w.start, w.end)  # the period behind every rate
-    assert set(body) == {"period_start", "period_end", "recording_started_on", "workflows"}
+    # ADM-07 P2-5: the kept endpoint gains `data_starts_on` (partial coverage); no other top-level change.
+    assert set(body) == {"period_start", "period_end", "recording_started_on", "data_starts_on", "workflows"}
+    assert body["data_starts_on"] is None
     for row in body["workflows"]:
         assert row["state"] == "not_applicable" and row["reason"] == "no_generation_attempts"
         assert row["attempts"] == 0 and row["successful"] == 0 and row["unsuccessful"] == 0  # counts are 0, not null

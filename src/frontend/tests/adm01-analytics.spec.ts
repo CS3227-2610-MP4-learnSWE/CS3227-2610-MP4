@@ -164,12 +164,11 @@ test("adm01 AC40 page title, purpose, panels, period fields and the navigation l
       exact: true,
     }),
   ).toBeVisible();
-  // the new link next to the unchanged demo-dashboard link (plan decision 10)
-  const link = page.getByRole("link", {
-    name: "Feature analytics",
-    exact: true,
-  });
-  await expect(link).toHaveAttribute("href", PATH);
+  // ADM-07 P2-5 (reason: the legacy page has no nav link; the hub link "Feature Analytics" now owns
+  // /admin/analytics). The demo-dashboard link "Analytics" is unchanged.
+  await expect(
+    page.getByRole("link", { name: "Feature Analytics", exact: true }),
+  ).toHaveAttribute("href", "/admin/analytics");
   await expect(
     page.getByRole("link", { name: "Analytics", exact: true }),
   ).toHaveAttribute("href", "/admin/overview");
@@ -896,10 +895,12 @@ test("adm01 AC42 switching the workflow tab sends one quality request and replac
 }) => {
   const mock = await setup(page);
   await page.goto("/admin/overview");
-  await page
-    .getByRole("link", { name: "Feature analytics", exact: true })
-    .click(); // push
-  await expect(page).toHaveURL(/\/admin\/analytics/);
+  // ADM-07 P2-5 (reason: no nav link to the legacy page): enter it by a push navigation instead.
+  await page.evaluate((to) => {
+    window.history.pushState({}, "", to);
+    window.dispatchEvent(new PopStateEvent("popstate"));
+  }, PATH); // push
+  await expect(page).toHaveURL(/\/admin\/feature-analytics-legacy/);
   await loaded(page);
   const before = mock.count();
   await tab(page, "Teacher lesson planning").click();

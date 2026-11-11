@@ -8,7 +8,8 @@ import { ADMIN, mockAuthApi, type AuthApiMock, type User } from "./authApi";
  * then the feature routes).
  */
 
-export const PATH = "/admin/analytics";
+// ADM-07 P2-5: the ADM-01 page moved unchanged to this path (no nav link); the hub owns /admin/analytics.
+export const PATH = "/admin/feature-analytics-legacy";
 export const API = "/api/admin/analytics";
 
 export type Kind = "usage" | "generation" | "quality" | "start" | "run";
