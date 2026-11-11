@@ -738,6 +738,118 @@ Acceptance criteria:
 - **Safeguards:** Only admins can see the page; shared accessibility, loading, empty-state and error criteria apply.
 
 
+### ADM-08 — Feedback hub
+
+Merges and supersedes ADM-02, ADM-03 and ADM-04 once approved: one admin area, "Feedback hub", with tabs Forms, Responses, Analysis and Follow-up. The screens and rules of those features are unchanged; the hub changes where they live and how they link. Real data only. Student and teacher survey forms and inboxes are unchanged.
+
+#### US-ADM-08-01 — Find all feedback tools in one place
+
+As an admin, I want one Feedback hub with tabs for forms, responses, analysis and follow-up so that I can run the whole feedback loop from one place.
+
+Acceptance criteria:
+
+- **Hub and tabs:** One admin page, "Feedback hub", has four tabs: Forms, Responses, Analysis and Follow-up. The selected tab and screen are shown in the address, so any screen can be bookmarked, refreshed and reopened.
+- **Same behaviour:** Every task in the tabs behaves as in US-ADM-08-02 to US-ADM-08-08 (copied from the earlier stories); the hub changes where things are, not what they do.
+- **Navigation:** Links between screens stay inside the hub; Back and Forward move between screens; leaving a form with unsaved changes asks first.
+- **Tab counts:** Each tab shows a small count (open forms on Forms, submitted responses on Responses, saved analyses on Analysis, feedback responses still without a reply on Follow-up) that is also announced to screen readers; a count that cannot be loaded is simply not shown and never blocks a tab. Counts load when the hub opens and are refreshed after my own changes that affect them (for example publishing a form, deleting a response or sending a reply), not when I switch tabs; changes made by other people appear the next time I open the hub.
+- **Shortcut to analysis:** From a form's submitted responses, the admin can choose "Analyse this form" to open the Analysis tab with that form already selected; nothing is generated until the admin chooses to.
+- **Failure isolation:** A screen that fails to load shows its own message and retry; the tab bar and the other tabs stay usable.
+- **Safeguards:** Only admins can see the hub and use its data; shared accessibility, loading, empty-state and error criteria apply.
+
+#### US-ADM-08-02 — Draft a feedback form
+
+As an admin, I want to create and save an unpublished feedback form using common survey question types so that I can prepare a focused survey before distributing it.
+
+Acceptance criteria (copied from US-ADM-02-01):
+
+- **Supported question types:** I can add short-answer and paragraph text questions; multiple-choice and dropdown questions that accept one answer; checkbox questions that accept multiple answers; and linear-scale questions where a respondent selects one value within the scale's configured range.
+- **Choice options:** For multiple-choice, dropdown, and checkbox questions, I can enter the answer options respondents can choose from.
+- **Linear-scale setup:** For a linear-scale question, I can configure its range and optionally label its endpoints.
+- **Required questions:** I can mark each question required or optional. Respondents cannot submit a form while a required question is unanswered.
+- **Form association:** I can optionally associate the form with a feature or lesson.
+- **Persistence:** When I save and reopen a draft, its questions, required-field settings, and optional association are unchanged.
+- **Publication restriction:** A draft is unpublished and cannot be opened for response submission, including by direct request.
+- **Scope boundary:** Drafting does not send inbox requests or make the form available to respondents; publication and recipient selection are covered by US-ADM-08-03.
+
+#### US-ADM-08-03 — Publish a targeted form and close collection
+
+As an admin, I want to select students or teachers as the audience for a form and publish it so that the intended users can provide feedback, and to close it when collection has ended.
+
+Acceptance criteria (copied from US-ADM-02-02 and US-ADM-02-03):
+
+- **Audience review:** Before publication, I can review whether the form is being sent to the selected student or teacher audience.
+- **Inbox delivery:** Publishing creates an in-app inbox request with a link to the form for each intended recipient.
+- **Access restriction:** While the form is open, only intended recipients can view and submit it; other users are denied through both the interface and direct requests.
+- **Submission eligibility:** A form can receive responses only after publication and before it is closed.
+- **Scope boundary:** This story distributes the form request; it does not cover composing a separate follow-up message or announcement (US-ADM-08-07 and US-ADM-08-08).
+- **State change:** I can close a published form to end response collection.
+- **Submission restriction:** After closure, the form rejects new responses through both the interface and direct requests, including requests from intended recipients.
+- **Existing data:** Closing the form preserves responses already submitted; authorised admins can still review them.
+- **Scope boundary:** Closing does not delete the form or its responses. Reopening a closed form is outside this story.
+
+#### US-ADM-08-04 — Review collected responses
+
+As an admin, I want to review the responses to a feedback form so that I can understand what respondents submitted.
+
+Acceptance criteria (copied from US-ADM-02-04, plus the response delete approved with ADM-03 on 2026-11-09):
+
+- **Response association:** Each submitted response is shown with its form and the questions it answers.
+- **Question snapshot:** The wording and required status of each question at the time of submission remain available with the response; later form edits do not alter that record.
+- **Access restriction:** Only an authorised admin can review collected responses.
+- **Scope boundary:** This story provides direct review of form responses. It does not generate AI summaries or select evidence for an analysis (US-ADM-08-05).
+- **Delete a response (carried from the approved ADM-03 amendment):** An admin can permanently delete a submitted response after confirming. Nothing else is changed except that the respondent may submit again while the form is open; stored analyses stay readable and links to the deleted response show that it is no longer available.
+
+#### US-ADM-08-05 — Generate a feedback analysis
+
+As an admin, I want AI to analyse feedback responses that I select and am authorised to review so that I can identify recurring issues and possible improvements.
+
+Acceptance criteria (copied from US-ADM-03-01):
+
+- **Input selection:** I can select responses for analysis, and the analysis uses only selected responses that I am authorised to review.
+- **Result sections:** The result contains a summary, recurring issues grouped by theme, and suggested improvements.
+- **Fact versus suggestion:** The result distinguishes issues reported in the selected feedback from AI-generated suggestions.
+- **Evidence references:** Each grouped issue includes references to supporting responses in the selected input. A suggestion presented as based on specific feedback also references its supporting responses; a suggestion without such evidence is identified as an AI suggestion, not a reported finding.
+- **Empty input:** If no responses are selected, the system does not generate an analysis and tells me that a selection is required.
+- **Failure states:** If a request limit is reached or analysis fails, the system tells me which occurred and does not present a partial or failed result as complete.
+- **Scope boundary:** Analysis is advisory only; it does not edit forms or responses, send messages, or apply suggested changes.
+- **Statistics and history (carried from the approved ADM-03 spec):** Statistics are shown at once and independently of the AI step; I can see my previous analyses and permanently delete my own.
+
+#### US-ADM-08-06 — Review supporting feedback
+
+As an admin, I want to open the feedback responses cited by an AI finding so that I can check the evidence before deciding what to do.
+
+Acceptance criteria (copied from US-ADM-03-02):
+
+- **Reference target:** Selecting a supporting-response reference opens the exact response cited by that finding.
+- **Access restriction:** The response is displayed only if I remain authorised to access it; an invalid, deleted, or inaccessible reference does not reveal response content.
+- **Scope boundary:** This story opens only responses cited by an analysis. Browsing all responses for a form is covered by US-ADM-08-04.
+- **No side effects:** Opening a finding or response does not send a message or modify the analysis, form, or response.
+
+#### US-ADM-08-07 — Send a feedback response
+
+As an admin, I want to compose, review, and send a message to an individual feedback submitter so that I can explain how their feedback is being addressed.
+
+Acceptance criteria (copied from US-ADM-04-01):
+
+- **Recipient scope:** I can address a response to the individual who submitted the selected feedback; the recipient is shown before sending.
+- **Message review:** I can review the message content before confirming the send action.
+- **Delivery:** After sending, the message appears as unread in that recipient’s in-app inbox.
+- **Privacy restriction:** The message does not include or expose other respondents’ private responses.
+- **Scope boundary:** This is a one-to-one follow-up, not a group announcement; group announcements are covered by US-ADM-08-08. Email and push delivery are outside the MVP.
+
+#### US-ADM-08-08 — Send a targeted announcement
+
+As an admin, I want to review and send an announcement to a selected student or teacher audience so that I can share relevant improvements with those users.
+
+Acceptance criteria (copied from US-ADM-04-02):
+
+- **Audience review:** Before sending, I can review whether the selected audience is students or teachers.
+- **Message review:** I can review the announcement content before confirming the send action.
+- **Delivery:** The announcement appears as unread in the in-app inbox of each intended recipient.
+- **Access restriction:** Only intended recipients can access the announcement, including through direct requests.
+- **Scope boundary:** An announcement is a shared message to an audience, not a response to an individual submission (US-ADM-08-07). Email and push delivery are outside the MVP.
+
+
 ## Nice-to-have stories — outside the MVP
 
 ### OPT-01 — Run code against test cases
