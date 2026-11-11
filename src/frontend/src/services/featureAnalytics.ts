@@ -182,14 +182,6 @@ export function isoDay(date: Date): string {
   return date.toISOString().slice(0, 10);
 }
 
-/** The last 30 UTC days, today included. */
-export function defaultPeriod(): Period {
-  const today = new Date();
-  const start = new Date(today);
-  start.setUTCDate(start.getUTCDate() - 29);
-  return { from: isoDay(start), to: isoDay(today) };
-}
-
 export type PeriodErrors = { from?: string; to?: string };
 
 /** The same three messages as the server, checked in the same order. */
