@@ -16,7 +16,9 @@ import leak_check
 from attempt_store import Attempt, store
 from companion_schemas import CompanionMessageIn, CompanionReplyOut, ContextIn, SourceOut
 from errors import ApiError
-from feature_analytics import GradingContent, record_chat_request_outcome, record_chat_request_received
+from feature_analytics import (
+    GradingContent, categorize_llm_error, record_chat_request_outcome, record_chat_request_received,
+)
 from lesson_provider import LessonProvider, LessonText, get_lesson_provider
 from llm_client import (
     LlmBadResponse,
@@ -178,12 +180,13 @@ def post_message(
     # ADM-01: one chat request is recorded once it reaches the chatbot; every exit below records one outcome.
     # The hooks never raise, so the response is the same whatever they do.
     request_id = record_chat_request_received(user_id=student, **_activity(attempt, viewed))
-    success, graded = False, None
+    success, graded, category = False, None, None
     try:
         try:
             with usage_feature("STU-03"):
                 reply = llm.complete(messages, max_tokens=config.MAX_TOKENS[plan.mode], caller_id=student)
         except LlmError as exc:
+            category = categorize_llm_error(exc)
             error = _map_error(exc)
             _log(plan.mode, error.code, started, lessons=len(plan.lessons))
             raise error from None
@@ -226,5 +229,6 @@ def post_message(
         return CompanionReplyOut(reply=reply.text, mode=plan.mode, withheld=False)
     finally:
         record_chat_request_outcome(request_id, success=success, grading=graded,
+                                    failure_category=None if success else category,
                                     source="student_hint" if plan.mode == "hint" else "student_explanation",
                                     identity_values=(user.id, user.email or "", user.display_name))

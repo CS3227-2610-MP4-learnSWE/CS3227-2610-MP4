@@ -9,15 +9,19 @@ from sqlalchemy import and_, func, or_, select
 
 from feature_analytics import config, privacy
 from feature_analytics.health import (
-    finished_state, median_half_up, percentile_nearest_rank, rate_percent, round_half_up, severity)
+    finished_state, median_half_up, median_one_decimal, percentile_nearest_rank, rate_percent, severity)
 from feature_analytics.models import (
     AnalyticsChatRequest as Chat,
     AnalyticsGenerationAttempt as Generation,
     AnalyticsGrade as Grade,
     AnalyticsGradingItem as Item,
     AnalyticsGradingRun as Run,
+    AnalyticsLoginEvent as Login,
     AnalyticsMeta,
     AnalyticsPracticeAttempt as Attempt,
+    AnalyticsPracticeDraftStarted as Draft,
+    AnalyticsPracticePublished as Published,
+    AnalyticsRequestLog as RequestLog,
     AnalyticsSession as Session,
 )
 from feature_analytics.periods import Window
@@ -26,6 +30,7 @@ from timestamps import utc_timestamp
 
 BEFORE_RECORDING = "period_before_recording"
 GENERATION_LABELS = {"study_notes": "Study notes", "mcq_batch": "MCQ batches"}
+GENERATION_KIND_OF = {"study_notes": "generation_notes", "mcq_batch": "generation_mcq"}
 ACTIVE_STATUSES = ("queued", "running")
 GRADABLE_STATUSES = ("pending", "grading_failed")
 
@@ -46,9 +51,9 @@ def _in_window(column, window: Window) -> list:
     return [column >= window.start_utc, column < window.end_utc_exclusive]
 
 
-def recording_started_on(db) -> date:
-    """The UTC date of the first recording (analytics_meta); a missing row counts as 'always recorded'."""
-    value = db.scalar(select(AnalyticsMeta.value).where(AnalyticsMeta.key == "recording_started_at"))
+def recording_started_on(db, key: str = "recording_started_at") -> date:
+    """The UTC date a source started recording (analytics_meta); a missing row counts as 'always recorded'."""
+    value = db.scalar(select(AnalyticsMeta.value).where(AnalyticsMeta.key == key))
     if value is None:
         return date.min
     parsed = datetime.fromisoformat(value)
@@ -64,9 +69,9 @@ class Cover:
     reason: str | None
 
 
-def _cover(db, window: Window, floor: datetime | None = None) -> Cover:
-    """Partial coverage (ADM-07): the metric covers [max(period start, recording start, floor), period end]."""
-    source = datetime.combine(recording_started_on(db), time.min, tzinfo=timezone.utc)
+def _cover(db, window: Window, floor: datetime | None = None, key: str = "recording_started_at") -> Cover:
+    """Partial coverage (ADM-07): the metric covers [max(period start, source start, floor), period end]."""
+    source = datetime.combine(recording_started_on(db, key), time.min, tzinfo=timezone.utc)
     start = max(window.start_utc, source, floor or window.start_utc)
     if start >= window.end_utc_exclusive:
         reason = "beyond_retention" if floor is not None and floor >= source else BEFORE_RECORDING
@@ -112,7 +117,7 @@ def practice_unavailable(reason: str) -> dict:
     return metric("unavailable", reason, started=None, submitted=None, percentage=None)
 
 
-# Phase 2: limiter refusals are not recorded, so requests equal attempts and the rate-limited count is unavailable.
+# Shape of an unavailable (not collected) rate-limited count.
 RATE_LIMITED_NOT_COLLECTED = {"state": "unavailable", "reason": "not_collected"}
 
 
@@ -204,6 +209,7 @@ def practice_completion(db, window: Window) -> dict:
 # ---- generation ----
 
 def generation_rates(db, window: Window) -> list[dict]:
+    """Accepted attempts plus limiter-refused requests (request log) per workflow; refusals are never attempts."""
     cover = _cover(db, window)
     if cover.reason:
         return generation_unavailable(cover.reason)
@@ -213,20 +219,28 @@ def generation_rates(db, window: Window) -> list[dict]:
             .where(*_in_window(Generation.accepted_at, cover.window)).group_by(Generation.workflow)
         ).all()
     }
+    log_cover = _log_cover(db, window, CATEGORIES_KEY)
+    refused: dict[str, int] = {}
+    if not log_cover.reason:
+        refused = dict(db.execute(
+            select(RequestLog.kind, func.count())
+            .where(RequestLog.kind.in_(GENERATION_KINDS), RequestLog.failure_category == "rate_limited",
+                   *_in_window(RequestLog.occurred_at, log_cover.window)).group_by(RequestLog.kind)).all())
+    state = ({"state": "unavailable", "reason": log_cover.reason} if log_cover.reason
+             else {"state": "available", "reason": None})
     result = []
     for workflow, label in GENERATION_LABELS.items():
         attempts, successful = found.get(workflow, (0, 0))
-        if attempts == 0:
-            result.append(metric("not_applicable", "no_generation_attempts", cover.starts_on, workflow=workflow, label=label,
-                                 attempts=0, requests=0, rate_limited=None,
-                                 rate_limited_state=RATE_LIMITED_NOT_COLLECTED, successful=0, unsuccessful=0,
-                                 rate_percent=None))
+        limited = None if log_cover.reason else refused.get(GENERATION_KIND_OF[workflow], 0)
+        requests = attempts + (limited or 0)
+        fields = dict(workflow=workflow, label=label, attempts=attempts, requests=requests, rate_limited=limited,
+                      rate_limited_state=state, successful=successful, unsuccessful=requests - successful)
+        if requests == 0:
+            result.append(metric("not_applicable", "no_generation_attempts", cover.starts_on, rate_percent=None,
+                                 **fields))
         else:
-            result.append(metric("available", None, cover.starts_on, workflow=workflow, label=label, attempts=attempts,
-                                 requests=attempts, rate_limited=None,
-                                 rate_limited_state=RATE_LIMITED_NOT_COLLECTED,
-                                 successful=successful, unsuccessful=attempts - successful,
-                                 rate_percent=round(successful / attempts * 100, 1)))
+            result.append(metric("available", None, cover.starts_on, rate_percent=round(successful / requests * 100, 1),
+                                 **fields))
     return result
 
 
@@ -407,7 +421,7 @@ def active_run(db) -> dict | None:
     return None if row is None else run_object(row)
 
 
-# ---- ADM-07 hub: health, hourly, daily and per-user reads (phase 2: existing tables only) ----
+# ---- ADM-07 hub: health, hourly, daily and per-user reads (request log and event tables) ----
 
 HOUR = timedelta(hours=1)
 IN_PROGRESS = "in_progress"
@@ -417,25 +431,37 @@ def _utc_date(value: datetime) -> date:
     return value.astimezone(timezone.utc).date()
 
 
-def _requests(db, at_column, model, scope: list, window: Window, now: datetime) -> list[tuple[datetime, str, int | None]]:
-    """(time, state, duration_ms) of each request of a source, with the in-progress rule applied at `now`."""
+REQUEST_LOG_KEY = "request_log_started_at"
+CATEGORIES_KEY = "request_log_categories_started_at"
+CHATBOT_KINDS = ("chatbot",)
+GENERATION_KINDS = ("generation_notes", "generation_mcq")
+
+
+def _retention_floor(now: datetime) -> datetime:
+    """Request-log rows older than this are purged, so reads ignore them even before the purge ran."""
+    return now.replace(minute=0, second=0, microsecond=0) - timedelta(days=config.HOURLY_RETENTION_DAYS)
+
+
+def _log_cover(db, window: Window, key: str = REQUEST_LOG_KEY) -> Cover:
+    return _cover(db, window, _retention_floor(_now()), key)
+
+
+def _log_requests(db, kinds: tuple[str, ...], window: Window,
+                  now: datetime) -> list[tuple[datetime, str, int | None, str | None]]:
+    """(time, state, duration_ms, category) of each logged request, with the in-progress rule applied at `now`.
+    An expired pending row is a timeout failure of 120 000 ms; a success has no category."""
     rows = db.execute(
-        select(at_column, model.outcome, model.duration_ms).where(*scope, *_in_window(at_column, window))
+        select(RequestLog.occurred_at, RequestLog.outcome, RequestLog.duration_ms, RequestLog.failure_category)
+        .where(RequestLog.kind.in_(kinds), *_in_window(RequestLog.occurred_at, window))
     ).all()
     expired_ms = config.IN_PROGRESS_EXPIRY_S * 1000
     result = []
-    for at, outcome, duration in rows:
+    for at, outcome, duration, category in rows:
         state = finished_state(outcome, at, now)
-        result.append((at, state, expired_ms if outcome == "pending" and state == "failure" else duration))
+        if outcome == "pending" and state == "failure":
+            duration, category = expired_ms, "timeout"
+        result.append((at, state, duration, category))
     return result
-
-
-def _chat_requests(db, window: Window, now: datetime) -> list:
-    return _requests(db, Chat.received_at, Chat, [Chat.role == "student"], window, now)
-
-
-def _generation_requests(db, window: Window, now: datetime) -> list:
-    return _requests(db, Generation.accepted_at, Generation, [], window, now)
 
 
 def failure_unavailable(reason: str, **extra) -> dict:
@@ -444,9 +470,9 @@ def failure_unavailable(reason: str, **extra) -> dict:
 
 
 def _failure_tile(requests: list, starts_on: str | None, empty_reason: str, **extra) -> dict:
-    in_progress = sum(1 for _, state, _ in requests if state == IN_PROGRESS)
+    in_progress = sum(1 for _, state, *_ in requests if state == IN_PROGRESS)
     total = len(requests) - in_progress
-    failed = sum(1 for _, state, _ in requests if state == "failure")
+    failed = sum(1 for _, state, *_ in requests if state == "failure")
     if total == 0:
         return metric("not_applicable", empty_reason, starts_on, total=0, failed=0, in_progress=in_progress,
                       rate_percent=None, severity=None, **extra)
@@ -455,18 +481,18 @@ def _failure_tile(requests: list, starts_on: str | None, empty_reason: str, **ex
 
 
 def health_chatbot(db, window: Window) -> dict:
-    cover = _cover(db, window)
+    cover = _log_cover(db, window)
     if cover.reason:
         return failure_unavailable(cover.reason)
-    return _failure_tile(_chat_requests(db, cover.window, _now()), cover.starts_on, "no_chat_requests")
+    return _failure_tile(_log_requests(db, CHATBOT_KINDS, cover.window, _now()), cover.starts_on, "no_chat_requests")
 
 
 def health_generation(db, window: Window) -> dict:
-    cover = _cover(db, window)
+    cover = _log_cover(db, window)
     if cover.reason:
-        return failure_unavailable(cover.reason, includes_rate_limited=False)
-    return _failure_tile(_generation_requests(db, cover.window, _now()), cover.starts_on,
-                         "no_generation_attempts", includes_rate_limited=False)
+        return failure_unavailable(cover.reason, includes_rate_limited=True)
+    return _failure_tile(_log_requests(db, GENERATION_KINDS, cover.window, _now()), cover.starts_on,
+                         "no_generation_attempts", includes_rate_limited=True)
 
 
 def rate_limited_unavailable(reason: str) -> dict:
@@ -474,8 +500,15 @@ def rate_limited_unavailable(reason: str) -> dict:
 
 
 def health_rate_limited(db, window: Window) -> dict:
-    """Phase 2: limiter refusals are not recorded yet, so the tile is unavailable rather than zero."""
-    return rate_limited_unavailable("not_collected")
+    """Limiter refusals among all finished logged requests, from the date categories became real; 0 is available."""
+    cover = _log_cover(db, window, CATEGORIES_KEY)
+    if cover.reason:
+        return rate_limited_unavailable(cover.reason)
+    finished = [r for r in _log_requests(db, CHATBOT_KINDS + GENERATION_KINDS, cover.window, _now())
+                if r[1] != IN_PROGRESS]
+    since = recording_started_on(db, CATEGORIES_KEY)
+    return metric("available", None, cover.starts_on, since=since.isoformat() if since != date.min else None,
+                  count=sum(1 for r in finished if r[3] == "rate_limited"), total_requests=len(finished))
 
 
 def _time_set(values: list[int]) -> dict:
@@ -490,8 +523,8 @@ def response_time_tile_unavailable(reason: str) -> dict:
 
 def _response_time_tile(requests: list, starts_on: str | None, empty_reason: str) -> dict:
     """Three sets over finished requests with a duration; in-progress rows and rows without a duration are in none."""
-    ok = [d for _, state, d in requests if state == "success" and d is not None]
-    bad = [d for _, state, d in requests if state == "failure" and d is not None]
+    ok = [d for _, state, d, _ in requests if state == "success" and d is not None]
+    bad = [d for _, state, d, _ in requests if state == "failure" and d is not None]
     sets = {"all": _time_set(ok + bad), "successful": _time_set(ok), "failed": _time_set(bad)}
     if not ok and not bad:
         return metric("not_applicable", empty_reason, starts_on, **sets)
@@ -499,17 +532,18 @@ def _response_time_tile(requests: list, starts_on: str | None, empty_reason: str
 
 
 def health_chatbot_response_time(db, window: Window) -> dict:
-    cover = _cover(db, window)
+    cover = _log_cover(db, window)
     if cover.reason:
         return response_time_tile_unavailable(cover.reason)
-    return _response_time_tile(_chat_requests(db, cover.window, _now()), cover.starts_on, "no_chat_requests")
+    return _response_time_tile(_log_requests(db, CHATBOT_KINDS, cover.window, _now()), cover.starts_on,
+                               "no_chat_requests")
 
 
 def health_generation_response_time(db, window: Window) -> dict:
-    cover = _cover(db, window)
+    cover = _log_cover(db, window)
     if cover.reason:
         return response_time_tile_unavailable(cover.reason)
-    return _response_time_tile(_generation_requests(db, cover.window, _now()), cover.starts_on,
+    return _response_time_tile(_log_requests(db, GENERATION_KINDS, cover.window, _now()), cover.starts_on,
                                "no_generation_attempts")
 
 
@@ -524,32 +558,35 @@ def hourly_unavailable(reason: str) -> dict:
 
 
 def hourly(db, window: Window) -> dict:
-    """One bucket per UTC hour from the effective start; phase 2 counts chatbot and generation requests together."""
+    """One bucket per UTC hour from the effective start; chatbot and generation requests together, with categories."""
     now = _now()
-    floor = now.replace(minute=0, second=0, microsecond=0) - timedelta(days=config.HOURLY_RETENTION_DAYS)
-    cover = _cover(db, window, floor)
+    cover = _log_cover(db, window)
     if cover.reason:
         return hourly_unavailable(cover.reason)
     start = cover.window.start_utc
     count = (window.end_utc_exclusive - start) // HOUR
     successful, failed = [0] * count, [0] * count
+    by_category = [dict.fromkeys(CATEGORIES, 0) for _ in range(count)]
     in_progress = 0
-    for at, state, _ in _chat_requests(db, cover.window, now) + _generation_requests(db, cover.window, now):
+    for at, state, _, category in _log_requests(db, CHATBOT_KINDS + GENERATION_KINDS, cover.window, now):
         if state == IN_PROGRESS:
             in_progress += 1
+            continue
+        index = (at - start) // HOUR
+        if state == "success":
+            successful[index] += 1
         else:
-            (successful if state == "success" else failed)[(at - start) // HOUR] += 1
+            failed[index] += 1
+            by_category[index][category if category in CATEGORIES else "unclassified"] += 1
     buckets = []
     for i in range(count):
         total = successful[i] + failed[i]
-        by_category = dict.fromkeys(CATEGORIES, 0)
-        by_category["unclassified"] = failed[i]  # categories are not recorded before phase 4
         buckets.append({"hour_start": iso(start + i * HOUR), "successful": successful[i], "failed": failed[i],
                         "total": total, "failure_rate_percent": rate_percent(failed[i], total),
-                        "failed_by_category": by_category})
+                        "failed_by_category": by_category[i]})
     return metric("available", None, cover.starts_on, in_progress=in_progress,
                   retention_days=config.HOURLY_RETENTION_DAYS,
-                  category_breakdown={"state": "unavailable", "reason": "not_collected"},
+                  category_breakdown={"state": "available", "reason": None},
                   totals={"successful": sum(successful), "failed": sum(failed),
                           "total": sum(successful) + sum(failed)},
                   buckets=buckets)
@@ -572,16 +609,59 @@ def per_student_unavailable(reason: str) -> dict:
     return metric("unavailable", reason, per_day=[])
 
 
+LOGINS_KEY = "login_events_started_at"
+DRAFT_KEY = "practice_draft_started_started_at"
+PUBLISHED_KEY = "practice_published_started_at"
+
+
+def _series_days(cover: Cover, window: Window) -> list[date]:
+    return _days(_utc_date(cover.window.start_utc), window.period_end)
+
+
+def _since(db, key: str) -> str | None:
+    started = recording_started_on(db, key)
+    return None if started == date.min else started.isoformat()
+
+
 def daily_logins(db, window: Window) -> dict:
-    return daily_series_unavailable("logins", "not_collected")
+    cover = _cover(db, window, key=LOGINS_KEY)
+    if cover.reason:
+        return daily_series_unavailable("logins", cover.reason)
+    rows = db.execute(select(Login.occurred_at, Login.user_id, Login.role)
+                      .where(*_in_window(Login.occurred_at, cover.window))).all()
+    events: dict[date, list] = {}
+    for at, user_id, role in rows:
+        events.setdefault(_utc_date(at), []).append((user_id, role))
+    per_day = []
+    for day in _series_days(cover, window):
+        today = events.get(day, [])
+        students = {u for u, r in today if r == "student"}
+        teachers = {u for u, r in today if r == "teacher"}
+        student_logins = sum(1 for _, r in today if r == "student")
+        per_day.append({"date": day.isoformat(), "student_logins": student_logins,
+                        "teacher_logins": len(today) - student_logins, "total_logins": len(today),
+                        "active_students": len(students), "active_teachers": len(teachers),
+                        "active_users_total": len(students | teachers)})
+    return metric("available", None, cover.starts_on, since=_since(db, LOGINS_KEY), per_day=per_day,
+                  total_logins=len(rows))
+
+
+def _first_event_series(db, window: Window, name: str, key: str, column, field: str) -> dict:
+    cover = _cover(db, window, key=key)
+    if cover.reason:
+        return daily_series_unavailable(name, cover.reason)
+    counts = Counter(_utc_date(at) for (at,) in db.execute(select(column).where(*_in_window(column, cover.window))))
+    per_day = [{"date": d.isoformat(), field: counts[d]} for d in _series_days(cover, window)]
+    return metric("available", None, cover.starts_on, since=_since(db, key), per_day=per_day,
+                  total=sum(counts.values()))
 
 
 def daily_practice_drafts_started(db, window: Window) -> dict:
-    return daily_series_unavailable("practice_drafts_started", "not_collected")
+    return _first_event_series(db, window, "practice_drafts_started", DRAFT_KEY, Draft.started_at, "drafts_started")
 
 
 def daily_practice_published(db, window: Window) -> dict:
-    return daily_series_unavailable("practice_published", "not_collected")
+    return _first_event_series(db, window, "practice_published", PUBLISHED_KEY, Published.published_at, "published")
 
 
 def _days(first: date, last: date) -> list[date]:
@@ -626,9 +706,7 @@ def daily_attempts_per_student(db, window: Window) -> dict:
     per_day = []
     for day in _days(_utc_date(w.start_utc), window.period_end):
         counts = sorted(per_user.get(day, Counter()).values())
-        middle = len(counts) // 2
-        median = (None if not counts else float(counts[middle]) if len(counts) % 2
-                  else round_half_up((counts[middle - 1] + counts[middle]) / 2, 1))
+        median = median_one_decimal(counts)
         distribution = {str(n): counts.count(n) for n in (1, 2, 3, 4)}
         distribution["5_plus"] = sum(1 for n in counts if n >= 5)
         per_day.append({"date": day.isoformat(), "active_students": len(counts), "median_attempts": median,

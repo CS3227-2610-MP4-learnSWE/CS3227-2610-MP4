@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 
 from auth.dependencies import AuthUser, current_user
 from errors import ApiError
+from feature_analytics import record_practice_published
 from practice_schemas import public_set
 from set_provider import SetProvider, get_set_provider
 from study_lessons.models import PublishedLesson
@@ -172,7 +173,11 @@ async def publish(request: Request, identifier: str, kind: str):
                     raise
                 return JSONResponse(previous, status_code=200)
         payload = detail(db, row, kind)
+        source_id, teacher_id = str(source.id), teacher.id
         db.commit()
+        if kind == "practice_set":
+            # ADM-07: a set's first publication, keyed by its draft id like the draft-started event; repeats are no-ops.
+            record_practice_published(practice_set_id=source_id, teacher_id=teacher_id)
         return JSONResponse(payload, status_code=201)
 
 

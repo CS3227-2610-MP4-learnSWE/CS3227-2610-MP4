@@ -99,7 +99,7 @@ def health(period_start: str | None = None, period_end: str | None = None, _: Au
         "chatbot_failure": _read(db, lambda: queries.health_chatbot(db, window),
                                  queries.failure_unavailable("read_failed")),
         "generation_failure": _read(db, lambda: queries.health_generation(db, window),
-                                    queries.failure_unavailable("read_failed", includes_rate_limited=False)),
+                                    queries.failure_unavailable("read_failed", includes_rate_limited=True)),
         "rate_limited": _read(db, lambda: queries.health_rate_limited(db, window),
                               queries.rate_limited_unavailable("read_failed")),
         "chatbot_response_time": _read(db, lambda: queries.health_chatbot_response_time(db, window),
