@@ -26,6 +26,7 @@ from auth.passwords import (
 from auth.sessions import create_session, load_session, revoke_session
 from auth.settings import AuthSettings, load_settings
 from errors import ApiError
+from feature_analytics import record_login
 from teacher_materials.models import Course, User
 
 router = APIRouter(prefix="/api", tags=["auth"])
@@ -153,6 +154,7 @@ def login(request: Request, raw: bytes = Depends(raw_body), db: Session = Depend
     token, session_row = create_session(db, user, settings.session_ttl_seconds)
     response = JSONResponse({"user": AuthUser.from_row(user).as_json(), "csrf_token": session_row.csrf_token})
     response.set_cookie(value=token, max_age=settings.session_ttl_seconds, **_set_cookie_args(settings))
+    record_login(user_id=user.id, role=user.role)  # ADM-07: the hook never raises and ignores admins
     return response
 
 

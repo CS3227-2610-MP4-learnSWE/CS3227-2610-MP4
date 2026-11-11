@@ -1,10 +1,10 @@
 import { ApiError, request } from "./client";
 
 export const FEATURE_LABELS = {
-  "STU-03": "Student assistant (STU-03)",
-  "TEA-02": "Teacher generation (TEA-02)",
-  "ADM-03": "Feedback analysis (ADM-03)",
-  "ADM-01": "Feature analytics (ADM-01)",
+  "STU-03": "Student assistant",
+  "TEA-02": "Teacher generation",
+  "ADM-03": "Feedback analysis",
+  "ADM-01": "Feature analytics",
 } as const;
 export type Feature = keyof typeof FEATURE_LABELS;
 export type Filters = {
@@ -108,12 +108,34 @@ function metric(value: unknown): value is Metric {
         value.reason === null;
 }
 
-export async function readUsage(filters: Filters): Promise<UsageReport> {
+/** Features whose AI calls are counted; the switch below turns reporting on or off for all of them. */
+export const INTEGRATED: Feature[] = ["STU-03", "TEA-02"];
+
+/** Admin switch: turns AI usage collection on or off. Throws ApiError on failure. */
+export async function setCollection(enabled: boolean): Promise<void> {
+  await request(
+    "PUT",
+    "/api/admin/ai-usage/coverage",
+    { enabled },
+    { timeoutMs: 15_000, anyUnauthorized: true },
+  );
+}
+
+export async function readUsage(
+  filters: Filters,
+  signal?: AbortSignal,
+): Promise<UsageReport> {
   const data = await request(
     "GET",
     `/api/admin/ai-usage?${new URLSearchParams(filters)}`,
     undefined,
-    { timeoutMs: 15_000, distinguishTimeout: true, cache: "no-store" },
+    {
+      timeoutMs: 15_000,
+      distinguishTimeout: true,
+      cache: "no-store",
+      signal,
+      anyUnauthorized: true,
+    },
   );
   const features =
     filters.feature === "all" ? Object.keys(FEATURE_LABELS) : [filters.feature];

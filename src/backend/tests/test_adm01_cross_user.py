@@ -166,10 +166,13 @@ def test_adm01_ac39_the_published_api_declares_no_user_selecting_parameter(no_ai
     spec = r.json()
     ops = [(path, method, op) for path, item in spec["paths"].items() if path.startswith("/api/admin/analytics")
            for method, op in item.items() if method in ("get", "post")]
-    assert len(ops) == 5, [(p, m) for p, m, _ in ops]  # usage, generation, quality, start, read run
+    # ADM-07 P2-5: 4 new read endpoints (health, hourly, daily, chatbot-users) join the 5 ADM-01 ones.
+    assert len(ops) == 9, [(p, m) for p, m, _ in ops]
     banned = re.compile(r"user|student|teacher|email|role|owner|requested", re.I)
     for path, method, op in ops:
         for param in op.get("parameters", []):
+            if path.endswith("/chatbot-users") and param["name"] == "role":
+                continue  # ADM-07 plan: `role` selects the student/teacher table, never a user
             assert not banned.search(param["name"]), (path, method, param["name"])
         body = op.get("requestBody")
         if body:
@@ -183,11 +186,11 @@ def test_adm01_ac39_the_published_api_declares_no_user_selecting_parameter(no_ai
 HOOKS = {
     # plan decision 4: no `role` parameter (every recorded chat request is a student request)
     "record_chat_request_received": ([], {"user_id", "activity_type", "activity_ref", "received_at"}),
-    "record_chat_request_outcome": (["request_id"], {"success", "grading", "completed_at", "source", "identity_values"}),
+    "record_chat_request_outcome": (["request_id"], {"success", "grading", "completed_at", "source", "identity_values", "failure_category"}),  # ADM-07 P4: plan adds failure_category
     "record_practice_attempt_started": ([], {"user_id", "practice_set_id", "attempt_ref", "started_at"}),
     "record_practice_attempt_submitted": ([], {"attempt_ref", "submitted_at"}),
     "record_generation_accepted": ([], {"workflow", "user_id", "accepted_at"}),
-    "record_generation_outcome": (["attempt_id"], {"success", "grading", "completed_at", "source", "identity_values"}),
+    "record_generation_outcome": (["attempt_id"], {"success", "grading", "completed_at", "source", "identity_values", "failure_category"}),  # ADM-07 P4
 }
 
 

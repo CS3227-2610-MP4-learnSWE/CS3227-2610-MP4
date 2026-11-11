@@ -23,3 +23,15 @@ DEFAULT_PAGE_LIMIT = 25
 MAX_PAGE_LIMIT = 100
 WORKFLOWS = ("student_exercise", "teacher_lesson_planning")
 DIMENSIONS = ("relevance", "factual_accuracy", "clarity", "safety")
+# ADM-07 analytics hub
+LOW_SAMPLE_REQUESTS = 20
+CRITICAL_PERCENT = 5
+WARNING_PERCENT = 2
+PURGE_REQUEST_LOG_DAYS = 30
+PURGE_LOGIN_EVENT_DAYS = 400
+PURGE_INTERVAL_S = 3600
+PURGE_BATCH = 5000
+CHATBOT_USERS_DEFAULT_LIMIT = 10
+IN_PROGRESS_EXPIRY_S = 120
+USERS_SORTS = ("unsuccessful", "successful", "name", "failure_rate")
+USERS_ORDERS = ("asc", "desc")

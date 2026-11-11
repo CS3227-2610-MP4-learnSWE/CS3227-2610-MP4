@@ -3,6 +3,7 @@ import re
 from datetime import date, datetime, timezone
 
 from fastapi import APIRouter, Depends, Request
+from pydantic import BaseModel, ConfigDict
 from sqlalchemy.exc import SQLAlchemyError
 
 from ai_usage import service
@@ -15,6 +16,24 @@ router = APIRouter(prefix="/api/admin", tags=["admin"])
 
 def invalid() -> ApiError:
     return ApiError(422, "invalid_ai_usage_filters", "Choose a valid feature and a UTC date range of at most 31 days ending today or earlier.")
+
+
+class CoverageIn(BaseModel):
+    model_config = ConfigDict(extra="forbid", strict=True)
+    enabled: bool
+
+
+@router.put("/ai-usage/coverage")
+def set_ai_usage_coverage(body: CoverageIn, admin: AuthUser = Depends(current_user(role="admin"))) -> dict:
+    """Turn AI usage collection on or off for the integrated features (admin only)."""
+    wait = admit(f"ai-usage-coverage:{admin.id}", 10, 60)
+    if wait is not None:
+        raise ApiError(429, "ai_usage_report_rate_limited", "Too many requests. Try again shortly.", retry_after_seconds=wait)
+    try:
+        (service.activate_coverage if body.enabled else service.deactivate_coverage)(list(service.INTEGRATED))
+    except (SQLAlchemyError, ValueError):
+        raise ApiError(503, "ai_usage_unavailable", "AI usage data is temporarily unavailable. Try again.") from None
+    return {"enabled": body.enabled}
 
 
 @router.get("/ai-usage")

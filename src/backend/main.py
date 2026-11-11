@@ -21,6 +21,7 @@ from teacher_notes.routes import router as teacher_notes_router
 from teacher_mcqs.routes import router as teacher_mcqs_router
 from teacher_publications.routes import router as publications_router
 from errors import ApiError
+from feature_analytics.retention import purge_expired
 
 app = FastAPI(title="learnSWE Preview API", version="0.1.0")
 app.include_router(auth_router)
@@ -39,6 +40,7 @@ app.include_router(companion_routes.router)
 app.include_router(study_router)
 app.include_router(progress_routes.router)
 app.include_router(publications_router)
+app.router.on_startup.append(purge_expired)  # ADM-07 retention; never raises
 app.add_exception_handler(ApiError, practice_routes.error_response)
 app.middleware("http")(add_no_store)
 

@@ -377,6 +377,8 @@ Acceptance criteria:
 
 ### ADM-01 — Feature analytics
 
+*Superseded by ADM-07 once approved.*
+
 #### US-ADM-01-01 — Inspect feature usage
 
 As an admin, I want to view chatbot outcomes and student practice-set completion for a selected reporting period so that I can understand how these learning features are being used.
@@ -602,6 +604,8 @@ Acceptance criteria:
 
 ### ADM-06 — AI usage monitoring
 
+*Superseded by ADM-07 once approved.*
+
 #### US-ADM-06-01 — Inspect AI requests and failures
 
 As an admin, I want to view AI request and failure counts by feature and reporting period so that I can understand service usage and problems.
@@ -624,6 +628,114 @@ Acceptance criteria:
 - **Measurement context:** Each available token or other resource measurement identifies the AI feature and reporting period it describes.
 - **Unavailable values:** If a measurement is unavailable, label it unavailable; do not show an estimate as if it were an observed value.
 - **Scope boundary:** Show recorded measurements only. Forecasts, inferred measurements, and private request content are outside this story.
+
+### ADM-07 — Analytics hub
+
+Merges and supersedes ADM-01 and ADM-06 once approved: one admin page, "Feature Analytics", with Health, Feature outcomes, AI usage and Quality sections. Real recorded data only; a metric without a data source is labelled unavailable. Chat message content is never shown.
+
+#### US-ADM-07-01 — Monitor feature health
+
+As an admin, I want a health summary at the top of the analytics page so that I can see at a glance whether the chatbot and content generation are failing.
+
+Acceptance criteria:
+
+- **Health tiles:** The first content shows tiles for chatbot failure rate, generation failure rate, rate-limited requests, chatbot response time (median and 95th percentile), content-generation response time (median and 95th percentile) and practice-set completion for the selected reporting period.
+- **Failure-rate status:** A failure rate above 5% is marked critical, 2% to 5% warning, and below 2% healthy. With fewer than 20 requests the tile shows "low sample" and no status colour. Status is always shown with an icon and words, never by colour alone.
+- **Definitions:** Failure rates and practice-set completion follow the definitions in US-ADM-07-04 and US-ADM-07-05. Response times are shown separately for the chatbot and for content generation. Each tile has a compact All / Successful / Failed selector (default All); failed includes timed-out requests; a set with no requests says "No requests", never zero. Requests still in progress are excluded and shown as "N in progress"; a request with no outcome after 2 minutes counts as a failure with category timeout.
+- **Data states:** A tile whose data source does not exist or is incomplete says it is unavailable and why; it never shows zero or an estimate.
+
+#### US-ADM-07-02 — Review hourly request patterns
+
+As an admin, I want hourly charts of requests and failures so that I can find when problems and peak load occur.
+
+Acceptance criteria:
+
+- **Charts:** The page shows side by side a requests-per-hour chart (successful and failed), a failure-rate-per-hour chart with a 5% reference line, and a peak-hours heatmap by weekday and hour. Hovering shows the count and failure percentage.
+- **Time zone:** Hourly buckets are stored in UTC and displayed in the browser's local time.
+- **Expanded view:** Each chart opens in a larger overlay with a data table, a CSV download, a focus trap, Esc to close and accessible names. The same information is available as text, not only in hover or colour.
+- **Retention and data states:** Hourly data is kept 30 days; a period it cannot cover is labelled unavailable.
+
+#### US-ADM-07-03 — Review daily usage and learning activity
+
+As an admin, I want daily activity figures so that I can see adoption and how students use practice sets.
+
+Acceptance criteria:
+
+- **Logins:** Show logins per day and unique active users per day, separately for students and teachers, with a total. Admin sign-ins are not counted.
+- **Practice drafts started:** Show, per day, the practice sets whose first draft was saved by a teacher that day. A set is counted once, whatever happens to it later.
+- **Practice sets published:** Show, per day, the practice sets first published that day. A set is counted once, on its first publication; unpublishing and republishing do not change the count. Drafts started and published are separate series with separate names.
+- **Attempt funnel:** Show practice attempts started versus submitted per day.
+- **Attempts per student:** Show, per day, the median number of attempts started per student and the distribution.
+- **Privacy and data states:** Events hold no message content. A metric that is not yet collected is labelled unavailable, never zero.
+
+#### US-ADM-07-04 — Inspect chatbot outcomes and practice completion
+
+As an admin, I want to view chatbot outcomes and student practice-set completion for a selected reporting period so that I can understand how these learning features are being used.
+
+Acceptance criteria:
+
+- **Chatbot outcome definition:** A chatbot request is successful only when the chatbot returns a valid response message; an error or missing response is non-successful.
+- **Chatbot counts:** For the selected period, the report shows each student's and each teacher's successful and non-successful chatbot request counts, grouped by role, plus the totals for each outcome across both roles. The per-user table is sortable and paginated and by default lists the ten users with the most non-successful requests.
+- **Practice-set completion definition:** A started practice attempt is complete only when the student successfully submits the whole set. For attempts started during the selected period, the completion percentage is attempts submitted by the end of that period divided by attempts started during that period.
+- **No denominator:** If no practice attempts were started in the selected period, show that the completion percentage is not applicable rather than displaying a percentage.
+- **Data states:** Show zero when data is available and the count is zero; label data unavailable when the report cannot obtain a reliable count.
+- **Privacy:** Show chatbot counts associated with the relevant user account, but do not show chatbot messages or other private conversation content.
+
+#### US-ADM-07-05 — Inspect generation reliability
+
+As an admin, I want to compare the success rates of AI content-generation workflows for a selected reporting period so that I can identify workflows that may be unreliable.
+
+Acceptance criteria:
+
+- **Workflow selection:** The report identifies the content-generation workflow and reporting period for every rate shown.
+- **Request definition (changed from US-ADM-01-02):** Count a generation request when a valid request is accepted for generation, and also when a valid request is refused by the rate limiter; a rate-limited request counts as unsuccessful. Requests rejected earlier (for example for invalid input or missing access) are not counted.
+- **Success definition:** A request is successful only when it returns a complete output in the expected format; errors, timeouts, rate-limited requests, and incomplete or invalid outputs are unsuccessful.
+- **Rate calculation:** For each workflow and period, calculate successful requests divided by all generation requests in that workflow and period.
+- **No denominator:** If there were no generation requests, show that no rate can be calculated rather than showing a percentage.
+
+#### US-ADM-07-06 — Inspect AI requests, failures and resource measurements
+
+As an admin, I want to view AI request and failure counts and available token measurements by feature and reporting period so that I can understand service usage and plan within SoC LLM limits.
+
+Acceptance criteria:
+
+- **Request unit:** Count each AI service-call attempt as one request, including a retry as a separate attempt.
+- **Breakdown:** For the selected feature and reporting period, show the total request count and failure count.
+- **Failure category:** Identify rate-limit failures separately from other failures.
+- **Zero activity and unavailable data:** If the data is available and no requests occurred in the selected period, show zero requests and failures. If the data source is unavailable or incomplete, label the affected counts unavailable rather than showing zero.
+- **Privacy restriction:** Do not display credentials, private prompts, or private response content.
+- **Measurement context:** Each available token or other resource measurement identifies the AI feature and reporting period it describes.
+- **Unavailable values:** If a measurement is unavailable, label it unavailable; do not show an estimate as if it were an observed value.
+- **Scope boundary:** Show recorded measurements only. Forecasts, inferred measurements, and private request content are outside this story.
+
+#### US-ADM-07-07 — Assess AI response quality and session activity
+
+As an admin, I want to review AI-assisted quality grades and session activity for student exercises and teacher lesson planning so that I can identify areas where AI assistance may need improvement.
+
+Acceptance criteria:
+
+- **Assessment scope:** I can select a reporting period and review results separately for student exercise assistance and teacher lesson-planning assistance. Each assessment covers an individual completed AI response to a request received in that period and identifies its workflow and reporting period.
+- **Quality rubric:** AI grades each assessable response separately for relevance to the request, factual accuracy against available authorised context, clarity, and safety. Each dimension uses a 1–5 scale: 1 is unacceptable, 2 has major shortcomings, 3 is adequate with notable shortcomings, 4 is good with minor shortcomings, and 5 is excellent with no identified shortcomings.
+- **Evidence and uncertainty:** Each grade includes a brief reason grounded in the response and available authorised context, without quoting private conversation content. If a dimension cannot be assessed from that material, it is marked unassessable rather than assigned a grade.
+- **Human review:** The admin can review the grades and reasons. Grades are AI assessments, not verified facts, and do not automatically change access or application content.
+- **Response time:** For each assessed request, show the elapsed time from receipt of the user's request to delivery of the final response. Identify failed or incomplete requests separately and do not present their elapsed time as a successful response time.
+- **Session message count:** A session begins with the first message linked to an activity and ends when that activity ends or the user starts a new conversation, whichever occurs first. For sessions that begin in the selected period, show the average number of user and AI messages per session, counting each message separately and dividing the total messages by the number of sessions included. Show the number of sessions used.
+- **Associated activity time:** For sessions linked to an exercise or lesson-planning activity, show the average session message count alongside the average elapsed time from the recorded start to the recorded end of each distinct associated activity. Show the number of linked sessions and distinct activities used, and identify the activity start and end events; elapsed time includes idle time unless it is measured separately.
+- **Missing data:** Exclude sessions without a recorded link or activity start and end from the associated-activity comparison, and show how many were excluded. Label a metric unavailable when its measurements are missing or incomplete; if there are no eligible records, show that no average can be calculated.
+- **Privacy and safeguards:** Evaluate only responses and the minimum context authorised for this purpose; exclude credentials, unnecessary personal data, and protected answer keys or solutions. Do not display private conversation content in the analytics report, and treat evaluated content as untrusted input.
+- **Interpretation and scope:** Present timing and message counts as descriptive measurements, not as quality grades or evidence of time saved. Comparing against a no-AI baseline is outside this story.
+
+#### US-ADM-07-08 — Choose a reporting period and refresh
+
+As an admin, I want one compact period selector and a refresh control so that every section describes the same period and I know how current it is.
+
+Acceptance criteria:
+
+- **Layout:** The title "Feature Analytics" is on the left; a compact reporting-period selector, the last-updated time and a refresh button are at the top right. The page is clean and minimal, with lower-urgency sections further down.
+- **Period:** The admin can choose a preset or a custom range of UTC dates (at most 366 days). Every section names or follows the selected period.
+- **Partial data:** If a metric has only been recorded since a date inside the period, the section shows the data from that date with the note "Data starts on {date}" instead of marking the whole metric unavailable; a metric with no data in the period at all is unavailable.
+- **Failure isolation:** A section that fails to load shows its own message and retry; the other sections remain usable.
+- **Safeguards:** Only admins can see the page; shared accessibility, loading, empty-state and error criteria apply.
 
 
 ## Nice-to-have stories — outside the MVP

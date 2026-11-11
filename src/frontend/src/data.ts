@@ -25,13 +25,12 @@ export const navigation: Record<
   ],
   admin: [
     { path: "overview", label: "Analytics", icon: "overview" },
-    { path: "analytics", label: "Feature analytics", icon: "usage" },
+    { path: "analytics", label: "Feature Analytics", icon: "usage" },
     { path: "forms", label: "Feedback forms", icon: "forms" },
     { path: "responses", label: "Feedback insights", icon: "sparkles" },
     { path: "announcements", label: "Announcements", icon: "inbox" },
     { path: "users", label: "Users", icon: "people" },
     { path: "courses", label: "Courses", icon: "book" },
-    { path: "ai-usage", label: "AI usage", icon: "usage" },
   ],
 };
 export const initialMessages = [

@@ -70,8 +70,36 @@ def _paging_number(value: str | None, default: int, low: int, high: int) -> int:
     return int(text)
 
 
-def parse_paging(limit: str | None, offset: str | None) -> tuple[int, int]:
+def parse_paging(limit: str | None, offset: str | None, default_limit: int | None = None) -> tuple[int, int]:
     return (
-        _paging_number(limit, config.DEFAULT_PAGE_LIMIT, 1, config.MAX_PAGE_LIMIT),
+        _paging_number(limit, default_limit or config.DEFAULT_PAGE_LIMIT, 1, config.MAX_PAGE_LIMIT),
         _paging_number(offset, 0, 0, 10**9),
     )
+
+
+def _choice(value: str | None, default: str | None, allowed: tuple[str, ...]) -> str | None:
+    if value is None:
+        return default
+    text = value.strip().lower()
+    return text if text in allowed else None
+
+
+def parse_chatbot_users_query(role: str | None, sort: str | None, order: str | None, limit: str | None,
+                              offset: str | None) -> tuple[str, str, str, int, int]:
+    """Rules in order: role, sort and order, paging. Returns (role, sort, order, limit, offset)."""
+    role_value = _choice(role, None, ("student", "teacher"))
+    if role_value is None:
+        raise ApiError(422, "invalid_role", "Choose student or teacher.")
+    sort_value = _choice(sort, "unsuccessful", config.USERS_SORTS)
+    order_value = _choice(order, "desc", config.USERS_ORDERS)
+    if sort_value is None or order_value is None:
+        raise ApiError(422, "invalid_sort", "Choose a valid sort column and order.")
+    page_limit, page_offset = parse_paging(limit, offset, config.CHATBOT_USERS_DEFAULT_LIMIT)
+    return role_value, sort_value, order_value, page_limit, page_offset
+
+
+def parse_include_rows(value: str | None) -> bool:
+    text = "true" if value is None else value.strip().lower()
+    if text not in ("true", "false"):
+        raise ApiError(422, "invalid_include_rows", "include_rows must be true or false.")
+    return text == "true"
