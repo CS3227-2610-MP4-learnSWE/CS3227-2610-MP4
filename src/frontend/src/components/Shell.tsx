@@ -137,9 +137,9 @@ export default function Shell({
           return (
             <NavLink
               key={item.path}
-              to={`/${role}/${item.path}`}
+              to={`/${role}/${item.path}${item.landing ? `/${item.landing}` : ""}`}
               className={({ isActive }) =>
-                `nav-item ${isActive ? "active" : ""}`
+                `nav-item ${isActive || (item.landing && section === item.path) ? "active" : ""}`
               }
               onClick={() => setOpen(false)}
               aria-label={item.path === "inbox" ? "Inbox" : undefined}

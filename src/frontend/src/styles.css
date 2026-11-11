@@ -5639,3 +5639,85 @@ td .MuiButton-root {
 .analytics-hub-collection p {
   margin: 0;
 }
+
+/* Feedback hub (ADM-08) */
+.feedback-hub-label {
+  margin: 0 0 4px;
+  font-weight: 600;
+}
+.feedback-hub-line,
+.feedback-hub-note {
+  margin: 0 0 16px;
+  color: var(--muted);
+}
+.feedback-hub-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 16px;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--paper);
+}
+.feedback-hub-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 16px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 15px;
+  cursor: pointer;
+}
+.feedback-hub-tab:hover {
+  background: var(--blue-soft);
+}
+.feedback-hub-tab:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+}
+.feedback-hub-tab.active {
+  border-bottom-color: var(--blue);
+  color: var(--blue);
+  font-weight: 600;
+}
+.feedback-hub-badge {
+  min-width: 22px;
+  padding: 0 6px;
+  border: 1px solid currentColor;
+  border-radius: 11px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 20px;
+  text-align: center;
+}
+.feedback-hub-chooser {
+  display: grid;
+  gap: 8px;
+  max-width: 480px;
+}
+.feedback-hub-chooser select {
+  width: 100%;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--ink);
+  font: inherit;
+}
+.feedback-hub-chooser select:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+}
+@media (min-width: 480px) {
+  .feedback-hub-tabs {
+    flex-wrap: nowrap;
+  }
+}

@@ -7,7 +7,7 @@ export const names: Record<Role, string> = {
 };
 export const navigation: Record<
   Role,
-  { path: string; label: string; icon: string }[]
+  { path: string; label: string; icon: string; landing?: string }[]
 > = {
   student: [
     { path: "overview", label: "Overview", icon: "overview" },
@@ -26,6 +26,12 @@ export const navigation: Record<
   admin: [
     { path: "overview", label: "Analytics", icon: "overview" },
     { path: "analytics", label: "Feature Analytics", icon: "usage" },
+    {
+      path: "feedback-hub",
+      label: "Feedback hub",
+      icon: "forms",
+      landing: "forms",
+    },
     { path: "forms", label: "Feedback forms", icon: "forms" },
     { path: "responses", label: "Feedback insights", icon: "sparkles" },
     { path: "announcements", label: "Announcements", icon: "inbox" },

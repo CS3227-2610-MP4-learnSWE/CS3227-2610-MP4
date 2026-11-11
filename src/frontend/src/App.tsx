@@ -42,6 +42,7 @@ const AdminFeedbackAnalysisResult = lazy(
 const AdminFeedbackAnalysisEvidence = lazy(
   () => import("./pages/AdminFeedbackAnalysisEvidence"),
 );
+const AdminFeedbackHub = lazy(() => import("./pages/AdminFeedbackHub"));
 const AdminAnalytics = lazy(() => import("./pages/AdminAnalytics"));
 
 function Inbox({ role }: { role: "student" | "teacher" }) {
@@ -244,6 +245,14 @@ export default function App() {
                 element={
                   <LiveAnalysis>
                     <AdminFeedbackAnalysisEvidence />
+                  </LiveAnalysis>
+                }
+              />
+              <Route
+                path="feedback-hub/*"
+                element={
+                  <LiveAnalysis>
+                    <AdminFeedbackHub />
                   </LiveAnalysis>
                 }
               />
