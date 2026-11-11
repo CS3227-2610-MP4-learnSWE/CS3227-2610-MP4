@@ -40,7 +40,54 @@ def err(r, code):
     assert "no-store" in r.headers.get("cache-control", ""), r.headers
 
 
+MIRROR_CHAT = (
+    "INSERT INTO analytics_request_log (kind, source_id, occurred_at, outcome, failure_category, duration_ms) "
+    "SELECT 'chatbot', id, received_at, outcome, CASE WHEN outcome='failure' THEN 'unclassified' END, duration_ms "
+    "FROM analytics_chat_request WHERE received_at >= '2039-01-01' OR received_at > now() - interval '45 days' "
+    "ON CONFLICT DO NOTHING")
+MIRROR_GEN = (
+    "INSERT INTO analytics_request_log (kind, source_id, occurred_at, outcome, failure_category, duration_ms) "
+    "SELECT CASE workflow WHEN 'study_notes' THEN 'generation_notes' ELSE 'generation_mcq' END, id, accepted_at, "
+    "outcome, CASE WHEN outcome='failure' THEN 'unclassified' END, duration_ms "
+    "FROM analytics_generation_attempt WHERE accepted_at >= '2039-01-01' OR accepted_at > now() - interval '45 days' "
+    "ON CONFLICT DO NOTHING")
+
+
+def mirror_all():
+    """Phase 4 reads analytics_request_log. Tests that seed the source tables directly (as in phase 2, no hook
+    runs) get the equivalent log row, exactly what the migration backfill would write (failures unclassified).
+    Idempotent; rows that already have a log row (written by a hook) are left alone."""
+    sql(MIRROR_CHAT)
+    sql(MIRROR_GEN)
+
+
+class P4RecordingStart:
+    """Moves recording_started_at and the request-log start keys together (phase 4 hourly/health read the log)."""
+
+    KEYS = ("recording_started_at", "request_log_started_at", "request_log_categories_started_at")
+
+    def __init__(self):
+        self.old = {k: (sql("SELECT value FROM analytics_meta WHERE key=%s", (k,)) or [[None]])[0][0] for k in self.KEYS}
+
+    def set(self, when):
+        for k in self.KEYS:
+            sql("UPDATE analytics_meta SET value=%s WHERE key=%s", (when.isoformat(), k))
+
+    def restore(self):
+        for k, v in self.old.items():
+            if v is not None:
+                sql("UPDATE analytics_meta SET value=%s WHERE key=%s", (v, k))
+
+
+@pytest.fixture
+def recording_start():
+    holder = P4RecordingStart()
+    yield holder
+    holder.restore()
+
+
 def get(path, user, win=None, **extra):
+    mirror_all()
     params = dict(win.params) if win is not None else {}
     params.update(extra)
     return call("GET", url(path, **params), user)

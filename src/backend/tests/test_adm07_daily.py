@@ -43,10 +43,13 @@ def test_adm07_ac19_exact_top_level_shape(analytics_admin):
 
 @pytest.mark.parametrize("key,total_key", [("logins", "total_logins"), ("practice_drafts_started", "total"),
                                            ("practice_published", "total")])
-def test_adm07_ac23_phase2_unmeasured_series_are_unavailable_not_collected_never_zero(key, total_key, analytics_admin):
-    m = daily(analytics_admin, new_window(2))[key]
-    assert m["state"] == "unavailable" and m["reason"] == "not_collected"
-    assert m["since"] is None and m["per_day"] == [] and m[total_key] is None
+def test_adm07_ac23_phase4_collected_series_with_no_events_are_available_zeros_not_not_collected(key, total_key, analytics_admin):
+    """PHASE 4 CHANGE (was unavailable/not_collected): the source exists, so an empty period is real zeros."""
+    w = new_window(2)
+    m = daily(analytics_admin, w)[key]
+    assert m["state"] == "available" and m["reason"] is None
+    assert m["since"] is not None and m[total_key] == 0
+    assert [d["date"] for d in m["per_day"]] == dates(w, 2)
 
 
 # ------------------------------------------------------------------ AC20 funnel
