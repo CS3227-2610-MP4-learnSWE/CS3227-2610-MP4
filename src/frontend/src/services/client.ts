@@ -113,6 +113,8 @@ export async function request(
     distinguishTimeout?: boolean;
     cache?: RequestCache;
     signal?: AbortSignal;
+    /** Treat every 401 (whatever its code) as an expired session. */
+    anyUnauthorized?: boolean;
   } = {},
 ): Promise<unknown> {
   // A delayed rejection from a previous account must not sign out a newer one.
@@ -151,7 +153,7 @@ export async function request(
     if (
       error instanceof ApiError &&
       error.status === 401 &&
-      error.code === "unauthenticated" &&
+      (options.anyUnauthorized || error.code === "unauthenticated") &&
       originGeneration === getSessionGeneration()
     )
       onUnauthenticated?.();

@@ -116,7 +116,13 @@ export async function readUsage(
     "GET",
     `/api/admin/ai-usage?${new URLSearchParams(filters)}`,
     undefined,
-    { timeoutMs: 15_000, distinguishTimeout: true, cache: "no-store", signal },
+    {
+      timeoutMs: 15_000,
+      distinguishTimeout: true,
+      cache: "no-store",
+      signal,
+      anyUnauthorized: true,
+    },
   );
   const features =
     filters.feature === "all" ? Object.keys(FEATURE_LABELS) : [filters.feature];

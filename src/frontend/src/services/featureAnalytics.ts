@@ -225,6 +225,7 @@ const read = (path: string, signal?: AbortSignal) =>
     distinguishTimeout: true,
     cache: "no-store",
     signal,
+    anyUnauthorized: true,
   });
 
 const query = (period: Period) =>
@@ -279,7 +280,12 @@ export async function startGradingRun(
     "POST",
     "/api/admin/analytics/grading-runs",
     { workflow, period_start: period.from, period_end: period.to },
-    { timeoutMs: TIMEOUT_MS, distinguishTimeout: true, signal },
+    {
+      timeoutMs: TIMEOUT_MS,
+      distinguishTimeout: true,
+      signal,
+      anyUnauthorized: true,
+    },
   );
   return checked<Run>(data, ["run_id", "status"]);
 }

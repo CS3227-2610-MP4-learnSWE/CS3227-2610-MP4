@@ -1,5 +1,9 @@
 # Handoff notes
 
+## 2026-11-11: developer revision 1 on ADM-07 (401 handling)
+- Cause: the shared API layer only ends the session on a 401 with code `unauthenticated`; the test sends a bare 401. Fix: `request` option `anyUnauthorized` (set for every analytics and AI usage read, grading start and run reads), so any 401 from the hub ends the session. adm07 + adm01 Playwright (mocked): 188 passed; typecheck, lint, prettier clean. AC32 keyboard test passed in this run.
+
+
 ## 2026-11-11: developer on ADM-07 phase 2 (P2-4, P2-5 dev part, P2-6..P2-12)
 - Done: backend endpoints `/health`, `/hourly`, `/daily`, `/chatbot-users`, `/usage?include_rows`, partial coverage (`data_starts_on`) on kept endpoints; hub UI at `/admin/analytics`, legacy page at `/admin/feature-analytics-legacy`, nav label "Feature Analytics", docs. No [P4] work, nothing deleted.
 - Checks: frontend typecheck and lint pass; a throwaway Playwright smoke (deleted) showed exactly 7 requests on load, tooltip, modal focus on Close, CSV download. Backend ADM-01 targeted run: 473 passed, 5 failed, all expected contract changes: `test_adm01_usage` top-level shape and `ac12 recording date`, `test_adm01_generation` two shape tests (new keys `data_starts_on`, `requests`, `rate_limited`, `rate_limited_state`), `test_adm01_cross_user ac39` (route count 5 to 9). Test-designer to update. Not run: ADM-06 tests, full suites.
