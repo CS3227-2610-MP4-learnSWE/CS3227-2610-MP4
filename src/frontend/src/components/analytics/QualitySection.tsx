@@ -129,72 +129,90 @@ function QualityBody({
       {data.data_starts_on && (
         <p className="muted">{startsNote(data.data_starts_on)}</p>
       )}
-      <section aria-labelledby="analytics-hub-grades-title">
-        <h3 id="analytics-hub-grades-title">Quality grades</h3>
-        {grades.state === "unavailable" ? (
-          <p>{unavailableText(grades.reason, recorded)}</p>
-        ) : grades.state === "not_applicable" ? (
-          <p>No responses have been graded for this period yet.</p>
-        ) : (
-          <ul className="analytics-list">
-            {grades.dimensions.map((d) => (
-              <li key={d.dimension}>
-                {api.DIMENSIONS.find((x) => x.id === d.dimension)?.label ??
-                  d.dimension}
-                :{" "}
-                {d.average === null
-                  ? NO_AVERAGE
-                  : `${d.average.toFixed(2)} of 5 (${d.graded_count} graded, ${d.unassessable_count} unassessable)`}
-              </li>
-            ))}
-          </ul>
-        )}
-        {grades.state !== "unavailable" && (
-          <p>
-            {grades.assessed_count} assessed, {grades.pending_count} waiting to
-            be graded, {grades.grading_failed_count} could not be graded,{" "}
-            {grades.content_expired_count} content no longer retained.
-          </p>
-        )}
-      </section>
-      <section aria-labelledby="analytics-hub-time-title">
-        <h3 id="analytics-hub-time-title">Response time</h3>
-        {time.state === "unavailable" ? (
-          <p>{unavailableText(time.reason, recorded)}</p>
-        ) : time.state === "not_applicable" ? (
-          na
-        ) : (
-          <p>{`Mean ${seconds(time.mean_ms ?? 0)} s, median ${seconds(time.median_ms ?? 0)} s (${time.successful_count} successful responses); ${time.failed_or_incomplete_count} failed or incomplete requests (no response time)`}</p>
-        )}
-      </section>
-      <section aria-labelledby="analytics-hub-sessions-title">
-        <h3 id="analytics-hub-sessions-title">Session activity</h3>
-        {sessions.state === "unavailable" ? (
-          <p>
-            {sessions.reason === "no_source"
-              ? NO_SESSIONS
-              : unavailableText(sessions.reason, recorded)}
-          </p>
-        ) : sessions.state === "not_applicable" ? (
-          na
-        ) : (
-          <p>{`${sessions.session_count} sessions, ${(sessions.average_messages_per_session ?? 0).toFixed(2)} messages per session (user and AI messages)`}</p>
-        )}
-      </section>
-      <section aria-labelledby="analytics-hub-activity-title">
-        <h3 id="analytics-hub-activity-title">Associated activity time</h3>
-        {act.state === "unavailable" ? (
-          <p>
-            {act.reason === "no_source"
-              ? NO_SESSIONS
-              : unavailableText(act.reason, recorded)}
-          </p>
-        ) : act.state === "not_applicable" ? (
-          na
-        ) : (
-          <p>{`${(act.average_activity_seconds ?? 0).toFixed(1)} s average elapsed time from Practice attempt started to Practice attempt submitted, ${(act.average_messages_per_session ?? 0).toFixed(2)} messages per session, ${act.linked_session_count} linked sessions, ${act.distinct_activity_count} distinct activities, ${act.excluded_session_count} sessions excluded (activity has no recorded end). Elapsed time includes idle time.`}</p>
-        )}
-      </section>
+      <div className="analytics-quality-grid">
+        <section aria-labelledby="analytics-hub-grades-title">
+          <h3 id="analytics-hub-grades-title">Quality grades</h3>
+          {grades.state === "unavailable" ? (
+            <p>{unavailableText(grades.reason, recorded)}</p>
+          ) : grades.state === "not_applicable" ? (
+            <p>No responses have been graded for this period yet.</p>
+          ) : (
+            <ul className="analytics-list">
+              {grades.dimensions.map((d) => (
+                <li key={d.dimension}>
+                  {api.DIMENSIONS.find((x) => x.id === d.dimension)?.label ??
+                    d.dimension}
+                  :{" "}
+                  {d.average === null
+                    ? NO_AVERAGE
+                    : `${d.average.toFixed(2)} of 5 (${d.graded_count} graded, ${d.unassessable_count} unassessable)`}
+                </li>
+              ))}
+            </ul>
+          )}
+          {grades.state !== "unavailable" && (
+            <p>
+              {grades.assessed_count} assessed, {grades.pending_count} waiting
+              to be graded, {grades.grading_failed_count} could not be graded,{" "}
+              {grades.content_expired_count} content no longer retained.
+            </p>
+          )}
+        </section>
+        <section aria-labelledby="analytics-hub-time-title">
+          <h3 id="analytics-hub-time-title">Response time</h3>
+          {time.state === "unavailable" ? (
+            <p>{unavailableText(time.reason, recorded)}</p>
+          ) : time.state === "not_applicable" ? (
+            na
+          ) : (
+            <p>
+              <span className="analytics-line">
+                Mean <strong>{seconds(time.mean_ms ?? 0)} s</strong>,
+              </span>{" "}
+              <span className="analytics-line">
+                median <strong>{seconds(time.median_ms ?? 0)} s</strong>
+              </span>{" "}
+              <span className="analytics-line-note">
+                ({time.successful_count} successful responses);{" "}
+                {time.failed_or_incomplete_count} failed or incomplete requests
+                (no response time)
+              </span>
+            </p>
+          )}
+        </section>
+        <section aria-labelledby="analytics-hub-sessions-title">
+          <h3 id="analytics-hub-sessions-title">Session activity</h3>
+          {sessions.state === "unavailable" ? (
+            <p>
+              {sessions.reason === "no_source"
+                ? NO_SESSIONS
+                : unavailableText(sessions.reason, recorded)}
+            </p>
+          ) : sessions.state === "not_applicable" ? (
+            na
+          ) : (
+            <p>
+              <strong>{sessions.session_count} sessions</strong>,{" "}
+              {(sessions.average_messages_per_session ?? 0).toFixed(2)} messages
+              per session (user and AI messages)
+            </p>
+          )}
+        </section>
+        <section aria-labelledby="analytics-hub-activity-title">
+          <h3 id="analytics-hub-activity-title">Associated activity time</h3>
+          {act.state === "unavailable" ? (
+            <p>
+              {act.reason === "no_source"
+                ? NO_SESSIONS
+                : unavailableText(act.reason, recorded)}
+            </p>
+          ) : act.state === "not_applicable" ? (
+            na
+          ) : (
+            <p>{`${(act.average_activity_seconds ?? 0).toFixed(1)} s average elapsed time from Practice attempt started to Practice attempt submitted, ${(act.average_messages_per_session ?? 0).toFixed(2)} messages per session, ${act.linked_session_count} linked sessions, ${act.distinct_activity_count} distinct activities, ${act.excluded_session_count} sessions excluded (activity has no recorded end). Elapsed time includes idle time.`}</p>
+          )}
+        </section>
+      </div>
       <section aria-labelledby="analytics-hub-items-title">
         <h3 id="analytics-hub-items-title">Assessed responses</h3>
         {page.error && <Alert severity="error">{page.error}</Alert>}

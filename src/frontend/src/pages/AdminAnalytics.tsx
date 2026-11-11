@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { Button } from "@mui/material";
+import { IconButton, Tooltip } from "@mui/material";
+import { RefreshCw } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router";
 import BlockState from "../components/analytics/BlockState";
 import ChatbotUsersTable from "../components/analytics/ChatbotUsersTable";
@@ -149,18 +150,23 @@ export default function AdminAnalytics() {
               "Not updated yet"
             )}
           </p>
-          <Button
-            variant="outlined"
-            disabled={!settled}
-            onClick={() => setRefresh((n) => n + 1)}
-          >
-            Refresh
-          </Button>
+          <Tooltip title="Refresh">
+            <span>
+              <IconButton
+                aria-label="Refresh"
+                className="analytics-hub-refresh"
+                disabled={!settled}
+                onClick={() => setRefresh((n) => n + 1)}
+              >
+                <RefreshCw size={20} aria-hidden="true" />
+              </IconButton>
+            </span>
+          </Tooltip>
         </div>
       </div>
 
       <Panel className="analytics-panel" role="region" ariaLabel="Health">
-        <h2>Health</h2>
+        <h2 className="analytics-hub-section-title">Health</h2>
         <BlockState
           block={health}
           loading="Loading health..."
@@ -194,7 +200,7 @@ export default function AdminAnalytics() {
         role="region"
         ariaLabel="Feature outcomes"
       >
-        <h2>Feature outcomes</h2>
+        <h2 className="analytics-hub-section-title">Feature outcomes</h2>
         <div role="region" aria-label="Daily activity">
           <BlockState
             block={daily}
@@ -224,7 +230,7 @@ export default function AdminAnalytics() {
       </Panel>
 
       <Panel className="analytics-panel" role="region" ariaLabel="AI usage">
-        <h2>AI usage</h2>
+        <h2 className="analytics-hub-section-title">AI usage</h2>
         <AiUsageSection
           key={sectionKey}
           period={period}
@@ -233,7 +239,7 @@ export default function AdminAnalytics() {
       </Panel>
 
       <Panel className="analytics-panel" role="region" ariaLabel="Quality">
-        <h2>Quality</h2>
+        <h2 className="analytics-hub-section-title">Quality</h2>
         <QualitySection
           key={sectionKey}
           period={period}

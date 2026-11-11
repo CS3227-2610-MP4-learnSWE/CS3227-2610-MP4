@@ -1,6 +1,6 @@
 # Tasks: ADM-07 Analytics hub
 
-Phases follow `workflow/specs/CONSOL-01/migration-plan.md`. Phase 3 (Feedback hub, ADM-08) is a separate feature. Each phase ends at a human gate; tasks of a later phase start only after its gate. Items marked phase 4 are the new event collection.
+Phases follow `workflow/plans/CONSOL-01-migration-plan.md`. Phase 3 (Feedback hub, ADM-08) is a separate feature. Each phase ends at a human gate; tasks of a later phase start only after its gate. Items marked phase 4 are the new event collection.
 
 ## Phase 1: specs (this run)
 | # | Task | Owner agent | Depends on | Status |
@@ -53,6 +53,14 @@ Phases follow `workflow/specs/CONSOL-01/migration-plan.md`. Phase 3 (Feedback hu
 ## Phase 6: docs and closeout
 | # | Task | Owner agent | Depends on | Status |
 |---|---|---|---|---|
-| P6-1 | Final docs pass, usage report, `logs/` summary, PR into `master` | orchestrator | Gate F | todo |
+| P6-1 | Final docs pass, usage report, `logs/` summary, PR into `master` | orchestrator | Gate F | done (branch pushed; PR opened by the human) |
+
+## Phase 7: refinements after browser review (2026-11-12, user-requested, no gate)
+| # | Task | Owner agent | Depends on | Status |
+|---|---|---|---|---|
+| P7-1 | Header icon refresh, success-rate tiles and chips, larger KPI numbers, section and subheader styles (AC44, AC45) | developer | P6-1 | done |
+| P7-2 | Click-to-open chart cards, two per row, totals cards, table borders and sort arrows, Quality grid (AC43, AC44) | developer | P7-1 | done |
+| P7-3 | AI usage: labels without IDs; collection switch endpoint, UI and tests (AC46) | developer, test-designer | P7-1 | done |
+| P7-4 | Dev seed (`dev_seed.py`, `seed_dev.py`) and docs (AC47) | developer | P7-1 | done |
 
 Within phase 2 and phase 4, the test-designer tasks and the developer tasks run in parallel (separate worktrees). Concurrency and cross-user tasks are kept because the feature reads and writes stored records.

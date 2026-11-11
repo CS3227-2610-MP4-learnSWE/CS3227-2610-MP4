@@ -9,6 +9,7 @@ export default function KpiTile({
   severity,
   chip,
   valueTestId,
+  compact = false,
   children,
 }: {
   label: string;
@@ -17,6 +18,8 @@ export default function KpiTile({
   severity?: Severity | null;
   chip?: ReactNode;
   valueTestId?: string;
+  /** Words such as "Not applicable" instead of a number: shown smaller. */
+  compact?: boolean;
   children?: ReactNode;
 }) {
   return (
@@ -30,7 +33,10 @@ export default function KpiTile({
         {label}
       </p>
       {value !== undefined && (
-        <p className="analytics-hub-tile-value" data-testid={valueTestId}>
+        <p
+          className={`analytics-hub-tile-value${compact ? " analytics-hub-tile-value-text" : ""}`}
+          data-testid={valueTestId}
+        >
           {value}
         </p>
       )}

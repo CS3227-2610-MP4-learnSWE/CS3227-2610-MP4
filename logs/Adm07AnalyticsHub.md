@@ -7,6 +7,9 @@ Orchestrated phases 2, 4 and 5 of ADM-07 on `feat/analytics-feedback-consolidati
 - **Phase 4 (run -03):** migration `20261111_adm07_events` (four tables, 30-day backfill), hooks at the host call sites, retention purge (30 d request log, 400 d sign-ins), the `ai_usage.cleanup` command, queries switched to the new tables. Verifier round 1 found one blocking defect (start key hid the backfill; plan line 21 amended by the orchestrator); round 2 found no product defects.
 - **Phase 5 (runs -04, -05):** retained criteria and a deletion list written first, assertions mapped and ported, then the legacy page, old AI usage page, old browser tests and ADM-01/ADM-06 specs deleted; `/admin/ai-usage` redirects to `/admin/analytics`. Verifier PASS.
 
+## Refinements after browser review (2026-11-12, outside the gated runs)
+Done directly at the user's request, no multi-agent run: header icon refresh; success-rate KPI tiles with inverted chips; larger numbers; contrasting section and subheader styles; click-to-open chart cards, two per row; users totals as cards; table borders and sort arrows; Quality cards; AI usage labels without IDs; AI usage collection switch (`PUT /api/admin/ai-usage/coverage`, tests added); `dev_seed.py` and `feature_analytics.seed_dev`. Spec AC43-AC47, plan and tasks (P7) updated. Checks: backend ADM-06 usage and switch tests 57 passed on a throwaway database; Playwright mocked adm07 and admin-ui 243 passed; typecheck and lint clean. Not run: the full backend suite, and a real-browser check of the last two rounds.
+
 ## Checks (as run, not re-run for this log)
 Backend ADM-07/ADM-01/ADM-06: 1130 passed (phase 5 verifier). Host suites touched by wiring: passed in phase 4 (954 + 417 across two runs, not re-run after phase 5). Playwright mocked adm07 + admin-ui: 242 passed. Typecheck and lint clean. The full backend suite was never run end to end.
 

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Alert, Button, Tab, Tabs } from "@mui/material";
+import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
 import { useAnalyticsBlock } from "../../hooks/useAnalyticsBlock";
 import * as api from "../../services/featureAnalytics";
 import { percent1, startsNote, unavailableText } from "./copy";
@@ -102,15 +103,27 @@ export default function ChatbotUsersTable({
             </p>
           ) : (
             <>
-              <p>
-                Students total: {current.totals.successful} successful,{" "}
-                {current.totals.unsuccessful} unsuccessful
-              </p>
-              <p>Teachers total: {unavailableText("no_source")}</p>
-              <p>
-                All users total:{" "}
-                {unavailableText(current.all_users_total.reason)}
-              </p>
+              <div className="analytics-hub-totals">
+                <p className="analytics-hub-total">
+                  <span className="analytics-hub-total-label">
+                    Students total:{" "}
+                  </span>
+                  <strong>{current.totals.successful}</strong> successful,{" "}
+                  <strong>{current.totals.unsuccessful}</strong> unsuccessful
+                </p>
+                <p className="analytics-hub-total">
+                  <span className="analytics-hub-total-label">
+                    Teachers total:{" "}
+                  </span>
+                  {unavailableText("no_source")}
+                </p>
+                <p className="analytics-hub-total">
+                  <span className="analytics-hub-total-label">
+                    All users total:{" "}
+                  </span>
+                  {unavailableText(current.all_users_total.reason)}
+                </p>
+              </div>
               {current.in_progress ? (
                 <p className="muted">{current.in_progress} in progress</p>
               ) : null}
@@ -149,6 +162,15 @@ export default function ChatbotUsersTable({
                                 aria-label={`Sort by ${c.label}`}
                               >
                                 {c.label}
+                                {current.sort === c.sort ? (
+                                  current.order === "asc" ? (
+                                    <ArrowUp size={14} aria-hidden="true" />
+                                  ) : (
+                                    <ArrowDown size={14} aria-hidden="true" />
+                                  )
+                                ) : (
+                                  <ArrowUpDown size={14} aria-hidden="true" />
+                                )}
                               </Button>
                             </th>
                           ))}

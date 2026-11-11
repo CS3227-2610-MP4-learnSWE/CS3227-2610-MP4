@@ -13,14 +13,24 @@ export default function ChartCard({
   children: ReactNode;
 }) {
   return (
-    <div role="group" aria-label={title} className="analytics-hub-card">
+    // The whole card opens the chart; the Expand button stays for keyboard and screen-reader users.
+    <div
+      role="group"
+      aria-label={title}
+      className={`analytics-hub-card${disabled ? "" : " analytics-hub-card-open"}`}
+      title={disabled ? undefined : "Click to expand"}
+      onClick={disabled ? undefined : onExpand}
+    >
       <div className="analytics-hub-card-head">
         <h3>{title}</h3>
         <Button
           variant="outlined"
           size="small"
           disabled={disabled}
-          onClick={onExpand}
+          onClick={(event) => {
+            event.stopPropagation();
+            onExpand();
+          }}
           aria-label={`Expand ${title}`}
         >
           Expand

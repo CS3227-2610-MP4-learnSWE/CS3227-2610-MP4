@@ -35,9 +35,9 @@ const metric = (
 });
 
 const LABELS = {
-  "STU-03": "Student assistant (STU-03)",
-  "TEA-02": "Teacher generation (TEA-02)",
-  "ADM-03": "Feedback analysis (ADM-03)",
+  "STU-03": "Student assistant",
+  "TEA-02": "Teacher generation",
+  "ADM-03": "Feedback analysis",
 } as const;
 const FEATURE_ROWS = 4; // the mock returns STU-03, TEA-02, ADM-03 and ADM-01 for "All features"
 
@@ -105,7 +105,9 @@ test("adm07 retained ADM-06 AC2/3/7 AI usage: recorded values, period line, coll
   page,
 }) => {
   const mock = await ready(page);
-  const row = table(page).getByRole("row").filter({ hasText: "STU-03" });
+  const row = table(page)
+    .getByRole("row")
+    .filter({ hasText: "Student assistant" });
   await expect(row).toContainText("731");
   await expect(row).toContainText("99");
   expect(await table(page).innerText()).not.toContain("%");
@@ -349,7 +351,7 @@ for (const bad of ["network", "json", "shape"] as const) {
   });
 }
 const group = (p: Page) =>
-  p.getByRole("group", { name: "Chatbot failure rate", exact: true });
+  p.getByRole("group", { name: "Chatbot success rate", exact: true });
 
 test("adm07 retained ADM-06 AC13 a 15 second wait ends in the timeout message with no automatic retry", async ({
   page,
@@ -657,3 +659,59 @@ for (const width of [1365, 390]) {
     });
   }
 }
+
+// ============================================================ collection switch (added 2026-11-12)
+
+test("adm07 AI usage collection switch turns collection on, reloads the report, then turns it off", async ({
+  page,
+}) => {
+  const puts: unknown[] = [];
+  const mock = await ready(page, (m) => {
+    m.tweak.aiusage = rowsOf((rows) => {
+      for (const r of rows)
+        for (const key of METRICS) r[key] = metric(null, "not_enabled");
+    });
+  });
+  await page.route("**/api/admin/ai-usage/coverage", async (route) => {
+    puts.push(route.request().postDataJSON());
+    delete mock.tweak.aiusage; // the next report shows collection on
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ enabled: true }),
+    });
+  });
+  await expect(ai(page)).toContainText("Collection: off");
+  await ai(page)
+    .getByRole("button", { name: "Turn on collection", exact: true })
+    .click();
+  await expect.poll(() => puts.length).toBe(1);
+  expect(puts[0]).toEqual({ enabled: true });
+  await expect(ai(page)).toContainText("Collection: on");
+  await ai(page)
+    .getByRole("button", { name: "Turn off collection", exact: true })
+    .click();
+  await expect.poll(() => puts.length).toBe(2);
+  expect(puts[1]).toEqual({ enabled: false });
+});
+
+test("adm07 AI usage collection switch shows its failure and keeps the report", async ({
+  page,
+}) => {
+  await ready(page);
+  await page.route("**/api/admin/ai-usage/coverage", (route) =>
+    route.fulfill({
+      status: 503,
+      contentType: "application/json",
+      body: JSON.stringify({
+        error: { code: "ai_usage_unavailable", message: "x" },
+      }),
+    }),
+  );
+  await ai(page)
+    .getByRole("button", { name: /Turn o(n|ff) collection/ })
+    .first()
+    .click();
+  await expect(alertIn(page, "temporarily unavailable")).toBeVisible();
+  await expect(table(page)).toBeVisible();
+});

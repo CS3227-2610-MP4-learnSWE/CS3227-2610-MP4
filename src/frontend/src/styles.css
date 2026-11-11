@@ -5067,6 +5067,77 @@ td .MuiButton-root {
 .analytics-scroll td {
   color: var(--ink);
 }
+.analytics-scroll table {
+  border-collapse: collapse;
+  border: 1px solid var(--line);
+}
+.analytics-scroll th,
+.analytics-scroll td {
+  border: 1px solid var(--line);
+}
+.analytics-scroll thead th {
+  background: var(--blue-soft);
+  color: var(--blue);
+  font-weight: 700;
+}
+.analytics-scroll tbody th[scope="row"] {
+  background: transparent;
+}
+.analytics-scroll tbody tr:nth-child(even) td,
+.analytics-scroll tbody tr:nth-child(even) th[scope="row"] {
+  background: color-mix(in srgb, var(--line) 35%, transparent);
+}
+/* Sortable column headers: a button with an arrow icon showing that the column can be sorted. */
+.analytics-scroll thead th .MuiButton-root {
+  gap: 6px;
+  padding: 0;
+  font-weight: 700;
+  text-transform: none;
+}
+.analytics-scroll thead th .MuiButton-root:hover {
+  text-decoration: underline;
+  background: transparent;
+}
+.analytics-hub-totals {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+  margin: 12px 0;
+}
+@media (min-width: 768px) {
+  .analytics-hub-totals {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+.analytics-panel p.analytics-hub-total {
+  margin: 0;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--paper);
+  font-size: 14px;
+  line-height: 1.4;
+}
+.analytics-hub-total-label {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--muted);
+  font-size: 14px;
+}
+.analytics-hub-total strong {
+  font-size: 32px;
+  font-weight: 800;
+  line-height: 1.1;
+}
+.analytics-line {
+  display: block;
+}
+.analytics-line-note {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 14px;
+}
 .analytics-scroll th[scope="rowgroup"] {
   background: var(--blue-soft);
   color: var(--blue);
@@ -5161,6 +5232,42 @@ td .MuiButton-root {
   align-items: center;
   gap: 12px;
 }
+@media (min-width: 900px) {
+  /* Period, last-updated text and refresh icon stay on one row. */
+  .analytics-hub-controls {
+    flex-wrap: nowrap;
+  }
+  .analytics-hub-controls .MuiTextField-root {
+    width: 220px;
+  }
+  .analytics-hub-updated {
+    white-space: nowrap;
+  }
+}
+.analytics-hub-refresh.MuiIconButton-root {
+  border: 1px solid var(--muted);
+  color: var(--blue);
+}
+/* Section titles: larger, heavier, with an accent rule, so they stand apart from content. */
+.analytics-panel h2.analytics-hub-section-title {
+  margin: 0 0 20px;
+  padding: 0 0 10px 14px;
+  font-size: 30px;
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  color: var(--blue);
+  border-left: 6px solid var(--blue);
+  border-bottom: 2px solid var(--line);
+}
+.analytics-panel h3 {
+  padding-left: 10px;
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 1.25;
+  color: var(--blue);
+  border-left: 4px solid var(--blue);
+}
 .analytics-hub-controls .MuiOutlinedInput-notchedOutline {
   border-color: var(--muted);
 }
@@ -5213,13 +5320,17 @@ td .MuiButton-root {
   overflow-wrap: anywhere;
 }
 .analytics-hub-tile-label {
-  font-size: 13px;
+  font-size: 14px;
   color: var(--muted);
 }
 .analytics-hub-tile-value {
-  font-size: 24px;
-  font-weight: 700;
-  line-height: 1.2;
+  font-size: 44px;
+  font-weight: 800;
+  line-height: 1.1;
+}
+.analytics-hub-tile .analytics-hub-tile-value-text {
+  font-size: 22px;
+  line-height: 1.3;
 }
 .analytics-hub-tile-detail,
 .analytics-hub-tile-time {
@@ -5228,6 +5339,18 @@ td .MuiButton-root {
 }
 .analytics-hub-tile-time {
   font-weight: 600;
+}
+.analytics-hub-tile .analytics-hub-tile-time {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 14px;
+}
+.analytics-hub-tile-time span {
+  font-size: 30px;
+  font-weight: 800;
+  line-height: 1.15;
 }
 .analytics-hub-radios {
   display: flex;
@@ -5277,10 +5400,74 @@ td .MuiButton-root {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
-@media (min-width: 1100px) {
-  .analytics-hub-cards:not(.analytics-hub-daily) {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+.analytics-hub-hourly > :last-child:nth-child(odd) {
+  grid-column: 1 / -1;
+}
+.analytics-hub-card-open {
+  cursor: pointer;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease,
+    border-color 0.15s ease;
+}
+.analytics-hub-card-open:hover {
+  transform: scale(1.025);
+  border-color: var(--blue);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.25);
+  position: relative;
+  z-index: 1;
+}
+.analytics-hub-tile-times {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+  gap: 8px;
+}
+.analytics-hub-tile .analytics-hub-tile-times .analytics-hub-tile-time {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+.analytics-hub-tile-times .analytics-hub-tile-time span {
+  font-size: clamp(20px, 2vw, 26px);
+  color: var(--ink);
+}
+.analytics-hub-tile .analytics-hub-radios {
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  margin-top: 6px;
+  font-size: 13px;
+}
+.analytics-hub-tile .analytics-hub-radios label {
+  gap: 2px;
+}
+.analytics-hub-tile .analytics-hub-tile-detail {
+  margin-top: 6px;
+  color: var(--muted);
+}
+.analytics-quality-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+}
+@media (min-width: 900px) {
+  .analytics-quality-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+}
+.analytics-quality-grid > section {
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--paper);
+}
+.analytics-quality-grid h3 {
+  margin-top: 0;
+}
+.analytics-quality-grid strong {
+  font-size: 20px;
+  font-weight: 800;
 }
 .analytics-hub-card {
   min-width: 0;
@@ -5296,7 +5483,7 @@ td .MuiButton-root {
 }
 .analytics-hub-card h3 {
   margin: 0 0 8px;
-  font-size: 16px;
+  font-size: 18px;
 }
 .analytics-hub-svg {
   display: block;
@@ -5426,7 +5613,10 @@ td .MuiButton-root {
 }
 @media (max-width: 599.95px) {
   .analytics-hub-tile-value {
-    font-size: 20px;
+    font-size: 36px;
+  }
+  .analytics-panel h2.analytics-hub-section-title {
+    font-size: 24px;
   }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -5438,4 +5628,14 @@ td .MuiButton-root {
 }
 .analytics-hub-cards {
   align-items: start;
+}
+.analytics-hub-collection {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin: 8px 0 12px;
+}
+.analytics-hub-collection p {
+  margin: 0;
 }

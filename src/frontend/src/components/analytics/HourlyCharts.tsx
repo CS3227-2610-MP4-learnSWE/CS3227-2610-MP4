@@ -58,7 +58,7 @@ export default function HourlyCharts({
 
   if (hourly.state === "unavailable")
     return (
-      <div className="analytics-hub-cards">
+      <div className="analytics-hub-cards analytics-hub-hourly">
         {(Object.keys(TITLES) as ChartId[]).map((id) => (
           <ChartCard key={id} title={TITLES[id]} disabled onExpand={() => {}}>
             <p>{unavailableText(hourly.reason, hourly.recording_started_on)}</p>
@@ -188,7 +188,7 @@ export default function HourlyCharts({
 
   return (
     <>
-      <div className="analytics-hub-cards">
+      <div className="analytics-hub-cards analytics-hub-hourly">
         {(Object.keys(TITLES) as ChartId[]).map((id) => (
           <ChartCard
             key={id}

@@ -49,8 +49,11 @@ def finish_attempt(attempt_id: UUID, outcome: str, *, input_tokens: int | None =
         return bool(row and row.outcome == outcome and all(getattr(row, key) == value for key, value in tokens.items()))
 
 
+INTEGRATED = ("STU-03", "TEA-02")
+
+
 def activate_coverage(features: list[str]) -> None:
-    if not features or any(feature not in ("STU-03", "TEA-02") for feature in features):
+    if not features or any(feature not in INTEGRATED for feature in features):
         raise ValueError("Only integrated AI features may be activated.")
     with Session(_engine()) as db, db.begin():
         for feature in sorted(set(features)):
@@ -63,6 +66,17 @@ def activate_coverage(features: list[str]) -> None:
                 if row.covered_since is None:
                     row.covered_since = db.scalar(select(func.clock_timestamp()))
                 row.enabled = True
+
+
+def deactivate_coverage(features: list[str]) -> None:
+    """Hide a feature's usage from reports. Attempts are still recorded, and the start of coverage is kept."""
+    if not features or any(feature not in INTEGRATED for feature in features):
+        raise ValueError("Only integrated AI features may be changed.")
+    with Session(_engine()) as db, db.begin():
+        for feature in sorted(set(features)):
+            row = db.scalar(select(UsageCoverage).where(UsageCoverage.feature == feature).with_for_update())
+            if row is not None:
+                row.enabled = False
 
 
 def _timestamp(value: datetime | None) -> str | None:

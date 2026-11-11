@@ -1,5 +1,9 @@
 # Handoff notes
 
+## 2026-11-12: orchestrator, ADM-07 refinements after browser review
+- Direct changes at the user's request (no multi-agent run, so no usage report): UI polish, success-rate tiles, click-to-open charts, AI usage labels and collection switch, dev seed. Spec AC43-AC47, plan, tasks P7 and both guides updated; see `logs/Adm07AnalyticsHub.md`.
+- Open: not re-verified by the verifier role; full backend suite not run; a real-browser check of the latest rounds is the human's.
+
 ## 2026-11-12: orchestrator, ADM-07 phase 6 closeout
 - Wrote `logs/Adm07AnalyticsHub.md` (summary and suggested PR text); branch pushed for a PR into `master` (no `gh` CLI here, PR opened by the human from the compare link). Usage: [report](usage/runs/2026-11-11-ADM07-06/report.md). Still human: `ai_usage.cleanup` dry-run/apply (P4-10c), team review and merge.
 

@@ -40,7 +40,13 @@ function unusable(tile: Tile): { value: string; lines: string[] } | null {
   return null;
 }
 
-function FailureKpi({
+/** Share of requests that succeeded, to one decimal, rounded half up on exact counts. */
+function successPercent(failed: number, total: number): number {
+  if (total === 0) return 0;
+  return Math.floor(((total - failed) * 2000 + total) / (2 * total)) / 10;
+}
+
+function SuccessKpi({
   label,
   tile,
   threshold,
@@ -61,7 +67,12 @@ function FailureKpi({
   return (
     <KpiTile
       label={label}
-      value={bad ? bad.value : percent1(tile.rate_percent ?? 0)}
+      value={
+        bad
+          ? bad.value
+          : percent1(successPercent(tile.failed ?? 0, tile.total ?? 0))
+      }
+      compact={Boolean(bad)}
       lines={[...(bad ? bad.lines : [detail]), ...progress]}
       severity={tile.severity}
       chip={
@@ -106,8 +117,25 @@ function ResponseTimeKpi({
     <KpiTile
       label={label}
       value={unavailable ? "Unavailable" : empty ? "No requests" : undefined}
+      compact={unavailable || empty}
       lines={[]}
     >
+      {!unavailable && !empty && (
+        <div className="analytics-hub-tile-times">
+          <p className="analytics-hub-tile-time">
+            Median{" "}
+            <span data-testid="response-time-median">
+              {seconds2(set.median_ms ?? 0)}
+            </span>
+          </p>
+          <p className="analytics-hub-tile-time">
+            p95{" "}
+            <span data-testid="response-time-p95">
+              {seconds2(set.p95_ms ?? 0)}
+            </span>
+          </p>
+        </div>
+      )}
       <div role="radiogroup" aria-label={name} className="analytics-hub-radios">
         {CHOICES.map((option) => (
           <label key={option.id}>
@@ -121,29 +149,13 @@ function ResponseTimeKpi({
           </label>
         ))}
       </div>
-      {unavailable ? (
-        <p className="analytics-hub-tile-detail">
-          {unavailableReason(tile.reason)}.
-        </p>
-      ) : empty ? (
-        <p className="analytics-hub-tile-detail">{NONE[choice]}</p>
-      ) : (
-        <>
-          <p className="analytics-hub-tile-time">
-            Median{" "}
-            <span data-testid="response-time-median">
-              {seconds2(set.median_ms ?? 0)}
-            </span>
-          </p>
-          <p className="analytics-hub-tile-time">
-            p95{" "}
-            <span data-testid="response-time-p95">
-              {seconds2(set.p95_ms ?? 0)}
-            </span>
-          </p>
-          <p className="analytics-hub-tile-detail">{detail[choice]}</p>
-        </>
-      )}
+      <p className="analytics-hub-tile-detail">
+        {unavailable
+          ? `${unavailableReason(tile.reason)}.`
+          : empty
+            ? NONE[choice]
+            : detail[choice]}
+      </p>
       {dataNote}
     </KpiTile>
   );
@@ -187,27 +199,28 @@ export default function HealthStrip({
   return (
     <>
       <div role="group" aria-label="KPI tiles" className="analytics-hub-tiles">
-        <FailureKpi
-          label="Chatbot failure rate"
+        <SuccessKpi
+          label="Chatbot success rate"
           tile={chat}
           threshold={threshold}
-          detail={`${chat.failed} of ${chat.total} chatbot requests`}
+          detail={`${(chat.total ?? 0) - (chat.failed ?? 0)} of ${chat.total ?? 0} chatbot requests succeeded`}
           dataNote={note(chat)}
         />
-        <FailureKpi
-          label="Generation failure rate"
+        <SuccessKpi
+          label="Generation success rate"
           tile={gen}
           threshold={threshold}
           detail={
             gen.includes_rate_limited
-              ? `${gen.failed} of ${gen.total} generation requests, including rate-limited ones`
-              : `${gen.failed} of ${gen.total} generation attempts; rate-limited requests are not recorded yet`
+              ? `${(gen.total ?? 0) - (gen.failed ?? 0)} of ${gen.total ?? 0} generation requests succeeded, counting rate-limited ones as failed`
+              : `${(gen.total ?? 0) - (gen.failed ?? 0)} of ${gen.total ?? 0} generation attempts succeeded; rate-limited requests are not recorded yet`
           }
           dataNote={note(gen)}
         />
         <KpiTile
           label="Rate-limited requests"
           value={limitedBad ? limitedBad.value : String(limited.count)}
+          compact={Boolean(limitedBad)}
           lines={
             limitedBad
               ? limitedBad.lines
@@ -233,6 +246,7 @@ export default function HealthStrip({
         <KpiTile
           label="Practice completion"
           value={doneBad ? doneBad.value : `${done.percentage}%`}
+          compact={Boolean(doneBad)}
           lines={
             doneBad
               ? doneBad.lines

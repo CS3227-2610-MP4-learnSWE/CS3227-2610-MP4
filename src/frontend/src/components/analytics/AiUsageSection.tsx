@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { TextField } from "@mui/material";
+import { Alert, Button, TextField } from "@mui/material";
 import { useAnalyticsBlock } from "../../hooks/useAnalyticsBlock";
 import { todayUtc } from "../../lib/period";
 import * as usage from "../../services/aiUsage";
@@ -61,8 +61,12 @@ export default function AiUsageSection({
 }) {
   const [feature, setFeature] = useState<usage.Filters["feature"]>("all");
   const applies = aiUsageApplies(period);
+  const [reload, setReload] = useState(0);
+  const [enabled, setEnabled] = useState<boolean | null>(null);
+  const [switching, setSwitching] = useState(false);
+  const [switchError, setSwitchError] = useState<string | null>(null);
   const block = useAnalyticsBlock(
-    `ai|${period.from}|${period.to}|${feature}|${applies}`,
+    `ai|${period.from}|${period.to}|${feature}|${applies}|${reload}`,
     (signal) =>
       applies
         ? usage.readUsage(
@@ -72,6 +76,28 @@ export default function AiUsageSection({
         : Promise.resolve(null),
   );
   useEffect(() => report(block.status), [block.status, report]);
+  // The state is read from the report itself, so the switch adds no request on load.
+  useEffect(() => {
+    if (block.status !== "success" || !block.data) return;
+    const rows = block.data.rows.filter((row) =>
+      usage.INTEGRATED.includes(row.feature),
+    );
+    if (rows.length > 0)
+      setEnabled(rows.some((row) => row.requests.reason !== "not_enabled"));
+  }, [block.status, block.data]);
+  const change = async (next: boolean) => {
+    setSwitching(true);
+    setSwitchError(null);
+    try {
+      await usage.setCollection(next);
+      setEnabled(next);
+      setReload((n) => n + 1);
+    } catch (error) {
+      setSwitchError(aiUsageFailure("AI usage collection", error));
+    } finally {
+      setSwitching(false);
+    }
+  };
   return (
     <>
       <TextField
@@ -89,6 +115,34 @@ export default function AiUsageSection({
           </option>
         ))}
       </TextField>
+      <div className="analytics-hub-collection">
+        <p>
+          Collection:{" "}
+          <strong>
+            {enabled === null ? "unknown" : enabled ? "on" : "off"}
+          </strong>
+        </p>
+        {enabled !== true && (
+          <Button
+            variant="outlined"
+            disabled={switching}
+            onClick={() => change(true)}
+          >
+            Turn on collection
+          </Button>
+        )}
+        {enabled !== false && (
+          <Button
+            variant="outlined"
+            color="inherit"
+            disabled={switching}
+            onClick={() => change(false)}
+          >
+            Turn off collection
+          </Button>
+        )}
+      </div>
+      {switchError && <Alert severity="error">{switchError}</Alert>}
       {!applies ? (
         <p role="status">{TOO_LONG}</p>
       ) : (

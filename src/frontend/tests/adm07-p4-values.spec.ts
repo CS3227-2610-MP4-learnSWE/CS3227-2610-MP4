@@ -30,7 +30,7 @@ async function ready(
   const mock = await setup(page);
   configure?.(mock);
   await page.goto(url);
-  await expect(group(page, "Chatbot failure rate")).toBeVisible();
+  await expect(group(page, "Chatbot success rate")).toBeVisible();
   await expect(
     page.getByRole("status").filter({ hasText: /^Loading / }),
   ).toHaveCount(0);
@@ -127,9 +127,9 @@ test("adm07 p4 AC40 generation tile detail line includes rate-limited requests",
       b.generation_failure.severity = "critical";
     };
   });
-  const tile = group(page, "Generation failure rate");
+  const tile = group(page, "Generation success rate");
   await expect(tile).toContainText(
-    "4 of 30 generation requests, including rate-limited ones",
+    "26 of 30 generation requests succeeded, counting rate-limited ones as failed",
   );
   await expect(tile).not.toContainText("are not recorded yet");
 });

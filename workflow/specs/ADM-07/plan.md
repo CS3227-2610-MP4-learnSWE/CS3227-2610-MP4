@@ -2,6 +2,12 @@
 
 Contract for the developer and the test-designer, who work in parallel without seeing each other. Spec: `spec.md`. Conventions are those of ADM-01 (the removed ADM-01 plan): router prefix `/api/admin/analytics`, error body `{"detail": {"code", "message"}}`, timestamps ISO 8601 UTC with `Z`, `user_id` is `varchar(64)`, `Cache-Control: no-store` from the existing `/api/admin/*` middleware, admin auth via the shared dependency, hooks use `open_session()` and never raise. Where this plan names an existing symbol it comes from the ADM-01/ADM-06 plans; the developer confirms it by reading code and reports differences in `workflow/notes.md` instead of guessing.
 
+## Refinements after Gate E (2026-11-12)
+- `PUT /api/admin/ai-usage/coverage` in `ai_usage/routes.py` (model `CoverageIn`, strict, `extra=forbid`) calls `service.activate_coverage` or the new `service.deactivate_coverage` for `service.INTEGRATED` (STU-03, TEA-02). Tests: `tests/test_adm07_coverage_toggle.py` (on/off keeps start, roles, bad bodies, CSRF) and two Playwright tests in `adm07-retained-aiusage.spec.ts`. Frontend: `setCollection` in `services/aiUsage.ts`, state derived from the report in `AiUsageSection.tsx`.
+- Success-rate display: `HealthStrip.tsx` (`successPercent`, `SuccessKpi`) and `SeverityChip.tsx`; tests renamed to "Chatbot success rate" and "Generation success rate".
+- Click-to-open chart cards, header icon refresh, section and subheader styles, totals cards, table borders, Quality grid: `ChartCard.tsx`, `ChatbotUsersTable.tsx`, `QualitySection.tsx`, `styles.css` (scoped `analytics-hub-*`, `analytics-quality-grid`).
+- Dev seed: `dev_seed.py` and `feature_analytics/seed_dev.py` (idempotent through the marker `dev_seed_applied_at` in `analytics_meta`).
+
 ## Phases
 | Phase | Backend | Frontend |
 |---|---|---|
@@ -234,7 +240,7 @@ Accessible roles and names (tests use only these and the test ids below):
 | Custom range | dialog "Custom range"; textboxes found by label "From date", "To date"; buttons "Apply period", "Cancel"; field errors linked by `aria-describedby`, `aria-invalid="true"` on the invalid field |
 | Refresh | button "Refresh"; text "Last updated ..." (`time` element) |
 | Sections | headings level 2 "Health", "Feature outcomes", "AI usage", "Quality"; regions named the same |
-| KPI | group named by the six tile labels ("Chatbot failure rate", "Generation failure rate", "Rate-limited requests", "Chatbot response time", "Generation response time", "Practice completion"); inside each response-time group a radio group "Chatbot response time outcome" / "Generation response time outcome" with radios "All" (checked by default), "Successful", "Failed" (changing it sends no request; `data-testid="response-time-median"` and `"response-time-p95"` on the two value elements of each tile); chip text as in the spec; severity also as `data-severity="low_sample\|ok\|warning\|critical"` |
+| KPI | group named by the six tile labels ("Chatbot success rate", "Generation success rate", "Rate-limited requests", "Chatbot response time", "Generation response time", "Practice completion"); inside each response-time group a radio group "Chatbot response time outcome" / "Generation response time outcome" with radios "All" (checked by default), "Successful", "Failed" (changing it sends no request; `data-testid="response-time-median"` and `"response-time-p95"` on the two value elements of each tile); chip text as in the spec; severity also as `data-severity="low_sample\|ok\|warning\|critical"` |
 | Loading | `status` with the exact text per block ("Loading health...", "Loading hourly charts...", "Loading daily activity...", "Loading chatbot users...", "Loading generation reliability...", "Loading AI usage...", "Loading quality results...") |
 | Failure | `alert` with the exact message; button "Retry health", "Retry hourly charts", "Retry daily activity", "Retry chatbot users", "Retry generation reliability", "Retry AI usage", "Retry quality results" |
 | Charts | `role="img"` with the names in the spec; Expand buttons "Expand Requests per hour", "Expand Failure rate per hour", "Expand Peak hours" |

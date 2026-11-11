@@ -79,7 +79,7 @@ async function ready(
   const mock = await setup(page);
   configure?.(mock);
   await page.goto(url);
-  await expect(group(page, "Chatbot failure rate")).toBeVisible();
+  await expect(group(page, "Chatbot success rate")).toBeVisible();
   await expect(
     page.getByRole("status").filter({ hasText: /^Loading / }),
   ).toHaveCount(0);
@@ -226,8 +226,8 @@ test("adm07 AC29 a period longer than 31 days sends six requests and explains th
 // ================================================================== KPI tiles (AC5-AC8)
 
 const TILES = [
-  "Chatbot failure rate",
-  "Generation failure rate",
+  "Chatbot success rate",
+  "Generation success rate",
   "Rate-limited requests",
   "Chatbot response time",
   "Generation response time",
@@ -240,15 +240,15 @@ test("adm07 AC5 six KPI tiles in order with values, details and chips", async ({
   await ready(page);
   const kpi = group(region(page, "Health"), "KPI tiles");
   for (const name of TILES) await expect(group(kpi, name)).toBeVisible();
-  const chatbot = group(kpi, "Chatbot failure rate");
-  await expect(chatbot).toContainText("7.5%");
-  await expect(chatbot).toContainText("9 of 120 chatbot requests");
-  await expect(chatbot).toContainText("Critical: above 5%");
-  const generation = group(kpi, "Generation failure rate");
-  await expect(generation).toContainText("3.3%");
-  await expect(generation).toContainText("Warning: 2% to 5%");
+  const chatbot = group(kpi, "Chatbot success rate");
+  await expect(chatbot).toContainText("92.5%");
+  await expect(chatbot).toContainText("111 of 120 chatbot requests succeeded");
+  await expect(chatbot).toContainText("Critical: below 95%");
+  const generation = group(kpi, "Generation success rate");
+  await expect(generation).toContainText("96.7%");
+  await expect(generation).toContainText("Warning: 95% to 98%");
   await expect(generation).toContainText(
-    "1 of 30 generation attempts; rate-limited requests are not recorded yet",
+    "29 of 30 generation attempts succeeded; rate-limited requests are not recorded yet",
   );
   await expect(group(kpi, "Practice completion")).toContainText(/70(\.0)?%/);
   await expect(group(kpi, "Practice completion")).toContainText(
@@ -267,9 +267,9 @@ test("adm07 AC10 phase 2 rate-limited tile is the unavailable not-collected stat
 
 const SEVERITIES = [
   ["low_sample", 19, 19, "Low sample: fewer than 20 requests"],
-  ["ok", 100, 1, "Healthy: below 2%"],
-  ["warning", 100, 3, "Warning: 2% to 5%"],
-  ["critical", 100, 6, "Critical: above 5%"],
+  ["ok", 100, 1, "Healthy: 98% or above"],
+  ["warning", 100, 3, "Warning: 95% to 98%"],
+  ["critical", 100, 6, "Critical: below 95%"],
 ] as const;
 
 for (const [severity, total, failed, chip] of SEVERITIES) {
@@ -284,7 +284,7 @@ for (const [severity, total, failed, chip] of SEVERITIES) {
         b.chatbot_failure.rate_percent = (failed * 100) / total;
       };
     });
-    const tile = group(page, "Chatbot failure rate");
+    const tile = group(page, "Chatbot success rate");
     await expect(tile.getByText(chip, { exact: true })).toBeVisible();
     await expect(
       page.locator(`[data-severity="${severity}"]`).first(),
@@ -309,7 +309,7 @@ for (const theme of ["light", "dark"] as const) {
         b.chatbot_failure.failed = failed;
       };
       await page.goto(HUB);
-      const text = group(page, "Chatbot failure rate").getByText(chip, {
+      const text = group(page, "Chatbot success rate").getByText(chip, {
         exact: true,
       });
       await expect(text).toBeVisible();
@@ -394,7 +394,7 @@ test("adm07 AC8 selection survives Refresh and period change and resets on brows
     radios.getByRole("radio", { name: "Failed", exact: true }),
   ).toBeChecked();
   await page.reload();
-  await expect(group(page, "Chatbot failure rate")).toBeVisible();
+  await expect(group(page, "Chatbot success rate")).toBeVisible();
   await expect(
     radios.getByRole("radio", { name: "All", exact: true }),
   ).toBeChecked();
@@ -436,7 +436,7 @@ test("adm07 AC38 in-progress note appears on the chatbot tile and the charts", a
       b.in_progress = 2;
     };
   });
-  await expect(group(page, "Chatbot failure rate")).toContainText(
+  await expect(group(page, "Chatbot success rate")).toContainText(
     "2 in progress",
   );
   await expect(region(page, "Hourly activity")).toContainText("2 in progress");
@@ -465,7 +465,7 @@ test("adm07 not-applicable and unavailable tiles use the specified words", async
       };
     };
   });
-  const chat = group(page, "Chatbot failure rate");
+  const chat = group(page, "Chatbot success rate");
   await expect(chat).toContainText("Not applicable");
   await expect(chat).toContainText("no chatbot requests in this period.");
   const pc = group(page, "Practice completion");
@@ -1070,7 +1070,7 @@ test("adm07 AC27 AI usage section: feature combobox, table, caption, note, one r
   const n0 = mock.count();
   await ai
     .getByRole("combobox", { name: "Feature", exact: true })
-    .selectOption({ label: "Teacher generation (TEA-02)" });
+    .selectOption({ label: "Teacher generation" });
   await expect.poll(() => mock.count()).toBe(n0 + 1);
   expect(mock.of("aiusage").at(-1)!.url.searchParams.get("feature")).toBe(
     "TEA-02",

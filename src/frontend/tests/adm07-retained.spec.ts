@@ -97,7 +97,7 @@ const retry = (p: Page, what: string) =>
   p.getByRole("button", { name: `Retry ${what}`, exact: true });
 
 async function loaded(page: Page) {
-  await expect(group(page, "Chatbot failure rate")).toBeVisible();
+  await expect(group(page, "Chatbot success rate")).toBeVisible();
   await expect(usersTable(page)).toBeVisible();
   await expect(generationTable(page)).toBeVisible();
   await expect(
@@ -517,7 +517,7 @@ for (const [kind, subject, what, regionName] of BLOCKS) {
       alertWith(region(page, regionName), MSG.network),
     ).toBeVisible();
     await expect(retry(page, what)).toBeVisible();
-    await expect(group(page, "Chatbot failure rate")).toBeVisible(); // other blocks stay
+    await expect(group(page, "Chatbot success rate")).toBeVisible(); // other blocks stay
     await expect(h1(page)).toBeVisible();
     await expect(periodSelect(page)).toBeEnabled();
     const before = mock.count();
@@ -570,7 +570,7 @@ for (const [kind, subject, what, regionName] of BLOCKS) {
     await page.goto(HUB);
     await expect(region(page, regionName).getByRole("alert")).toBeVisible();
     await expect(retry(page, what)).toBeVisible();
-    await expect(group(page, "Chatbot failure rate")).toBeVisible();
+    await expect(group(page, "Chatbot success rate")).toBeVisible();
   });
 }
 
@@ -796,7 +796,7 @@ test("adm07 retained AC30 two invalid custom-range fields: focus goes to the fir
     .click();
   await expect(rangeDialog(page)).toHaveCount(0);
   await expect.poll(() => mock.count()).toBe(13); // 6 blocks: over 31 days sends no AI usage request
-  await expect(group(page, "Chatbot failure rate")).toBeVisible();
+  await expect(group(page, "Chatbot success rate")).toBeVisible();
 });
 
 // ============================================================ roles, anonymous, 401 (ADM-01 AC44)

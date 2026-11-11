@@ -2,9 +2,9 @@ import { AlertTriangle, CheckCircle2, Info, OctagonAlert } from "lucide-react";
 import type { Severity } from "../../services/featureAnalytics";
 
 const CHIPS = {
-  critical: { Icon: OctagonAlert, words: () => "Critical: above 5%" },
-  warning: { Icon: AlertTriangle, words: () => "Warning: 2% to 5%" },
-  ok: { Icon: CheckCircle2, words: () => "Healthy: below 2%" },
+  critical: { Icon: OctagonAlert, words: () => "Critical: below 95%" },
+  warning: { Icon: AlertTriangle, words: () => "Warning: 95% to 98%" },
+  ok: { Icon: CheckCircle2, words: () => "Healthy: 98% or above" },
   low_sample: {
     Icon: Info,
     words: (threshold: number) =>
