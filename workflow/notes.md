@@ -1,5 +1,10 @@
 # Handoff notes
 
+## 2026-11-11: orchestrator, ADM-07 phase 5 done (Gate F decisions applied)
+- Run 2026-11-11-ADM07-05: assertions mapped and ported first (`phase5-test-mapping.md`, `adm07-retained*.spec.ts`, `adm07-redirect.spec.ts`), then deleted: legacy page, old AI usage page and nav, adm01/adm06 browser tests, ADM-01/ADM-06 specs; `/admin/ai-usage` redirects to `/admin/analytics`. Verifier PASS (backend 1130 passed, Playwright mocked 242 passed, typecheck/lint clean). Retained-criteria mapping corrected; speccheck OK.
+- Security cases (verifier): redirect nested under RequireRole admin; `/api/admin/ai-usage` admin-only with no-store and rate limit; no legacy page rendered.
+- Remaining: P6-1 final docs pass, `logs/` summary and PR into `master` (not started); P4-10c (cleanup dry-run then apply) is the human's; plan line-21 amendment awaits Gate E confirmation already given. Backend test docstrings still cite deleted ADM-01 plan (history). Usage: [report](usage/runs/2026-11-11-ADM07-05/report.md).
+
 ## 2026-11-11: developer, ADM-07 phase 5 deletion (Gate F)
 - Done: hub CSS (reasons 14px, caption span fits region); deleted AdminFeatureAnalyticsLegacy (page, lazy import, route) and unused `defaultPeriod`; `/admin/ai-usage` is now `Navigate replace` to `/admin/analytics`; deleted AdminAiUsage, its Admin.tsx case, nav entry and `.ai-usage-*` CSS; deleted adm01-analytics, adm01-privacy, adm06-usage specs and adm01Api.ts (adm07Api.ts now imports ./adm07Fixtures); removed ADM-06 test, ai-usage route mock and visual row from admin-ui.spec.ts; deleted workflow/specs/ADM-01 and ADM-06 (speccheck ADM-07 OK); fixed links; docs updated; retained-criteria ADM-06 AC12 corrected (mapping section 5).
 - Kept: services/aiUsage.ts, backend ai-usage and /usage include_rows, all backend tests and helpers.
