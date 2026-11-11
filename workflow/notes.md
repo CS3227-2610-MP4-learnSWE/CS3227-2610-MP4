@@ -1,5 +1,13 @@
 # Handoff notes
 
+## 2026-11-11: developer on ADM-07 phase 2 (P2-4, P2-5 dev part, P2-6..P2-12)
+- Done: backend endpoints `/health`, `/hourly`, `/daily`, `/chatbot-users`, `/usage?include_rows`, partial coverage (`data_starts_on`) on kept endpoints; hub UI at `/admin/analytics`, legacy page at `/admin/feature-analytics-legacy`, nav label "Feature Analytics", docs. No [P4] work, nothing deleted.
+- Checks: frontend typecheck and lint pass; a throwaway Playwright smoke (deleted) showed exactly 7 requests on load, tooltip, modal focus on Close, CSV download. Backend ADM-01 targeted run: 473 passed, 5 failed, all expected contract changes: `test_adm01_usage` top-level shape and `ac12 recording date`, `test_adm01_generation` two shape tests (new keys `data_starts_on`, `requests`, `rate_limited`, `rate_limited_state`), `test_adm01_cross_user ac39` (route count 5 to 9). Test-designer to update. Not run: ADM-06 tests, full suites.
+- Deviations to review: no Pydantic response models (plain dicts, as ADM-01); `CustomRangeDialog` lives inside `PeriodSelector.tsx`; `useAnalyticsBlock` wraps `useAnalyticsLoad`; QualitySection duplicates legacy quality code until phase 5; `data_starts_on` added both per metric and at top level of kept endpoints; unavailable `/hourly` and `/chatbot-users` use null `in_progress`; Refresh and period change remount users/AI/quality sections (reset to defaults); failed Refresh shows the failure message, not old data (spec wording ambiguous); heatmap CSV `hour_local` is an integer 0-23; tooltip date format is "Mon 2026-11-09 08:00" (spec leaves it open).
+- Not verified: dark theme contrast numbers, 320 px layout, keyboard-only run, timezone cases by test.
+- Resource use: one Sonnet 5.5 session, roughly 400k tokens, no retries, no live LLM calls.
+
+
 ## 2026-11-11: spec-writer on ADM-07 (Analytics hub), phase 1 specs
 - Done: `workflow/specs/ADM-07/spec.md`, `plan.md`, `tasks.md` (draft, awaiting Gate B); US-ADM-07-01..08 added to `docs/UserStories.md`; ADM-07 entry added to `docs/FeatureList.md`; old ADM-01/ADM-06 marked "Superseded by ADM-07 once approved" (no other old text changed). No app code.
 - Contract: kept `/usage` (new optional `include_rows`), `/generation`, `/quality`, grading-run endpoints, `/api/admin/ai-usage`; new `/health`, `/hourly`, `/daily`, `/chatbot-users`. Hub loads 7 parallel GETs. Phase 4 adds `analytics_request_log` (30-day retention, no user id), `analytics_login_event`, `analytics_practice_created`, backfill and purge.
