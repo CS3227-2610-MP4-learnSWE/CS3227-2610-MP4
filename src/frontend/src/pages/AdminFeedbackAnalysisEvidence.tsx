@@ -2,6 +2,7 @@ import { useCallback, useLayoutEffect, useState } from "react";
 import { Link, useLocation, useParams } from "react-router";
 import { Button } from "@mui/material";
 import { PageHeading, Panel } from "../components/ui";
+import { useFeedbackPaths } from "../lib/feedbackPaths";
 import {
   getAnalysis,
   getEvidence,
@@ -23,8 +24,14 @@ const answerText = (
   return String(value);
 };
 
-export default function AdminFeedbackAnalysisEvidence() {
-  const { analysisId = "", label = "" } = useParams();
+export function AdminFeedbackAnalysisEvidenceScreen({
+  analysisId,
+  label,
+}: {
+  analysisId: string;
+  label: string;
+}) {
+  const paths = useFeedbackPaths();
   const [data, setData] = useState<Evidence | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
@@ -64,9 +71,7 @@ export default function AdminFeedbackAnalysisEvidence() {
     <div className="feedback-analysis">
       <PageHeading title={`Response ${label}`} />
       <p>
-        <Link to={`/admin/feedback/analysis/${analysisId}`}>
-          Back to analysis
-        </Link>
+        <Link to={paths.analysisResult(analysisId)}>Back to analysis</Link>
       </p>
       {loading && <p role="status">Loading response...</p>}
       {error && (
@@ -99,5 +104,16 @@ export default function AdminFeedbackAnalysisEvidence() {
         </Panel>
       )}
     </div>
+  );
+}
+
+/** The old evidence page: a thin wrapper that reads the ids from the address. */
+export default function AdminFeedbackAnalysisEvidence() {
+  const { analysisId = "", label = "" } = useParams();
+  return (
+    <AdminFeedbackAnalysisEvidenceScreen
+      analysisId={analysisId}
+      label={label}
+    />
   );
 }

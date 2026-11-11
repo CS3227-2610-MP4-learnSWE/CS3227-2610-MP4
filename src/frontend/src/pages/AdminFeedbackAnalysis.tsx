@@ -8,6 +8,7 @@ import {
   TextField,
 } from "@mui/material";
 import { PageHeading, Panel } from "../components/ui";
+import { useFeedbackPaths } from "../lib/feedbackPaths";
 import DeleteAnalysisDialog from "../components/DeleteAnalysisDialog";
 import {
   createAnalysis,
@@ -26,8 +27,6 @@ import {
   localTime,
   SELECTION_REQUIRED,
 } from "../messages/feedbackAnalysis";
-
-const SELECTION = "/admin/feedback/analysis";
 
 /** One read with its own error and Retry; the same function identity means the same request. */
 function useLoader<T>(load: (() => Promise<T>) | null, what: string) {
@@ -71,6 +70,7 @@ const newRequestId = () => crypto.randomUUID();
 export default function AdminFeedbackAnalysis() {
   const navigate = useNavigate();
   const location = useLocation();
+  const paths = useFeedbackPaths();
   const [formId, setFormId] = useState("");
   const [offset, setOffset] = useState(0);
   const [refresh, setRefresh] = useState(0);
@@ -144,6 +144,21 @@ export default function AdminFeedbackAnalysis() {
     setOffset(0);
     changeSelection(new Set());
   };
+  // `?form=` (the "Analyse this form" shortcut) is matched against the admin's own list, never sent to the server.
+  const linkedForm = new URLSearchParams(location.search).get("form");
+  const [linkMissing, setLinkMissing] = useState(false);
+  const linkHandled = useRef(false);
+  useEffect(() => {
+    if (linkedForm === null || linkHandled.current || !forms.data) return;
+    linkHandled.current = true;
+    const wanted = linkedForm.toLowerCase();
+    const match = forms.data.items.find(
+      (form) => form.state !== "draft" && form.id.toLowerCase() === wanted,
+    );
+    if (match) chooseForm(match.id);
+    else setLinkMissing(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [linkedForm, forms.data]);
   const total = count.data?.count ?? null;
   const selected = selectAll ? (total ?? 0) : ticked.size;
 
@@ -166,7 +181,7 @@ export default function AdminFeedbackAnalysis() {
     try {
       const analysis = await createAnalysis(body);
       requestId.current = null;
-      navigate(`${SELECTION}/${analysis.id}`, { replace: true });
+      navigate(paths.analysisResult(analysis.id), { replace: true });
     } catch (e) {
       // Only a failure that may not have reached the server keeps the same request id.
       if (!isTransport(e)) requestId.current = null;
@@ -196,6 +211,12 @@ export default function AdminFeedbackAnalysis() {
         <div>
           <Panel>
             <h2>Select responses</h2>
+            {linkMissing && (
+              <p role="status">
+                The linked form is not available for analysis. Choose a form
+                below.
+              </p>
+            )}
             {forms.loading && <p role="status">Loading forms...</p>}
             {forms.error && (
               <LoadError message={forms.error} retry={forms.retry} />
@@ -347,7 +368,7 @@ export default function AdminFeedbackAnalysis() {
             <ul className="analysis-history">
               {items.map((item) => (
                 <li key={item.id}>
-                  <Link to={`${SELECTION}/${item.id}`}>
+                  <Link to={paths.analysisResult(item.id)}>
                     {`${item.form_title}, ${localTime(item.created_at)}, ${item.response_count} responses, AI ${item.ai_status}`}
                   </Link>
                   <Button

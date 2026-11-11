@@ -1,3 +1,4 @@
+import { emitHubCountChange } from "../lib/hubCountEvents";
 import { ApiError, getSessionGeneration, request } from "./client";
 
 export type Association = null | { kind: "feature" | "lesson"; id: string };
@@ -386,7 +387,14 @@ export async function feedbackWrite<K extends Kind>(
 ) {
   epoch++;
   try {
-    return await send(method, path, kind, body, signal);
+    const result = await send(method, path, kind, body, signal);
+    // Only a confirmed create, publish or close changes the hub's form counts.
+    if (
+      method === "POST" &&
+      (path === adminBase || /\/(publish|close)$/.test(path))
+    )
+      emitHubCountChange("forms-changed");
+    return result;
   } finally {
     epoch++;
   }

@@ -11,6 +11,7 @@ import {
   TextField,
 } from "@mui/material";
 import { PageHeading, Panel } from "./ui";
+import { useFeedbackPaths } from "../lib/feedbackPaths";
 import { useDraftNavigationGuard } from "../hooks/useDraftNavigationGuard";
 import { useFeedbackRead } from "../hooks/useFeedbackRead";
 import {
@@ -300,6 +301,7 @@ export default function FeedbackDraftEditor({
   const controls = useRef<HTMLFormElement>(null);
   const alive = useRef(true);
   const controller = useRef<AbortController | null>(null);
+  const paths = useFeedbackPaths();
   const blocker = useDraftNavigationGuard(dirty, saving);
   useEffect(() => {
     alive.current = true;
@@ -360,7 +362,7 @@ export default function FeedbackDraftEditor({
       setSuccess("Draft saved.");
       if (!initial) {
         created?.(row);
-        setDestination(`/admin/feedback/${row.id}`);
+        setDestination(paths.form(row.id));
       }
     } catch (failure) {
       if (alive.current) {
@@ -403,7 +405,7 @@ export default function FeedbackDraftEditor({
           code === "uncertain_mutation") && (
           <Button
             onClick={() =>
-              initial ? window.location.reload() : navigate("/admin/feedback")
+              initial ? window.location.reload() : navigate(paths.forms())
             }
           >
             Reload saved form

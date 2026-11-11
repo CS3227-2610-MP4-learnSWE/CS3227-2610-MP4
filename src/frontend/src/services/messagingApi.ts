@@ -1,3 +1,4 @@
+import { emitHubCountChange } from "../lib/hubCountEvents";
 import { ApiError, getSessionGeneration, request } from "./client";
 
 export type Recipient = {
@@ -240,10 +241,17 @@ export function messagingRead<T>(path: string) {
     },
   };
 }
-export function messagingWrite<T>(
+export async function messagingWrite<T>(
   path: string,
   body: unknown,
   signal?: AbortSignal,
 ) {
-  return send<T>("POST", path, body, signal);
+  const result = await send<T>("POST", path, body, signal);
+  // Only a sent reply to a feedback response changes the hub's Follow-up count.
+  if (
+    path.endsWith("/send") &&
+    (result as Partial<Receipt>).kind === "feedback_response"
+  )
+    emitHubCountChange("followup-changed");
+  return result;
 }
