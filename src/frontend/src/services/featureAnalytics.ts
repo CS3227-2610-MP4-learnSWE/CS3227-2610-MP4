@@ -17,8 +17,15 @@ export type Reason =
   | "no_practice_attempts"
   | "no_generation_attempts"
   | "no_eligible_records"
-  | "none_graded";
-type Base = { state: State; reason: Reason | null };
+  | "none_graded"
+  | "not_collected"
+  | "beyond_retention"
+  | "no_chat_requests";
+type Base = {
+  state: State;
+  reason: Reason | null;
+  data_starts_on?: string | null;
+};
 
 export type UserRow = {
   user_id: string;
@@ -52,12 +59,16 @@ export type GenerationRow = Base & {
   workflow: string;
   label: string;
   attempts: number | null;
+  requests: number | null;
+  rate_limited: number | null;
+  rate_limited_state: { state: State; reason: Reason | null };
   successful: number | null;
   unsuccessful: number | null;
   rate_percent: number | null;
 };
 export type Generation = {
   recording_started_on: string;
+  data_starts_on?: string | null;
   workflows: GenerationRow[];
 };
 
@@ -113,6 +124,7 @@ export type Items = {
 export type Quality = {
   workflow: Workflow;
   recording_started_on: string;
+  data_starts_on?: string | null;
   grades: Base & {
     assessed_count: number | null;
     pending_count: number | null;
@@ -361,4 +373,172 @@ export function pollFailure(error: unknown): string {
       return `Grading progress could not be checked: the server returned an error (${error.status}).`;
   }
   return "Grading progress could not be checked: the server returned an unreadable reply.";
+}
+
+// ---- ADM-07 hub reads ----
+
+export type Severity = "low_sample" | "ok" | "warning" | "critical";
+export type FailureTile = Base & {
+  total: number | null;
+  failed: number | null;
+  in_progress: number | null;
+  rate_percent: number | null;
+  severity: Severity | null;
+  includes_rate_limited?: boolean;
+};
+export type TimeSet = {
+  count: number | null;
+  median_ms: number | null;
+  p95_ms: number | null;
+};
+export type ResponseTimeTile = Base & {
+  all: TimeSet;
+  successful: TimeSet;
+  failed: TimeSet;
+};
+export type Health = {
+  period_start: string;
+  period_end: string;
+  recording_started_on: string;
+  data_starts_on: string | null;
+  as_of: string;
+  low_sample_threshold: number;
+  chatbot_failure: FailureTile;
+  generation_failure: FailureTile;
+  rate_limited: Base & {
+    since: string | null;
+    count: number | null;
+    total_requests: number | null;
+  };
+  chatbot_response_time: ResponseTimeTile;
+  generation_response_time: ResponseTimeTile;
+  practice_completion: Usage["practice_completion"];
+};
+
+export const CATEGORIES = [
+  "timeout",
+  "rate_limited",
+  "invalid_output",
+  "upstream",
+  "unclassified",
+] as const;
+export type Category = (typeof CATEGORIES)[number];
+export type HourlyBucket = {
+  hour_start: string;
+  successful: number;
+  failed: number;
+  total: number;
+  failure_rate_percent: number | null;
+  failed_by_category: Record<Category, number>;
+};
+export type Hourly = Base & {
+  recording_started_on: string;
+  as_of: string;
+  in_progress: number | null;
+  retention_days: number;
+  category_breakdown: { state: State; reason: Reason | null };
+  totals: { successful: number; failed: number; total: number } | null;
+  buckets: HourlyBucket[];
+};
+
+export type DailySeries = Base & {
+  since: string | null;
+  per_day: Record<string, string | number>[];
+  total_logins?: number | null;
+  total?: number | null;
+};
+export type Funnel = Base & {
+  started_total: number | null;
+  submitted_by_period_end: number | null;
+  per_day: { date: string; started: number; submitted: number }[];
+};
+export type PerStudentDay = {
+  date: string;
+  active_students: number;
+  median_attempts: number | null;
+  distribution: Record<"1" | "2" | "3" | "4" | "5_plus", number>;
+};
+export type Daily = {
+  period_start: string;
+  period_end: string;
+  recording_started_on: string;
+  logins: DailySeries;
+  practice_drafts_started: DailySeries;
+  practice_published: DailySeries;
+  attempts_funnel: Funnel;
+  attempts_per_student: Base & { per_day: PerStudentDay[] };
+};
+
+export type UsersRole = "student" | "teacher";
+export type UsersSort = "unsuccessful" | "successful" | "name" | "failure_rate";
+export type UsersOrder = "asc" | "desc";
+export type UsersQuery = {
+  role: UsersRole;
+  sort: UsersSort;
+  order: UsersOrder;
+  offset: number;
+};
+export const USERS_PAGE_SIZE = 10;
+export type ChatbotUsers = Base & {
+  recording_started_on: string;
+  as_of: string;
+  in_progress: number | null;
+  role: UsersRole;
+  sort: UsersSort;
+  order: UsersOrder;
+  totals: { successful: number | null; unsuccessful: number | null };
+  all_users_total: Base & {
+    successful: number | null;
+    unsuccessful: number | null;
+  };
+  limit: number;
+  offset: number;
+  total_users: number | null;
+  rows: (UserRow & { failure_rate_percent: number | null })[];
+};
+
+export const getHealth = async (
+  period: Period,
+  signal?: AbortSignal,
+): Promise<Health> =>
+  checked<Health>(
+    await read(`/api/admin/analytics/health?${query(period)}`, signal),
+    ["chatbot_failure", "generation_failure", "chatbot_response_time"],
+  );
+
+export async function getHourly(
+  period: Period,
+  signal?: AbortSignal,
+): Promise<Hourly> {
+  const data = checked<Hourly>(
+    await read(`/api/admin/analytics/hourly?${query(period)}`, signal),
+    ["state", "buckets", "category_breakdown"],
+  );
+  if (!Array.isArray(data.buckets)) throw new ApiError(0, "bad_response");
+  return data;
+}
+
+export const getDaily = async (
+  period: Period,
+  signal?: AbortSignal,
+): Promise<Daily> =>
+  checked<Daily>(
+    await read(`/api/admin/analytics/daily?${query(period)}`, signal),
+    ["logins", "attempts_funnel", "attempts_per_student"],
+  );
+
+export async function getChatbotUsers(
+  period: Period,
+  users: UsersQuery,
+  signal?: AbortSignal,
+): Promise<ChatbotUsers> {
+  const data = checked<ChatbotUsers>(
+    await read(
+      `/api/admin/analytics/chatbot-users?role=${users.role}&sort=${users.sort}&order=${users.order}&limit=${USERS_PAGE_SIZE}&offset=${users.offset}&${query(period)}`,
+      signal,
+    ),
+    ["state", "totals", "rows"],
+  );
+  if (!Array.isArray(data.rows)) throw new ApiError(0, "bad_response");
+  return data;
 }
