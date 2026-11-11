@@ -11,22 +11,22 @@ Phases follow `workflow/specs/CONSOL-01/migration-plan.md`. Phase 3 (Feedback hu
 ## Phase 2: UI and endpoints on existing data (Gate C: try it in the browser)
 | # | Task | Owner agent | Depends on | Status |
 |---|---|---|---|---|
-| P2-1 | Backend tests (incl. AC38 in-progress rule and AC39 partial coverage): `/health`, `/hourly`, `/daily`, `/chatbot-users`, `/usage?include_rows`, validation and auth (AC1, AC2, AC4-AC9, AC11-AC13, AC19-AC21, AC23-AC26); no `src/` access | test-designer | Gate B | todo |
-| P2-2 | Frontend Playwright tests for the hub: header and period, six KPI tiles (response-time tiles per workflow with All/Successful/Failed selector) and severity, logins split by role, charts, modal, CSV, timezones, daily cards, users table, carried generation/AI usage/Quality/grading states, request counts, history, roles, 401, backend down, timeout, mobile, themes (AC7, AC14-AC18, AC27-AC32) | test-designer | Gate B | todo |
-| P2-3 | Concurrent-request and cross-user tests for the new read endpoints (non-admin of every role gets 403; two simultaneous Refresh-style loads return consistent data) | test-designer | Gate B | todo |
-| P2-4 | Backend: `health.py` (severity, percentile, in-progress rule), new queries, partial coverage (`data_starts_on`, also on the kept endpoints), schemas, four routes, `include_rows`, config constants | developer | Gate B | todo |
-| P2-5 | Update existing ADM-01 coverage tests for partial coverage (test-designer, reasons recorded). Frontend: move the old ADM-01 page to `/admin/feature-analytics-legacy`; test-designer repoints the ADM-01 browser tests to that path (assertions unchanged) | developer, test-designer | Gate B | todo |
-| P2-6 | Frontend: `useAnalyticsBlock`, `lib/period.ts`, `lib/analyticsTime.ts`, `lib/csv.ts`, services | developer | P2-4 contract | todo |
-| P2-7 | Frontend: header, period selector, custom range dialog, Refresh and last updated | developer | P2-6 | todo |
-| P2-8 | Frontend: Health strip, KPI tiles, severity chips | developer | P2-6 | todo |
-| P2-9 | Frontend: hourly charts, expand modal, CSV | developer | P2-6 | todo |
-| P2-10 | Frontend: daily cards, chatbot users table, generation table | developer | P2-6 | todo |
-| P2-11 | Frontend: AI usage section (reuse `services/aiUsage.ts`) and Quality section (extract from the old page, reuse not rewrite) | developer | P2-6 | todo |
-| P2-12 | Nav link "Feature Analytics", routes, scoped styles, docs (`UserGuide.md` only for what works: unavailable states are described as such) and `DeveloperGuide.md` (including the dated SoC LLM limit observations of 2026-11-11, labelled as observed, not documented quotas, with the unconfirmed reasoning-token hypothesis) | developer | P2-7 to P2-11 | todo |
-| P2-13 | Run backend and frontend suites, typecheck, lint; report per test, contract mismatch versus logic bug | test-designer | P2-1 to P2-3, P2-4 to P2-12 | todo |
-| P2-14 | Verify: spec coverage, SHR-01/02/05 on every new endpoint, privacy (no content), chart accessibility, docs accuracy; re-run suite | verifier | P2-13 | todo |
-| P2-15 | Fix defects (max 2 rounds), verifier re-checks | developer, verifier | P2-14 | todo |
-| P2-16 | Orchestrator: usage report, notes, human tries the hub (Gate C) | orchestrator | P2-15 | todo |
+| P2-1 | Backend tests (incl. AC38 in-progress rule and AC39 partial coverage): `/health`, `/hourly`, `/daily`, `/chatbot-users`, `/usage?include_rows`, validation and auth (AC1, AC2, AC4-AC9, AC11-AC13, AC19-AC21, AC23-AC26); no `src/` access | test-designer | Gate B | done (Gate C passed 2026-11-11) |
+| P2-2 | Frontend Playwright tests for the hub: header and period, six KPI tiles (response-time tiles per workflow with All/Successful/Failed selector) and severity, logins split by role, charts, modal, CSV, timezones, daily cards, users table, carried generation/AI usage/Quality/grading states, request counts, history, roles, 401, backend down, timeout, mobile, themes (AC7, AC14-AC18, AC27-AC32) | test-designer | Gate B | done (Gate C passed 2026-11-11) |
+| P2-3 | Concurrent-request and cross-user tests for the new read endpoints (non-admin of every role gets 403; two simultaneous Refresh-style loads return consistent data) | test-designer | Gate B | done (Gate C passed 2026-11-11) |
+| P2-4 | Backend: `health.py` (severity, percentile, in-progress rule), new queries, partial coverage (`data_starts_on`, also on the kept endpoints), schemas, four routes, `include_rows`, config constants | developer | Gate B | done (Gate C passed 2026-11-11) |
+| P2-5 | Update existing ADM-01 coverage tests for partial coverage (test-designer, reasons recorded). Frontend: move the old ADM-01 page to `/admin/feature-analytics-legacy`; test-designer repoints the ADM-01 browser tests to that path (assertions unchanged) | developer, test-designer | Gate B | done (Gate C passed 2026-11-11) |
+| P2-6 | Frontend: `useAnalyticsBlock`, `lib/period.ts`, `lib/analyticsTime.ts`, `lib/csv.ts`, services | developer | P2-4 contract | done (Gate C passed 2026-11-11) |
+| P2-7 | Frontend: header, period selector, custom range dialog, Refresh and last updated | developer | P2-6 | done (Gate C passed 2026-11-11) |
+| P2-8 | Frontend: Health strip, KPI tiles, severity chips | developer | P2-6 | done (Gate C passed 2026-11-11) |
+| P2-9 | Frontend: hourly charts, expand modal, CSV | developer | P2-6 | done (Gate C passed 2026-11-11) |
+| P2-10 | Frontend: daily cards, chatbot users table, generation table | developer | P2-6 | done (Gate C passed 2026-11-11) |
+| P2-11 | Frontend: AI usage section (reuse `services/aiUsage.ts`) and Quality section (extract from the old page, reuse not rewrite) | developer | P2-6 | done (Gate C passed 2026-11-11) |
+| P2-12 | Nav link "Feature Analytics", routes, scoped styles, docs (`UserGuide.md` only for what works: unavailable states are described as such) and `DeveloperGuide.md` (including the dated SoC LLM limit observations of 2026-11-11, labelled as observed, not documented quotas, with the unconfirmed reasoning-token hypothesis) | developer | P2-7 to P2-11 | done (Gate C passed 2026-11-11) |
+| P2-13 | Run backend and frontend suites, typecheck, lint; report per test, contract mismatch versus logic bug | test-designer | P2-1 to P2-3, P2-4 to P2-12 | done (Gate C passed 2026-11-11) |
+| P2-14 | Verify: spec coverage, SHR-01/02/05 on every new endpoint, privacy (no content), chart accessibility, docs accuracy; re-run suite | verifier | P2-13 | done (Gate C passed 2026-11-11) |
+| P2-15 | Fix defects (max 2 rounds), verifier re-checks | developer, verifier | P2-14 | done (Gate C passed 2026-11-11) |
+| P2-16 | Orchestrator: usage report, notes, human tries the hub (Gate C) | orchestrator | P2-15 | done (Gate C passed 2026-11-11) |
 
 ## Phase 4: new event collection (Gate E: check real data)
 | # | Task | Owner agent | Depends on | Status |
