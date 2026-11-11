@@ -439,7 +439,7 @@ GENERATION_KINDS = ("generation_notes", "generation_mcq")
 
 def _retention_floor(now: datetime) -> datetime:
     """Request-log rows older than this are purged, so reads ignore them even before the purge ran."""
-    return now.replace(minute=0, second=0, microsecond=0) - timedelta(days=config.HOURLY_RETENTION_DAYS)
+    return now.replace(minute=0, second=0, microsecond=0) - timedelta(days=config.PURGE_REQUEST_LOG_DAYS)
 
 
 def _log_cover(db, window: Window, key: str = REQUEST_LOG_KEY) -> Cover:
@@ -553,7 +553,7 @@ CATEGORIES = ("timeout", "rate_limited", "invalid_output", "upstream", "unclassi
 
 
 def hourly_unavailable(reason: str) -> dict:
-    return metric("unavailable", reason, in_progress=None, retention_days=config.HOURLY_RETENTION_DAYS,
+    return metric("unavailable", reason, in_progress=None, retention_days=config.PURGE_REQUEST_LOG_DAYS,
                   category_breakdown={"state": "unavailable", "reason": "not_collected"}, totals=None, buckets=[])
 
 
@@ -585,7 +585,7 @@ def hourly(db, window: Window) -> dict:
                         "total": total, "failure_rate_percent": rate_percent(failed[i], total),
                         "failed_by_category": by_category[i]})
     return metric("available", None, cover.starts_on, in_progress=in_progress,
-                  retention_days=config.HOURLY_RETENTION_DAYS,
+                  retention_days=config.PURGE_REQUEST_LOG_DAYS,
                   category_breakdown={"state": "available", "reason": None},
                   totals={"successful": sum(successful), "failed": sum(failed),
                           "total": sum(successful) + sum(failed)},

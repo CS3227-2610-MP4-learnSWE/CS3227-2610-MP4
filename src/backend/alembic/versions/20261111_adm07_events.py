@@ -1,5 +1,5 @@
 """ADM-07 event collection: request log, login events, first-save and first-publication events, with backfill."""
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from alembic import op
 import sqlalchemy as sa
@@ -81,6 +81,14 @@ def upgrade():
 
     bind = op.get_bind()
     starts = {key: now.isoformat() for key in META_KEYS}
+    # The request log is backfilled for 30 days, so it starts at the later of the ADM-01 recording start and 30 days ago.
+    recorded = bind.scalar(sa.text("SELECT value FROM analytics_meta WHERE key = 'recording_started_at'"))
+    backfill_from = now - timedelta(days=30)
+    if recorded is not None:
+        parsed = datetime.fromisoformat(recorded)
+        parsed = parsed if parsed.tzinfo else parsed.replace(tzinfo=timezone.utc)
+        backfill_from = max(backfill_from, parsed)
+    starts["request_log_started_at"] = backfill_from.astimezone(timezone.utc).isoformat()
     for key, table, column in (("practice_draft_started_started_at", "analytics_practice_draft_started", "started_at"),
                                ("practice_published_started_at", "analytics_practice_published", "published_at")):
         earliest = bind.scalar(sa.text(f"SELECT min({column}) FROM {table}"))
