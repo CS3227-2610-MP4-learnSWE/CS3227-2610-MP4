@@ -1,5 +1,11 @@
 # Handoff notes
 
+## 2026-11-12: orchestrator, ADM-08 phase 3 ready for Gate D (human browser check)
+- Run 2026-11-12-ADM08-02 on feat/adm08-feedback-hub (not pushed). Developer 3b30d30..0a63618, fix round 1 2462a09/ac7e484/53f4c5b; tests merged (f36d24e, 2a4a6dd, a5257e1). Verifier round 1 FAIL (D1: duplicate count GETs under StrictMode, blocking); round 2 PASS for product code. Spec corrected by the orchestrator (f00d47e): response detail sends 2 GETs; repeated `form` is not available.
+- Deviation: the orchestrator edited one test expectation directly (adm08-journeys.spec.ts line 599, `{f:1,a:1,u:0}`), as the verifier proposed, because the 2 revision rounds were used.
+- Checks: backend test_adm08_* 117 passed; ADM-02/03/04/07 backend 881 passed (round 1; backend unchanged since); Playwright mocked adm08 137 passed, existing admin suites passed (367 in round 2); typecheck and eslint clean. Not run: full backend suite, non-mocked Playwright, a real-browser check. `ai_usage.cleanup` not run; dev seed not run on a real database.
+- Non-blocking: N1 aria-current set via ref callback in Shell.tsx; N2 module-level in-flight map in HubCountsProvider; D5 dev seed copies publish/submit logic (no store functions exist); route params not normalised (same as legacy). Phase 5 (cleanup of ADM-02/03/04) not started; needs Gate D then Gate F. Usage: [report](usage/runs/2026-11-12-ADM08-02/report.md) (orchestrator row overlaps run 01; do not sum; agent timestamps are bounds).
+
 ## 2026-11-12: orchestrator, ADM-08 specs approved (Gate B passed)
 - Human approved spec/plan/tasks with all stated defaults. Nothing built or committed. Next: build phase (P3 tasks: test-designer in worktree reset to the start commit, developer in parallel, then verifier); phase 5 cleanup of ADM-02/03/04 needs Gate F.
 

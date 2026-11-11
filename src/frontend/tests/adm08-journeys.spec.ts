@@ -596,7 +596,7 @@ test("adm08 AC29 generate analysis and analysis delete each add exactly one anal
   await expect(statusWith(page, DONE_ANALYSIS)).toBeVisible();
   await expect(badge(page, "Analysis")).toHaveText("1");
   await settled(page);
-  expect(await deltas(ctx, before)).toEqual({ f: 0, a: 1, u: 0 });
+  expect(await deltas(ctx, before)).toEqual({ f: 1, a: 1, u: 0 }); // f:1 = the /analysis screen own forms GET after the replace (Q16 shared URL); a:1 = the count refetch
 });
 
 test("adm08 AC29 an analysis delete answered 404 still refetches the analyses count", async ({ page }) => {
