@@ -147,12 +147,11 @@ def test_adm07_ac25_period_boundaries_are_start_inclusive_end_exclusive(analytic
 
 # ------------------------------------------------------------------ AC26 teachers and totals
 
-def test_adm07_ac26_teacher_role_is_unavailable_no_source_and_queries_no_table(analytics_admin, tracked_users, monkeypatch):
-    from feature_analytics import queries
-
+def test_adm07_ac26_teacher_role_is_unavailable_no_source_and_returns_no_student_data(analytics_admin, tracked_users):
+    # P2-13: the earlier version patched queries.chatbot_users to raise; that assumed the route never calls the
+    # query function for teachers, which the plan does not say. Behaviour only is asserted now.
     w = new_window()
     person(tracked_users, "Stu " + uid()[:6], 2, 1, w)
-    monkeypatch.setattr(queries, "chatbot_users", lambda *a, **k: (_ for _ in ()).throw(AssertionError("queried")))
     body = users(analytics_admin, w, role="teacher")
     assert body["role"] == "teacher" and body["state"] == "unavailable" and body["reason"] == "no_source"
     assert body["totals"] == {"successful": None, "unsuccessful": None}
@@ -164,7 +163,9 @@ def test_adm07_ac26_all_users_total_is_unavailable_no_source_for_both_roles(anal
     person(tracked_users, "Stu " + uid()[:6], 2, 1, w)
     for role in ("student", "teacher"):
         t = users(analytics_admin, w, role=role)["all_users_total"]
-        assert t == {"state": "unavailable", "reason": "no_source", "successful": None, "unsuccessful": None}
+        # P2-13: the plan example lists four keys; a per-metric `data_starts_on` is also allowed (spec: every metric carries it)
+        assert {k: v for k, v in t.items() if k != "data_starts_on"} == {
+            "state": "unavailable", "reason": "no_source", "successful": None, "unsuccessful": None}
 
 
 # ------------------------------------------------------------------ AC38 / AC39

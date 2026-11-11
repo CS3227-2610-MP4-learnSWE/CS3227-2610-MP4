@@ -76,8 +76,9 @@ def test_adm07_ac20_boundary_instants_belong_to_the_correct_day(analytics_admin,
     attempt_row(s, "att-" + uid(), w.start_dt + timedelta(days=1), None)
     attempt_row(s, "att-" + uid(), w.end_dt, None)  # at the exclusive end: not counted
     f = daily(analytics_admin, w)["attempts_funnel"]
-    assert f["started_total"] == 4
-    assert [d["started"] for d in f["per_day"]] == [2, 2]
+    # P2-13: corrected own miscount (5 rows seeded, 2 outside the window): D0 has two, D1 has one.
+    assert f["started_total"] == 3
+    assert [d["started"] for d in f["per_day"]] == [2, 1]
 
 
 def test_adm07_ac20_none_started_is_not_applicable_but_per_day_is_dense_and_keeps_earlier_submissions(analytics_admin, tracked_users):

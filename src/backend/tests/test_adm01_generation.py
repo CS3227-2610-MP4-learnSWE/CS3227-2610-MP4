@@ -54,8 +54,10 @@ def test_adm01_ac14_each_row_has_exactly_the_documented_fields(analytics_admin, 
     gen_row(teacher(tracked_users), "study_notes", w.at(1))
     body, by = generation(analytics_admin, w)
     for row in body["workflows"]:
+        # ADM-07 P2-5: phase 2 adds requests, rate_limited, rate_limited_state and data_starts_on (plan.md);
+        # every ADM-01 field is still required with its old meaning.
         assert set(row) == {"workflow", "label", "state", "reason", "attempts", "successful", "unsuccessful",
-                            "rate_percent"}
+                            "rate_percent", "requests", "rate_limited", "rate_limited_state", "data_starts_on"}
 
 
 # ---------------------------------------------------------------- AC16, AC17: counting and rate

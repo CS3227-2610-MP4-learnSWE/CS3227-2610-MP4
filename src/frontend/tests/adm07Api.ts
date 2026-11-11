@@ -138,7 +138,9 @@ export function hourlyBody(url: URL): Json {
         successful,
         failed,
         total,
-        failure_rate_percent: total ? Math.round((failed * 1000) / total) / 10 : null,
+        failure_rate_percent: total
+          ? Math.round((failed * 1000) / total) / 10
+          : null,
         failed_by_category: { ...CATS, unclassified: failed },
       });
     }
@@ -155,7 +157,11 @@ export function hourlyBody(url: URL): Json {
     reason: null,
     retention_days: 30,
     category_breakdown: unavailable("not_collected"),
-    totals: { successful: sum("successful"), failed: sum("failed"), total: sum("total") },
+    totals: {
+      successful: sum("successful"),
+      failed: sum("failed"),
+      total: sum("total"),
+    },
     buckets,
   };
 }
@@ -267,7 +273,10 @@ export function usersBody(url: URL, total = 23): Json {
 
 export function aiUsageBody(url: URL): Json {
   const feature = url.searchParams.get("feature") ?? "all";
-  const m = (value: number | null, reason: string | null = null) => ({ value, reason });
+  const m = (value: number | null, reason: string | null = null) => ({
+    value,
+    reason,
+  });
   const row = (f: string) => ({
     feature: f,
     coverage_start: "2020-01-01T00:00:00Z",
@@ -318,7 +327,8 @@ export class HubMock {
   }
   /** Analytics GET requests only (excludes grading start/poll). */
   loads() {
-    return this.requests.filter((r) => r.kind !== "start" && r.kind !== "run").length;
+    return this.requests.filter((r) => r.kind !== "start" && r.kind !== "run")
+      .length;
   }
   next(kind: Kind, ...steps: Step[]) {
     this.steps[kind].push(...steps);
@@ -342,7 +352,8 @@ export class HubMock {
     };
     if (method === "GET" && map[path]) return map[path];
     if (method === "POST" && path === `${API}/grading-runs`) return "start";
-    if (method === "GET" && path.startsWith(`${API}/grading-runs/`)) return "run";
+    if (method === "GET" && path.startsWith(`${API}/grading-runs/`))
+      return "run";
     return null;
   }
 
@@ -404,7 +415,8 @@ export class HubMock {
     }
     this.requests.push({ kind, url, method: request.method() });
     const step = this.steps[kind].shift() ?? {};
-    if (step.hold) await new Promise<void>((resolve) => this.waiting.push(resolve));
+    if (step.hold)
+      await new Promise<void>((resolve) => this.waiting.push(resolve));
     if (step.abort) {
       await route.abort("connectionrefused").catch(() => undefined);
       return;
@@ -422,7 +434,12 @@ export class HubMock {
         json:
           step.json ??
           (failing
-            ? { detail: { code: "error", message: "ignored private server error" } }
+            ? {
+                detail: {
+                  code: "error",
+                  message: "ignored private server error",
+                },
+              }
             : this.defaultBody(kind, url)),
         headers: { "cache-control": "no-store" },
       })
