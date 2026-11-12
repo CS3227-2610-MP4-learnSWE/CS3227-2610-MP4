@@ -1,0 +1,61 @@
+name: Publish product website
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'website/**'
+      - 'scripts/build_product_site.py'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    if: github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Build website with validated application URL
+        env:
+          PRODUCT_APP_URL: ${{ vars.PRODUCT_APP_URL }}
+        run: python scripts/build_product_site.py --output build/product-site
+      - name: Verify application login before publication
+        env:
+          PRODUCT_APP_URL: ${{ vars.PRODUCT_APP_URL }}
+        run: |
+          python - <<'PY'
+          import os
+          from urllib.request import Request, urlopen
+          url = os.environ['PRODUCT_APP_URL'].strip().rstrip('/') + '/login'
+          with urlopen(Request(url, headers={'Accept': 'text/html'}), timeout=90) as response:
+              if response.status != 200 or 'text/html' not in response.headers.get('Content-Type', ''):
+                  raise SystemExit('Application login is not available; publication stopped.')
+          PY
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: build/product-site
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Publish GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
