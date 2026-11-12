@@ -1,4 +1,5 @@
 feature_run_id,invocation_id,role,effort,tool,session_id,agent_id,started_at,finished_at
-2026-11-12-ADM08-03,2026-11-12-ADM08-03-orchestrator-01,orchestrator,inherited,claude,2d91cb19-7500-44ad-9198-d941094197fe,,2026-11-12T15:24:39+08:00,
+2026-11-12-ADM08-03,2026-11-12-ADM08-03-orchestrator-01,orchestrator,inherited,claude,2d91cb19-7500-44ad-9198-d941094197fe,,2026-11-12T04:14:00+08:00,2026-11-12T16:03:54+08:00
 2026-11-12-ADM08-03,2026-11-12-ADM08-03-spec-writer-01,spec-writer,inherited,claude,2d91cb19-7500-44ad-9198-d941094197fe,aad57fd30389731e4,2026-11-12T15:24:39+08:00,2026-11-12T15:30:18+08:00
-2026-11-12-ADM08-03,2026-11-12-ADM08-03-test-designer-01,test-designer,inherited,claude,2d91cb19-7500-44ad-9198-d941094197fe,,2026-11-12T15:30:18+08:00,
+2026-11-12-ADM08-03,2026-11-12-ADM08-03-test-designer-01,test-designer,inherited,claude,2d91cb19-7500-44ad-9198-d941094197fe,a301e541eb2879327,2026-11-12T15:30:18+08:00,2026-11-12T15:56:17+08:00
+2026-11-12-ADM08-03,2026-11-12-ADM08-03-verifier-01,verifier,inherited,claude,2d91cb19-7500-44ad-9198-d941094197fe,a55aeeb591988cbdf,2026-11-12T15:56:17+08:00,2026-11-12T16:03:37+08:00

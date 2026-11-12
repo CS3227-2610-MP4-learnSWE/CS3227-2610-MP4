@@ -1,5 +1,23 @@
 # Handoff notes
 
+## 2026-11-12: orchestrator, ADM-08 phase 5 documents (P5-1 to P5-3), awaiting Gate F
+- Done: P5-1 `retained-criteria.md` (speccheck OK, committed f6d3ebd); P5-2 `phase5-test-mapping.md`, 10 `adm08-ported-*` specs with helpers and `adm08-redirects.spec.ts` (merged 076b046; ported 132 passed, redirects 35 passed and 53 failed as expected until P5-5); P5-3 `phase5-deletion-list.md` from the read-only verifier inventory. Nothing has been deleted. Also committed 6a48fc5 (hub review fixes, reply names its form via `form_title`).
+- Next: human Gate F (P5-4) on the 8 decisions at the end of `phase5-deletion-list.md`. Before P5-5 the test owner fixes mapping defects 1-3 (adm08Api.ts imports adm03Api.ts; anonymous demo `/admin/announcements` versus AC21; the Shell.tsx "Explore insights" link). P5-5 then runs as a developer task, followed by P5-6 and P5-7.
+- Feature-run report path: `workflow/usage/runs/2026-11-12-ADM08-03/report.md` (4 invocations, 297 requests; the orchestrator row spans the whole session and overlaps earlier runs, so do not sum across runs; agent times are bounds).
+- Deviations: the test-designer run was interrupted by an API outage and resumed once (same invocation).
+
+## 2026-11-12: spec-writer on ADM-08 (task P5-1, retained criteria; spec text only, nothing committed)
+- Done: wrote `workflow/specs/ADM-08/retained-criteria.md` from the ADM-02, ADM-03 and ADM-04 specs and plans (final text of AC01-AC25 + amendments + error dictionary E01-E08/V01-V11/C01-C06; AC1-AC50 + 2026-11-09 amendment + build rulings + all failure messages; AC01-AC15 + visual amendment + error copy), with the inner-screen UI tables and standard entries copied. Respondent and recipient criteria are kept (Q7). Records the post-spec changes: inbox items carry `form_title` (commit 6a48fc5), analysis panel padding, "Go to Forms" button-styled link, green publish/close chip, question editor prompt with type beside it. Covering tests are named by file only (best guess, to be confirmed by the AC22 mapping task).
+- Next (agent + task): orchestrator runs speccheck (`workflow/tools/speccheck`, `python -m speccheck ..\..\specs\ADM-08`; this agent had no shell, so it was NOT run); P5-2 test mapping; P5-3 deletion inventory; Gate F.
+- Files touched: `workflow/specs/ADM-08/retained-criteria.md`, `workflow/notes.md`.
+- Invocation ID(s) for this handoff: n/a (orchestrator records).
+- Model(s) and effort setting: Sonnet 5.5, default effort.
+- Elapsed wall-clock time: n/a.
+- Feature-run report path (added by orchestrator at run completion): n/a.
+- Decisions / open questions: see "Open points for the phase 5 owner" in the file: reduce-call data bound stated twice in the ADM-03 spec (9,000 vs 1,500 + 6,150); `test_adm03_profile/regressions/final_regressions` exist only as stale compiled files; ADM-03 AC41/AC43 "revert completion" is replaced by the build ruling (derived completion); display of `form_title` is not in any spec (read from `MessagesInbox.tsx`).
+- Blocking findings: none.
+- Resource use: Tracker run: no (orchestrator owns). Model: Sonnet 5.5. Total tokens: unavailable. Cost (USD): unavailable. Retries and revision rounds: 0.
+
 ## 2026-11-12: orchestrator, ADM-08 phase 3 ready for Gate D (human browser check)
 - Run 2026-11-12-ADM08-02 on feat/adm08-feedback-hub (not pushed). Developer 3b30d30..0a63618, fix round 1 2462a09/ac7e484/53f4c5b; tests merged (f36d24e, 2a4a6dd, a5257e1). Verifier round 1 FAIL (D1: duplicate count GETs under StrictMode, blocking); round 2 PASS for product code. Spec corrected by the orchestrator (f00d47e): response detail sends 2 GETs; repeated `form` is not available.
 - Deviation: the orchestrator edited one test expectation directly (adm08-journeys.spec.ts line 599, `{f:1,a:1,u:0}`), as the verifier proposed, because the 2 revision rounds were used.
@@ -589,3 +607,10 @@
 
 ## ADM-08 developer revision round 1
 D1 (StrictMode double count GETs, deferred-abort shared guard in HubCountsProvider), D2 (aria-current on every hub URL in Shell), D4 (repeated form param = unavailable) fixed. Remaining adm08 Playwright failures (14) observed: response-detail AC13 expects 1 GET (spec now 2, D3), AC15 reduced-motion, and journey/AC29 tests not analysed; tests untouched.
+
+## 2026-11-12: developer on local frontend install maintenance
+- Done: confirmed the running repository Vite process held esbuild.exe open; stopped Vite PID 33504 and esbuild PID 33884, then npm.cmd ci succeeded (237 packages added).
+- Next: user can restart npm.cmd run dev. No application or dependency manifest changes. npm reported 7 moderate vulnerabilities; no audit fixes applied.
+- Files touched: this handoff and logs/isaac/2026-11-12-frontend-install-lock.md.
+- Resource use: small maintenance outside an explicitly invoked workflow; tracker not run, tokens/cost unavailable; no retries.
+
