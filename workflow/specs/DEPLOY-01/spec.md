@@ -1,6 +1,6 @@
 # Spec: DEPLOY-01 Hosted application and product website
 
-Status: Draft; human approval required before implementation.
+Status: Approved by Isaac, 2026-11-13.
 
 ## Goal
 Deploy learnSWE online with separate development and production environments, managed by the team through GitHub Actions, and publish a separate GitHub Pages product website. This implements the delivery requirements in docs/FeatureList.md; it does not introduce new learning features.

@@ -1,6 +1,6 @@
 ﻿# Plan: DEPLOY-01 Hosted application and product website
 
-Status: Draft; requires human approval. Implementation starts only after open technical gates below are resolved.
+Status: Approved by Isaac, 2026-11-13. Resolve provider-specific gates before live deployment; amend incompatible contracts before implementation of the affected part.
 
 ## Data model
 Reuse the existing PostgreSQL schema and Alembic revisions. No new product tables. Development and production use separate empty databases and users; DATABASE_URL uses postgresql+psycopg:// and provider-required TLS. Original uploads remain database-backed. Startup migration uses one fixed PostgreSQL advisory-lock key 3227261001 on a dedicated connection, shared by both manual and startup migration commands. Lock acquisition deadline 60 seconds; failure exits nonzero before HTTP startup. Never automatically seed or downgrade. Document backup and tested restore before later production schema changes.
