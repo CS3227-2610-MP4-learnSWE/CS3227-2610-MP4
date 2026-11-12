@@ -99,3 +99,53 @@ def test_deploy01_ac4_lock_cannot_target_different_database(monkeypatch):
     with pytest.raises(Exception):
         start.migrate("postgresql+psycopg://test:test@localhost/other")
     assert not calls
+
+
+def test_deploy01_ac4_lock_deadline_bounds_a_blocked_driver_query(monkeypatch):
+    """A deadline must bound acquisition even when the driver stops returning."""
+    import threading
+    import deployment.start as start
+
+    monkeypatch.setenv("DATABASE_URL", "postgresql+psycopg://test:test@localhost/test")
+    monkeypatch.setattr(start, "LOCK_TIMEOUT_SECONDS", 0.05)
+    release = threading.Event()
+    entered = threading.Event()
+    done = threading.Event()
+    upgrades = []
+    errors = []
+
+    class BlockedConnection(FakeConnection):
+        def execute(self, statement, *args, **kwargs):
+            entered.set()
+            release.wait(2)
+
+            class Result:
+                def scalar(self): return False
+
+            return Result()
+
+    class Engine:
+        def connect(self): return BlockedConnection([])
+        def dispose(self): pass
+
+    monkeypatch.setattr(start, "create_engine", lambda *args, **kwargs: Engine())
+    monkeypatch.setattr(start.command, "upgrade", lambda *args: upgrades.append(args))
+
+    def migrate():
+        try:
+            start.migrate("postgresql+psycopg://test:test@localhost/test")
+        except Exception as exc:
+            errors.append(exc)
+        finally:
+            done.set()
+
+    worker = threading.Thread(target=migrate, daemon=True)
+    worker.start()
+    try:
+        assert entered.wait(1), "the acquisition query was never reached"
+        assert done.wait(0.5), "migration acquisition ignored its deadline while the driver blocked"
+        assert errors, "deadline must abort migration rather than report success"
+        assert not upgrades
+    finally:
+        release.set()
+        worker.join(timeout=1)
