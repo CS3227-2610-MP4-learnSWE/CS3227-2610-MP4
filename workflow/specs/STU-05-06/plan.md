@@ -3,7 +3,7 @@
 Dependency: the build starts from a branch containing PR 31 (`origin/feat/adm04-feedback-follow-up`, ADM-04). The orchestrator merges that branch into this one for the build, and the STU pull request stays stacked on PR 31 until PR 31 merges. `FeedbackInbox.tsx` and `Shell.tsx` are shared with ADM-04, so no work in them starts earlier.
 
 ## Data model
-No change. No new table, column or migration. Reused: `feedback_recipients.read_at` and `feedback_responses` (ADM-02, `workflow/specs/ADM-02/plan.md`, Data model) and the ADM-04 delivery rows with `read_at` per recipient (`workflow/specs/ADM-04/plan.md`, Data model).
+No change. No new table, column or migration. Reused: `feedback_recipients.read_at` and `feedback_responses` (ADM-02, `workflow/specs/ADM-08/retained-criteria.md`, Data model) and the ADM-04 delivery rows with `read_at` per recipient (`workflow/specs/ADM-08/retained-criteria.md`, Data model).
 
 ## API endpoints
 No new endpoint. The slice relies on these existing contracts, which are not copied here:

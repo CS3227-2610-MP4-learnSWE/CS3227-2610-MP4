@@ -104,7 +104,7 @@ export default function Shell({
   const section = location.pathname.split("/")[2];
   const current =
     navigation[role].find((item) => item.path === section)?.label ||
-    (section === "feedback" ? "Feedback" : "Workspace");
+    "Workspace";
   const sidebar = (
     <>
       <div className="sidebar-brand">
@@ -125,15 +125,7 @@ export default function Shell({
             : "YOUR ADMIN SPACE"}
       </div>
       <nav aria-label={`${role} navigation`}>
-        {navigation[role].map((original) => {
-          const item =
-            !demoMode && role === "admin" && original.path === "forms"
-              ? { ...original, path: "feedback" }
-              : !demoMode &&
-                  role === "admin" &&
-                  original.path === "announcements"
-                ? { ...original, path: "announcements/new" }
-                : original;
+        {navigation[role].map((item) => {
           return (
             <NavLink
               key={item.path}
@@ -216,10 +208,12 @@ export default function Shell({
             ) : (
               <Link
                 to={
-                  role === "teacher" ? "/teacher/generate" : "/admin/responses"
+                  role === "teacher"
+                    ? "/teacher/generate"
+                    : "/admin/feedback-hub/forms"
                 }
               >
-                Explore {role === "admin" ? "insights" : "the studio"}
+                Explore {role === "admin" ? "feedback" : "the studio"}
                 <ArrowUpRight size={14} />
               </Link>
             )}

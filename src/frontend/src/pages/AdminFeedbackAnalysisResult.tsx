@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate, useParams } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { Button } from "@mui/material";
 import { PageHeading, Panel } from "../components/ui";
 import { useFeedbackPaths } from "../lib/feedbackPaths";
@@ -185,10 +185,4 @@ export function AdminFeedbackAnalysisResultScreen({
       )}
     </div>
   );
-}
-
-/** The old `/admin/feedback/analysis/:analysisId` page: a thin wrapper that reads the id from the address. */
-export default function AdminFeedbackAnalysisResult() {
-  const { analysisId = "" } = useParams();
-  return <AdminFeedbackAnalysisResultScreen analysisId={analysisId} />;
 }

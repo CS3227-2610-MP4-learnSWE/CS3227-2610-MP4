@@ -424,6 +424,8 @@ Acceptance criteria:
 
 ### ADM-02 — Targeted feedback forms
 
+*Superseded by ADM-08.*
+
 #### US-ADM-02-01 — Draft a feedback form
 
 As an admin, I want to create and save an unpublished feedback form using common survey question types so that I can prepare a focused survey before distributing it.
@@ -475,6 +477,8 @@ Acceptance criteria:
 
 ### ADM-03 — AI feedback analysis
 
+*Superseded by ADM-08.*
+
 #### US-ADM-03-01 — Generate a feedback analysis
 
 As an admin, I want AI to analyse feedback responses that I select and am authorised to review so that I can identify recurring issues and possible improvements.
@@ -501,6 +505,8 @@ Acceptance criteria:
 - **No side effects:** Opening a finding or response does not send a message or modify the analysis, form, or response.
 
 ### ADM-04 — Feedback follow-up
+
+*Superseded by ADM-08.*
 
 #### US-ADM-04-01 — Send a feedback response
 
@@ -740,7 +746,7 @@ Acceptance criteria:
 
 ### ADM-08 — Feedback hub
 
-Merges and supersedes ADM-02, ADM-03 and ADM-04 once approved: one admin area, "Feedback hub", with tabs Forms, Responses, Analysis and Follow-up. The screens and rules of those features are unchanged; the hub changes where they live and how they link. Real data only. Student and teacher survey forms and inboxes are unchanged.
+Merged and superseded ADM-02, ADM-03 and ADM-04: one admin area, "Feedback hub", with tabs Forms, Responses, Analysis and Follow-up. The screens and rules of those features are unchanged; the hub changes where they live and how they link. Real data only. Student and teacher survey forms and inboxes are unchanged.
 
 #### US-ADM-08-01 — Find all feedback tools in one place
 

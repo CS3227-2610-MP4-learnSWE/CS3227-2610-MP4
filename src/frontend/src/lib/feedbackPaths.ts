@@ -18,27 +18,7 @@ export type FeedbackPaths = {
   analysisForForm(formId: string): string | null;
 };
 
-const LEGACY = "/admin/feedback";
 const HUB = "/admin/feedback-hub";
-
-export const legacyPaths: FeedbackPaths = {
-  forms: () => LEGACY,
-  newForm: () => `${LEGACY}/new`,
-  form: (id) => `${LEGACY}/${id}`,
-  editForm: (id) => `${LEGACY}/${id}/edit`,
-  responses: () => LEGACY,
-  formResponses: (formId) => `${LEGACY}/${formId}/responses`,
-  response: (formId, responseId) =>
-    `${LEGACY}/${formId}/responses/${responseId}`,
-  analysis: () => `${LEGACY}/analysis`,
-  analysisResult: (id) => `${LEGACY}/analysis/${id}`,
-  analysisEvidence: (id, label) =>
-    `${LEGACY}/analysis/${id}/responses/${label}`,
-  announcement: () => "/admin/announcements/new",
-  reply: (formId, responseId) =>
-    `${LEGACY}/${formId}/responses/${responseId}/reply`,
-  analysisForForm: () => null,
-};
 
 export const hubPaths: FeedbackPaths = {
   forms: () => `${HUB}/forms`,
@@ -58,7 +38,7 @@ export const hubPaths: FeedbackPaths = {
     `${HUB}/analysis?form=${encodeURIComponent(formId)}`,
 };
 
-const FeedbackPathsContext = createContext<FeedbackPaths>(legacyPaths);
+const FeedbackPathsContext = createContext<FeedbackPaths>(hubPaths);
 export const FeedbackPathsProvider = FeedbackPathsContext.Provider;
 export const useFeedbackPaths = () => useContext(FeedbackPathsContext);
 
@@ -149,26 +129,4 @@ export type FeedbackScreenRoute =
   | { screen: "response-list"; formId: string }
   | { screen: "response"; formId: string; responseId: string };
 
-/** The screen of an old `/admin/feedback/...` address (same segment positions the old page used). */
-export function parseLegacyFeedbackPath(pathname: string): FeedbackScreenRoute {
-  const [, , , id, action, responseId] = pathname.split("/");
-  if (!id) return { screen: "forms" };
-  if (id === "new") return { screen: "form-new" };
-  if (action === "edit") return { screen: "form-edit", formId: id };
-  if (action === "responses")
-    return responseId
-      ? { screen: "response", formId: id, responseId }
-      : { screen: "response-list", formId: id };
-  return { screen: "form", formId: id };
-}
-
 export type ReplyTarget = { formId: string; responseId: string };
-
-/** The reply target of an old `/admin/feedback/{form}/responses/{response}/reply` address, else undefined. */
-export function parseLegacyReplyPath(
-  pathname: string,
-): ReplyTarget | undefined {
-  if (!pathname.endsWith("/reply")) return undefined;
-  const parts = pathname.split("/");
-  return { formId: parts[3], responseId: parts[5] };
-}

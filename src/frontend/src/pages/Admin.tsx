@@ -19,7 +19,6 @@ import {
   FileText,
   MessageSquare,
   Plus,
-  Send,
   Sparkles,
 } from "lucide-react";
 import {
@@ -153,11 +152,7 @@ function Overview() {
           </div>
         </Panel>
       </div>
-      <SectionHeading
-        title="What your community is saying"
-        link="Explore feedback"
-        to="/admin/responses"
-      />
+      <SectionHeading title="What your community is saying" />
       <div className="feedback-cards">
         {feedback.map((item) => (
           <Panel key={item.id} className="feedback-card">
@@ -321,212 +316,6 @@ function Forms() {
     </>
   );
 }
-function Responses() {
-  const [filter, setFilter] = useState("All responses");
-  const [analysis, setAnalysis] = useState(false);
-  const [source, setSource] = useState<string | null>(null);
-  const visible = feedback.filter(
-    (item) => filter === "All responses" || item.sentiment === filter,
-  );
-  return (
-    <>
-      <PageHeading
-        eyebrow="THE VOICES BEHIND THE NUMBERS"
-        title="Listen a little closer."
-        description="Explore feedback and find the ideas worth taking forward."
-        action={
-          <Button
-            variant="contained"
-            startIcon={<Sparkles size={17} />}
-            onClick={() => setAnalysis(true)}
-          >
-            Preview AI analysis
-          </Button>
-        }
-      />
-      <div className="response-layout">
-        <div>
-          <div className="filter-buttons inbox-filters">
-            {["All responses", "Positive", "Suggestion"].map((value) => (
-              <Button
-                key={value}
-                size="small"
-                variant={filter === value ? "contained" : "text"}
-                onClick={() => setFilter(value)}
-              >
-                {value}
-              </Button>
-            ))}
-          </div>
-          {visible.map((item) => (
-            <Panel className="response-card" key={item.id}>
-              <div className="response-top">
-                <Tag tone={item.sentiment === "Positive" ? "green" : "purple"}>
-                  {item.tag}
-                </Tag>
-                <span>{item.id}</span>
-              </div>
-              <blockquote>“{item.quote}”</blockquote>
-              <small>{item.author} · Sample response</small>
-            </Panel>
-          ))}
-        </div>
-        <Panel className="insight-panel">
-          <span className="icon-box purple">
-            <Sparkles size={24} />
-          </span>
-          <h2>A starting point for understanding.</h2>
-          {analysis ? (
-            <>
-              <Tag tone="purple">Fixed sample · No AI request</Tag>
-              <h3>Guidance is making a difference</h3>
-              <p>Students value hints that encourage independent thinking.</p>
-              <Button size="small" onClick={() => setSource("FB-024")}>
-                Supporting response FB-024
-                <ArrowRight size={14} />
-              </Button>
-              <h3>Clarity could go further</h3>
-              <p>
-                Feedback asks for source comparisons and clearer post-submission
-                explanations.
-              </p>
-              <Button size="small" onClick={() => setSource("FB-025")}>
-                Supporting response FB-025
-                <ArrowRight size={14} />
-              </Button>
-              <Button size="small" onClick={() => setSource("FB-026")}>
-                Supporting response FB-026
-                <ArrowRight size={14} />
-              </Button>
-              <div className="callout small">
-                <Sparkles size={18} />
-                <p>
-                  <strong>Suggested improvement</strong>
-                  <br />
-                  Explore a side-by-side source view. This is a suggestion, not
-                  a user quote.
-                </p>
-              </div>
-            </>
-          ) : (
-            <p>
-              Preview a sample summary, recurring themes and suggestions. Your
-              judgement stays at the centre.
-            </p>
-          )}
-          <PreviewNote>
-            No changes or messages are triggered by this analysis.
-          </PreviewNote>
-        </Panel>
-      </div>
-      <Dialog
-        open={!!source}
-        onClose={() => setSource(null)}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle>Supporting feedback · {source}</DialogTitle>
-        <DialogContent>
-          <blockquote>
-            {feedback.find((item) => item.id === source)?.quote}
-          </blockquote>
-          <p className="muted">
-            {feedback.find((item) => item.id === source)?.author} · Illustrative
-            response
-          </p>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setSource(null)}>Close</Button>
-        </DialogActions>
-      </Dialog>
-    </>
-  );
-}
-function Announcements() {
-  const [subject, setSubject] = useState("");
-  const [message, setMessage] = useState("");
-  const [audience, setAudience] = useState("Students and teachers");
-  const [open, setOpen] = useState(false);
-  return (
-    <>
-      <PageHeading
-        eyebrow="CLOSE THE FEEDBACK LOOP"
-        title="Keep your community in the loop."
-        description="A thoughtful update helps people feel heard."
-      />
-      <Panel className="form-panel announcement-panel">
-        <span className="icon-box blue">
-          <Send size={23} />
-        </span>
-        <h2>A message with purpose</h2>
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            setOpen(true);
-          }}
-        >
-          <TextField
-            select
-            label="Recipients"
-            value={audience}
-            onChange={(e) => setAudience(e.target.value)}
-          >
-            {[
-              "Students and teachers",
-              "Students",
-              "Teachers",
-              "Sample feedback submitter",
-            ].map((value) => (
-              <MenuItem key={value} value={value}>
-                {value}
-              </MenuItem>
-            ))}
-          </TextField>
-          <TextField
-            required
-            label="Subject"
-            value={subject}
-            onChange={(e) => setSubject(e.target.value)}
-          />
-          <TextField
-            required
-            label="Message"
-            multiline
-            minRows={6}
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-          />
-          <div className="form-actions">
-            <span className="muted">Review before sharing.</span>
-            <Button type="submit" variant="contained">
-              Preview announcement
-            </Button>
-          </div>
-        </form>
-        <PreviewNote>No delivery endpoint is connected.</PreviewNote>
-      </Panel>
-      <Dialog
-        open={open}
-        onClose={() => setOpen(false)}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle>Announcement preview</DialogTitle>
-        <DialogContent>
-          <Tag>{audience}</Tag>
-          <h2>{subject}</h2>
-          <p className="message-body">{message}</p>
-          <PreviewNote>
-            Nothing will be sent. This is a visual preview only.
-          </PreviewNote>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOpen(false)}>Back to editing</Button>
-        </DialogActions>
-      </Dialog>
-    </>
-  );
-}
 function Usage() {
   const [period, setPeriod] = useState("This week");
   return (
@@ -648,10 +437,6 @@ function AdminContent() {
       return <Overview />;
     case "forms":
       return <Forms />;
-    case "responses":
-      return <Responses />;
-    case "announcements":
-      return <Announcements />;
     case "users":
       return <AdminAccounts />;
     case "courses":
@@ -669,7 +454,7 @@ function AdminContent() {
 
 export default function Admin() {
   const section = useLocation().pathname.split("/")[2];
-  const preview = ["overview", "forms", "responses", "usage"].includes(section);
+  const preview = ["overview", "forms", "usage"].includes(section);
   return (
     <div className={`admin-surface${preview ? " admin-preview" : ""}`}>
       <AdminContent />

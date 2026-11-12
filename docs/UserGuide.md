@@ -44,9 +44,7 @@ The former **Practice sets** builder has been removed. Its old URL opens the con
 ## Admin
 
 - Analytics has sample reporting periods and labelled illustrative figures.
-- Signed-in Feedback forms opens the persistent ADM-02 form manager described below. The anonymous legacy `/admin/forms` demo only previews a survey request and creates no form or inbox request.
-- Feedback insights offers sentiment filtering, fixed AI analysis and links to supporting sample responses.
-- Signed-in **Announcements** sends reviewed private messages to selected student or teacher audiences through the ADM-04 workflow below. The anonymous legacy announcement preview sends nothing.
+- Signed-in **Feedback hub** holds feedback forms, responses, AI analysis and announcements or replies in four tabs, described in "ADM-08: Feedback hub" below. The anonymous legacy `/admin/forms` demo only previews a survey request and creates no form or inbox request.
 - **Users** requires an admin sign-in and manages real accounts. Search by name or email, filter by role/status, and use Previous/Next to browse results. **Manage account** immediately opens an Account details overlay with status and course access; use **Close account details**, Escape or the backdrop to close it when no save is pending. Accounts have one fixed role; there is no promotion or demotion.
 - Use **Create account** to create a student, teacher or admin. Enter a display name, email, role, password and matching confirmation. A green **Account created.** toast confirms success; name, email and both password fields clear while the chosen role stays selected (initially Student). Failed creation keeps your input. Existing password rules apply (10–128 characters, not common or equal to the email/name part). The password is not shown in account details. New accounts sign in with the password entered here, not a `SEED_*_PASSWORD` from `.env`. Share it privately with the owner; mandatory first-login password changes and password reset are not implemented.
 - **Courses** creates courses with a title of 1–200 characters and a default **General** topic for teacher publishing. To assign a teacher or enrol a student, return to Users, choose their account, select a Course and choose **Grant course access**. New accounts begin with no assignments; teachers can manage only assigned courses. Disabled accounts can still have assignments edited. Admin accounts do not receive course assignments.
@@ -204,18 +202,7 @@ Before the walkthrough, start PostgreSQL, apply the ADM-02 migration to your con
 
 In the admin form list, the title, state and response count form one clickable row. Open a form and choose **Review responses**; each response row leads with the respondent name, with a local submission date/time and secondary response ID. Clicking anywhere in the row opens Feedback response, with the original ID shown separately. Rows have a subtle hover and keyboard-focus highlight.
 
-### Admin: prepare, publish and review
-
-1. Open **Feedback forms** (`/admin/feedback`), then **New feedback form**.
-2. Enter a title and optional description. Optionally associate a feature or published lesson. Association is a reference only and grants no lesson access.
-3. Use **Add question**. Choose Short answer, Paragraph, Multiple choice, Dropdown, Checkboxes or Linear scale. Enter the prompt and select **required** when needed. Choice questions need 2–20 distinct options. Scales use whole-number endpoints between 0 and 10, with the minimum below the maximum, and optional endpoint labels. A form has 1–30 questions.
-4. Click **Save draft**. Saved unpublished forms can be reopened with **Edit draft**. They cannot receive responses and send no inbox requests.
-5. From the saved form, choose **Review audience**. Select Students or Teachers, search, and select individual recipients. Selection persists across audience pages and clears when the role changes. Choose **Review selected recipients**, check the names and role, then **Publish form**. Up to 500 recipients from one role can receive a form.
-6. Publication freezes the questions and selected audience and creates a private inbox request for each recipient. Later accounts do not receive the earlier request.
-7. Use **Review responses** to open submitted feedback with the respondent name, submission time and the exact question snapshot. Unfinished response drafts are private to their owners and do not appear here or count as responses.
-8. Choose **Close collection**, then **Confirm close**, to stop draft editing and submission permanently. Existing submitted responses remain available. Reopening, deleting, AI analysis and separate follow-up messages are outside this feature.
-
-All active admins can manage the forms and review submitted responses. Feedback is identified; it is not anonymous. Records have no automatic expiry or deletion in this release.
+Admins prepare, publish and review forms in the Forms tab of the Feedback hub (see "ADM-08: Feedback hub" below).
 
 ### Student or teacher: save progress and complete a form
 
@@ -241,7 +228,7 @@ Only you can read your unfinished draft. Once submitted, your name and feedback 
 
 Admins can open a submitted feedback response and choose **Respond to feedback**. The recipient is fixed to that respondent and shown before sending. Enter **Subject** and **Message**, choose **Review message**, read the complete text and recipient list, then choose **Confirm send**. **Edit message** restores the composer. Messages are plain text; raw feedback is never included automatically. Review your wording before sending because sent messages cannot be edited or recalled.
 
-For an announcement, open **Announcements**, select **Students** or **Teachers**, and choose **All active users** or **Selected users**. Selected recipients remain selected while you search or change pages; changing role clears the selection. Review shows the exact frozen audience before confirmation. At most 500 recipients can receive one announcement; choose a smaller selected audience when necessary. If a recipient's eligibility or name changes, review the audience again. An empty audience cannot be sent to.
+For an announcement, open the **Follow-up** tab of the Feedback hub, select **Students** or **Teachers**, and choose **All active users** or **Selected users**. Selected recipients remain selected while you search or change pages; changing role clears the selection. Review shows the exact frozen audience before confirmation. At most 500 recipients can receive one announcement; choose a smaller selected audience when necessary. If a recipient's eligibility or name changes, review the audience again. An empty audience cannot be sent to.
 
 Students and teachers receive each delivery as unread in the **Messages** section beneath their existing feedback requests. The section displays the full subject, text, type and timestamp, with its own unread count. **Mark as read** persists across refresh; **Load more messages** retrieves older messages. A reply to a feedback response is labelled "Feedback response" and names the form it answers ("In reply to your feedback on …"). Other recipients and raw survey responses are not exposed. Email and push notifications are not sent.
 
@@ -273,20 +260,20 @@ The Inbox separates **Feedback requests** from **Messages**. Unread messages hav
 
 ### Shared design across the admin workspace
 
-Feedback forms, Users and Courses follow the shared admin design: outlined labelled fields, distinct section headings, padded panels and clear keyboard focus in light and dark themes. Narrow screens stack the panels and wrap long names and identifiers.
+The Feedback hub forms, Users and Courses follow the shared admin design: outlined labelled fields, distinct section headings, padded panels and clear keyboard focus in light and dark themes. Narrow screens stack the panels and wrap long names and identifiers.
 
-- **Feedback forms:** the editor groups Form details, Association and Questions. The saved-form view separates its overview and question list. Review audience separates recipient search from selection, shows the selected count across searches/pages and presents the exact recipients before publication.
+- **Forms tab:** the editor groups Form details, Association and Questions. The saved-form view separates its overview and question list. Review audience separates recipient search from selection, shows the selected count across searches/pages and presents the exact recipients before publication.
 - **Users:** Find accounts and Create account appear side by side on wider screens and stack on smaller screens. Account details and access-removal confirmations retain their existing actions and keyboard behavior.
 - **Courses:** Create course is separate from Available courses. Manage course access in Users remains the route to enrolments and teacher assignments.
 
-Analytics and the legacy feedback-analysis, form and usage demos retain their sample-only notices. This visual update does not activate live analytics or AI feedback analysis. ADM-04's composer and recipient Inbox retain their existing design.
+Analytics and the legacy form and usage demos retain their sample-only notices. This visual update does not activate live analytics or AI feedback analysis. ADM-04's composer and recipient Inbox retain their existing design.
 
 
 When choosing announcement recipients, moving to another result page keeps that page selected until you change the search or audience role. Search updates after a short pause in typing; selected recipients remain selected across pages and searches.
 
 ## ADM-03: AI feedback analysis
 
-Admins can analyse feedback responses under **Feedback > Feedback analysis**.
+Admins can analyse feedback responses in the **Analysis** tab of the Feedback hub.
 
 1. Choose a feedback form, tick responses (or use **Select all**, up to 500 responses) and press **Generate analysis**.
 2. The result page shows statistics immediately, under "Question results" with a text table for every question. These numbers are computed by the server, not by AI.
@@ -297,7 +284,7 @@ Free-text answers are sent to the AI without names or ids, but respondents may t
 
 ### Deleting a feedback response (admins)
 
-On a response's detail page (Feedback > Responses > a response), the **Delete response** button opens a confirmation. Confirming permanently deletes that response only: the form, the respondent's account and stored analyses are not changed, and no message is sent. If the form is open, the respondent can submit it again. Links in stored analyses that cite the deleted response show that it is no longer available. If an analysis's AI step is still running when a selected response is deleted, that AI step stops with a message saying so; its statistics stay as they were.
+On a response's detail page (Feedback hub > Responses > a response), the **Delete response** button opens a confirmation. Confirming permanently deletes that response only: the form, the respondent's account and stored analyses are not changed, and no message is sent. If the form is open, the respondent can submit it again. Links in stored analyses that cite the deleted response show that it is no longer available. If an analysis's AI step is still running when a selected response is deleted, that AI step stops with a message saying so; its statistics stay as they were.
 
 ## ADM-07: Feature Analytics hub (admins)
 
@@ -315,8 +302,22 @@ Open **Feature Analytics** in the admin menu (`/admin/analytics`). The old "AI u
 
 ## ADM-08: Feedback hub (admins)
 
-Open **Feedback hub** in the admin navigation. It has four tabs: **Forms**, **Responses**, **Analysis** and **Follow-up**. The screens inside each tab are the existing ones (feedback forms, responses, AI analysis, announcements and replies), described in the sections above; the older "Feedback forms" and "Announcements" links still work as before.
+Open **Feedback hub** in the admin navigation. It has four tabs: **Forms**, **Responses**, **Analysis** and **Follow-up**. The screens inside each tab are the existing ones (feedback forms, responses, AI analysis, announcements and replies), described in the sections above. The old `/admin/feedback...`, `/admin/responses` and `/admin/announcements` addresses redirect to the matching hub page (keeping any `?review=` link); the separate "Feedback forms", "Feedback insights" and "Announcements" menu items were removed.
 
 - **Tab counts:** a small number on a tab shows open forms (Forms), submitted responses in published forms (Responses), saved analyses (Analysis) and responses still without a sent reply (Follow-up, `99+` above 99). A `+` means only the newest 100 forms or 50 analyses are counted. The numbers load when you open the hub and update after you create, publish or close a form, delete a response or analysis, start an analysis or send a reply. Changes by other admins or new student answers show after you reload. If a count cannot be loaded, nothing is shown.
 - **Responses:** the tab starts with a list to choose a published form; the choice opens that form's submitted responses. On that list, **Choose another form** returns to the choice and **Analyse this form** opens the Analysis tab with the form already selected (you still choose the responses and press Generate analysis).
 - **Follow-up:** the tab opens the announcement composer. To reply to one person, open their response on the Responses tab and choose **Respond to feedback**.
+
+### Admin: prepare, publish and review (Forms tab)
+
+1. Open **Feedback hub**, stay on the **Forms** tab (`/admin/feedback-hub/forms`), then choose **New feedback form**.
+2. Enter a title and optional description. Optionally associate a feature or published lesson. Association is a reference only and grants no lesson access.
+3. Use **Add question**. Choose Short answer, Paragraph, Multiple choice, Dropdown, Checkboxes or Linear scale. Enter the prompt and select **required** when needed. Choice questions need 2–20 distinct options. Scales use whole-number endpoints between 0 and 10, with the minimum below the maximum, and optional endpoint labels. A form has 1–30 questions.
+4. Click **Save draft**. Saved unpublished forms can be reopened with **Edit draft**. They cannot receive responses and send no inbox requests.
+5. From the saved form, choose **Review audience**. Select Students or Teachers, search, and select individual recipients. Selection persists across audience pages and clears when the role changes. Choose **Review selected recipients**, check the names and role, then **Publish form**. Up to 500 recipients from one role can receive a form.
+6. Publication freezes the questions and selected audience and creates a private inbox request for each recipient. Later accounts do not receive the earlier request.
+7. Use **Review responses** to open submitted feedback with the respondent name, submission time and the exact question snapshot. Unfinished response drafts are private to their owners and do not appear here or count as responses.
+8. Choose **Close collection**, then **Confirm close**, to stop draft editing and submission permanently. Existing submitted responses remain available. Reopening, deleting, AI analysis and separate follow-up messages are outside this feature.
+
+All active admins can manage the forms and review submitted responses. Feedback is identified; it is not anonymous. Records have no automatic expiry or deletion in this release.
+

@@ -1552,13 +1552,6 @@ button:focus-visible {
   line-height: 1.8;
   margin: 0;
 }
-.callout.small {
-  padding: 15px;
-  gap: 10px;
-}
-.callout.small p {
-  font-size: 11px;
-}
 .reader-outline {
   padding: 25px;
   position: sticky;
@@ -2366,57 +2359,6 @@ td .MuiButton-root {
 .form-panel > .MuiButton-root {
   margin-top: 13px;
 }
-.response-layout {
-  display: grid;
-  grid-template-columns: 1.3fr 1fr;
-  gap: 24px;
-  align-items: start;
-}
-.response-card {
-  padding: 24px;
-  margin-bottom: 17px;
-}
-.response-top {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 10px;
-  color: var(--muted);
-}
-.response-card blockquote {
-  font-size: 14px;
-  margin: 20px 0;
-}
-.response-card small {
-  font-size: 10px;
-  color: var(--muted);
-}
-.insight-panel {
-  padding: 26px;
-  background: linear-gradient(
-    135deg,
-    var(--purple-soft),
-    var(--paper)
-  ) !important;
-}
-.insight-panel h2 {
-  font-size: 23px;
-  margin: 20px 0;
-}
-.insight-panel h3 {
-  font-size: 15px;
-  margin: 25px 0 10px;
-}
-.insight-panel > p {
-  font-size: 12px;
-  color: var(--muted);
-}
-.insight-panel > .MuiButton-root {
-  font-size: 10px;
-  text-align: left;
-  justify-content: flex-start;
-  gap: 5px;
-}
 .announcement-panel {
   margin: auto;
   max-width: 780px;
@@ -2723,9 +2665,6 @@ td .MuiButton-root {
   }
   .feedback-card blockquote {
     min-height: 0;
-  }
-  .response-layout {
-    grid-template-columns: 1fr;
   }
   .teacher-hero {
     padding: 27px;
@@ -3307,12 +3246,6 @@ td .MuiButton-root {
   }
   .feedback-pulse {
     padding: 25px;
-  }
-  .response-card {
-    padding: 21px;
-  }
-  .insight-panel {
-    padding: 24px;
   }
   .app-footer {
     flex-wrap: wrap;

@@ -21,7 +21,6 @@ import {
 import { useFeedbackRead } from "../hooks/useFeedbackRead";
 import { getSessionGeneration } from "../services/client";
 import {
-  parseLegacyFeedbackPath,
   useFeedbackPaths,
   type FeedbackScreenRoute,
 } from "../lib/feedbackPaths";
@@ -578,19 +577,11 @@ function AdminFeedbackContent({ route }: { route: FeedbackScreenRoute }) {
   );
 }
 
-/** The feedback screens for an already resolved route; the hub and the old page both render this. */
+/** The feedback screens for an already resolved route; the hub renders this. */
 export function AdminFeedbackScreen({ route }: { route: FeedbackScreenRoute }) {
   return (
     <div className="admin-surface admin-feedback">
       <AdminFeedbackContent route={route} />
     </div>
-  );
-}
-
-/** The old `/admin/feedback/...` page: a thin wrapper that reads the screen from the address. */
-export default function AdminFeedback() {
-  const location = useLocation();
-  return (
-    <AdminFeedbackScreen route={parseLegacyFeedbackPath(location.pathname)} />
   );
 }

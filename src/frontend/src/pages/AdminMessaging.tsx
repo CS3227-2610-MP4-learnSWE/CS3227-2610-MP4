@@ -10,11 +10,7 @@ import {
 } from "@mui/material";
 import { MessageSquare, Users, Send, CheckCircle2 } from "lucide-react";
 import { useAuth } from "../auth/AuthContext";
-import {
-  parseLegacyReplyPath,
-  useFeedbackPaths,
-  type ReplyTarget,
-} from "../lib/feedbackPaths";
+import { useFeedbackPaths, type ReplyTarget } from "../lib/feedbackPaths";
 import { PageHeading, Panel } from "../components/ui";
 import { useMessagingRead } from "../hooks/useMessagingRead";
 import { getSessionGeneration } from "../services/client";
@@ -576,7 +572,7 @@ function MessagingRoute({ reply }: { reply?: ReplyTarget }) {
   );
 }
 
-/** The messaging screens (announcement or reply to a response); the hub and the old pages both render this. */
+/** The messaging screens (announcement or reply to a response); the hub renders this. */
 export function AdminMessagingScreen({ reply }: { reply?: ReplyTarget }) {
   const { status, user } = useAuth();
   if (status === "loading") return <p role="status">Loading your session…</p>;
@@ -584,10 +580,4 @@ export function AdminMessagingScreen({ reply }: { reply?: ReplyTarget }) {
   if (user?.role !== "admin")
     return <Navigate to={`/${user?.role}/overview`} replace />;
   return <MessagingRoute reply={reply} />;
-}
-
-/** The old announcement and reply pages: a thin wrapper that reads the reply target from the address. */
-export default function AdminMessaging() {
-  const { pathname } = useLocation();
-  return <AdminMessagingScreen reply={parseLegacyReplyPath(pathname)} />;
 }

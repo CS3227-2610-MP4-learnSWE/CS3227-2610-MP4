@@ -1,5 +1,5 @@
 import { useCallback, useLayoutEffect, useState } from "react";
-import { Link, useLocation, useParams } from "react-router";
+import { Link, useLocation } from "react-router";
 import { Button } from "@mui/material";
 import { PageHeading, Panel } from "../components/ui";
 import { useFeedbackPaths } from "../lib/feedbackPaths";
@@ -104,16 +104,5 @@ export function AdminFeedbackAnalysisEvidenceScreen({
         </Panel>
       )}
     </div>
-  );
-}
-
-/** The old evidence page: a thin wrapper that reads the ids from the address. */
-export default function AdminFeedbackAnalysisEvidence() {
-  const { analysisId = "", label = "" } = useParams();
-  return (
-    <AdminFeedbackAnalysisEvidenceScreen
-      analysisId={analysisId}
-      label={label}
-    />
   );
 }

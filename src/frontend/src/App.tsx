@@ -7,7 +7,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { Navigate, Route, Routes } from "react-router";
+import { Navigate, Route, Routes, useLocation } from "react-router";
 import {
   Alert,
   createTheme,
@@ -27,21 +27,10 @@ import { PracticeProvider } from "./practice/PracticeContext";
 import InboxPage, { FeedbackForm } from "./pages/Inbox";
 import FeedbackInbox from "./pages/FeedbackInbox";
 import RecipientFeedback from "./pages/RecipientFeedback";
-import AdminFeedback from "./pages/AdminFeedback";
-import AdminMessaging from "./pages/AdminMessaging";
 
 // Loaded on demand so the student pages never download the teacher demo data.
 const Teacher = lazy(() => import("./pages/Teacher"));
 const Admin = lazy(() => import("./pages/Admin"));
-const AdminFeedbackAnalysis = lazy(
-  () => import("./pages/AdminFeedbackAnalysis"),
-);
-const AdminFeedbackAnalysisResult = lazy(
-  () => import("./pages/AdminFeedbackAnalysisResult"),
-);
-const AdminFeedbackAnalysisEvidence = lazy(
-  () => import("./pages/AdminFeedbackAnalysisEvidence"),
-);
 const AdminFeedbackHub = lazy(() => import("./pages/AdminFeedbackHub"));
 const AdminAnalytics = lazy(() => import("./pages/AdminAnalytics"));
 
@@ -75,12 +64,12 @@ function useWasAuthenticated() {
   return was.current;
 }
 
-function LiveFeedback({ admin = false }: { admin?: boolean }) {
+function LiveFeedback() {
   const { status } = useAuth();
   const was = useWasAuthenticated();
   if (status === "anonymous" && !was) return <Navigate to="/login" replace />;
   if (status !== "authenticated") return null;
-  return admin ? <AdminFeedback /> : <RecipientFeedback />;
+  return <RecipientFeedback />;
 }
 
 /**
@@ -97,15 +86,16 @@ function LiveAnalysis({ children }: { children: ReactNode }) {
   );
 }
 
-function Announcements() {
-  const { status } = useAuth();
-  return status === "authenticated" ? (
-    <AdminMessaging />
-  ) : (
-    <Suspense fallback={<p role="status">Loading…</p>}>
-      <Admin />
-    </Suspense>
-  );
+const HUB = "/admin/feedback-hub";
+
+/**
+ * An old admin address sent to its hub page. The target is built from the raw (still encoded) path segments
+ * after `/admin/`, so an encoded "/" in an id or label never becomes a path separator; query and hash are kept.
+ */
+function HubRedirect({ to }: { to: (segments: string[]) => string }) {
+  const { pathname, search, hash } = useLocation();
+  const segments = pathname.replace(/\/$/, "").split("/").slice(2);
+  return <Navigate to={`${to(segments)}${search}${hash}`} replace />;
 }
 
 export default function App() {
@@ -225,30 +215,6 @@ export default function App() {
             >
               <Route index element={<Navigate to="overview" replace />} />
               <Route
-                path="feedback/analysis"
-                element={
-                  <LiveAnalysis>
-                    <AdminFeedbackAnalysis />
-                  </LiveAnalysis>
-                }
-              />
-              <Route
-                path="feedback/analysis/:analysisId"
-                element={
-                  <LiveAnalysis>
-                    <AdminFeedbackAnalysisResult />
-                  </LiveAnalysis>
-                }
-              />
-              <Route
-                path="feedback/analysis/:analysisId/responses/:label"
-                element={
-                  <LiveAnalysis>
-                    <AdminFeedbackAnalysisEvidence />
-                  </LiveAnalysis>
-                }
-              />
-              <Route
                 path="feedback-hub/*"
                 element={
                   <LiveAnalysis>
@@ -256,7 +222,70 @@ export default function App() {
                   </LiveAnalysis>
                 }
               />
-              <Route path="feedback/*" element={<LiveFeedback admin />} />
+              <Route
+                path="feedback/analysis"
+                element={<HubRedirect to={() => `${HUB}/analysis`} />}
+              />
+              <Route
+                path="feedback/analysis/:analysisId"
+                element={<HubRedirect to={(s) => `${HUB}/analysis/${s[2]}`} />}
+              />
+              <Route
+                path="feedback/analysis/:analysisId/responses/:label"
+                element={
+                  <HubRedirect
+                    to={(s) => `${HUB}/analysis/${s[2]}/responses/${s[4]}`}
+                  />
+                }
+              />
+              <Route
+                path="feedback/new"
+                element={<HubRedirect to={() => `${HUB}/forms/new`} />}
+              />
+              <Route
+                path="feedback/:formId"
+                element={<HubRedirect to={(s) => `${HUB}/forms/${s[1]}`} />}
+              />
+              <Route
+                path="feedback/:formId/edit"
+                element={
+                  <HubRedirect to={(s) => `${HUB}/forms/${s[1]}/edit`} />
+                }
+              />
+              <Route
+                path="feedback/:formId/responses"
+                element={<HubRedirect to={(s) => `${HUB}/responses/${s[1]}`} />}
+              />
+              <Route
+                path="feedback/:formId/responses/:responseId"
+                element={
+                  <HubRedirect to={(s) => `${HUB}/responses/${s[1]}/${s[3]}`} />
+                }
+              />
+              <Route
+                path="feedback/:formId/responses/:responseId/reply"
+                element={
+                  <HubRedirect
+                    to={(s) => `${HUB}/follow-up/reply/${s[1]}/${s[3]}`}
+                  />
+                }
+              />
+              <Route
+                path="feedback"
+                element={<HubRedirect to={() => `${HUB}/forms`} />}
+              />
+              <Route
+                path="responses"
+                element={<HubRedirect to={() => `${HUB}/forms`} />}
+              />
+              <Route
+                path="announcements"
+                element={<HubRedirect to={() => `${HUB}/follow-up`} />}
+              />
+              <Route
+                path="announcements/new"
+                element={<HubRedirect to={() => `${HUB}/follow-up`} />}
+              />
               <Route
                 path="analytics"
                 element={
@@ -268,12 +297,6 @@ export default function App() {
               <Route
                 path="ai-usage"
                 element={<Navigate to="/admin/analytics" replace />}
-              />
-              <Route path="announcements" element={<Announcements />} />
-              <Route path="announcements/new" element={<AdminMessaging />} />
-              <Route
-                path="feedback/:formId/responses/:responseId/reply"
-                element={<AdminMessaging />}
               />
               <Route
                 path="*"

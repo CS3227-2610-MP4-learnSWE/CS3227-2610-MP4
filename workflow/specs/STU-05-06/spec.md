@@ -7,8 +7,8 @@ From the user stories: a student completes open feedback forms intended for them
 
 ## Behaviour
 No new student screen, route, table or endpoint. The student side is delivered by:
-- ADM-02: `/student/inbox` (survey requests), `/student/feedback/{form_id}` (form, draft, submit); contract in `workflow/specs/ADM-02/plan.md` (endpoints GET `/api/feedback/inbox`, GET `/api/feedback/forms/{form_id}`, PUT `.../draft`, POST `.../responses`; error dictionary E01-E08, V10-V11, C04-C06).
-- ADM-04 (PR 31, `workflow/specs/ADM-04/` on branch `origin/feat/adm04-feedback-follow-up`): a separate `Messages` section on the same inbox page, GET `/api/messaging/inbox`, POST `/api/messaging/inbox/{delivery_id}/read`, and a combined sidebar badge from GET `/api/messaging/unread-count` returning `{unread_count, unread_messages, unread_requests}` (hook `useInboxUnread`, badge in `Shell.tsx`).
+- ADM-02: `/student/inbox` (survey requests), `/student/feedback/{form_id}` (form, draft, submit); contract in `workflow/specs/ADM-08/retained-criteria.md` (endpoints GET `/api/feedback/inbox`, GET `/api/feedback/forms/{form_id}`, PUT `.../draft`, POST `.../responses`; error dictionary E01-E08, V10-V11, C04-C06).
+- ADM-04 (PR 31, `workflow/specs/ADM-08/retained-criteria.md`, formerly the ADM-04 spec, on branch `origin/feat/adm04-feedback-follow-up`): a separate `Messages` section on the same inbox page, GET `/api/messaging/inbox`, POST `/api/messaging/inbox/{delivery_id}/read`, and a combined sidebar badge from GET `/api/messaging/unread-count` returning `{unread_count, unread_messages, unread_requests}` (hook `useInboxUnread`, badge in `Shell.tsx`).
 
 This slice adds: (a) a criterion-by-criterion verification matrix (plan.md, Test plan); (b) tests named `stu05_` / `stu06_` only where the matrix finds a gap; (c) one small frontend change (option A, chosen by the user): each message shows `From: Administrator` and its sent time, made in `MessagesInbox.tsx` after PR 31 merges; (d) accuracy fixes to `docs/UserGuide.md` and `docs/DeveloperGuide.md` for the student inbox and feedback sections; (e) a first-run browser failure record.
 
