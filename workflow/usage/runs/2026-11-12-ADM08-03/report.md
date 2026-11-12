@@ -8,8 +8,11 @@ Token usage = uncached input + cache reads + cache writes + output. Reasoning is
 
 | Record | Feature run ID | Invocation ID | Role | Model(s) | Effort | Elapsed | Requests | Token usage | Cost (USD) |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| invocation | 2026-11-12-ADM08-03 | 2026-11-12-ADM08-03-orchestrator-01 | orchestrator | claude-sonnet-5-5 | inherited | 11:49:54 | 188 | 32052458 | 6.399372 |
+| invocation | 2026-11-12-ADM08-03 | 2026-11-12-ADM08-03-orchestrator-01 | orchestrator | claude-sonnet-5-5 | inherited | 12:27:23 | 230 | 44797270 | 8.122491 |
 | invocation | 2026-11-12-ADM08-03 | 2026-11-12-ADM08-03-spec-writer-01 | spec-writer | claude-sonnet-5-5 | inherited | 0:05:39 | 15 | 1520110 | 1.012724 |
 | invocation | 2026-11-12-ADM08-03 | 2026-11-12-ADM08-03-test-designer-01 | test-designer | claude-sonnet-5-5 | inherited | 0:25:59 | 54 | 4153108 | 1.450269 |
 | invocation | 2026-11-12-ADM08-03 | 2026-11-12-ADM08-03-verifier-01 | verifier | claude-opus-5-5 | inherited | 0:07:20 | 40 | 2991636 | 1.777241 |
-| feature_run_total | 2026-11-12-ADM08-03 |  | TOTAL | claude-opus-5-5; claude-sonnet-5-5 |  | 11:49:54 | 297 | 40717312 | 10.639605 |
+| invocation | 2026-11-12-ADM08-03 | 2026-11-12-ADM08-03-test-designer-02 | test-designer | claude-sonnet-5-5 | inherited | 0:32:22 | 36 | 1706451 | 0.655936 |
+| invocation | 2026-11-12-ADM08-03 | 2026-11-12-ADM08-03-developer-01 | developer | claude-sonnet-5-5 | inherited | 0:32:22 | 29 | 1339072 | 0.463781 |
+| invocation | 2026-11-12-ADM08-03 | 2026-11-12-ADM08-03-verifier-02 | verifier | claude-opus-5-5 | inherited | 0:03:29 | 5 | 96680 | 0.204320 |
+| feature_run_total | 2026-11-12-ADM08-03 |  | TOTAL | claude-opus-5-5; claude-sonnet-5-5 |  | 12:27:23 | 409 | 56604327 | 13.686761 |

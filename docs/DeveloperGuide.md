@@ -644,7 +644,7 @@ The scoped rules in `styles.css` define neutral panels, outlined MUI fields, rea
 
 `LocalTime.tsx` renders recorded instants with the browser's locale/time zone and preserves the ISO value in `time[datetime]` and the title. Report date filters remain UTC. Response link accessible names retain their exact identifiers and original timestamps, while visible rows lead with human names. Existing endpoints, fetch cadence, error mappings, session clearing and security checks are unchanged; no background requests or live AI are added.
 
-Regression coverage is in `tests/admin-ui.spec.ts`, alongside existing ADM-02/04/05/06 suites. The existing row-layout and timestamp assertions were adapted to the documented taller cards and semantic local dates, retaining full-row navigation, hover, request-count and exact-record assertions. Use isolated Playwright ports when a developer server is running. Check desktop/mobile, both themes, visible input/focus outlines, long content, retained input on failure and keyboard-reachable report scrolling.
+Regression coverage is in `tests/admin-ui.spec.ts`, alongside the ADM-05/06 suites (the former ADM-02 and ADM-04 admin tests now live in `adm08-ported-*`). The existing row-layout and timestamp assertions were adapted to the documented taller cards and semantic local dates, retaining full-row navigation, hover, request-count and exact-record assertions. Use isolated Playwright ports when a developer server is running. Check desktop/mobile, both themes, visible input/focus outlines, long content, retained input on failure and keyboard-reachable report scrolling.
 
 
 ### Frontend CI: recipient debounce and shell request counts
