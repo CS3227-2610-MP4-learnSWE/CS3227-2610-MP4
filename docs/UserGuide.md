@@ -361,3 +361,8 @@ The analysis changes nothing and stays under **Previous analyses** until you del
 - **Sessions.** You stay signed in for up to 12 hours. Disabled accounts are signed out at once.
 - **Appearance.** The sun or moon button switches light and dark mode. On a phone, open the sidebar with the menu button.
 - **Trouble signing in or starting the app?** See "If something goes wrong" in the [README](../README.md#if-something-goes-wrong).
+
+
+## Hosted access
+
+A hosted application address has not yet been verified. Use the local setup in the README until the team publishes the application link. The separate product website will explain learnSWE and link to the sign-in page; it does not host accounts or learning records.

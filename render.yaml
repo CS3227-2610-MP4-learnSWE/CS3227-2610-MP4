@@ -1,0 +1,37 @@
+services:
+  - type: web
+    name: learnswe-dev
+    runtime: docker
+    plan: free
+    branch: master
+    autoDeployTrigger: off
+    healthCheckPath: /api/health
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: ALLOWED_ORIGINS
+        sync: false
+      - key: SOCLAAS_BASE_URL
+        sync: false
+      - key: SOCLAAS_API_KEY
+        sync: false
+      - key: SOCLAAS_MODEL
+        sync: false
+  - type: web
+    name: learnswe-prod
+    runtime: docker
+    plan: free
+    branch: master
+    autoDeployTrigger: off
+    healthCheckPath: /api/health
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: ALLOWED_ORIGINS
+        sync: false
+      - key: SOCLAAS_BASE_URL
+        sync: false
+      - key: SOCLAAS_API_KEY
+        sync: false
+      - key: SOCLAAS_MODEL
+        sync: false

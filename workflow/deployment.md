@@ -1,34 +1,96 @@
-# Deployment (CD): options and open decisions
+# Deployment: Render application, Neon PostgreSQL and GitHub Pages
 
-Not built yet. Continuous integration is in place (`.github/workflows/ci.yml`, plan in `specs/CI-01/plan.md`); deployment waits for the decisions below.
+Implementation: DEPLOY-01. No live URLs are claimed until the checks below pass. All work is prepared on a feature branch and reviewed through a PR into master. GitHub Actions owns deployment; leave Render automatic deployment off.
 
-## What the assignment requires
-- The app is deployed online, with a separate **dev** and **production** environment.
-- The team manages deployment with its own automation (for example GitHub Actions). Build-and-host environments provided by Codex or Claude are not allowed.
-- AI features must use the SoC LLM.
+## Architecture and free-tier limits
 
-## The deciding question: where can the SoC LLM be reached from?
-The SoC documentation host (`dochub.comp.nus.edu.sg`) resolves to a private address (172.18.x.x) and could not be reached from outside the NUS network on 30 Oct 2026. If the SoC LLM endpoint is internal too, a backend hosted outside NUS cannot call it, and the backend would have to run inside the NUS network (or reach it through an approved route). To confirm from the NUS network or VPN: the SoC LLM guide linked in the assignment (endpoint, authentication, rate limits, and whether it is reachable from the internet).
+A multi-stage Dockerfile builds React/Vite and a Python 3.12 FastAPI server. Render serves both from one HTTPS origin, preserving same-site session cookies and relative /api calls. Separate learnswe-dev and learnswe-prod free web services use separate empty Neon projects/databases and database roles. Both hosted services run APP_ENV=production for production security; environment isolation comes from services, credentials and data, not disabling security in dev.
 
-## Options
-| Option | Fits if | Notes |
-|---|---|---|
-| SoC-provided server or VM for dev and prod | SoC offers project hosting, or the LLM is internal-only | GitHub Actions deploys over SSH or a self-hosted runner inside NUS; secrets in GitHub environments |
-| External host for both (static frontend host plus a Python app host) | The SoC LLM is reachable from the internet | Free tiers exist; separate dev and prod services; deploy from Actions |
-| Split: frontend on a static host, backend inside NUS | Frontend can be public, backend must be internal | Needs CORS and a public route to the backend |
+The product site is static website/ content, independently published to GitHub Pages. It makes no API requests, stores no session data and links to the real application login.
 
-## Pipeline shape once hosting is chosen
-- Merge to `master` deploys to **dev** automatically after CI passes.
-- A version tag (for example `v1.0.0`) or a manual approval deploys the same build to **prod**, using a protected GitHub environment.
-- Secrets (LLM key, database URL) live in GitHub environment secrets, never in the repository; the job has least-privilege permissions.
+Render free services sleep after 15 minutes idle, can restart at any time, and share 750 instance hours per workspace/month. They offer neither persistent disks nor shell/one-off jobs. Avoid paid resources and payment methods when a strict zero-cost ceiling is required; service suspension is preferable to overage billing. Neon free capacity and retention limits must be checked in its dashboard. Provider free tiers are suitable for this assignment/demo, without an always-on production SLA. Sources: https://render.com/docs/free and https://neon.com/pricing.
 
-## Open decisions
-1. Is the SoC LLM reachable from outside the NUS network?
-2. Does SoC provide servers or VMs for course projects?
-3. Database hosting for PostgreSQL (dev and prod).
+Teacher originals are PostgreSQL material_file.content BYTEA, not persistent local files. Existing per-file/total raw-byte limits do not describe full database consumption; monitor tables/indexes/backups too. FILE_STORAGE_DIR remains ignored. Never clear old databases or files to bypass migration guards.
 
-## Teacher original-file persistence
+## One-time secure setup
 
-Teacher originals now live in PostgreSQL material_file.content BYTEA with metadata/drafts, so a Render persistent disk is not required for uploads. FILE_STORAGE_DIR is ignored; temporary multipart spooling may use ephemeral disk. Keep DATABASE_URL and provider credentials in deployment secrets. The application enforces10 MiB per file/100 MiB total raw bytes, not total database usage; monitor the chosen provider's capacity and other tables/overhead. No specific free-tier allowance is assumed. PostgreSQL backups now include originals; restore the database as one unit.
+1. Create Render and Neon accounts in the owner's name, free plans only. Connect Render to this public GitHub repository. Prefer matching Singapore regions if supported. Create independent empty dev and production databases/roles; never point either service at local or existing real-user data.
+2. After reviewed merge, create the two Git-backed Docker services using render.yaml (plan free, autoDeployTrigger off). Creation may initiate the first build; do not treat it as an approved production release. Use GitHub Actions for subsequent deploys and verify exact commit.
+3. In each Render service's secure environment settings, set DATABASE_URL to the corresponding Neon TLS URL with the SQLAlchemy postgresql+psycopg:// prefix. Set ALLOWED_ORIGINS to that service's exact https:// origin. Set SOCLAAS_BASE_URL, SOCLAAS_API_KEY and SOCLAAS_MODEL only server-side. Never paste secrets into chat, website variables, Git, Docker build arguments or logs.
+4. The image fixes APP_ENV=production, SESSION_COOKIE_SECURE=true, SESSION_COOKIE_SAMESITE=lax, TRUST_PROXY_HEADERS=false, FRONTEND_DIST_DIR=/app/frontend-dist and disables demo access at frontend build. Keep these values. Render supplies PORT. Session cookies remain HttpOnly through the shared auth module; unsafe requests retain origin/CSRF checks.
+5. Create GitHub environments development and production. Store RENDER_API_KEY and RENDER_SERVICE_ID as environment secrets for the corresponding service. Require a teammate review for production environment deployments when repository policy supports it. Use separate production credentials; grant minimum provider scope available. Do not commit secret exports.
+6. Verify the SoC endpoint is reachable from Render using a separately approved bounded request. Do not substitute another LLM provider. Missing/unreachable AI configuration remains an explicit limitation; never claim AI verified without a successful hosted request.
 
-Deploy this revision against a separately created empty database, migrate and seed explicitly, then upload again. Conversion/downgrade refuses populated material tables; never clear the previous database/files to bypass it. Keep old code/configuration/database/files for rollback. This change does not configure hosting, deploy, implement login or resolve SoC LLM network reachability; follow the existing decisions/gates above.
+## Proxy and rate-limit boundary
+
+The entrypoint uses --no-proxy-headers and rejects TRUST_PROXY_HEADERS=true. It does not trust client-supplied X-Forwarded-For. Explicit ALLOWED_ORIGINS permits the HTTPS frontend even though the upstream connection uses HTTP. Secure cookies are still sent by browsers over the public HTTPS origin. Until Render's trusted proxy boundary is verified, per-IP quotas can group visitors under a proxy IP; per-email and authenticated caller limits remain. Do not set wildcard proxy trust to bypass a login/rate-limit issue. A future trusted-proxy configuration requires a reviewed security contract.
+
+## Builds, migration and startup
+
+From the repository root:
+
+```powershell
+docker build -t learnswe:local .
+```
+
+The image installs locked dependencies with uv sync --frozen --no-dev and npm ci, builds the frontend and starts as UID 10001. It includes no local env files, worktrees, logs or database files. Runtime binds 0.0.0.0:$PORT, default 8000, with one Uvicorn worker and no development reload. Startup validates secure settings and the built index before migration.
+
+Before accepting traffic, python -m deployment.start runs Alembic upgrade head while holding PostgreSQL advisory lock 3227261001. Concurrent starts serialize; lock acquisition stops after 60 seconds. Configuration or migration errors exit nonzero with a redacted diagnostic; Render must report the failed release rather than serving the new build. Restarts check head but do not reapply completed revisions. Explicit operator migration uses python -m deployment.start --migrate-only, with the same lock and secure DATABASE_URL. Startup never seeds accounts or sample data. Avoid manually running raw Alembic concurrently with release startup.
+
+Only backward-compatible schema changes can safely coexist with old serving processes during a rolling deployment. First deployment uses an empty database. An incompatible schema release requires a separately reviewed maintenance/backup plan.
+
+## Account provisioning
+
+After successful migration, run these commands from a trusted operator machine or an ephemeral container against the intended database, passing secrets through an ignored env file/secure environment, never command-line literals:
+
+```powershell
+uv run --env-file .env.production python -m teacher_materials.seed
+uv run --env-file .env.production python -m auth.seed
+```
+
+Run from src/backend. The ignored operator file must specify APP_ENV=production, the intended DATABASE_URL and six SEED_ email/password fields. Use strong unique private credentials; do not use public README examples. The first command creates the starting courses/users; the second sets sign-in credentials. Provisioning is idempotent by default and does not reset existing passwords; --reset-passwords is an explicit account operation. Remove provisioning secrets from service runtime after use. Use admin Users/Courses screens to manage access after initial provisioning. No production sample_data.py, development analytics/feedback seeds or environment-label workaround.
+
+## GitHub Actions releases
+
+.github/workflows/deploy.yml listens for successful CI push runs on master. Automatic releases target development using the completed run's head_sha. Manual dispatch accepts dev or production and a full 40-character commit SHA. The script verifies the commit is reachable from master and has successful push CI in ci.yml for that exact SHA before calling Render. No production deployment from an unreviewed feature branch. Production requires manual selection and its environment policy.
+
+Render's POST /v1/services/{serviceId}/deploys accepts {commitId: SHA} for Git-backed services, including Docker. The script polls for at most 15 minutes, rejects returned commit mismatches, fails on provider terminal failure and verifies process health, database health and /login HTML. Per-environment Actions concurrency does not cancel a running migration. Source: https://render.com/docs/deploys and https://api-docs.render.com/reference/create-deploy.
+
+The privileged workflow checks out master automation, never an untrusted PR. Tokens are environment variables and provider response bodies are not logged. A successful release smoke is not a substitute for the user journeys below.
+
+## GitHub Pages product website
+
+Set repository variable PRODUCT_APP_URL to the verified production HTTPS origin (no /login, query, fragment or credentials). Settings > Pages > Build and deployment > Source: GitHub Actions. The public repository supports Pages. No custom domain is needed.
+
+.github/workflows/pages.yml publishes on relevant master changes and manual dispatch on master only. It validates the origin, builds to build/product-site, checks /login availability, then uses official configure/upload/deploy Pages actions. Generated CSS links are relative, so the repository subpath works. Never upload website/index.html directly: it is a template containing __APP_LOGIN_URL__.
+
+Local preview example (public placeholder is only for local validation):
+
+```powershell
+$env:PRODUCT_APP_URL='https://example.com'
+python scripts/build_product_site.py --output build/product-site
+python -m http.server 8088 --directory build
+```
+
+Open http://127.0.0.1:8088/product-site/ for subpath, keyboard and responsive checks. The real public site link will be recorded only after publication and live verification.
+
+## Background work, restart and recovery
+
+Feedback analysis and analytics quality grading use existing in-process daemon threads. They are not durable workers and may stop during Render restart, deploy or idle shutdown. Existing feedback-analysis stale sweeping marks interrupted old runs failed during subsequent authorized service reads/actions; existing grading sweep marks expired runs run_expired. Review the failure in the admin UI and initiate an explicit new analysis/grading run; never assume a lost thread resumes or automatically replay AI calls. Existing privacy initialization/scanning threads restart with the app and retain fail-closed behavior. A single Uvicorn worker avoids multiplying process-local jobs/rate limits. No paid worker, cron, Redis or queue is introduced.
+
+## Backup, rollback and restore
+
+Before later production releases, make an encrypted/off-repository PostgreSQL backup with pg_dump using provider-required TLS and private credentials. Originals are included in the database, so restore as one unit. Verify a restore into a separate empty recovery database before trusting the backup. Never commit dumps or print connection URLs. Retention and point-in-time recovery depend on the actual provider plan; a free tier is not a backup policy.
+
+For app-only rollback, select an earlier reviewed master commit with successful CI and redeploy it through Actions. Render free native rollback history is limited. Check schema compatibility first: rolling back code does not reverse migrations. Do not automatically downgrade or delete material data. For incompatible failure, stop writes, preserve failed deployment/database evidence, restore a tested backup to a new database, deploy compatible code, verify all journeys, then switch secure configuration and redeploy. Keep the old database/files until recovery is confirmed.
+
+## Verification record (pending live access)
+
+- Local validation results: see the DEPLOY-01 handoff/session log; do not infer live hosting from a passing build.
+- Live application URL: pending. Product website URL: pending.
+- Required live checks: /api/health and /api/health/ready report process state; /api/health/database performs a SELECT 1 probe with a 5-second response bound and redacted 503 failures. Unknown API routes/methods and missing static files must not become HTML.
+- Sign in/out as student, teacher and admin with private operator credentials. Verify Secure/HttpOnly/SameSite=Lax cookies, CSRF rejection, unauthenticated/wrong-role/cross-course denial and expired-session behavior.
+- Teacher uploads an original, reads it back, reviews/publishes content; student reads a lesson, submits a full practice set and sees answers only afterward, then checks progress; admin reviews feedback. Use controlled test records.
+- Approve a bounded SoC request before testing hosted AI generation/analysis. Confirm background completion and explicit recovery of an interrupted job.
+- Restart the application and verify accounts, originals, published content and results persist. Verify Pages assets and real application link from its repository subpath on desktop/mobile light/dark and keyboard navigation.
+- Mark every check passed, failed or pending with evidence; never publish credentials, private content or an unverified live URL.

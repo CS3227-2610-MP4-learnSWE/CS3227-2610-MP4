@@ -22,6 +22,10 @@ from teacher_mcqs.routes import router as teacher_mcqs_router
 from teacher_publications.routes import router as publications_router
 from errors import ApiError
 from feature_analytics.retention import purge_expired
+import os
+from pathlib import Path
+from deployment.health import database_health
+from deployment.static import attach_frontend
 
 app = FastAPI(title="learnSWE Preview API", version="0.1.0")
 app.include_router(auth_router)
@@ -72,3 +76,8 @@ def health() -> dict[str, str]:
 def readiness() -> dict[str, str]:
     """Process readiness, not database or AI service readiness."""
     return {'status': 'ready'}
+
+
+app.add_api_route('/api/health/database', database_health, methods=['GET'], response_model=None)
+if os.environ.get('FRONTEND_DIST_DIR'):
+    attach_frontend(app, Path(os.environ['FRONTEND_DIST_DIR']))
