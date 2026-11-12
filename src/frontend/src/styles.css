@@ -5634,3 +5634,8 @@ td .MuiButton-root {
   font-size: 14px;
   font-weight: 600;
 }
+
+/* Range control above the hourly charts. */
+.analytics-hub-range {
+  margin: 0 0 16px;
+}

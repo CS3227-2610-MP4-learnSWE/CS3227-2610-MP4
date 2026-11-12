@@ -14,6 +14,7 @@ import {
   RequestsPerHourChart,
 } from "./charts";
 import { percent1, startsNote, unavailableText } from "./copy";
+import { inHourlyRange, type HourlyRange } from "../../lib/period";
 
 type ChartId = "requests" | "failure" | "peak";
 const TITLES: Record<ChartId, string> = {
@@ -35,26 +36,32 @@ const hh = (hour: number) => `${String(hour).padStart(2, "0")}:00`;
 export default function HourlyCharts({
   hourly,
   period,
+  range = "period",
+  now = new Date(),
   timeZone,
 }: {
   hourly: Hourly;
   period: Period;
+  range?: HourlyRange;
+  now?: Date;
   timeZone: string;
 }) {
   const [open, setOpen] = useState<ChartId | null>(null);
   const zone = timeZone || "UTC";
+  // A rolling range keeps only its own hours; the response covers whole UTC days.
+  const buckets = useMemo(
+    () => hourly.buckets.filter((b) => inHourlyRange(b.hour_start, range, now)),
+    [hourly.buckets, range, now],
+  );
   const rows = useMemo(
     () =>
-      hourly.buckets.map((bucket) => ({
+      buckets.map((bucket) => ({
         bucket,
         local: toLocalBucket(bucket.hour_start, zone),
       })),
-    [hourly.buckets, zone],
+    [buckets, zone],
   );
-  const cells = useMemo(
-    () => buildHeatmap(hourly.buckets, zone),
-    [hourly.buckets, zone],
-  );
+  const cells = useMemo(() => buildHeatmap(buckets, zone), [buckets, zone]);
 
   if (hourly.state === "unavailable")
     return (
@@ -67,7 +74,17 @@ export default function HourlyCharts({
       </div>
     );
 
-  const totals = hourly.totals ?? { successful: 0, failed: 0, total: 0 };
+  const totals =
+    range === "period"
+      ? (hourly.totals ?? { successful: 0, failed: 0, total: 0 })
+      : buckets.reduce(
+          (sum, b) => ({
+            successful: sum.successful + b.successful,
+            failed: sum.failed + b.failed,
+            total: sum.total + b.total,
+          }),
+          { successful: 0, failed: 0, total: 0 },
+        );
   const empty = totals.total === 0;
   const breakdown = hourly.category_breakdown.state === "available";
   const busiest = cells.reduce((a, b) => (b.total > a.total ? b : a), cells[0]);
@@ -77,7 +94,10 @@ export default function HourlyCharts({
     failure: `Failure rate per hour chart: ${withRequests} hours with requests, 5% reference line`,
     peak: `Peak hours heatmap: busiest hour ${WEEKDAYS[busiest.weekday]} ${hh(busiest.hour)} with ${busiest.total} requests`,
   };
-  const name = (base: string) => `${base}_${period.from}_${period.to}.csv`;
+  const name = (base: string) =>
+    range === "period"
+      ? `${base}_${period.from}_${period.to}.csv`
+      : `${base}_last-${range}.csv`;
   const rate = (value: number | null) =>
     value === null ? NO_REQUESTS : percent1(value);
 
@@ -196,7 +216,15 @@ export default function HourlyCharts({
             disabled={empty}
             onExpand={() => setOpen(id)}
           >
-            {empty ? <p>No requests in this period.</p> : charts(false)[id]}
+            {empty ? (
+              <p>
+                {range === "period"
+                  ? "No requests in this period."
+                  : "No requests in this range."}
+              </p>
+            ) : (
+              charts(false)[id]
+            )}
           </ChartCard>
         ))}
       </div>

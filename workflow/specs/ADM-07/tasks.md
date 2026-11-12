@@ -62,5 +62,6 @@ Phases follow `workflow/plans/CONSOL-01-migration-plan.md`. Phase 3 (Feedback hu
 | P7-2 | Click-to-open chart cards, two per row, totals cards, table borders and sort arrows, Quality grid (AC43, AC44) | developer | P7-1 | done |
 | P7-3 | AI usage: labels without IDs; collection switch endpoint, UI and tests (AC46) | developer, test-designer | P7-1 | done |
 | P7-4 | Dev seed (`dev_seed.py`, `seed_dev.py`) and docs (AC47) | developer | P7-1 | done |
+| P7-5 | Hourly chart range control (AC48) and its tests | developer | P7-1 | done |
 
 Within phase 2 and phase 4, the test-designer tasks and the developer tasks run in parallel (separate worktrees). Concurrency and cross-user tasks are kept because the feature reads and writes stored records.

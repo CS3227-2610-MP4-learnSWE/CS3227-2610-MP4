@@ -521,6 +521,72 @@ test("adm07 AC18 three charts are images with the specified accessible names", a
   await expect(hourly.getByText("More requests")).toBeVisible();
 });
 
+// 2026-11-11T05:20Z: the last 24 hours end with the 05:00Z hour, so the mock's busy hours of the first
+// requested day (16:00Z and 17:00Z) are inside the range only when that day is 2026-11-10 or 2026-11-08.
+const NOW = new Date("2026-11-11T05:20:00Z");
+const RANGE = "Hourly chart range";
+
+test("adm07 hourly range: the control offers the selected period and the last 24 hours, 3 days and 7 days", async ({
+  page,
+}) => {
+  await ready(page);
+  const range = page.getByRole("radiogroup", { name: RANGE });
+  await expect(
+    range.getByRole("radio", { name: "Selected period", exact: true }),
+  ).toBeChecked();
+  for (const label of ["Last 24 hours", "Last 3 days", "Last 7 days"])
+    await expect(
+      range.getByRole("radio", { name: label, exact: true }),
+    ).not.toBeChecked();
+});
+
+for (const [label, days, hours] of [
+  ["Last 24 hours", "2026-11-10", 24],
+  ["Last 3 days", "2026-11-08", 72],
+  ["Last 7 days", "2026-11-04", 168],
+] as const) {
+  test(`adm07 hourly range: ${label} requests whole UTC days from ${days} and shows ${hours} hours ending now`, async ({
+    page,
+  }) => {
+    await page.clock.install({ time: NOW });
+    await ready(page);
+    const hourly = region(page, "Hourly activity");
+    const request = page.waitForRequest(
+      (r) =>
+        r.url().includes("/api/admin/analytics/hourly") &&
+        r.url().includes(`period_start=${days}`),
+    );
+    await page
+      .getByRole("radiogroup", { name: RANGE })
+      .getByRole("radio", { name: label, exact: true })
+      .check();
+    const url = new URL((await request).url());
+    expect(url.searchParams.get("period_end")).toBe("2026-11-11");
+    // Only the last N hours are drawn: the busy hours of the first day are in range for 24 h and 3 d.
+    await expect(
+      hourly.getByRole("img", {
+        name: new RegExp(`^Requests per hour chart: .* over ${hours} hours$`),
+      }),
+    ).toBeVisible();
+  });
+}
+
+test("adm07 hourly range: the 24-hour range keeps only its hours in the chart summary", async ({
+  page,
+}) => {
+  await page.clock.install({ time: NOW });
+  await ready(page);
+  await page
+    .getByRole("radiogroup", { name: RANGE })
+    .getByRole("radio", { name: "Last 24 hours", exact: true })
+    .check();
+  await expect(
+    region(page, "Hourly activity").getByRole("img", {
+      name: "Requests per hour chart: 6 requests, 1 failed over 24 hours",
+    }),
+  ).toBeVisible();
+});
+
 test("adm07 AC15 reference line only on the failure-rate chart; tooltips by test id", async ({
   page,
 }) => {
