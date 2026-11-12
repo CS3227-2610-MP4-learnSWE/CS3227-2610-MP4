@@ -123,7 +123,7 @@ uv run --env-file .env python -m alembic upgrade head
 
   You should see `demo-student: seeded`, `demo-teacher: seeded` and `demo-admin: seeded`. Running it again is safe: it does not duplicate anything or change existing passwords.
 
-- **Accounts only (no sample content).** Creates just the three accounts and two empty courses.
+- **Accounts only (no sample content).** Creates the three accounts, two empty courses (Software Engineering and Programming) and a second teacher, Alex, who has no sign-in; rename or disable these in **Users** and **Courses** as you like. Use this for a real deployment.
 
   ```sh
   uv run --env-file .env python -m teacher_materials.seed
@@ -208,9 +208,12 @@ Then repeat step 4 from "Create the database tables" onward.
 
 ## Deploying for real users
 
-1. In the backend `.env`: set `APP_ENV=production` and `SESSION_COOKIE_SECURE=true`, use your real `https://` address in `ALLOWED_ORIGINS`, and use your own `SEED_*` emails and passwords, not the examples. Do not run the sample data command.
-2. In the frontend `.env`: keep `VITE_ENABLE_DEMO_ACCESS=false`.
-3. Build the frontend with `npm run build` in `src/frontend` and serve the `dist` folder over https, with `/api` forwarded to the backend. Details are in the [Developer Guide](docs/DeveloperGuide.md).
+1. In the backend `.env`: set `APP_ENV=production` and `SESSION_COOKIE_SECURE=true`, use your real `https://` address in `ALLOWED_ORIGINS` (for example `https://learn.example.edu`), and use your own `SEED_*` emails and passwords, not the examples. Then run the "Accounts only" commands from step 4. The sample data command refuses to run when `APP_ENV=production`.
+2. In the frontend `.env`: keep `VITE_ENABLE_DEMO_ACCESS=false`. It is read when you build, so set it before the next step.
+3. Build the frontend: in `src/frontend` run `npm run build`. Serve the `dist` folder over https with any web server, with two rules: unknown paths such as `/admin/analytics` must return `index.html`, and everything under `/api` must be forwarded unchanged (including cookies and the `Origin` header) to the backend on port 8000. Keep the backend running as in step 4.
+4. Open your https address and sign in with your own account. Login only works over https because the session cookie is marked secure.
+
+More detail is in the [Developer Guide](docs/DeveloperGuide.md).
 
 ## More documentation
 
