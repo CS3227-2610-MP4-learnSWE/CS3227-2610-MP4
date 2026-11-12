@@ -23,7 +23,7 @@ import {
   X,
 } from "lucide-react";
 import { Brand, Icon, ThemeToggle } from "./ui";
-import { navigation, names, roles, type Role } from "../data";
+import { navigation, names, demoRoles, type Role } from "../data";
 import { useDemo } from "../state";
 import { useAuth } from "../auth/AuthContext";
 import StudyCompanion, { CompanionTrigger } from "./StudyCompanion";
@@ -104,7 +104,7 @@ export default function Shell({
   const section = location.pathname.split("/")[2];
   const current =
     navigation[role].find((item) => item.path === section)?.label ||
-    (section === "feedback" ? "Feedback" : "Workspace");
+    "Workspace";
   const sidebar = (
     <>
       <div className="sidebar-brand">
@@ -125,22 +125,22 @@ export default function Shell({
             : "YOUR ADMIN SPACE"}
       </div>
       <nav aria-label={`${role} navigation`}>
-        {navigation[role].map((original) => {
-          const item =
-            !demoMode && role === "admin" && original.path === "forms"
-              ? { ...original, path: "feedback" }
-              : !demoMode &&
-                  role === "admin" &&
-                  original.path === "announcements"
-                ? { ...original, path: "announcements/new" }
-                : original;
+        {navigation[role].map((item) => {
           return (
             <NavLink
               key={item.path}
-              to={`/${role}/${item.path}`}
+              to={`/${role}/${item.path}${item.landing ? `/${item.landing}` : ""}`}
               className={({ isActive }) =>
-                `nav-item ${isActive ? "active" : ""}`
+                `nav-item ${isActive || (item.landing && section === item.path) ? "active" : ""}`
               }
+              ref={(el) => {
+                // A landing item stays current on every URL of its section, not only its landing path.
+                if (!el || !item.landing) return;
+                if (section === item.path)
+                  el.setAttribute("aria-current", "page");
+                else if (!el.classList.contains("active"))
+                  el.removeAttribute("aria-current");
+              }}
               onClick={() => setOpen(false)}
               aria-label={item.path === "inbox" ? "Inbox" : undefined}
               aria-description={
@@ -208,10 +208,12 @@ export default function Shell({
             ) : (
               <Link
                 to={
-                  role === "teacher" ? "/teacher/generate" : "/admin/responses"
+                  role === "teacher"
+                    ? "/teacher/generate"
+                    : "/admin/feedback-hub/forms"
                 }
               >
-                Explore {role === "admin" ? "insights" : "the studio"}
+                Explore {role === "admin" ? "feedback" : "the studio"}
                 <ArrowUpRight size={14} />
               </Link>
             )}
@@ -312,7 +314,7 @@ export default function Shell({
                   inputProps={{ "aria-label": "Demo role" }}
                   IconComponent={ChevronDown}
                 >
-                  {roles.map((item) => (
+                  {demoRoles.map((item) => (
                     <MenuItem key={item} value={item}>
                       {item[0].toUpperCase() + item.slice(1)}
                     </MenuItem>

@@ -398,3 +398,18 @@ Metadata count endpoint enforces shared active student/teacher cookie authorizat
 
 Cases checked: cross-course, unknown, malformed, draft and withdrawn lesson ids give one 404 `lesson_not_found`; lesson withdrawn or membership removed during the model call discards the reply (404); pasted practice question gives Hint mode with no lesson text and no search; no key, explanation or choice in Lesson context; lesson text injection does not change mode or context; letter and verdict leaks withheld in Lesson mode, including when the `NOT_IN_LESSON:` marker is placed inside the leak (found by verifier round 1, fixed); nested, full-width, bold and zero-width markers never shown (nested case found in round 2, fixed); lesson delimiters imitated in lesson text neutralised; sources limited to id and title from the database row; titles rendered as text; no lesson text, title or key in logs; one-connection pool succeeds; 30 simultaneous requests admit 20.
 Option b (607523e, verifier-04 PASS): whitespace inside marker words removed; unmarked replies unchanged; no false positives on prose; adversarial 2,000-character inputs at most about 155 ms. Open (non-blocking): marker matches inside a word; an invisible combining mark (U+034F) between letters would leave a marker. AC29 live check not done.
+
+## 2026-11-12 ADM-08 Feedback hub: phase 3 and phase 5 verifier PASS
+
+Scope: one new read-only endpoint `GET /api/admin/messaging/followup-counts`, the hub screens (no new stored data), and in phase 5 the redirects from the old admin feedback and announcements URLs. Verifier passes: phase 3 round 2 (after one fix round) and phase 5 round 1, no blocking defects.
+
+Cases checked (expected, actual):
+- Count endpoint and the 29 existing routes: unauthenticated 401, student and teacher 403, `Cache-Control: no-store`, admin only; the frozen route inventory (30 routes, `test_adm08_route_inventory.py`) passes. Pass.
+- Follow-up count counts only responses that can still be replied to (shared `replyable()` predicate, `test_adm08_followup_count.py`); no response text, respondent or message body is returned. Pass.
+- Wrong role on a redirected old URL (student or teacher on `/admin/responses` and the old feedback URLs): replaced to their own home with zero feedback requests (`adm08-redirects.spec.ts`). Pass.
+- Anonymous visitor on old URLs, demo access on and off: ends on `/login`, no demo announcements page, no feedback or messaging request. Pass.
+- Redirect keeps `?review=` and `#hash`, uses history replace, builds the target from raw path segments so an encoded `%2F` in an id stays one segment; the server still returns only the current admin's own message preview. Pass.
+- Student inbox `form_title` (added 2026-11-12): a reply names the title of the form it answers, from the recipient's own form; not returned for other users; ADM-04 exact-key assertion updated. Pass (`test_adm04_messaging.py`).
+- No server-side change in phase 5; no secrets added. Pass.
+
+Not run: the non-mocked Playwright project and a real-browser check of the redirects. Open (non-blocking): the redirect strips only one trailing slash.

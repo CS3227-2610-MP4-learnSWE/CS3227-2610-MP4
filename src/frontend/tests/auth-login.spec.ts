@@ -75,7 +75,7 @@ test("shr01 AC21 create account mode asks for display name, email and password w
 for (const [user, home] of [
   [STUDENT, "/student/overview"],
   [TEACHER, "/teacher/overview"],
-  [ADMIN, "/admin/overview"],
+  [ADMIN, "/admin/analytics"],
 ] as const) {
   test(`shr01 AC21 signing in as a ${user.role} goes to ${home} and posts exactly email and password`, async ({
     page,
@@ -259,8 +259,10 @@ test("shr01 AC21 the Explore demo buttons stay, grouped under the development-sh
   await mockAuthApi(page, { user: null });
   await page.goto("/login");
   await expect(page.getByText(DEMO_HEADING)).toBeVisible();
-  for (const role of ["student", "teacher", "admin"] as const)
+  for (const role of ["student", "teacher"] as const)
     await expect(await exploreDemoLink(page, role)).toBeVisible();
+  // No admin demo: admin pages need a real sign-in (Analytics overview merged, 2026-11-12).
+  await expect(page.getByRole("tab", { name: "Admin" })).toHaveCount(0);
   // The misleading preview-only wording is gone from the sign-in form.
   await expect(page.locator("body")).not.toContainText("Preview only");
   await expect(page.locator("body")).not.toContainText(

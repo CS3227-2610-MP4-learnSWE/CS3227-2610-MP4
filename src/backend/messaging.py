@@ -82,6 +82,12 @@ def feedback_recipient(response_id: str, request: Request, _: AuthUser = Depends
     return committed(db, {"response_id": str(response.id), "recipient": store.recipient_json(user)})
 
 
+@router.get("/api/admin/messaging/followup-counts")
+def followup_counts(request: Request, _: AuthUser = Depends(admin), db: Session = Depends(get_session)):
+    valid.query(request)
+    return committed(db, {"unanswered_responses": store.unanswered_response_count(db)})
+
+
 @router.get("/api/admin/messaging/recipients")
 def recipients(request: Request, _: AuthUser = Depends(admin), db: Session = Depends(get_session)):
     q = valid.query(request, ("role", "search", "page", "page_size"))

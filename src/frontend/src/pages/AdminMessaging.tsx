@@ -10,6 +10,7 @@ import {
 } from "@mui/material";
 import { MessageSquare, Users, Send, CheckCircle2 } from "lucide-react";
 import { useAuth } from "../auth/AuthContext";
+import { useFeedbackPaths, type ReplyTarget } from "../lib/feedbackPaths";
 import { PageHeading, Panel } from "../components/ui";
 import { useMessagingRead } from "../hooks/useMessagingRead";
 import { getSessionGeneration } from "../services/client";
@@ -523,16 +524,16 @@ function Review({
   );
 }
 
-function MessagingRoute() {
+function MessagingRoute({ reply }: { reply?: ReplyTarget }) {
   const location = useLocation();
+  const paths = useFeedbackPaths();
   const navigate = useNavigate();
   const generation = getSessionGeneration();
   const previewId = new URLSearchParams(location.search).get("review");
-  const parts = location.pathname.split("/");
-  const responseId = location.pathname.endsWith("/reply")
-    ? parts[5]
+  const responseId = reply?.responseId;
+  const back = reply
+    ? paths.response(reply.formId, reply.responseId)
     : undefined;
-  const back = responseId ? location.pathname.slice(0, -6) : undefined;
   const seed = useRef<{
     preview?: Preview;
     fields?: Fields;
@@ -571,11 +572,12 @@ function MessagingRoute() {
   );
 }
 
-export default function AdminMessaging() {
+/** The messaging screens (announcement or reply to a response); the hub renders this. */
+export function AdminMessagingScreen({ reply }: { reply?: ReplyTarget }) {
   const { status, user } = useAuth();
   if (status === "loading") return <p role="status">Loading your session…</p>;
   if (status !== "authenticated") return <Navigate to="/login" replace />;
   if (user?.role !== "admin")
     return <Navigate to={`/${user?.role}/overview`} replace />;
-  return <MessagingRoute />;
+  return <MessagingRoute reply={reply} />;
 }

@@ -1,40 +1,15 @@
 import { expect, test } from "@playwright/test";
 import { ADMIN, STUDENT, TEACHER, mockAuthApi } from "./authApi";
 
-test("shr01 shell tip dismisses, stays dismissed on navigation and returns after refresh", async ({
-  page,
-}, testInfo) => {
-  await mockAuthApi(page, { user: ADMIN });
-  await page.setViewportSize({ width: 1280, height: 1000 });
-  await page.goto("/admin/overview");
-  await expect(
-    page.getByText("Listen. Learn. Improve.", { exact: true }),
-  ).toBeVisible();
-  await page.screenshot({ path: testInfo.outputPath("dismissible-tip.png") });
-  await page
-    .getByRole("button", { name: "Dismiss sidebar tip", exact: true })
-    .click();
-  await expect(
-    page.getByText("Listen. Learn. Improve.", { exact: true }),
-  ).toHaveCount(0);
-  await page
-    .getByRole("link", { name: "Feedback insights", exact: true })
-    .click();
-  await expect(
-    page.getByText("Listen. Learn. Improve.", { exact: true }),
-  ).toHaveCount(0);
-  await page.reload();
-  await expect(
-    page.getByText("Listen. Learn. Improve.", { exact: true }),
-  ).toBeVisible();
-});
-
 for (const user of [STUDENT, TEACHER, ADMIN]) {
   test(`shr01 ${user.role} logout cancel and Escape preserve session without a POST`, async ({
     page,
   }, testInfo) => {
     const auth = await mockAuthApi(page, { user });
-    await page.goto(`/${user.role}/overview`);
+    // The admin home is the data-backed Feature Analytics hub; use a request-free admin page (the "This page isn't here" screen).
+    const start =
+      user.role === "admin" ? "/admin/not-a-page" : `/${user.role}/overview`;
+    await page.goto(start);
     await page.getByRole("button", { name: "Log out", exact: true }).click();
     const dialog = page.getByRole("dialog", {
       name: "Confirm logout",
@@ -53,7 +28,7 @@ for (const user of [STUDENT, TEACHER, ADMIN]) {
     expect(auth.count("logout")).toBe(0);
     await dialog.getByRole("button", { name: "Cancel", exact: true }).click();
     await expect(dialog).toHaveCount(0);
-    await expect(page).toHaveURL(new RegExp(`/${user.role}/overview$`));
+    await expect(page).toHaveURL(new RegExp(`${start}$`));
     await page.getByRole("button", { name: "Log out", exact: true }).click();
     await page.keyboard.press("Escape");
     await expect(dialog).toHaveCount(0);
@@ -67,7 +42,7 @@ test("shr01 logout confirmation submits once and cannot dismiss during pending l
 }) => {
   const auth = await mockAuthApi(page, { user: ADMIN });
   auth.script("logout", { hold: true });
-  await page.goto("/admin/overview");
+  await page.goto("/admin/not-a-page");
   await page.getByRole("button", { name: "Log out", exact: true }).click();
   const dialog = page.getByRole("dialog", {
     name: "Confirm logout",

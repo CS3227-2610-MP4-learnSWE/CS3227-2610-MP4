@@ -4,7 +4,9 @@ import type { Role } from "../data";
 import { useAuth } from "./AuthContext";
 import { demoAccessEnabled } from "./demoAccess";
 
-export const homePath = (role: Role) => `/${role}/overview`;
+/** Admins land on Feature Analytics; students and teachers on their Overview. */
+export const homePath = (role: Role) =>
+  role === "admin" ? "/admin/analytics" : `/${role}/overview`;
 
 /** UX guard only: the server enforces access on every API call. */
 export function RequireRole({
@@ -14,7 +16,7 @@ export function RequireRole({
   role: Role;
   children: ReactNode;
 }) {
-  const { status, user } = useAuth();
+  const { status, user, sessionExpired } = useAuth();
   if (status === "loading") return <p role="status">Loading your session…</p>;
   if (status === "authenticated" && user)
     return user.role === role ? (
@@ -23,7 +25,15 @@ export function RequireRole({
       <Navigate to={homePath(user.role)} replace />
     );
   // Anonymous: demo mode (sample data, no session) while demo access is enabled.
-  return demoAccessEnabled() ? children : <Navigate to="/login" replace />;
+  if (demoAccessEnabled()) return children;
+  // The same destination and notice as AuthContext's own redirect after an expiry, so the two never differ.
+  return (
+    <Navigate
+      to="/login"
+      replace
+      state={sessionExpired ? { sessionExpired: true } : null}
+    />
+  );
 }
 
 /** "/" and unknown paths: signed-in users go home, everyone else to the login page. */

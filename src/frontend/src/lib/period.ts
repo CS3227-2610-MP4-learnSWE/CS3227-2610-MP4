@@ -16,6 +16,49 @@ export const FUTURE_MESSAGE = "The end date cannot be in the future (UTC).";
 
 export const todayUtc = () => isoDay(new Date());
 
+/** Range of the hourly charts: the page period, or the last 24 hours, 3 days or 7 days ending now. */
+export type HourlyRange = "period" | "24h" | "3d" | "7d";
+export const HOURLY_RANGES: {
+  id: HourlyRange;
+  label: string;
+  hours: number;
+}[] = [
+  { id: "period", label: "Selected period", hours: 0 },
+  { id: "24h", label: "Last 24 hours", hours: 24 },
+  { id: "3d", label: "Last 3 days", hours: 72 },
+  { id: "7d", label: "Last 7 days", hours: 168 },
+];
+const HOUR_MS = 3_600_000;
+const currentHour = (now: Date) =>
+  Math.floor(now.getTime() / HOUR_MS) * HOUR_MS;
+
+/** What to request for the hourly charts: the whole UTC days that cover the range (the server works in days). */
+export function hourlyRequestPeriod(
+  range: HourlyRange,
+  period: Period,
+  now: Date,
+): Period {
+  const hours = HOURLY_RANGES.find((r) => r.id === range)?.hours ?? 0;
+  if (!hours) return period;
+  return {
+    from: isoDay(new Date(currentHour(now) - (hours - 1) * HOUR_MS)),
+    to: isoDay(now),
+  };
+}
+
+/** Whether an hour bucket falls inside a rolling range: the last N hours ending with the current hour. */
+export function inHourlyRange(
+  hourStartIso: string,
+  range: HourlyRange,
+  now: Date,
+): boolean {
+  const hours = HOURLY_RANGES.find((r) => r.id === range)?.hours ?? 0;
+  if (!hours) return true;
+  const at = new Date(hourStartIso).getTime();
+  const end = currentHour(now);
+  return at <= end && at > end - hours * HOUR_MS;
+}
+
 /** Presets are UTC calendar dates ending today (UTC). */
 export function resolvePeriod(range: Range, today: string): Period {
   const days = RANGES.find((r) => r.id === range)?.days ?? 7;

@@ -487,7 +487,11 @@ test("adm07 retained ADM-06 AC13 navigating away drops a late result and returni
   mock.next("aiusage", { hold: true });
   await page.goto(HUB);
   await expect(status(page, "Loading AI usage...")).toBeVisible();
-  await page.locator('a[href="/admin/overview"]').first().click();
+  await page.getByRole("link", { name: "Feedback hub", exact: true }).click();
+  // The hub page is a lazy chunk: only release the held read once the analytics page is really gone.
+  await expect(
+    page.getByRole("tab", { name: "Follow-up", exact: true }),
+  ).toBeVisible();
   mock.release();
   await expect(table(page)).toHaveCount(0);
   await page

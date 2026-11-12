@@ -1,7 +1,8 @@
 import { useId, useState, type ReactNode } from "react";
 import { Button } from "@mui/material";
 import type { Daily, DailySeries } from "../../services/featureAnalytics";
-import type { TableData } from "./ChartModal";
+import { buildCsv } from "../../lib/csv";
+import ChartModal, { type TableData } from "./ChartModal";
 import { startsNote, unavailableText } from "./copy";
 
 type Series = {
@@ -11,8 +12,6 @@ type Series = {
   cls: string;
 };
 
-const W = 520;
-const H = 160;
 const LEFT = 34;
 const TOP = 8;
 const BOTTOM = 22;
@@ -23,12 +22,16 @@ function MiniChart({
   days,
   series,
   stacked,
+  large = false,
 }: {
   label: string;
   days: string[];
   series: Series[];
   stacked: boolean;
+  large?: boolean;
 }) {
+  const W = large ? 900 : 520;
+  const H = large ? 340 : 160;
   const bars = series.filter((s) => s.kind === "bar");
   const lines = series.filter((s) => s.kind === "line");
   const sums = days.map((_, i) =>
@@ -107,22 +110,67 @@ function MiniChart({
   );
 }
 
+const slug = (title: string) =>
+  title
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+
 function DailyCard({
   title,
   table,
   notes = [],
+  large,
   children,
 }: {
   title: string;
   table?: TableData;
   notes?: ReactNode[];
+  /** The enlarged chart; when given the card expands on hover and opens an overlay on click. */
+  large?: ReactNode;
   children: ReactNode;
 }) {
   const [shown, setShown] = useState(false);
+  const [open, setOpen] = useState(false);
   const id = useId();
+  const expandable = !!large && !!table;
+  const first = table?.rows[0]?.[0];
+  const last = table?.rows[table.rows.length - 1]?.[0];
   return (
-    <div role="group" aria-label={title} className="analytics-hub-card">
-      <h3>{title}</h3>
+    <div
+      role="group"
+      aria-label={title}
+      className={`analytics-hub-card${expandable ? " analytics-hub-card-open" : ""}`}
+      title={expandable ? "Click to expand" : undefined}
+      // The chart and header open the overlay; buttons and the data table keep their own behaviour.
+      onClick={
+        expandable
+          ? (event) => {
+              // The overlay is a portal but its React events bubble here: ignore anything outside this card.
+              if (!event.currentTarget.contains(event.target as Node)) return;
+              const own = (event.target as HTMLElement).closest(
+                "button, a, table, [role='region']",
+              );
+              // Ignore only controls inside this card (the page's own regions wrap it).
+              if (own && event.currentTarget.contains(own)) return;
+              setOpen(true);
+            }
+          : undefined
+      }
+    >
+      <div className="analytics-hub-card-head">
+        <h3>{title}</h3>
+        {expandable && (
+          <Button
+            variant="outlined"
+            size="small"
+            onClick={() => setOpen(true)}
+            aria-label={`Expand ${title}`}
+          >
+            Expand
+          </Button>
+        )}
+      </div>
       {children}
       {notes.map((note, i) => (
         <p key={i} className="muted">
@@ -179,6 +227,16 @@ function DailyCard({
           </div>
         </>
       )}
+      {open && expandable && table && (
+        <ChartModal
+          title={title}
+          chart={large}
+          table={table}
+          csvName={`${slug(title)}${first !== undefined ? `_${first}_${last}` : ""}.csv`}
+          csv={buildCsv(table.head, table.rows)}
+          onClose={() => setOpen(false)}
+        />
+      )}
     </div>
   );
 }
@@ -223,18 +281,23 @@ function SeriesCard({
     ...notes,
     ...(data.data_starts_on ? [startsNote(data.data_starts_on)] : []),
   ];
+  const draw = (large: boolean) => (
+    <MiniChart
+      label={`${title} chart`}
+      days={days}
+      series={chart(days)}
+      stacked
+      large={large}
+    />
+  );
   return (
-    <DailyCard title={title} table={table} notes={shown}>
-      {total === 0 ? (
-        <p>{empty}</p>
-      ) : (
-        <MiniChart
-          label={`${title} chart`}
-          days={days}
-          series={chart(days)}
-          stacked
-        />
-      )}
+    <DailyCard
+      title={title}
+      table={table}
+      notes={shown}
+      large={total === 0 ? undefined : draw(true)}
+    >
+      {total === 0 ? <p>{empty}</p> : draw(false)}
     </DailyCard>
   );
 }
@@ -251,6 +314,47 @@ export default function DailyActivity({ daily }: { daily: Daily }) {
   } = daily;
   const funnel = daily.attempts_funnel;
   const perStudent = daily.attempts_per_student;
+  const funnelChart = (large: boolean) =>
+    funnel.state === "available" ? (
+      <MiniChart
+        label="Attempts started and submitted per day chart"
+        days={funnel.per_day.map((d) => d.date)}
+        stacked={false}
+        large={large}
+        series={[
+          {
+            name: "Started",
+            values: funnel.per_day.map((d) => d.started),
+            kind: "bar",
+            cls: "analytics-hub-ok",
+          },
+          {
+            name: "Submitted",
+            values: funnel.per_day.map((d) => d.submitted),
+            kind: "bar",
+            cls: "analytics-hub-alt",
+          },
+        ]}
+      />
+    ) : null;
+  const perStudentChart = (large: boolean) =>
+    perStudent.state === "available" ? (
+      <MiniChart
+        label="Attempts per student per day chart"
+        days={perStudent.per_day.map((d) => d.date)}
+        stacked
+        large={large}
+        series={(["1", "2", "3", "4", "5_plus"] as const).map((k, i) => ({
+          name:
+            k === "5_plus"
+              ? "5 or more"
+              : `${k} attempt${k === "1" ? "" : "s"}`,
+          values: perStudent.per_day.map((d) => d.distribution[k]),
+          kind: "bar" as const,
+          cls: `analytics-hub-step-${i}`,
+        }))}
+      />
+    ) : null;
 
   return (
     <div className="analytics-hub-cards analytics-hub-daily">
@@ -346,6 +450,7 @@ export default function DailyActivity({ daily }: { daily: Daily }) {
       />
       <DailyCard
         title="Attempts started and submitted per day"
+        large={funnel.state === "available" ? funnelChart(true) : undefined}
         table={
           funnel.state === "unavailable"
             ? undefined
@@ -377,29 +482,14 @@ export default function DailyActivity({ daily }: { daily: Daily }) {
             Not applicable: no practice attempts were started in this period.
           </p>
         ) : (
-          <MiniChart
-            label="Attempts started and submitted per day chart"
-            days={funnel.per_day.map((d) => d.date)}
-            stacked={false}
-            series={[
-              {
-                name: "Started",
-                values: funnel.per_day.map((d) => d.started),
-                kind: "bar",
-                cls: "analytics-hub-ok",
-              },
-              {
-                name: "Submitted",
-                values: funnel.per_day.map((d) => d.submitted),
-                kind: "bar",
-                cls: "analytics-hub-alt",
-              },
-            ]}
-          />
+          funnelChart(false)
         )}
       </DailyCard>
       <DailyCard
         title="Attempts per student per day"
+        large={
+          perStudent.state === "available" ? perStudentChart(true) : undefined
+        }
         table={
           perStudent.state === "unavailable"
             ? undefined
@@ -438,20 +528,7 @@ export default function DailyActivity({ daily }: { daily: Daily }) {
         ) : perStudent.state === "not_applicable" ? (
           <p>No students started attempts in this period.</p>
         ) : (
-          <MiniChart
-            label="Attempts per student per day chart"
-            days={perStudent.per_day.map((d) => d.date)}
-            stacked
-            series={(["1", "2", "3", "4", "5_plus"] as const).map((k, i) => ({
-              name:
-                k === "5_plus"
-                  ? "5 or more"
-                  : `${k} attempt${k === "1" ? "" : "s"}`,
-              values: perStudent.per_day.map((d) => d.distribution[k]),
-              kind: "bar" as const,
-              cls: `analytics-hub-step-${i}`,
-            }))}
-          />
+          perStudentChart(false)
         )}
       </DailyCard>
     </div>

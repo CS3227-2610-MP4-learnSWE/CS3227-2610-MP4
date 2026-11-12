@@ -1,0 +1,5 @@
+feature_run_id,invocation_id,role,effort,tool,session_id,agent_id,started_at,finished_at
+2026-11-12-ADM08-01,2026-11-12-ADM08-01-orchestrator-01,orchestrator,inherited,claude,2d91cb19-7500-44ad-9198-d941094197fe,,2026-11-12T04:14:00+08:00,2026-11-12T04:46:00+08:00
+2026-11-12-ADM08-01,2026-11-12-ADM08-01-spec-writer-01,spec-writer,inherited,claude,2d91cb19-7500-44ad-9198-d941094197fe,a27ddce33fdfd399c,2026-11-12T04:14:30+08:00,2026-11-12T04:25:00+08:00
+2026-11-12-ADM08-01,2026-11-12-ADM08-01-spec-writer-02,spec-writer,inherited,claude,2d91cb19-7500-44ad-9198-d941094197fe,afd031e8afba02fe6,2026-11-12T04:25:30+08:00,2026-11-12T04:36:00+08:00
+2026-11-12-ADM08-01,2026-11-12-ADM08-01-spec-writer-03,spec-writer,inherited,claude,2d91cb19-7500-44ad-9198-d941094197fe,a1aeccfc91c6df2cf,2026-11-12T04:36:30+08:00,2026-11-12T04:46:00+08:00

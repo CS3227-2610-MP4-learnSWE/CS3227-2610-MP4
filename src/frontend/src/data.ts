@@ -1,5 +1,6 @@
 export type Role = "student" | "teacher" | "admin";
-export const roles: Role[] = ["student", "teacher", "admin"];
+/** Roles offered by the anonymous demo shortcut and switcher; the admin area has no demo. */
+export const demoRoles: Role[] = ["student", "teacher"];
 export const names: Record<Role, string> = {
   student: "Alex",
   teacher: "Jamie",
@@ -7,7 +8,7 @@ export const names: Record<Role, string> = {
 };
 export const navigation: Record<
   Role,
-  { path: string; label: string; icon: string }[]
+  { path: string; label: string; icon: string; landing?: string }[]
 > = {
   student: [
     { path: "overview", label: "Overview", icon: "overview" },
@@ -24,11 +25,13 @@ export const navigation: Record<
     { path: "inbox", label: "Inbox", icon: "inbox" },
   ],
   admin: [
-    { path: "overview", label: "Analytics", icon: "overview" },
     { path: "analytics", label: "Feature Analytics", icon: "usage" },
-    { path: "forms", label: "Feedback forms", icon: "forms" },
-    { path: "responses", label: "Feedback insights", icon: "sparkles" },
-    { path: "announcements", label: "Announcements", icon: "inbox" },
+    {
+      path: "feedback-hub",
+      label: "Feedback hub",
+      icon: "forms",
+      landing: "forms",
+    },
     { path: "users", label: "Users", icon: "people" },
     { path: "courses", label: "Courses", icon: "book" },
   ],
@@ -66,30 +69,3 @@ export const initialMessages = [
   },
 ];
 export type DemoMessage = (typeof initialMessages)[number];
-export const feedback = [
-  {
-    id: "FB-024",
-    author: "Student 024",
-    tag: "AI companion",
-    quote:
-      "The hints help me think it through instead of just copying an answer.",
-    sentiment: "Positive",
-  },
-  {
-    id: "FB-025",
-    author: "Teacher 008",
-    tag: "Content studio",
-    quote:
-      "I would like to see the original material next to the generated notes.",
-    sentiment: "Suggestion",
-  },
-  {
-    id: "FB-026",
-    author: "Student 031",
-    tag: "Practice",
-    quote:
-      "It would help to have a clearer explanation after submitting the set.",
-    sentiment: "Suggestion",
-  },
-];
-export const weeklyActivity = [42, 68, 51, 85, 62, 95, 74];

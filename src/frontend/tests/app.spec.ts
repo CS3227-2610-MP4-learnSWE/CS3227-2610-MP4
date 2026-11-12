@@ -108,15 +108,6 @@ const routesByRole: Record<string, string[]> = {
     "/teacher/inbox",
     "/teacher/feedback",
   ],
-  admin: [
-    "/admin/overview",
-    "/admin/forms",
-    "/admin/responses",
-    "/admin/announcements",
-    "/admin/users",
-    "/admin/courses",
-    "/admin/usage",
-  ],
 };
 for (const [role, routes] of Object.entries(routesByRole)) {
   test(`${role} routes render on direct navigation and reload`, async ({
@@ -139,12 +130,6 @@ for (const [role, routes] of Object.entries(routesByRole)) {
       } else {
         await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
       }
-    }
-    if (role === "admin") {
-      await page.reload();
-      await expect(
-        page.getByRole("heading", { name: "AI usage" }),
-      ).toBeVisible();
     }
   });
 }
@@ -178,9 +163,7 @@ test("mobile navigation works without horizontal overflow", async ({
   ).toBe(true);
 });
 
-test("teacher generation is real while admin messages remain explicit previews", async ({
-  page,
-}) => {
+test("teacher generation is real", async ({ page }) => {
   const teacherApi = await mockTeacherNotesApi(page);
   await page.goto("/teacher/generate");
   await page
@@ -190,12 +173,6 @@ test("teacher generation is real while admin messages remain explicit previews",
     page.getByText("Draft notes generated and saved."),
   ).toBeVisible();
   expect(teacherApi.generationCalls).toBe(1);
-  await mockAuthApi(page, { user: null });
-  await page.goto("/admin/announcements");
-  await page.getByLabel("Subject").fill("Course update");
-  await page.getByLabel("Message").fill("Some useful information.");
-  await page.getByRole("button", { name: "Preview announcement" }).click();
-  await expect(page.getByRole("dialog")).toContainText("Nothing will be sent");
 });
 
 test("desktop and mobile layouts render without overflow in both themes", async ({
@@ -223,12 +200,6 @@ test("desktop and mobile layouts render without overflow in both themes", async 
         "/teacher/review",
         "/teacher/practice",
         "/teacher/inbox",
-        "/admin/overview",
-        "/admin/forms",
-        "/admin/responses",
-        "/admin/announcements",
-        "/admin/users",
-        "/admin/usage",
       ]) {
         await mockAuthApi(page, {
           user: route.startsWith("/teacher/") ? TEACHER : null,
@@ -251,12 +222,7 @@ test("desktop and mobile layouts render without overflow in both themes", async 
           `${route} at ${width}px in ${theme}: ${JSON.stringify(overflow)}`,
         ).toBe(true);
         if (
-          [
-            "/login",
-            "/student/overview",
-            "/teacher/generate",
-            "/admin/overview",
-          ].includes(route)
+          ["/login", "/student/overview", "/teacher/generate"].includes(route)
         ) {
           await page.screenshot({
             path: `test-results/visual/${theme}-${width}-${route.replaceAll("/", "-")}.png`,

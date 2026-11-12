@@ -398,7 +398,7 @@ test("TEA-06 AC14 anonymous /teacher/feedback keeps the sample form", async ({
 
 for (const user of [STUDENT, ADMIN]) {
   const destination =
-    user.role === "admin" ? "/admin/overview" : "/student/overview";
+    user.role === "admin" ? "/admin/analytics" : "/student/overview";
   for (const url of [
     "/teacher/inbox",
     "/teacher/feedback",

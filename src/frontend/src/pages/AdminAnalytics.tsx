@@ -17,9 +17,12 @@ import { PageHeading, Panel } from "../components/ui";
 import { useAnalyticsBlock } from "../hooks/useAnalyticsBlock";
 import { browserZone } from "../lib/analyticsTime";
 import {
+  HOURLY_RANGES,
   choiceFromParams,
+  hourlyRequestPeriod,
   periodOfChoice,
   todayUtc,
+  type HourlyRange,
   type Range,
 } from "../lib/period";
 import * as api from "../services/featureAnalytics";
@@ -70,14 +73,21 @@ export default function AdminAnalytics() {
   // One independent read per block. Refresh changes `refresh`, which starts every read again.
   const [refresh, setRefresh] = useState(0);
   const key = `${period.from}|${period.to}`;
+  // The hourly charts have their own range; rolling ranges end at the moment of the last refresh or choice.
+  const [hourlyRange, setHourlyRange] = useState<HourlyRange>("period");
+  const anchor = useMemo(() => new Date(), [refresh, hourlyRange]); // eslint-disable-line react-hooks/exhaustive-deps
+  const hourlyPeriod = useMemo(
+    () => hourlyRequestPeriod(hourlyRange, period, anchor),
+    [hourlyRange, period, anchor],
+  );
   const health = useAnalyticsBlock(
     `health|${key}`,
     (s) => api.getHealth(period, s),
     [refresh],
   );
   const hourly = useAnalyticsBlock(
-    `hourly|${key}`,
-    (s) => api.getHourly(period, s),
+    `hourly|${hourlyPeriod.from}|${hourlyPeriod.to}`,
+    (s) => api.getHourly(hourlyPeriod, s),
     [refresh],
   );
   const daily = useAnalyticsBlock(
@@ -182,6 +192,23 @@ export default function AdminAnalytics() {
           )}
         </BlockState>
         <div role="region" aria-label="Hourly activity">
+          <div
+            role="radiogroup"
+            aria-label="Hourly chart range"
+            className="analytics-hub-radios analytics-hub-range"
+          >
+            {HOURLY_RANGES.map((option) => (
+              <label key={option.id}>
+                <input
+                  type="radio"
+                  name="Hourly chart range"
+                  checked={hourlyRange === option.id}
+                  onChange={() => setHourlyRange(option.id)}
+                />
+                {option.label}
+              </label>
+            ))}
+          </div>
           <BlockState
             block={hourly}
             loading="Loading hourly charts..."
@@ -189,7 +216,13 @@ export default function AdminAnalytics() {
             retryLabel="Retry hourly charts"
           >
             {(data) => (
-              <HourlyCharts hourly={data} period={period} timeZone={zone} />
+              <HourlyCharts
+                hourly={data}
+                period={period}
+                range={hourlyRange}
+                now={anchor}
+                timeZone={zone}
+              />
             )}
           </BlockState>
         </div>

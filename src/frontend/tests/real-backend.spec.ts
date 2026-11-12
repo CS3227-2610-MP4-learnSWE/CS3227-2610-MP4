@@ -20,7 +20,7 @@ for (const role of ["student", "teacher"] as const) {
     await page.getByLabel(/^email/i).fill(process.env.E2E_ADMIN_EMAIL!);
     await page.getByLabel(/^password/i).fill(process.env.E2E_ADMIN_PASSWORD!);
     await page.getByRole("button", { name: "Sign in", exact: true }).click();
-    await expect(page).toHaveURL(/\/admin\/overview$/);
+    await expect(page).toHaveURL(/\/admin\/analytics(\?.*)?$/);
     await page.goto("/admin/users");
     await page.getByLabel("Display name", { exact: true }).fill(name);
     await page.getByLabel("Email", { exact: true }).fill(email);

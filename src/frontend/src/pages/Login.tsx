@@ -96,9 +96,11 @@ export default function Login({
       <header className="login-header">
         <Brand />
         <div className="login-header-right">
-          <span className="demo-pill">
-            <span /> Demo · Sample data
-          </span>
+          {demoAccessEnabled() && (
+            <span className="demo-pill">
+              <span /> Demo · Sample data
+            </span>
+          )}
           <ThemeToggle dark={dark} toggle={toggle} />
         </div>
       </header>
@@ -271,8 +273,7 @@ export default function Login({
                   <span>JUST TAKING A LOOK?</span>
                 </div>
                 <h3 className="demo-shortcut-heading">
-                  Demo shortcut (development): sample data, not signed in, no
-                  real account
+                  Explore without signing in: sample data, no real account
                 </h3>
                 <Tabs
                   value={role}
@@ -283,7 +284,6 @@ export default function Login({
                 >
                   <Tab value="student" label="Student" />
                   <Tab value="teacher" label="Teacher" />
-                  <Tab value="admin" label="Admin" />
                 </Tabs>
                 <Button
                   component={Link}

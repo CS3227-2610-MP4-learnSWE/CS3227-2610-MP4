@@ -265,7 +265,7 @@ test("stu06 sidebar Inbox link pushes a history entry and Back returns to the pr
 
 for (const [user, destination] of [
   [TEACHER, "/teacher/overview"],
-  [ADMIN, "/admin/overview"],
+  [ADMIN, "/admin/analytics"],
 ] as const) {
   for (const url of ["/student/inbox", `/student/feedback/${FORM_ID}`]) {
     test(`stu06 wrong role ${user.role} opening ${url} is redirected with no inbox, form or message request`, async ({

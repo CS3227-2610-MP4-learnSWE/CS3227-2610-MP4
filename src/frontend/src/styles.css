@@ -248,17 +248,6 @@ button:focus-visible {
   border: 1px solid var(--line);
   color: var(--muted);
 }
-.section-heading {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 17px;
-}
-.section-heading h2 {
-  font-size: 17px;
-  margin: 0;
-}
 .count-badge {
   background: var(--blue-soft);
   color: var(--blue);
@@ -1533,32 +1522,6 @@ button:focus-visible {
   color: var(--ink);
   margin: 24px 0;
 }
-.callout {
-  background: var(--blue-soft);
-  color: var(--blue);
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  padding: 21px;
-  display: flex;
-  align-items: flex-start;
-  gap: 14px;
-  margin: 24px 0;
-}
-.callout strong {
-  font-size: 12px;
-}
-.callout p {
-  font-size: 12px;
-  line-height: 1.8;
-  margin: 0;
-}
-.callout.small {
-  padding: 15px;
-  gap: 10px;
-}
-.callout.small p {
-  font-size: 11px;
-}
 .reader-outline {
   padding: 25px;
   position: sticky;
@@ -2110,9 +2073,6 @@ td .MuiButton-root {
   color: var(--muted);
   margin: -10px 0 0;
 }
-.studio-controls > .callout {
-  margin: 0;
-}
 .studio-controls > .preview-note {
   padding: 0;
   font-size: 10px;
@@ -2221,9 +2181,6 @@ td .MuiButton-root {
 /* Admin */
 .analytics-chart {
   padding: 25px;
-}
-.analytics-chart .section-heading {
-  align-items: flex-start;
 }
 .analytics-chart h2 {
   font-size: 17px;
@@ -2355,67 +2312,8 @@ td .MuiButton-root {
   font-size: 9px;
   color: var(--muted);
 }
-.form-question {
-  margin-top: 25px;
-  padding-bottom: 15px;
-  border-bottom: 1px solid var(--line);
-}
-.form-question .MuiFormControlLabel-label {
-  font-size: 11px;
-}
 .form-panel > .MuiButton-root {
   margin-top: 13px;
-}
-.response-layout {
-  display: grid;
-  grid-template-columns: 1.3fr 1fr;
-  gap: 24px;
-  align-items: start;
-}
-.response-card {
-  padding: 24px;
-  margin-bottom: 17px;
-}
-.response-top {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 10px;
-  color: var(--muted);
-}
-.response-card blockquote {
-  font-size: 14px;
-  margin: 20px 0;
-}
-.response-card small {
-  font-size: 10px;
-  color: var(--muted);
-}
-.insight-panel {
-  padding: 26px;
-  background: linear-gradient(
-    135deg,
-    var(--purple-soft),
-    var(--paper)
-  ) !important;
-}
-.insight-panel h2 {
-  font-size: 23px;
-  margin: 20px 0;
-}
-.insight-panel h3 {
-  font-size: 15px;
-  margin: 25px 0 10px;
-}
-.insight-panel > p {
-  font-size: 12px;
-  color: var(--muted);
-}
-.insight-panel > .MuiButton-root {
-  font-size: 10px;
-  text-align: left;
-  justify-content: flex-start;
-  gap: 5px;
 }
 .announcement-panel {
   margin: auto;
@@ -2700,7 +2598,6 @@ td .MuiButton-root {
   }
   .studio-controls > .icon-box,
   .studio-controls > .preview-note,
-  .studio-controls > .callout,
   .studio-controls > h2,
   .studio-controls > p {
     grid-column: 1/-1;
@@ -2723,9 +2620,6 @@ td .MuiButton-root {
   }
   .feedback-card blockquote {
     min-height: 0;
-  }
-  .response-layout {
-    grid-template-columns: 1fr;
   }
   .teacher-hero {
     padding: 27px;
@@ -3093,13 +2987,6 @@ td .MuiButton-root {
   .stats-grid.four .stat > small {
     font-size: 9px;
   }
-  .section-heading h2 {
-    font-size: 16px;
-  }
-  .section-heading .text-link {
-    font-size: 10px;
-    white-space: nowrap;
-  }
   .lesson-cards {
     grid-template-columns: 1fr;
     gap: 18px;
@@ -3297,9 +3184,6 @@ td .MuiButton-root {
   .analytics-chart {
     padding: 20px;
   }
-  .analytics-chart .section-heading {
-    flex-wrap: wrap;
-  }
   .analytics-bars {
     gap: 8px;
     padding-left: 0;
@@ -3307,12 +3191,6 @@ td .MuiButton-root {
   }
   .feedback-pulse {
     padding: 25px;
-  }
-  .response-card {
-    padding: 21px;
-  }
-  .insight-panel {
-    padding: 24px;
   }
   .app-footer {
     flex-wrap: wrap;
@@ -4294,20 +4172,6 @@ td .MuiButton-root {
   border-radius: 12px;
   background: var(--bg);
 }
-.admin-preview .studio-controls,
-.admin-preview .form-panel {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-.admin-preview .studio-controls > *,
-.admin-preview .form-panel > * {
-  min-width: 0;
-}
-.admin-preview .form-panel > h2,
-.admin-preview .form-panel > p {
-  margin: 0;
-}
 @media (max-width: 1100px) {
   .admin-workspace,
   .admin-course-workspace {
@@ -4981,7 +4845,8 @@ td .MuiButton-root {
 }
 .feedback-analysis .analysis-bar-track {
   display: inline-block;
-  width: 120px;
+  /* Shrinks on narrow screens so the results table never widens the page, whatever the font. */
+  width: min(120px, 22vw);
   max-width: 40%;
   height: 10px;
   margin-right: 8px;
@@ -5323,12 +5188,13 @@ td .MuiButton-root {
   font-size: 14px;
   color: var(--muted);
 }
-.analytics-hub-tile-value {
+/* `.analytics-panel p` (15px) outranks a lone class, so the value rules carry `p` and the panel. */
+.analytics-panel .analytics-hub-tile p.analytics-hub-tile-value {
   font-size: 44px;
   font-weight: 800;
   line-height: 1.1;
 }
-.analytics-hub-tile .analytics-hub-tile-value-text {
+.analytics-panel .analytics-hub-tile p.analytics-hub-tile-value-text {
   font-size: 22px;
   line-height: 1.3;
 }
@@ -5348,9 +5214,9 @@ td .MuiButton-root {
   font-size: 14px;
 }
 .analytics-hub-tile-time span {
-  font-size: 30px;
+  font-size: 44px;
   font-weight: 800;
-  line-height: 1.15;
+  line-height: 1.1;
 }
 .analytics-hub-radios {
   display: flex;
@@ -5612,7 +5478,8 @@ td .MuiButton-root {
   border-color: var(--muted);
 }
 @media (max-width: 599.95px) {
-  .analytics-hub-tile-value {
+  .analytics-panel .analytics-hub-tile p.analytics-hub-tile-value,
+  .analytics-hub-tile-time span {
     font-size: 36px;
   }
   .analytics-panel h2.analytics-hub-section-title {
@@ -5638,4 +5505,138 @@ td .MuiButton-root {
 }
 .analytics-hub-collection p {
   margin: 0;
+}
+
+/* Feedback hub (ADM-08) */
+.feedback-hub-label {
+  margin: 0 0 4px;
+  font-weight: 600;
+}
+.feedback-hub-line,
+.feedback-hub-note {
+  margin: 0 0 16px;
+  color: var(--muted);
+}
+.feedback-hub-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 16px;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--paper);
+}
+.feedback-hub-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 16px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 15px;
+  cursor: pointer;
+}
+.feedback-hub-tab:hover {
+  background: var(--blue-soft);
+}
+.feedback-hub-tab:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+}
+.feedback-hub-tab.active {
+  border-bottom-color: var(--blue);
+  color: var(--blue);
+  font-weight: 600;
+}
+.feedback-hub-badge {
+  min-width: 22px;
+  padding: 0 6px;
+  border: 1px solid currentColor;
+  border-radius: 11px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 20px;
+  text-align: center;
+}
+.feedback-hub-chooser {
+  display: grid;
+  gap: 8px;
+  max-width: 480px;
+}
+.feedback-hub-chooser select {
+  width: 100%;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--ink);
+  font: inherit;
+}
+.feedback-hub-chooser select:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+}
+@media (min-width: 480px) {
+  .feedback-hub-tabs {
+    flex-wrap: nowrap;
+  }
+}
+
+/* Question editor: prompt with its type beside it; required and remove share one footer row. */
+.feedback-question-main {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-start;
+}
+.feedback-question-main > .feedback-question-prompt-field {
+  flex: 1 1 280px;
+  min-width: 0;
+}
+.feedback-question-main > .feedback-question-type-field {
+  flex: 0 1 200px;
+  min-width: 0;
+}
+.feedback-question-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.feedback-question-foot .MuiFormControlLabel-root {
+  margin: 0;
+}
+
+/* Success status shown as a green chip, with text as well as colour. */
+.admin-surface p.feedback-notice-chip {
+  display: inline-block;
+  margin: 0 0 16px;
+  padding: 6px 14px;
+  border: 1px solid var(--green);
+  border-radius: 999px;
+  background: var(--green-soft);
+  color: var(--green);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+/* Reply label naming the form it answers. */
+.message-card p.message-form-ref {
+  margin: 0 0 8px;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+/* Range control above the hourly charts. */
+.analytics-hub-range {
+  margin: 0 0 16px;
 }

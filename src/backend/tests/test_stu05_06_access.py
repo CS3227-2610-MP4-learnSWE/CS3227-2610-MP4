@@ -1,6 +1,6 @@
 """STU-05-06 student view of ADM-02 feedback and ADM-04 inbox: audience, cross-user and unread tests.
 
-Contracts only: workflow/specs/ADM-02/plan.md and workflow/specs/ADM-04/plan.md. No SoC LLM is
+Contracts only: workflow/specs/ADM-08/retained-criteria.md. No SoC LLM is
 involved (feedback and messages never enter AI context), so no LLM mock is needed.
 """
 import pytest

@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { Link, useNavigate, useParams } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { Button } from "@mui/material";
 import { PageHeading, Panel } from "../components/ui";
+import { useFeedbackPaths } from "../lib/feedbackPaths";
 import QuestionResults from "../components/QuestionResults";
 import DeleteAnalysisDialog from "../components/DeleteAnalysisDialog";
 import { useAnalysisPolling } from "../hooks/useAnalysisPolling";
@@ -13,15 +14,14 @@ import {
   stepText,
 } from "../messages/feedbackAnalysis";
 
-const SELECTION = "/admin/feedback/analysis";
-
 function Evidence({ id, labels }: { id: string; labels: string[] }) {
+  const paths = useFeedbackPaths();
   return (
     <span className="analysis-evidence">
       {labels.map((label) => (
         <Link
           key={label}
-          to={`${SELECTION}/${id}/responses/${label}`}
+          to={paths.analysisEvidence(id, label)}
           aria-label={`Response ${label}`}
         >
           {label}
@@ -109,17 +109,21 @@ function AiSection({ analysis }: { analysis: Analysis }) {
   );
 }
 
-export default function AdminFeedbackAnalysisResult() {
-  const { analysisId = "" } = useParams();
+export function AdminFeedbackAnalysisResultScreen({
+  analysisId,
+}: {
+  analysisId: string;
+}) {
   const navigate = useNavigate();
+  const paths = useFeedbackPaths();
   const { analysis, loadError, notFound, pollError, loading, retry } =
     useAnalysisPolling(analysisId);
   const [deleting, setDeleting] = useState(false);
   return (
-    <div className="feedback-analysis">
+    <div className="admin-surface feedback-analysis">
       <PageHeading title="Feedback analysis result" />
       <p>
-        <Link to={SELECTION}>Back to Feedback analysis</Link>
+        <Link to={paths.analysis()}>Back to Feedback analysis</Link>
       </p>
       {loading && !analysis && !loadError && (
         <p role="status">Loading analysis...</p>
@@ -170,7 +174,7 @@ export default function AdminFeedbackAnalysisResult() {
               target={analysis}
               onClose={() => setDeleting(false)}
               onDeleted={(gone) =>
-                navigate(SELECTION, {
+                navigate(paths.analysis(), {
                   replace: true,
                   state: { status: gone ? DELETE_404 : DELETED_STATUS },
                 })

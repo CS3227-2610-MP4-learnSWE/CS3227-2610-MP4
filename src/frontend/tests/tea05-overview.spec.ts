@@ -654,7 +654,7 @@ test("tea05 AC13 a request that never answers times out after 15 seconds with no
 
 for (const [user, destination] of [
   [STUDENT, "/student/overview"],
-  [ADMIN, "/admin/overview"],
+  [ADMIN, "/admin/analytics"],
 ] as const) {
   test(`tea05 AC13 a signed-in ${user.role} opening the teacher overview is redirected and sends no request`, async ({
     page,

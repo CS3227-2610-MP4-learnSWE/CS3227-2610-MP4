@@ -1,4 +1,52 @@
-# Developer Guide — Current Preview
+# learnSWE Developer Guide
+
+This guide is for people who build, test and deploy learnSWE. Users should start with the [README](../README.md) (set up and run) and the [User Guide](UserGuide.md) (features and a step-by-step walkthrough). Feature codes such as TEA-02 or ADM-07 below match `docs/FeatureList.md` and the specs under `workflow/specs/`; they are internal and do not appear in the product.
+
+## Setup, configuration, tests and layout
+
+**Documentation map.** `README.md`: prerequisites, setup, running, troubleshooting. `docs/UserGuide.md`: feature tables and the walkthrough with screenshots (`docs/images/guide/`). This guide: architecture, configuration, tests and per-feature implementation notes. `docs/sample-files/testing-basics.txt` is the source file the walkthrough uploads.
+
+**Setup.** Follow the README. In short: `docker compose up -d postgres`; in `src/backend` copy `.env.example` to `.env`, run `uv sync --frozen`, `uv run --env-file .env python -m alembic upgrade head`, a seed (below) and `uv run --env-file .env python -m uvicorn main:app --host 127.0.0.1 --port 8000`; in `src/frontend` copy `.env.example` to `.env`, run `npm ci` and `npm run dev`. The backend does not load `.env` by itself: always use `--env-file .env`, and restart it after editing `.env`. Windows Application Control can block the `alembic.exe` and `uvicorn.exe` launchers; the `python -m ...` forms above avoid them.
+
+**Backend `.env`** (all names are in `src/backend/.env.example`).
+
+| Setting | Meaning |
+|---|---|
+| `DATABASE_URL` | SQLAlchemy URL. The example points at the Compose database `learnswe` on `127.0.0.1:5433`. |
+| `APP_ENV` | `development` (own computer, http) or `production` (https only; requires `SESSION_COOKIE_SECURE=true`). The sample-data commands refuse to run unless it is `development`. |
+| `SESSION_*`, `ALLOWED_ORIGINS`, `TRUST_PROXY_HEADERS`, `AUTH_*` | Cookie and origin policy and the sign-in and sign-up rate limits. `ALLOWED_ORIGINS` must list every browser origin or login returns 403. |
+| `SEED_STUDENT_*`, `SEED_TEACHER_*`, `SEED_ADMIN_*` | Email and password for `auth.seed`. `.env.example` leaves them empty (a test enforces that no password is committed); the README gives public example values for trying the app locally. Use your own for any shared or production environment. |
+| `SOCLAAS_BASE_URL`, `SOCLAAS_API_KEY`, `SOCLAAS_MODEL` | The SoC LLM (OpenAI-compatible). Empty means every AI feature reports itself unavailable. Never commit the key. |
+
+**Frontend `.env`:** `API_PORT` (backend port the dev server proxies `/api` to, default 8000; `API_PROXY_TARGET` overrides it with a full URL) and `VITE_ENABLE_DEMO_ACCESS` (`false` in `.env.example`; `true` shows an "Explore without signing in" shortcut with sample student and teacher screens, and there is no admin demo). Restart `npm run dev` after changing them.
+
+**Seeds.** `python sample_data.py` (from `src/backend`, development only, idempotent) runs `teacher_materials.seed`, `auth.seed`, `study_lessons.seed`, `teacher_publications.seed`, `feedback_dev_seed` and `feature_analytics.seed_dev`, then turns AI usage collection on; it is the "sample data" option of the README. For accounts only run `python -m teacher_materials.seed` then `python -m auth.seed`. `auth.seed` never changes an existing password; after editing a `SEED_*_PASSWORD` run `python -m auth.seed --reset-passwords` (it applies to every configured seed account). To start from nothing: `docker compose down -v`, `docker compose up -d postgres`, migrate and seed again.
+
+**Tests** (from the repository root; one command per line on PowerShell 5.1).
+
+```sh
+cd src/backend
+uv run pytest -q
+```
+
+```sh
+cd src/frontend
+npm run typecheck
+npm run lint
+npm run format:check
+npm run build
+npx playwright install chromium
+npm test
+```
+
+The browser tests mock the API and start their own Vite server on port 5173 if it is free; stop a manually started dev server first, and note that a running backend can answer requests a test did not mock. Backend integration tests need `TEA01_TEST_DATABASE_URL` pointing at a dedicated PostgreSQL database (they create and drop only their own schema; never point it at real data); without it they are skipped. The production build is written to `src/frontend/dist/` and needs a SPA fallback to `index.html` and `/api` routed to FastAPI.
+
+**Health API.** `GET /api/health` returns `200 {"status":"ok"}` (the process can serve requests). `GET /api/health/ready` returns `200 {"status":"ready"}` (process readiness only; it does not check PostgreSQL or AI). FastAPI's generated API documentation is at `/docs` on the backend.
+
+**Project layout.** `src/frontend/`: React, TypeScript, Vite, Material UI, React Router. `src/backend/`: FastAPI, SQLAlchemy and Alembic, with locked dependencies (`uv.lock`). `docs/`: feature list, user stories, guides, the shared data contract. `workflow/`: the spec-driven, multi-agent process (start at `workflow/README.md`): specs, security and experiment logs, usage reports. `CLAUDE.md`, `AGENTS.md`, `.claude/agents/`: project rules and agent roles. `logs/`: session summaries.
+
+**Keeping the User Guide current.** Every step in the walkthrough was run against a fresh database with the sample data and a configured SoC LLM, and its screenshots were captured from that run (`workflow/tools/guide-screenshots/`, see its README). After UI changes, rerun it and review the images.
+
 
 ## Architecture and boundaries
 
@@ -14,7 +62,7 @@ FastAPI exposes `/api/health` and `/api/health/ready` (process-only semantics) a
 
 ## Teacher Materials (TEA-01)
 
-The exact schema/API are in [SharedDataContract.md](SharedDataContract.md) and [TEA-01-db-storage](../workflow/specs/TEA-01-db-storage/plan.md). Start PostgreSQL 16 with `docker compose up -d postgres` (loopback port 5433, persistent named volume). Once, create a separate empty database with `docker compose exec postgres createdb -U learnswe learnswe_db_files`. Preserve any existing database/files/.env. Set `DATABASE_URL=postgresql+psycopg://learnswe:learnswe-local-only@127.0.0.1:5433/learnswe_db_files` in your local environment. From src/backend run `uv run --env-file .env alembic upgrade head`, then `uv run --env-file .env python -m teacher_materials.seed`. The seed is idempotent; migration/seed never run at request time. No FILE_STORAGE_DIR is required.
+The exact schema/API are in [SharedDataContract.md](SharedDataContract.md) and [TEA-01-db-storage](../workflow/specs/TEA-01-db-storage/plan.md). Set up PostgreSQL, the migrations and the seeds as described under "Setup, configuration, tests and layout" above (database `learnswe` on loopback port 5433, persistent named volume). Migration and seeding never run at request time. No FILE_STORAGE_DIR is required.
 
 The Alembic online engine explicitly uses READ COMMITTED so the locked material check sees concurrent committed uploads even when the database defaults to repeatable read. Revision 20261102_tea01_db_storage refuses conversion if any materials exist, before schema changes; use the fresh database and upload sources again. Old uploads/drafts remain in the old database/files and do not appear in the fresh database. Populated downgrade also refuses: the old filesystem originals cannot be recreated automatically. Empty downgrade/reupgrade is supported; rollback to the old release requires its code, database/configuration and files. Do not drop/reset old data to make migration pass.
 Teacher endpoints use `teacher_access.teacher_session`: the shared cookie/CSRF/Origin/teacher-role checks inside an explicit READ COMMITTED transaction. Seed credentials with `auth.seed` and sign in; legacy demo headers and flags are ignored. Teacher endpoints check role and membership before reading material metadata or bytes. Uploads are bounded to 10 MiB, validated as PDF/UTF-8 text, and stored in material_file.content BYTEA. The 100 MiB global original-byte budget uses transaction advisory lock 32272610 and a fresh byte sum under READ COMMITTED; oversized totals return 413 storage_quota_exceeded. Metadata/content insert and commit together; lists never load BYTEA. Downloads/generation authorise before fetching bytes. Missing content returns 503 service_unavailable. Temporary multipart spooling is closed automatically. Uploads do not create student content. The Materials page uses the shared HTTP client for multipart and blob responses while student practice keeps its existing session behaviour.
@@ -69,8 +117,8 @@ Spec and contract: `workflow/specs/STU-01/`. Package `src/backend/study_lessons/
 - STU-04 must read progress through `completion_counts(db, user_id, course_ids=None)` and `completed_lessons(db, user_id)`, not the tables. They count only non-withdrawn lessons in courses the user belongs to.
 - TEA-03 publication calls `publish_lesson(db, draft, teacher)` after checking the teacher owns the draft's course; it flushes a new `published_lesson` row (topic copied from the source material) and the caller commits. The teacher publishing workflow below exposes publication. `withdrawn_at` is honoured on read; no code sets it.
 - Completion is one row per (user, lesson) written by a single `INSERT ... ON CONFLICT DO UPDATE`; the request carries the wanted state, so repeats and races are safe. The user always comes from the session.
-- AI usage collection switch: admin-only `PUT /api/admin/ai-usage/coverage` with `{"enabled": true|false}` activates or deactivates STU-03 and TEA-02 (`ai_usage.service.activate_coverage` / `deactivate_coverage`; same effect as `python -m ai_usage.activate`). Deactivating sets `enabled=false` only; `covered_since` is kept and attempts keep being recorded. The hub button reads its state from the usage report, so it adds no request on load. `dev_seed.py` also activates both features.
-- Dev data, one command: after `alembic upgrade head`, run `uv run --env-file .env python dev_seed.py` from `src/backend` (refuses unless `APP_ENV=development`). It runs, in order, `teacher_materials.seed`, `auth.seed`, `study_lessons.seed`, `teacher_publications.seed` and `feature_analytics.seed_dev`; each step is idempotent. `feature_analytics.seed_dev` adds about a week of made-up hub activity (chatbot and generation requests with a few failures and rate-limited ones, sign-ins, practice attempts, drafts and published sets) through the real recording hooks with past timestamps, and moves the `analytics_meta` start dates back so reports cover that week. Applied once per database (`dev_seed_applied_at` marker); `--force` adds another week. Development databases only: the rows look real, so never run it where real usage is recorded.
+- AI usage collection switch: admin-only `PUT /api/admin/ai-usage/coverage` with `{"enabled": true|false}` activates or deactivates STU-03 and TEA-02 (`ai_usage.service.activate_coverage` / `deactivate_coverage`; same effect as `python -m ai_usage.activate`). Deactivating sets `enabled=false` only; `covered_since` is kept and attempts keep being recorded. The hub button reads its state from the usage report, so it adds no request on load. `sample_data.py` also activates both features.
+- Dev data, one command: after `alembic upgrade head`, run `uv run --env-file .env python sample_data.py` from `src/backend` (refuses unless `APP_ENV=development`). It runs, in order, `teacher_materials.seed`, `auth.seed`, `study_lessons.seed`, `teacher_publications.seed` and `feature_analytics.seed_dev`; each step is idempotent. `feature_analytics.seed_dev` adds about a week of made-up hub activity (chatbot and generation requests with a few failures and rate-limited ones, sign-ins, practice attempts, drafts and published sets) through the real recording hooks with past timestamps, and moves the `analytics_meta` start dates back so reports cover that week. Applied once per database (`dev_seed_applied_at` marker); `--force` adds another week. Development databases only: the rows look real, so never run it where real usage is recorded.
 - Dev data: after `teacher_materials.seed`, run `uv run python -m study_lessons.seed` (two sample lessons for `demo-student`'s Software Engineering course). Not for production.
 - Frontend: `services/lessons.ts` (shape-checked calls), `services/lessonMessages.ts` (exact error text), `pages/Materials.tsx`, `pages/Lesson.tsx`; the Overview stats are `OverviewStats` in `pages/Student.tsx` (STU-04). Lessons are rendered as text with `white-space: pre-wrap`. Nothing is stored in the browser. Identical in-flight GETs (`services/readOnce.ts`) share one request (StrictMode runs effects twice in development), but only within the same session and completion state: the key includes `getSessionGeneration()` (bumped by every `setCsrfToken` call, i.e. sign-in, sign-out, 401 clear) and a counter bumped before and after each completion PUT, so a request started earlier is never handed to a later page. The old sample lessons and `completed` demo state were removed.
 - Known limits: past 500 lessons in a course the list keeps the oldest-published 500 (not topic order) and its count then differs from the Overview, which counts every lesson; a page opened while a completion PUT is still pending can show the earlier state until reload; the PUT body has no size cap; `?course=` matching on the Materials page is case-sensitive; the backend has no formatter; a withdrawal racing a completion PUT can leave the PUT's result visible once.
@@ -85,7 +133,7 @@ Practice uses single-answer MCQs only, including code-reading questions expresse
 
 Continuous integration (`.github/workflows/ci.yml`) runs on every pull request into `master` and every push to it: backend tests; frontend typecheck, lint, format check, build and Playwright tests; the token tracker's and experiment scripts' unit tests; and a dependency audit that blocks on known vulnerabilities in runtime dependencies and only reports dev-only ones. It uses read-only permissions and no secrets. Plan and decisions: `workflow/specs/CI-01/plan.md`. Deployment is not built yet; options and open decisions are in `workflow/deployment.md`.
 
-Use the startup/check commands in [README.md](../README.md). `package-lock.json` and `uv.lock` pin resolved dependencies. Local PostgreSQL credentials in the Compose file are development-only. Ignore rules exclude local env files, generated output, virtual environments, browser traces and dependency directories. Use `npm run format` to format frontend files and `npm run format:check` to check them.
+Use the setup steps in [README.md](../README.md) and the test commands in "Setup, configuration, tests and layout" above. `package-lock.json` and `uv.lock` pin resolved dependencies. Local PostgreSQL credentials in the Compose file are development-only. Ignore rules exclude local env files, generated output, virtual environments, browser traces and dependency directories. Use `npm run format` to format frontend files and `npm run format:check` to check them.
 
 Playwright exercises real UI behaviour with intercepted health responses. Backend tests independently verify the real API. Visual checks cover desktop/mobile and light/dark modes. Native form validation is used where appropriate; accessible labels, visible focus, a skip link, reduced-motion CSS and a mobile navigation drawer are included. This is not a full accessibility certification.
 
@@ -199,99 +247,11 @@ Account creation success uses a green, dismissible six-second toast; all text/pa
 
 `tests/real-backend.spec.ts` also has opt-in admin-created student/teacher login checks using independent browser contexts, a real API/database and no API mocks. Run only with an isolated test database and administrator: the real-backend project additionally requires `E2E_ALLOW_ADMIN_ACCOUNT_CREATION=1`, `E2E_ADMIN_EMAIL` and `E2E_ADMIN_PASSWORD` for these cases. They create disposable accounts, verify fresh login and reload, and capture overlay screenshots. Normal mocked runs exclude this file; existing real-backend CI does not create accounts unless explicitly opted in. Never point these creation checks at production data.
 
-### Local admin setup and password reset (PowerShell)
+### Sign-in setup and diagnosis
 
-Prerequisites: Git, uv, Node/npm and Docker Desktop as in [README](../README.md). Run commands from inside this checkout. Existing env/database settings must be preserved; no default admin credentials are shipped. Public signup creates students only. No SoC credentials are needed for ADM-05 or mocked tests.
+Setup, seed accounts and password reset are described under "Setup, configuration, tests and layout" above and in the README. Public sign-up creates students only; there is no default admin credential beyond the `SEED_ADMIN_*` values you set. New accounts created in Users sign in with the password entered there, not a `SEED_*` value; password reset and forced first-login changes are not implemented.
 
-**1. Prepare env files and PostgreSQL.** Start Docker Desktop, then run:
-
-```powershell
-Set-Location (git rev-parse --show-toplevel)
-docker compose up -d postgres
-docker compose exec -T postgres pg_isready -U learnswe -d learnswe
-if (-not (Test-Path src\backend\.env)) { Copy-Item src\backend\.env.example src\backend\.env }
-if (-not (Test-Path src\frontend\.env)) { Copy-Item src\frontend\.env.example src\frontend\.env }
-notepad src\backend\.env
-```
-
-The readiness command should report `accepting connections`. If PostgreSQL is still starting, repeat that check before creating a database or running migrations.
-
-**2. Update `src/backend/.env`.** Keep existing database/SoC values and replace existing assignments rather than adding duplicate keys. For a fresh setup, the template uses the database URL below. Credentials here are public **local-test examples**, never shared/production credentials:
-
-```dotenv
-DATABASE_URL=postgresql+psycopg://learnswe:learnswe-local-only@127.0.0.1:5433/learnswe_db_files
-APP_ENV=development
-SESSION_COOKIE_SECURE=false
-SESSION_COOKIE_SAMESITE=lax
-ALLOWED_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
-SEED_ADMIN_EMAIL=adm05-test@example.com
-SEED_ADMIN_PASSWORD='ExampleOnly!7Qm#42vL'
-```
-
-Save the file. Quoting keeps `#` literal; do not enter quotes in the login form. `.env` is ignored; never commit credentials. Optional `SEED_STUDENT_EMAIL`/`SEED_STUDENT_PASSWORD` and `SEED_TEACHER_EMAIL`/`SEED_TEACHER_PASSWORD` pairs configure fixed demo accounts; incomplete pairs are skipped. SOCLAAS settings are required only for actual generation/chat, not login.
-
-**Fresh database only:** when using `learnswe_db_files`, create it only if missing. Skip this block when retaining a different existing `DATABASE_URL`; ensure that database is reachable instead. This block preserves any existing database:
-
-```powershell
-Set-Location (git rev-parse --show-toplevel)
-$adm05DatabaseExists = docker compose exec -T postgres psql -U learnswe -d postgres -tAc "SELECT 1 FROM pg_database WHERE datname = 'learnswe_db_files'"
-if ($LASTEXITCODE -ne 0) { throw 'Cannot inspect PostgreSQL; check Docker Desktop and the postgres service.' }
-if (($adm05DatabaseExists -join '').Trim() -ne '1') {
-    docker compose exec -T postgres createdb -U learnswe learnswe_db_files
-}
-```
-
-**3. Apply migrations and seed, then start the backend.** Apply the additive `20261106_adm05_access` migration before starting the updated backend. Existing users default to enabled; `User.access_status` is enabled/disabled/archived and `archived_at` records irreversible archival. Downgrade refuses while any disabled/archived account exists, rather than silently granting access. Do not edit old migrations. Stop any existing backend with Ctrl+C in its terminal first:
-
-```powershell
-Set-Location (git rev-parse --show-toplevel)
-docker compose up -d postgres
-Set-Location src\backend
-uv sync --frozen
-uv run --env-file .env alembic upgrade head
-uv run --env-file .env python -m teacher_materials.seed
-uv run --env-file .env python -m auth.seed
-uv run --env-file .env uvicorn main:app --host 127.0.0.1 --port 8000 --reload
-```
-
-`demo-admin: seeded` means credentials were saved; `unchanged` keeps the previous hash/email; `skipped` identifies missing or invalid settings. Resolve wrong-role/email-conflict errors rather than ignoring them. Seed email is normalised; passwords are not trimmed or printed. Admin-created accounts are not seed targets. Roles remain fixed; no end-user password reset/change flow exists.
-
-**4. Explicitly reset an existing seed password after editing `.env`.** Run in another terminal, or before starting the backend in step 3:
-
-```powershell
-Set-Location (git rev-parse --show-toplevel)
-Set-Location src\backend
-uv run --env-file .env python -m auth.seed --reset-passwords
-```
-
-Changing `.env`, restarting the API, or rerunning the seed without this flag does not replace an existing hash. The flag applies **every configured seed role**, not just admin, and can update configured emails subject to uniqueness. It does not enable disabled accounts, restore archived accounts or revoke sessions. For a password-change test, keep the email unchanged, sign out, check the old password fails once, then check the new password succeeds. Do not infer success from an already-open authenticated session. Repeated failed attempts trigger the login limiter.
-
-After changing backend settings such as `ALLOWED_ORIGINS`, fully stop and restart the `uv run --env-file .env uvicorn ...` command. Uvicorn `--reload` does not refresh the environment loaded by its parent `uv` process. Seed commands are separate processes and read saved `.env` values each time. Vite proxies with `changeOrigin: true`; explicitly allow the frontend origin instead of disabling Origin/CSRF checks.
-
-**5. Configure/start the frontend in a second terminal.** Edit **`src/frontend/.env`**:
-
-```powershell
-Set-Location (git rev-parse --show-toplevel)
-notepad src\frontend\.env
-```
-
-```dotenv
-API_PORT=8000
-VITE_ENABLE_DEMO_ACCESS=true
-```
-
-If `API_PROXY_TARGET` is present, set it to `http://127.0.0.1:8000` or remove it to use `API_PORT`; the target overrides the port. Never put secrets in `VITE_*` variables. Save, stop any running frontend with Ctrl+C, then run:
-
-```powershell
-Set-Location (git rev-parse --show-toplevel)
-Set-Location src\frontend
-npm.cmd ci
-npm.cmd run dev
-```
-
-`npm.cmd` avoids PowerShell's `npm.ps1` execution-policy error. Restart the frontend after its `.env` changes. Open **http://127.0.0.1:5173/login**, use Sign in with the configured admin email/password without quotes, and follow the [account/course walkthrough](UserGuide.md#try-account-and-course-management-locally). Demo shortcuts and login role tabs do not grant a real admin session. Account creation sends the password once, confirms it on the client, never returns hashes/passwords/session metadata, and clears secret fields on success/unmount.
-
-**6. Diagnose failures using the Network response, not just the Uvicorn status line.**
+**Diagnose failures using the Network response, not just the Uvicorn status line.**
 
 | Request/status | Interpretation and recovery |
 |---|---|
@@ -305,7 +265,7 @@ npm.cmd run dev
 | Login 429 `rate_limited` | Wait for retry time. Defaults are 5 failures/email or 20/IP in 900 seconds. The limiter is process-local, so a local restart clears it. |
 | API 503 or network error | Check configuration, PostgreSQL/migration head, proxy target and running processes; not proof of a wrong password. |
 
-The [UserGuide sign-in walkthrough](UserGuide.md#set-up-local-admin-sign-in-powershell) provides the user-facing steps. These local settings are not a production deployment configuration.
+The [README](../README.md) has the user-facing troubleshooting table. These local settings are not a production deployment configuration.
 
 ### Lifecycle implementation and automated verification
 
@@ -565,11 +525,11 @@ uv run --env-file .env alembic upgrade head
 uv run --env-file .env uvicorn main:app --host 127.0.0.1 --port 8000 --reload
 ```
 
-Start the frontend with the existing setup instructions. Sign in as an enabled admin and open `/admin/feedback`; use separate student/teacher browser profiles to check targeted `/student/inbox` and `/teacher/inbox` delivery. Follow the [ADM-02 user walkthrough](UserGuide.md#adm-02-targeted-feedback-forms). No LLM configuration or calls are needed for this feature.
+Start the frontend with the existing setup instructions. Sign in as an enabled admin and open `/admin/feedback-hub/forms`; use separate student/teacher browser profiles to check targeted `/student/inbox` and `/teacher/inbox` delivery. Follow the [ADM-02 user walkthrough](UserGuide.md#adm-02-targeted-feedback-forms). No LLM configuration or calls are needed for this feature.
 
 ### Storage, access and concurrency
 
-- `feedback_models.py` owns relational records, `feedback_validation.py` validates definitions/answers, `feedback_store.py` serialises snapshots and centralises access/locking, and `feedback.py` owns HTTP routes, strict query/body handling, quotas and fixed error translation. The approved [plan](../workflow/specs/ADM-02/plan.md) is the endpoint/schema contract.
+- `feedback_models.py` owns relational records, `feedback_validation.py` validates definitions/answers, `feedback_store.py` serialises snapshots and centralises access/locking, and `feedback.py` owns HTTP routes, strict query/body handling, quotas and fixed error translation. The retained criteria in `workflow/specs/ADM-08/retained-criteria.md` and the backend tests are the endpoint/schema contract (the old ADM-02 spec was removed in ADM-08 phase 5; its PR notes are in `docs/archive/ADM-02/`).
 - Reuse cookie sessions, role checks, Origin/CSRF validation and the existing SQLAlchemy session/pool. Before record work, reuse the account lifecycle transaction advisory lock and freshly verify the session/account. Survey operations take that lock before feature records, so account disable/archive, publication, saves, submit and close use a consistent ordering across workers. This simple global ordering favours correctness over throughput.
 - Publication freezes definitions/audience and inserts all recipient inbox rows in the same transaction. Partial publication rolls back. Form editing and private draft saving have independent optimistic versions. A unique form/recipient response plus serialised submit/close prevents duplicate completion or late draft resurrection.
 - Draft PUT preserves exact text and allows missing required answers. The final POST carries `draft_version` and the complete final answers, validates required fields and atomically inserts the immutable form/question/answer snapshot and removes the private draft. Acknowledgement determines saved/completed UI state; elapsed time alone never does.
@@ -619,7 +579,7 @@ uv run --env-file .env uvicorn main:app --host 127.0.0.1 --port 8000 --reload
 
 The equivalent shell commands on macOS/Linux are identical. A serving process must load the intended `.env`; a 503 indicates temporary storage/configuration failure, including an unapplied migration. The implementation session did not migrate the developer database or restart user servers.
 
-`AdminMessaging` connects the submitted-response `Respond to feedback` action and admin `Announcements` navigation. The `?review=<UUID>` URL recovers only the current admin's preview or original sent receipt. Review POST uses its returned data directly; refresh/history performs one recovery GET, never an automatic send. Edit restores reviewed fields and reloads eligibility once. Private drafts are not put in browser storage. `MessagesInbox` appears beneath the unchanged survey section for authenticated students/teachers. New recipient APIs are GET `/api/messaging/inbox?limit=20&offset=0` and POST `/api/messaging/inbox/{delivery_id}/read`; full literal content is inline, so no separate detail endpoint exposes feedback references or audience identities.
+`AdminMessaging` connects the submitted-response `Respond to feedback` action and the hub Follow-up tab. The `?review=<UUID>` URL recovers only the current admin's preview or original sent receipt. Review POST uses its returned data directly; refresh/history performs one recovery GET, never an automatic send. Edit restores reviewed fields and reloads eligibility once. Private drafts are not put in browser storage. `MessagesInbox` appears beneath the unchanged survey section for authenticated students/teachers. New recipient APIs are GET `/api/messaging/inbox?limit=20&offset=0` and POST `/api/messaging/inbox/{delivery_id}/read`; full literal content is inline, so no separate detail endpoint exposes feedback references or audience identities.
 
 Text limits are 120 subject/5000 body Unicode code points, 500 distinct recipients, 128 KiB request bodies and 15 seconds per browser request. Admin quotas per minute: 20 recipient/recovery reads, 10 previews and 5 first-time sends; successful replay is exempt from send quota. Inbox reads and mark-read share 60 requests/minute/account. The reused limiter is process-local; durable uniqueness and access remain database-enforced. Delivery and previews have no automatic retention deletion. No sent-message edit/recall or sent-history browser is included.
 
@@ -631,18 +591,20 @@ Manual verification: sign in as admin, open a submitted response, compose/review
 
 `useInboxUnread` loads the summary once per authenticated recipient shell, deduplicates StrictMode reads, refreshes each visible minute and on window focus/visibility return (minimum five seconds apart), and stops when hidden/unmounted or signed out. List loads publish section counts; successful mark-read changes the badge locally. First successful survey-detail read requests a summary refresh. Revisions prevent an older summary from overwriting a more recent local count; in-flight invalidations coalesce into one follow-up. Background failures retain known data and recover on the next refresh without interrupting the current page. No message bodies are polled. Session-generation checks prevent previous-account badge data.
 
+Each inbox message item also carries `form_title` (the title of the feedback form a `feedback_response` reply answers, otherwise `null`), joined in `messaging_store.inbox`; the exact-key assertions in `tests/adm04_helpers.py` include it.
+
 The ADM-04 styles scope input outlines and surfaces to messaging/inbox. Do not reset all nested fieldsets: MUI uses a fieldset for outlined inputs. Header/input contrast, semantic dates, recipient search separation and responsive light/dark screenshots are covered by `tests/adm04-redesign.spec.ts`; private summary semantics by `tests/test_adm04_unread.py`.
 
 
 ### Admin screen design baseline
 
-`workflow/ui-design.md` governs the remaining admin surfaces as well as ADM-04. `Admin.tsx` scopes the live access/course pages and legacy previews with `.admin-surface`; `AdminFeedback.tsx` independently scopes the form routes. Portal dialogs opt into `.admin-dialog`, so input styling also applies outside the page DOM. Do not apply these classes to the ADM-04 composer or recipient inbox.
+`workflow/ui-design.md` governs the remaining admin surfaces as well as ADM-04. `Admin.tsx` scopes the live access/course pages with `.admin-surface`; `AdminFeedback.tsx` independently scopes the form routes. Portal dialogs opt into `.admin-dialog`, so input styling also applies outside the page DOM. Do not apply these classes to the ADM-04 composer or recipient inbox.
 
 The scoped rules in `styles.css` define neutral panels, outlined MUI fields, readable metadata and responsive layouts. MUI notched-outline fieldsets receive an explicit border, margin and padding so the global fieldset reset cannot erase them. Account discovery/results precede creation in DOM order and stack below 1100px; recipient lists scroll within 280px. Feedback editor sections retain the native disabled fieldset and existing submission/navigation guards.
 
 `LocalTime.tsx` renders recorded instants with the browser's locale/time zone and preserves the ISO value in `time[datetime]` and the title. Report date filters remain UTC. Response link accessible names retain their exact identifiers and original timestamps, while visible rows lead with human names. Existing endpoints, fetch cadence, error mappings, session clearing and security checks are unchanged; no background requests or live AI are added.
 
-Regression coverage is in `tests/admin-ui.spec.ts`, alongside existing ADM-02/04/05/06 suites. The existing row-layout and timestamp assertions were adapted to the documented taller cards and semantic local dates, retaining full-row navigation, hover, request-count and exact-record assertions. Use isolated Playwright ports when a developer server is running. Check desktop/mobile, both themes, visible input/focus outlines, long content, retained input on failure and keyboard-reachable report scrolling.
+Regression coverage is in `tests/admin-ui.spec.ts`, alongside the ADM-05/06 suites (the former ADM-02 and ADM-04 admin tests now live in `adm08-ported-*`). The existing row-layout and timestamp assertions were adapted to the documented taller cards and semantic local dates, retaining full-row navigation, hover, request-count and exact-record assertions. Use isolated Playwright ports when a developer server is running. Check desktop/mobile, both themes, visible input/focus outlines, long content, retained input on failure and keyboard-reachable report scrolling.
 
 
 ### Frontend CI: recipient debounce and shell request counts
@@ -658,7 +620,7 @@ When a history test counts completed report loads, wait for the report data on e
 
 ## ADM-03: AI feedback analysis
 
-Admin-only. Spec and contract: `workflow/specs/ADM-03/`. Backend package `src/backend/feedback_analysis/`, frontend pages `AdminFeedbackAnalysis*.tsx`.
+Admin-only. Contract: retained criteria in `workflow/specs/ADM-08/retained-criteria.md` (the old ADM-03 spec was removed in ADM-08 phase 5). Backend package `src/backend/feedback_analysis/`, frontend pages `AdminFeedbackAnalysis*.tsx`.
 
 - **Two independent parts.** `POST /api/admin/feedback/analyses` stores the analysis and returns the statistics at once (`aggregates.py`, pure functions, no LLM, each response read with its own `form_snapshot`). The AI step then runs in a daemon thread (`jobs.start`, `jobs.run_job`) with its own DB sessions; every write is `UPDATE ... WHERE id = :id AND ai_status = 'running'`, so a job whose row was swept or deleted updates zero rows and ends quietly. The request session is closed before the job starts.
 - **Map-reduce.** `entries.py` normalises and de-duplicates free-text answers (short_answer and paragraph only), samples deterministically and packs batches (at most 10); `prompts.py` builds `TASK: MAP` and `TASK: REDUCE` prompts (no identity, no choice or scale answers, no raw answers in reduce); `validate.py` enforces strict JSON and label subsets; `failures.py` holds every exact message and maps shared-client errors. Limits in messages come from `llm_client.Limits()` defaults.
@@ -687,6 +649,12 @@ Admin-only. Contract: retained criteria in `workflow/specs/ADM-07/retained-crite
 - **Tests.** Existing ADM-06 tests and Playwright fixtures list four features (`ADM-01` is a valid usage label); the backend tests are `tests/test_adm01_*.py` (browser tests for the Quality section are `tests/adm07-retained.spec.ts`).
 ## ADM-07: Feature Analytics hub (phase 2 and phase 4)
 
+The hub is the admin landing page: `homePath("admin")` in `auth/RequireRole.tsx` is `/admin/analytics`, `/admin` and the old `/admin/overview` redirect there, and the sample "Analytics" overview page, its nav item, the sample feedback-form and usage previews (`/admin/forms`, `/admin/usage`), their sample data and CSS and the admin demo were removed; `Admin.tsx` now routes only Users and Courses and shows "This page isn't here" for any other path. Students and teachers still land on `/<role>/overview`. `data.ts` `demoRoles` (student, teacher) drives the login demo shortcut and the demo role switcher. Anonymous visitors to admin pages without a session are sent to `/login` by `LiveAnalysis`.
+
+The hourly block has its own range (`lib/period.ts` `HOURLY_RANGES`, `hourlyRequestPeriod`, `inHourlyRange`): a rolling choice (24 h, 3 d, 7 d) asks `/hourly` for the whole UTC days covering it and `HourlyCharts` keeps only the last N hours ending with the current hour (totals and CSV recomputed); "Selected period" is the previous behaviour. The anchor time is fixed at the last refresh or choice. Covered by the `adm07 hourly range` tests in `tests/adm07-analytics.spec.ts`.
+
+`DailyActivity.tsx` `DailyCard` is expandable like `ChartCard`: a chart-bearing card gets `analytics-hub-card-open` (hover enlarge), an Expand button and a `ChartModal` with a large `MiniChart` (`large` prop), the table and a CSV built by `buildCsv`. Its card-level click ignores controls inside the card and, because the overlay is a portal whose React events bubble to the card, anything outside the card DOM. Tests: `adm07 daily charts ...` in `tests/adm07-analytics.spec.ts`.
+
 Spec: `workflow/specs/ADM-07/`. Phase 2 read existing ADM-01 tables; phase 4 (below) adds the event tables.
 
 - **Backend** (`src/backend/feature_analytics/`): new GET routes `/api/admin/analytics/health`, `/hourly`, `/daily`, `/chatbot-users`; `/usage` takes `include_rows=true|false`. `health.py` holds the pure helpers (`severity`, `percentile_nearest_rank`, `median_half_up`, `round_half_up`, `rate_percent`, `finished_state`). `queries.py` applies the in-progress rule at read time (pending younger than `IN_PROGRESS_EXPIRY_S` = 120 s is excluded and counted as `in_progress`; older is a failure with duration 120000 ms); one timestamp per request is taken by `queries.begin_request()` (tests monkeypatch `queries.utcnow`) and returned as `as_of`. `_cover()` implements partial coverage: metrics are computed from `max(period start, recording start, retention floor)` and carry `data_starts_on`; they are `unavailable` only if the whole period is earlier. Every metric object now has a `data_starts_on` key, and `/usage`, `/generation`, `/quality` also carry a top-level `data_starts_on`. `/generation` entries gain `requests`, `rate_limited` and `rate_limited_state` (see phase 4 below for their sources). Response models in `schemas.py` were not added: responses stay plain dicts like the ADM-01 routes.
@@ -697,3 +665,15 @@ Spec: `workflow/specs/ADM-07/`. Phase 2 read existing ADM-01 tables; phase 4 (be
 - **AI usage cleanup (one-off, destructive):** `uv run python -m ai_usage.cleanup --dry-run` prints per feature the pending attempts older than 24 hours and the coverage change; `--apply --approved-by <name>` deletes exactly those rows permanently (no archive, no restore) and, for each affected feature, clears `incomplete_since` and sets `covered_since` to the next UTC midnight (never earlier). Terminal rows are never deleted. Run `--dry-run` on the target database and review it before `--apply`; it is not an Alembic revision.
 - **Frontend:** `pages/AdminAnalytics.tsx` is the hub; the previous page and its `/admin/feature-analytics-legacy` route were deleted in phase 5, and `/admin/ai-usage` is a `Navigate replace` to `/admin/analytics`; the old `pages/AdminAiUsage.tsx` and its nav entry are gone (the AI usage section is `components/analytics/AiUsageSection.tsx`). Blocks use `hooks/useAnalyticsBlock.ts` (wraps `useAnalyticsLoad`); charts are hand-written SVG (`components/analytics/charts.tsx`); `lib/` has period, local-time bucketing and CSV helpers. Each load sends 7 GETs (6 when AI usage does not apply).
 - **SoC LLM limits (observed 2026-11-11, not documented quotas):** with `qwen3.6:35b`, `max_tokens` of 100 to 100 000 were accepted; a 160 000-character prompt (26 687 tokens) was accepted; an 8 000-token completion ended with `finish_reason` "length"; no rate-limit headers; the model list reports a 131 072-token context window. Requests-per-minute and daily quotas were not tested. Unconfirmed hypothesis: reasoning tokens may consume the `max_tokens` budget (the earlier remembered 2 000 or 5 000 limit was not reproduced).
+
+## ADM-08: Feedback hub
+
+Spec: `workflow/specs/ADM-08/`. A tab shell at `/admin/feedback-hub/...` around the ADM-02, ADM-03 and ADM-04 admin screens. The old pages, routes (except the redirects below) and the "Feedback forms", "Feedback insights" and "Announcements" nav items were deleted in phase 5, as was the anonymous demo Announcements page and the demo "Feedback insights" page; the sidebar tip ("Explore feedback") links to `/admin/feedback-hub/forms`.
+
+- **Routes** (all admin only, inside the same page guard as `LiveAnalysis`): `forms`, `forms/new`, `forms/{id}`, `forms/{id}/edit`, `responses` (form chooser), `responses/{form}`, `responses/{form}/{response}`, `analysis` (optional `?form={id}`), `analysis/{id}`, `analysis/{id}/responses/{label}`, `follow-up`, `follow-up/reply/{form}/{response}`. The bare hub address and an unknown first segment are replaced with `/forms`; any other unmatched path shows "This Feedback hub page does not exist.".
+- **Addresses:** `lib/feedbackPaths.ts` is the only place that builds feedback page addresses (`hubPaths`, `parseHubPath`). The inner screens read them from `FeedbackPathsContext` (default `hubPaths`) and take their route values as props: `AdminFeedbackScreen`, `AdminFeedbackAnalysisResultScreen`, `AdminFeedbackAnalysisEvidenceScreen`, `AdminMessagingScreen`. The page files export only the screens (the old default-export wrappers were deleted). Old addresses are `Navigate replace` redirects (`HubRedirect` in `App.tsx`, children of the admin `RequireRole` route) that keep `?search` and `#hash` (so `?review=` survives) and build the target from the raw, still encoded path segments so an encoded `/` in an id never splits. Old address to hub address map: `/admin/feedback` to `/forms`, `.../new`, `.../{form}`, `.../{form}/edit` under `/forms`, `.../{form}/responses[/{response}]` to `/responses/{form}[/{response}]`, `.../responses/{response}/reply` to `/follow-up/reply/{form}/{response}`, `/admin/feedback/analysis...` to `/analysis...`, `/admin/announcements[/new]` to `/follow-up`, `/admin/responses` and bare `/admin/feedback` to `/forms`. Other deeper `/admin/feedback/...` paths fall to the admin catch-all.
+- **Components** (`components/feedback-hub/`): `FeedbackHub` (label, tablist, tabpanel, screen choice), `HubTabs` (roving tabindex, arrow/Home/End focus, push on activation), `ResponsesChooser` (one `GET /api/admin/feedback/forms?limit=100&offset=0`, drafts dropped), `HubNotFound`, `HubCountsProvider` with `hubCounts.ts` (`formatCount`, `useHubCounts`).
+- **Tab counts:** loaded once per hub mount by `HubCountsProvider` through `services/hubCountsApi.ts` (forms list `limit=100`, analyses list `limit=50`, `GET /api/admin/messaging/followup-counts`; 15 s timeout, no retry, failures silent, 401 handled by the shared `request`). After a successful count-changing mutation the service emits a topic from `lib/hubCountEvents.ts` (payload-free, in memory) and the provider refetches only that source, latest wins; with no hub mounted an emit does nothing. Emitters: `feedbackApi.feedbackWrite` (create, publish, close: `forms-changed`), `feedbackAnalysisApi` (create and delete analysis: `analyses-changed`; delete response: `forms-changed` and `followup-changed`; a 404 on a delete also emits), `messagingApi.messagingWrite` (send of a `feedback_response` preview: `followup-changed`).
+- **Follow-up count endpoint:** `GET /api/admin/messaging/followup-counts` (`messaging.py`) returns `{"unanswered_responses": n}`; `messaging_store.unanswered_response_count` counts `feedback_responses` whose respondent passes `messaging_store.replyable()` (role student or teacher, enabled, not archived: the same rule `response_recipient` uses) and that have no `admin_messages` row of kind `feedback_response` pointing at them. Admin only, read bucket (20 per minute), query strings rejected (422), read only, no migration.
+- **"Analyse this form":** `Responses` renders the link only when `paths.analysisForForm` is not null (hub); `AdminFeedbackAnalysis` compares `?form=` with its own forms list (case-insensitive, non-draft) and calls the picker's own handler, else shows the "not available" status.
+- **Dev seed:** `uv run --env-file .env python -m feedback_dev_seed` (also a step of `sample_data.py`; `APP_ENV=development` only, idempotent through the form title "Sample course feedback") creates one open form with the six question types for the enabled seeded students and one response each, through the feedback validators. No AI call, analysis or message.

@@ -47,6 +47,7 @@ def test_adm04_ac01_05_response_recipient_is_derived_and_only_intended_inbox_rec
     assert item['subject'] == 'Your feedback' and item['body'] == value['body']
     assert item['kind'] == 'feedback_response' and item['read_at'] is None
     assert item['sent_at'] == receipt['sent_at']
+    assert item['form_title'] == form['title']  # the reply names the form it answers
     assert messages(outsider)['items'] == []
     assert rid not in json.dumps(box) and form['id'] not in json.dumps(box)
     assert 'answers' not in json.dumps(box) and person['display_name'] not in json.dumps(box)

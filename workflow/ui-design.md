@@ -54,5 +54,5 @@ Project design baseline, approved by the user after the ADM-04 redesign on 2026-
 ## Reuse references
 
 - Implemented examples: `src/frontend/src/pages/AdminMessaging.tsx`, `components/MessagesInbox.tsx`, `pages/FeedbackInbox.tsx`, `hooks/useInboxUnread.ts`, and scoped messaging styles in `styles.css`.
-- Acceptance/visual examples: `workflow/specs/ADM-04/spec.md`, its plan, and `src/frontend/tests/adm04-redesign.spec.ts`. Ignored screenshots are temporary evidence, not permanent design assets.
+- Acceptance/visual examples: `workflow/specs/ADM-08/retained-criteria.md` and `src/frontend/tests/adm04-redesign.spec.ts`. Ignored screenshots are temporary evidence, not permanent design assets.
 - External background: [Google Material text-field guidance](https://m2.material.io/design/components/text-fields.html), [Google Material Web text fields](https://github.com/material-components/material-web/blob/main/docs/components/text-field.md), and [MUI text fields](https://mui.com/material-ui/react-text-field/). Use this project's accepted pattern rather than copying every upstream default.

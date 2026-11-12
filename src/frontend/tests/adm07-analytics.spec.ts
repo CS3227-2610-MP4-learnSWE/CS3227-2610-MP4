@@ -139,16 +139,17 @@ test("adm07 header, muted line, sections, period options and controls", async ({
   await expect(page.getByText(/^Last updated /)).toBeVisible();
 });
 
-test("adm07 nav link Feature Analytics is distinct from the demo Analytics link", async ({
+test("adm07 nav has Feature Analytics and no separate Analytics link", async ({
   page,
 }) => {
   await ready(page);
   await expect(
     page.getByRole("link", { name: "Feature Analytics", exact: true }),
   ).toHaveAttribute("href", HUB);
+  // The separate sample "Analytics" overview was merged into Feature Analytics (2026-11-12).
   await expect(
     page.getByRole("link", { name: "Analytics", exact: true }),
-  ).toHaveAttribute("href", "/admin/overview");
+  ).toHaveCount(0);
 });
 
 test("adm07 AC29 load sends exactly seven parallel requests with the exact URLs", async ({
@@ -520,6 +521,72 @@ test("adm07 AC18 three charts are images with the specified accessible names", a
   await expect(hourly.getByText("More requests")).toBeVisible();
 });
 
+// 2026-11-11T05:20Z: the last 24 hours end with the 05:00Z hour, so the mock's busy hours of the first
+// requested day (16:00Z and 17:00Z) are inside the range only when that day is 2026-11-10 or 2026-11-08.
+const NOW = new Date("2026-11-11T05:20:00Z");
+const RANGE = "Hourly chart range";
+
+test("adm07 hourly range: the control offers the selected period and the last 24 hours, 3 days and 7 days", async ({
+  page,
+}) => {
+  await ready(page);
+  const range = page.getByRole("radiogroup", { name: RANGE });
+  await expect(
+    range.getByRole("radio", { name: "Selected period", exact: true }),
+  ).toBeChecked();
+  for (const label of ["Last 24 hours", "Last 3 days", "Last 7 days"])
+    await expect(
+      range.getByRole("radio", { name: label, exact: true }),
+    ).not.toBeChecked();
+});
+
+for (const [label, days, hours] of [
+  ["Last 24 hours", "2026-11-10", 24],
+  ["Last 3 days", "2026-11-08", 72],
+  ["Last 7 days", "2026-11-04", 168],
+] as const) {
+  test(`adm07 hourly range: ${label} requests whole UTC days from ${days} and shows ${hours} hours ending now`, async ({
+    page,
+  }) => {
+    await page.clock.install({ time: NOW });
+    await ready(page);
+    const hourly = region(page, "Hourly activity");
+    const request = page.waitForRequest(
+      (r) =>
+        r.url().includes("/api/admin/analytics/hourly") &&
+        r.url().includes(`period_start=${days}`),
+    );
+    await page
+      .getByRole("radiogroup", { name: RANGE })
+      .getByRole("radio", { name: label, exact: true })
+      .check();
+    const url = new URL((await request).url());
+    expect(url.searchParams.get("period_end")).toBe("2026-11-11");
+    // Only the last N hours are drawn: the busy hours of the first day are in range for 24 h and 3 d.
+    await expect(
+      hourly.getByRole("img", {
+        name: new RegExp(`^Requests per hour chart: .* over ${hours} hours$`),
+      }),
+    ).toBeVisible();
+  });
+}
+
+test("adm07 hourly range: the 24-hour range keeps only its hours in the chart summary", async ({
+  page,
+}) => {
+  await page.clock.install({ time: NOW });
+  await ready(page);
+  await page
+    .getByRole("radiogroup", { name: RANGE })
+    .getByRole("radio", { name: "Last 24 hours", exact: true })
+    .check();
+  await expect(
+    region(page, "Hourly activity").getByRole("img", {
+      name: "Requests per hour chart: 6 requests, 1 failed over 24 hours",
+    }),
+  ).toBeVisible();
+});
+
 test("adm07 AC15 reference line only on the failure-rate chart; tooltips by test id", async ({
   page,
 }) => {
@@ -811,6 +878,58 @@ test("adm07 AC41 five daily cards; drafts started and published are two cards", 
     "Attempts per student per day",
   ])
     await expect(group(daily, name)).toBeVisible();
+});
+
+test("adm07 daily charts expand on hover and open an overlay with the data table, CSV and Close, like the Health charts", async ({
+  page,
+}) => {
+  await ready(page);
+  const daily = region(page, "Daily activity");
+  const title = "Attempts started and submitted per day";
+  const card = group(daily, title);
+  // Hover enlarges the card slightly.
+  await card.hover();
+  await expect(card).toHaveCSS("transform", /^matrix\(1\.0/);
+  // The Expand button opens the overlay with the large chart, its data table and the actions.
+  await expand(page, title).click();
+  const dialog = modal(page, title);
+  await expect(dialog).toBeVisible();
+  await expect(
+    dialog.getByRole("img", { name: `${title} chart` }),
+  ).toBeVisible();
+  await expect(
+    dialog.getByRole("table", { name: `${title} data` }),
+  ).toBeVisible();
+  const [download] = await Promise.all([
+    page.waitForEvent("download"),
+    dialog.getByRole("button", { name: "Download CSV", exact: true }).click(),
+  ]);
+  expect(download.suggestedFilename()).toMatch(
+    /^attempts-started-and-submitted-per-day_\d{4}-\d{2}-\d{2}_\d{4}-\d{2}-\d{2}\.csv$/,
+  );
+  await dialog.getByRole("button", { name: "Close", exact: true }).click();
+  await expect(dialog).toHaveCount(0);
+  // Clicking the chart itself opens it too.
+  await card.getByRole("img", { name: `${title} chart` }).click();
+  await expect(dialog).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(dialog).toHaveCount(0);
+});
+
+test("adm07 daily charts: the data table toggle does not open the overlay, and unavailable cards cannot expand", async ({
+  page,
+}) => {
+  await ready(page);
+  const daily = region(page, "Daily activity");
+  const title = "Attempts per student per day";
+  const card = group(daily, title);
+  await card
+    .getByRole("button", { name: "Show data table", exact: true })
+    .click();
+  await card.getByRole("table", { name: `${title} data` }).click();
+  await expect(modal(page, title)).toHaveCount(0);
+  // Logins are unavailable in this fixture: no chart, so no Expand button.
+  await expect(expand(page, "Logins per day")).toHaveCount(0);
 });
 
 test("adm07 AC23 phase 2: logins, drafts and published are unavailable, not zero", async ({

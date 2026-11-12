@@ -29,7 +29,7 @@ test.beforeEach(async ({ page }) => {
 const ROLE_ROUTES = [
   "/student/overview",
   "/teacher/overview",
-  "/admin/overview",
+  "/admin/analytics",
 ];
 
 // ---------------------------------------------------------------- AuthContext
@@ -107,7 +107,7 @@ test("shr01 AC22 a pending session check never flashes the demo shell for a sign
 for (const [user, own] of [
   [STUDENT, "/student/overview"],
   [TEACHER, "/teacher/overview"],
-  [ADMIN, "/admin/overview"],
+  [ADMIN, "/admin/analytics"],
 ] as const) {
   test(`shr01 AC22 a signed-in ${user.role} renders their own area and is sent home from the others`, async ({
     page,
@@ -165,7 +165,9 @@ test("shr01 AC25 anonymous visitors still reach every role area in labelled demo
   page,
 }) => {
   await mockAuthApi(page, { user: null });
-  for (const route of ROLE_ROUTES) {
+  // The admin area has no anonymous demo since the Analytics overview was merged into Feature
+  // Analytics (2026-11-12); its admin routes need a real sign-in.
+  for (const route of ROLE_ROUTES.filter((r) => !r.startsWith("/admin/"))) {
     await page.goto(route);
     await expect(page).toHaveURL(new RegExp(`${route}$`));
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
@@ -208,8 +210,8 @@ test("shr01 AC25 the Explore demo buttons enter demo mode without any sign-in re
   const auth = await mockAuthApi(page, { user: null });
   await page.goto("/login");
   await expect(page.getByText(DEMO_HEADING)).toBeVisible();
-  await (await exploreDemoLink(page, "admin")).click();
-  await expect(page).toHaveURL(/\/admin\/overview$/);
+  await (await exploreDemoLink(page, "teacher")).click();
+  await expect(page).toHaveURL(/\/teacher\/overview$/);
   await expect(page.getByText("Demo (not signed in)").first()).toBeVisible();
   expect(auth.count("login")).toBe(0);
   expect(auth.count("signup")).toBe(0);

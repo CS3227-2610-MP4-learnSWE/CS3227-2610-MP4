@@ -289,7 +289,7 @@ test("stu04 AC14 reload shows the loading state and then the stored figures", as
 
 for (const [label, user, home] of [
   ["teacher", TEACHER, "/teacher/overview"],
-  ["admin", ADMIN, "/admin/overview"],
+  ["admin", ADMIN, "/admin/analytics"],
 ] as const) {
   test(`stu04 AC14 a ${label} is redirected away from the student Overview without a progress request`, async ({
     page,

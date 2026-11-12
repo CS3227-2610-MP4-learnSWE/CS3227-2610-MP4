@@ -21,6 +21,10 @@ import {
 import { useFeedbackRead } from "../hooks/useFeedbackRead";
 import { getSessionGeneration } from "../services/client";
 import {
+  useFeedbackPaths,
+  type FeedbackScreenRoute,
+} from "../lib/feedbackPaths";
+import {
   adminBase,
   feedbackError,
   feedbackWrite,
@@ -41,6 +45,7 @@ function ReadError({ error, retry }: { error: string; retry: () => void }) {
 }
 
 function Forms() {
+  const paths = useFeedbackPaths();
   const [offset, setOffset] = useState(0);
   const read = useFeedbackRead(
     `${adminBase}?limit=20&offset=${offset}`,
@@ -54,14 +59,10 @@ function Forms() {
         description="Prepare surveys, choose recipients and review their submitted feedback."
         action={
           <>
-            <Button component={Link} to="/admin/feedback/analysis">
+            <Button component={Link} to={paths.analysis()}>
               Feedback analysis
             </Button>
-            <Button
-              component={Link}
-              to="/admin/feedback/new"
-              variant="contained"
-            >
+            <Button component={Link} to={paths.newForm()} variant="contained">
               New feedback form
             </Button>
           </>
@@ -91,7 +92,7 @@ function Forms() {
                   >
                     <Link
                       className="feedback-list-entry"
-                      to={`/admin/feedback/${form.id}`}
+                      to={paths.form(form.id)}
                       aria-label={`${form.title} · ${state} · Responses: ${form.response_count}`}
                     >
                       <span className="feedback-list-entry-title">
@@ -123,6 +124,7 @@ function Forms() {
 }
 
 function Detail({ id, initial }: { id: string; initial?: Form }) {
+  const paths = useFeedbackPaths();
   const location = useLocation();
   const read = useFeedbackRead(
     `${adminBase}/${encodeURIComponent(id)}`,
@@ -226,7 +228,11 @@ function Detail({ id, initial }: { id: string; initial?: Form }) {
       />
       <Panel>
         <h2>Form overview</h2>
-        {notice && <p role="status">{notice}</p>}
+        {notice && (
+          <p role="status" className="feedback-notice-chip">
+            {notice}
+          </p>
+        )}
         {error && !closeDialog && (
           <p role="alert">
             {error}
@@ -247,7 +253,7 @@ function Detail({ id, initial }: { id: string; initial?: Form }) {
               <Button
                 component={Link}
                 variant="outlined"
-                to={`/admin/feedback/${id}/edit`}
+                to={paths.editForm(id)}
                 disabled={reconcile}
               >
                 Edit draft
@@ -262,7 +268,7 @@ function Detail({ id, initial }: { id: string; initial?: Form }) {
               Close collection
             </Button>
           )}
-          <Button component={Link} to={`/admin/feedback/${id}/responses`}>
+          <Button component={Link} to={paths.formResponses(id)}>
             Review responses
           </Button>
         </div>
@@ -333,6 +339,8 @@ function Edit({ id }: { id: string }) {
 }
 
 function Responses({ id }: { id: string }) {
+  const paths = useFeedbackPaths();
+  const analyseLink = paths.analysisForForm(id);
   const [offset, setOffset] = useState(0);
   // A status carried by a response delete is shown once: it is cleared from the history entry so a refresh drops it.
   const location = useLocation();
@@ -357,6 +365,12 @@ function Responses({ id }: { id: string }) {
         description="Only submitted responses are available for review."
       />
       <Panel>
+        {analyseLink && (
+          <p>
+            <Link to={paths.responses()}>Choose another form</Link>{" "}
+            <Link to={analyseLink}>Analyse this form</Link>
+          </p>
+        )}
         <h2 ref={heading} tabIndex={-1}>
           Submitted responses
         </h2>
@@ -374,7 +388,7 @@ function Responses({ id }: { id: string }) {
                 >
                   <Link
                     className="feedback-list-entry"
-                    to={`/admin/feedback/${id}/responses/${response.id}`}
+                    to={paths.response(id, response.id)}
                     aria-label={`Response ${response.id} · ${response.respondent.display_name} · ${response.submitted_at}`}
                   >
                     <span className="feedback-list-entry-title">
@@ -417,6 +431,7 @@ function answerText(q: Question, value: Answer["value"] | undefined) {
 }
 
 function Response({ id, responseId }: { id: string; responseId: string }) {
+  const paths = useFeedbackPaths();
   const read = useFeedbackRead(
     `${adminBase}/${id}/responses/${responseId}`,
     "response",
@@ -440,10 +455,7 @@ function Response({ id, responseId }: { id: string; responseId: string }) {
       <Panel>
         <p className="admin-metadata">Response {response.id}</p>
         <p>Respondent: {response.respondent.display_name}</p>
-        <Button
-          component={Link}
-          to={`/admin/feedback/${id}/responses/${responseId}/reply`}
-        >
+        <Button component={Link} to={paths.reply(id, responseId)}>
           Respond to feedback
         </Button>
         <Button ref={trigger} color="error" onClick={() => setDeleting(true)}>
@@ -479,7 +491,7 @@ function Response({ id, responseId }: { id: string; responseId: string }) {
           }}
           onClose={() => setDeleting(false)}
           onDeleted={(gone) =>
-            navigate(`/admin/feedback/${id}/responses`, {
+            navigate(paths.formResponses(id), {
               replace: true,
               state: {
                 status: gone ? RESPONSE_NOT_FOUND : RESPONSE_DELETED_STATUS,
@@ -517,9 +529,9 @@ function Response({ id, responseId }: { id: string; responseId: string }) {
   );
 }
 
-function AdminFeedbackContent() {
+function AdminFeedbackContent({ route }: { route: FeedbackScreenRoute }) {
   const location = useLocation();
-  const [, , , id, action, responseId] = location.pathname.split("/");
+  const id = "formId" in route ? route.formId : undefined;
   const generation = getSessionGeneration();
   const creation = useRef<{ form: Form; generation: number } | null>(null);
   const createdForm =
@@ -530,10 +542,10 @@ function AdminFeedbackContent() {
   useEffect(() => {
     // The create receipt belongs only to the immediate replacement entry.
     // Detail captures it on mount; subsequent history entries must fetch again.
-    if (id !== "new") creation.current = null;
-  }, [id, location.key, generation]);
-  if (!id) return <Forms key={location.key} />;
-  if (id === "new")
+    if (route.screen !== "form-new") creation.current = null;
+  }, [route.screen, id, location.key, generation]);
+  if (route.screen === "forms") return <Forms key={location.key} />;
+  if (route.screen === "form-new")
     return (
       <FeedbackDraftEditor
         key={location.key}
@@ -542,30 +554,34 @@ function AdminFeedbackContent() {
         }}
       />
     );
-  if (action === "edit") return <Edit key={`${id}:${location.key}`} id={id} />;
-  if (action === "responses")
-    return responseId ? (
+  if (route.screen === "form-edit")
+    return <Edit key={`${route.formId}:${location.key}`} id={route.formId} />;
+  if (route.screen === "response")
+    return (
       <Response
-        key={`${responseId}:${location.key}`}
-        id={id}
-        responseId={responseId}
+        key={`${route.responseId}:${location.key}`}
+        id={route.formId}
+        responseId={route.responseId}
       />
-    ) : (
-      <Responses key={`${id}:${location.key}`} id={id} />
+    );
+  if (route.screen === "response-list")
+    return (
+      <Responses key={`${route.formId}:${location.key}`} id={route.formId} />
     );
   return (
     <Detail
-      key={`${id}:${location.key}:${generation}`}
-      id={id}
+      key={`${route.formId}:${location.key}:${generation}`}
+      id={route.formId}
       initial={createdForm}
     />
   );
 }
 
-export default function AdminFeedback() {
+/** The feedback screens for an already resolved route; the hub renders this. */
+export function AdminFeedbackScreen({ route }: { route: FeedbackScreenRoute }) {
   return (
     <div className="admin-surface admin-feedback">
-      <AdminFeedbackContent />
+      <AdminFeedbackContent route={route} />
     </div>
   );
 }

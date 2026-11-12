@@ -1,3 +1,4 @@
+import { emitHubCountChange } from "../lib/hubCountEvents";
 import { ApiError, getSessionGeneration, request } from "./client";
 
 const BASE = "/api/admin/feedback";
@@ -66,7 +67,7 @@ export type HistoryItem = {
   ai_status: "running" | "complete" | "failed";
 };
 export type Page<T> = { items: T[]; next_offset: number | null };
-export type FormItem = { id: string; title: string };
+export type FormItem = { id: string; title: string; state?: string };
 export type ResponseItem = {
   id: string;
   respondent: { id: string; display_name: string };
@@ -146,28 +147,39 @@ export const getEvidence = async (analysisId: string, label: string) =>
     await get(`/analyses/${id(analysisId)}/responses/${id(label)}`),
     (v) => isObject(v.response),
   );
-export const createAnalysis = async (body: object) =>
-  checked<Analysis>(
+export const createAnalysis = async (body: object) => {
+  const analysis = checked<Analysis>(
     await request("POST", `${BASE}/analyses`, body, options),
     isAnalysis,
   );
-export async function deleteAnalysis(analysisId: string): Promise<void> {
-  await request(
-    "DELETE",
-    `${BASE}/analyses/${id(analysisId)}`,
-    undefined,
-    options,
-  );
+  emitHubCountChange("analyses-changed");
+  return analysis;
+};
+
+/** Runs a delete; a 404 (already gone) counts as done for the hub counts, any other failure is rethrown unannounced. */
+async function deleteAnnounced(
+  path: string,
+  topics: Parameters<typeof emitHubCountChange>[0][],
+): Promise<void> {
+  try {
+    await request("DELETE", path, undefined, options);
+  } catch (error) {
+    if (!(error instanceof ApiError && error.status === 404)) throw error;
+    topics.forEach(emitHubCountChange);
+    throw error;
+  }
+  topics.forEach(emitHubCountChange);
 }
+
+export const deleteAnalysis = (analysisId: string) =>
+  deleteAnnounced(`${BASE}/analyses/${id(analysisId)}`, ["analyses-changed"]);
 
 export async function deleteFeedbackResponse(
   formId: string,
   responseId: string,
 ): Promise<void> {
-  await request(
-    "DELETE",
+  await deleteAnnounced(
     `${BASE}/forms/${id(formId)}/responses/${id(responseId)}`,
-    undefined,
-    options,
+    ["forms-changed", "followup-changed"],
   );
 }
