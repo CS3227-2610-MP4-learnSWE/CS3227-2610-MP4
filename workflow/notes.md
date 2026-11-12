@@ -1,5 +1,15 @@
 # Handoff notes
 
+## 2026-11-13: orchestrator, DEPLOY-01 draft deployment contracts awaiting approval
+- Done: inspected deployment/runtime and connected GitHub metadata; created separate branch `deploy/production-pages`; independent spec-writer drafted spec/plan/tasks. Speccheck PASS (1 checked, 0 failed, 0 waived). No app code/tests/deployment/resources changed. Existing `.claude/worktrees/` left untouched.
+- Decisions: user requires free tiers only; no Render/Neon accounts yet. Proposed free same-origin Render app, separate dev/prod services/databases, Neon PostgreSQL and static GitHub Pages product site. GitHub public/admin access confirmed; Render/Neon integrations offered, connection pending.
+- Next: human approves concrete spec/plan; creates/connects Render/Neon accounts. Then resolve provider exact-commit/proxy gates, independent tests and implementation per coordination, validate, PR/team review, Actions deployment and live verification. Do not infer master merge approval.
+- Files: workflow/specs/DEPLOY-01/{spec,plan,tasks}.md; usage manifest/report; resource log; session log.
+- Invocation IDs: 2026-11-13-DEPLOY-01-orchestrator-01 and -spec-writer-01. Parent metadata model gpt-6.1-sol; effort unavailable. Elapsed and observation bounds in report; token/cost attribution unavailable. No feature revision rounds; report recovery required two command corrections and fallback after exporter rejected earlier same-session usage outside invocation interval.
+- Required usage closeout: generated and inspected [report](usage/runs/2026-11-13-DEPLOY-01/report.md), both invocation rows plus total and one Token usage column; linked resource/session logs. Continue the same run on resume and regenerate report.
+- Blocking gates: required human spec/plan approval, hosting accounts, secure production secrets/configuration, exact-commit deployment verification and SoC network smoke. No live URL exists yet.
+
+
 ## 2026-11-12: orchestrator, ADM-08 phase 5 executed and verified (P5-5 to P5-7)
 - Done: Gate F decisions recorded (baa2494). P5-5 developer code and docs cleanup (4869faa) and test-side edits (2ff94ab) merged (d43f508): old admin feedback routes redirect (replace, query and hash kept) to the hub, demo "Feedback insights" and demo Announcements deleted, three nav items removed, sidebar tip now "Explore feedback", ADM-02/03/04 spec folders removed with `pr.md`/`retro.md` archived under `docs/archive/`. P5-7 verifier PASS (round 1, no blocking defects): 360 ADM-08 mocked tests passed.
 - Checks: typecheck and lint clean; full backend 3262 passed, 7 errors (PermissionError on the pytest temp folder in tea01/tea02, environmental); full mocked Playwright 1347 passed, 6 failed on the first run: 4 (stu04-overview AC14, stu04-progress AC15 x2, tea05-overview AC13) pass with the dev backend out of the loop, adm08-hub AC18 flaked and passes alone, ported adm04 AC12 fixed in 21d326f. Not run: non-mocked Playwright project, a real-browser check of the redirects.
