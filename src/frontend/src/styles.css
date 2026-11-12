@@ -4845,7 +4845,8 @@ td .MuiButton-root {
 }
 .feedback-analysis .analysis-bar-track {
   display: inline-block;
-  width: 120px;
+  /* Shrinks on narrow screens so the results table never widens the page, whatever the font. */
+  width: min(120px, 22vw);
   max-width: 40%;
   height: 10px;
   margin-right: 8px;
