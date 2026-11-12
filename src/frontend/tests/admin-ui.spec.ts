@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { ADMIN, mockAuthApi, STUDENT } from "./authApi";
+import { ADMIN, STUDENT } from "./authApi";
 import { setup, FORM_ID } from "./adm02Api";
 import { mkdir } from "node:fs/promises";
 
@@ -83,22 +83,6 @@ for (const mode of ["light", "dark"] as const) {
       page.getByRole("heading", { name: "Available courses", exact: true }),
     ).toBeVisible();
     await outlined(page, "Course title");
-    await noOverflow(page);
-  });
-}
-
-for (const path of ["forms", "usage"]) {
-  test(`admin preview ${path} retains sample scope at 320px`, async ({
-    page,
-  }) => {
-    await page.route("**/api/**", (route) =>
-      route.fulfill({ status: 503, json: {} }),
-    );
-    await mockAuthApi(page, { user: ADMIN });
-    await page.setViewportSize({ width: 320, height: 850 });
-    await page.goto(`/admin/${path}`);
-    await expect(page.locator(".admin-preview")).toBeVisible();
-    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
     await noOverflow(page);
   });
 }

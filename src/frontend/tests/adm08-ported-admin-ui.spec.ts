@@ -1,4 +1,4 @@
-// ADM-08 phase 5 port of the admin-route tests of admin-ui.spec.ts onto hub paths; assertions unchanged. ADM-05 users/courses tests and the demo preview tests stay in admin-ui.spec.ts or are superseded (see phase5-test-mapping.md).
+// ADM-08 phase 5 port of the admin-route tests of admin-ui.spec.ts onto hub paths; assertions unchanged. ADM-05 users/courses tests stay in admin-ui.spec.ts; the demo preview tests were removed with the demo pages (see phase5-test-mapping.md).
 import { expect, test, type Page } from "@playwright/test";
 import { ADMIN, STUDENT } from "./authApi";
 import { setup, FORM_ID, RESPONSE_ID, TIME } from "./adm08-ported-adm02Api";

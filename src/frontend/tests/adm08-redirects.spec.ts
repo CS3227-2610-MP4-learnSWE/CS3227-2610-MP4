@@ -1,6 +1,5 @@
 // ADM-08 AC21 (phase 5): every old admin feedback and announcement URL redirects to its hub URL by
-// history replace, keeping query and hash. EXPECTED TO FAIL until task P5-5 executes: until then the
-// old routes still render the old pages. Do not weaken; this file passes only after the redirects exist.
+// history replace, keeping query and hash. Do not weaken.
 import { expect, test, type Page } from "@playwright/test";
 import {
   FORM_ID,
@@ -83,13 +82,13 @@ for (const [old, hub] of MAP) {
     page,
   }) => {
     await arrange(page);
-    await page.goto("/admin/usage");
+    await page.goto("/admin/not-a-page");
     const before = await page.evaluate(() => history.length);
     await pushOld(page, old);
     await expect.poll(() => here(page)).toBe(hub);
     expect(await page.evaluate(() => history.length)).toBe(before + 1);
     await page.goBack();
-    await expect(page).toHaveURL(/\/admin\/usage$/);
+    await expect(page).toHaveURL(/\/admin\/not-a-page$/);
   });
 }
 
@@ -187,13 +186,13 @@ test("adm08 AC21 D1 /admin/responses is replaced, not pushed: Back skips the old
   page,
 }) => {
   await arrange(page);
-  await page.goto("/admin/usage");
+  await page.goto("/admin/not-a-page");
   const before = await page.evaluate(() => history.length);
   await pushOld(page, "/admin/responses");
   await expect.poll(() => here(page)).toBe(`${HUB}/forms`);
   expect(await page.evaluate(() => history.length)).toBe(before + 1);
   await page.goBack();
-  await expect(page).toHaveURL(/\/admin\/usage$/);
+  await expect(page).toHaveURL(/\/admin\/not-a-page$/);
 });
 
 for (const [user, home] of [

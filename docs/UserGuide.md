@@ -43,8 +43,8 @@ The former **Practice sets** builder has been removed. Its old URL opens the con
 
 ## Admin
 
-- **Feature Analytics** is the admin landing page (`/admin/analytics`), described in "ADM-07: Feature Analytics hub" below. The former sample "Analytics" overview is gone and `/admin/overview` redirects to it; it needs an admin sign-in, so the anonymous demo has no admin analytics page.
-- Signed-in **Feedback hub** holds feedback forms, responses, AI analysis and announcements or replies in four tabs, described in "ADM-08: Feedback hub" below. The anonymous legacy `/admin/forms` demo only previews a survey request and creates no form or inbox request.
+- **Feature Analytics** is the admin landing page (`/admin/analytics`), described in "ADM-07: Feature Analytics hub" below. The former sample "Analytics" overview, the sample feedback-form and AI-usage previews and the admin demo are gone: every admin page needs a real admin sign-in, `/admin/overview` redirects to Feature Analytics, and the login page's demo shortcut offers Student and Teacher only.
+- Signed-in **Feedback hub** holds feedback forms, responses, AI analysis and announcements or replies in four tabs, described in "ADM-08: Feedback hub" below.
 - **Users** requires an admin sign-in and manages real accounts. Search by name or email, filter by role/status, and use Previous/Next to browse results. **Manage account** immediately opens an Account details overlay with status and course access; use **Close account details**, Escape or the backdrop to close it when no save is pending. Accounts have one fixed role; there is no promotion or demotion.
 - Use **Create account** to create a student, teacher or admin. Enter a display name, email, role, password and matching confirmation. A green **Account created.** toast confirms success; name, email and both password fields clear while the chosen role stays selected (initially Student). Failed creation keeps your input. Existing password rules apply (10–128 characters, not common or equal to the email/name part). The password is not shown in account details. New accounts sign in with the password entered here, not a `SEED_*_PASSWORD` from `.env`. Share it privately with the owner; mandatory first-login password changes and password reset are not implemented.
 - **Courses** creates courses with a title of 1–200 characters and a default **General** topic for teacher publishing. To assign a teacher or enrol a student, return to Users, choose their account, select a Course and choose **Grant course access**. New accounts begin with no assignments; teachers can manage only assigned courses. Disabled accounts can still have assignments edited. Admin accounts do not receive course assignments.
@@ -266,7 +266,7 @@ The Feedback hub forms, Users and Courses follow the shared admin design: outlin
 - **Users:** Find accounts and Create account appear side by side on wider screens and stack on smaller screens. Account details and access-removal confirmations retain their existing actions and keyboard behavior.
 - **Courses:** Create course is separate from Available courses. Manage course access in Users remains the route to enrolments and teacher assignments.
 
-Analytics and the legacy form and usage demos retain their sample-only notices. This visual update does not activate live analytics or AI feedback analysis. ADM-04's composer and recipient Inbox retain their existing design.
+This visual update does not change analytics or AI feedback analysis. ADM-04's composer and recipient Inbox retain their existing design.
 
 
 When choosing announcement recipients, moving to another result page keeps that page selected until you change the search or audience role. Search updates after a short pause in typing; selected recipients remain selected across pages and searches.

@@ -6,8 +6,8 @@ for (const user of [STUDENT, TEACHER, ADMIN]) {
     page,
   }, testInfo) => {
     const auth = await mockAuthApi(page, { user });
-    // The admin home is the data-backed Feature Analytics hub; use the request-free admin demo page.
-    const start = user.role === "admin" ? "/admin/usage" : `/${user.role}/overview`;
+    // The admin home is the data-backed Feature Analytics hub; use a request-free admin page (the "This page isn't here" screen).
+    const start = user.role === "admin" ? "/admin/not-a-page" : `/${user.role}/overview`;
     await page.goto(start);
     await page.getByRole("button", { name: "Log out", exact: true }).click();
     const dialog = page.getByRole("dialog", {
@@ -41,7 +41,7 @@ test("shr01 logout confirmation submits once and cannot dismiss during pending l
 }) => {
   const auth = await mockAuthApi(page, { user: ADMIN });
   auth.script("logout", { hold: true });
-  await page.goto("/admin/usage");
+  await page.goto("/admin/not-a-page");
   await page.getByRole("button", { name: "Log out", exact: true }).click();
   const dialog = page.getByRole("dialog", {
     name: "Confirm logout",

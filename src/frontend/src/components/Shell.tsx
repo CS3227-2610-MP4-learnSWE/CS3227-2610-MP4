@@ -23,7 +23,7 @@ import {
   X,
 } from "lucide-react";
 import { Brand, Icon, ThemeToggle } from "./ui";
-import { navigation, names, roles, type Role } from "../data";
+import { navigation, names, demoRoles, type Role } from "../data";
 import { useDemo } from "../state";
 import { useAuth } from "../auth/AuthContext";
 import StudyCompanion, { CompanionTrigger } from "./StudyCompanion";
@@ -314,7 +314,7 @@ export default function Shell({
                   inputProps={{ "aria-label": "Demo role" }}
                   IconComponent={ChevronDown}
                 >
-                  {roles.map((item) => (
+                  {demoRoles.map((item) => (
                     <MenuItem key={item} value={item}>
                       {item[0].toUpperCase() + item.slice(1)}
                     </MenuItem>

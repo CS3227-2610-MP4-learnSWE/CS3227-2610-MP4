@@ -1,5 +1,6 @@
 export type Role = "student" | "teacher" | "admin";
-export const roles: Role[] = ["student", "teacher", "admin"];
+/** Roles offered by the anonymous demo shortcut and switcher; the admin area has no demo. */
+export const demoRoles: Role[] = ["student", "teacher"];
 export const names: Record<Role, string> = {
   student: "Alex",
   teacher: "Jamie",

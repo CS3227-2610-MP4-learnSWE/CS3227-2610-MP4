@@ -121,27 +121,6 @@ export function Panel({
     </Paper>
   );
 }
-export function SectionHeading({
-  title,
-  link,
-  to,
-}: {
-  title: string;
-  link?: string;
-  to?: string;
-}) {
-  return (
-    <div className="section-heading">
-      <h2>{title}</h2>
-      {link && to && (
-        <Link className="text-link" to={to}>
-          {link}
-          <ArrowRight size={15} />
-        </Link>
-      )}
-    </div>
-  );
-}
 export function Stat({
   label,
   value,

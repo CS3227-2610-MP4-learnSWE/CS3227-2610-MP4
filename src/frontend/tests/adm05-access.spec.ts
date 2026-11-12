@@ -73,7 +73,7 @@ for (const width of [1100, 390]) {
       },
     });
     await page.setViewportSize({ width, height: 500 });
-    await page.goto("/admin/usage");
+    await page.goto("/admin/not-a-page");
     if (width < 760)
       await page
         .getByRole("button", { name: "Open navigation", exact: true })

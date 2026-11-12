@@ -762,7 +762,7 @@ test("adm08 AC29 leaving the hub leaves no pending or stray count request", asyn
   const ctx = await mounted(page);
   await open(page, `${HUB}/follow-up/reply/${FORM_ID}/${RESPONSE_ID}`);
   await settle(ctx);
-  await page.goto("/admin/usage");
+  await page.goto("/admin/not-a-page");
   const before = snap(ctx);
   await settled(page);
   expect(await deltas(ctx, before)).toEqual({ f: 0, a: 0, u: 0 });
