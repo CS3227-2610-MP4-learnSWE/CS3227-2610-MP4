@@ -52,6 +52,7 @@ def test_deploy01_ac4_database_connection_failure_blocks_start_without_credentia
 
 class FakeConnection:
     def __init__(self, events): self.events = events
+    def execution_options(self, **kwargs): return self
     def __enter__(self): return self
     def __exit__(self, *args): return False
     def execute(self, statement, *args, **kwargs):
