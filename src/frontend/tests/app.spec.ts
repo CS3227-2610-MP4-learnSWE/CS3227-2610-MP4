@@ -111,8 +111,6 @@ const routesByRole: Record<string, string[]> = {
   admin: [
     "/admin/overview",
     "/admin/forms",
-    "/admin/responses",
-    "/admin/announcements",
     "/admin/users",
     "/admin/courses",
     "/admin/usage",
@@ -178,7 +176,7 @@ test("mobile navigation works without horizontal overflow", async ({
   ).toBe(true);
 });
 
-test("teacher generation is real while admin messages remain explicit previews", async ({
+test("teacher generation is real", async ({
   page,
 }) => {
   const teacherApi = await mockTeacherNotesApi(page);
@@ -190,12 +188,6 @@ test("teacher generation is real while admin messages remain explicit previews",
     page.getByText("Draft notes generated and saved."),
   ).toBeVisible();
   expect(teacherApi.generationCalls).toBe(1);
-  await mockAuthApi(page, { user: null });
-  await page.goto("/admin/announcements");
-  await page.getByLabel("Subject").fill("Course update");
-  await page.getByLabel("Message").fill("Some useful information.");
-  await page.getByRole("button", { name: "Preview announcement" }).click();
-  await expect(page.getByRole("dialog")).toContainText("Nothing will be sent");
 });
 
 test("desktop and mobile layouts render without overflow in both themes", async ({
@@ -225,8 +217,6 @@ test("desktop and mobile layouts render without overflow in both themes", async 
         "/teacher/inbox",
         "/admin/overview",
         "/admin/forms",
-        "/admin/responses",
-        "/admin/announcements",
         "/admin/users",
         "/admin/usage",
       ]) {

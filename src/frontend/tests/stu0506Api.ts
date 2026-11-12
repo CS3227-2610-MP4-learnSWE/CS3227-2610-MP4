@@ -5,7 +5,7 @@ import { setup as setupFeedback } from "./adm02Api";
 /**
  * STU-05-06 fixture: the ADM-02 feedback mock (survey requests and the form) plus a small
  * stateful ADM-04 messaging mock (inbox, mark read, unread-count). Contracts only:
- * workflow/specs/ADM-02/plan.md and workflow/specs/ADM-04/plan.md.
+ * workflow/specs/ADM-08/retained-criteria.md.
  */
 export const INBOX = "/api/messaging/inbox";
 export const COUNT = "/api/messaging/unread-count";

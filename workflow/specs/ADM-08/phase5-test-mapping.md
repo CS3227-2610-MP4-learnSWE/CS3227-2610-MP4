@@ -132,3 +132,26 @@ All of `src/backend/tests/` (including `adm02_helpers.py`, `adm03_fixtures.py`, 
 2. Delete or edit the Sup-after-P5-5 tests listed above in the same commit.
 3. Delete adm02-review, adm03-*, adm04-messaging, the admin tests of adm02-feedback and adm04-redesign, the ported admin tests of admin-ui and the first shell test only after the ported specs pass.
 4. Keep `adm02Api.ts` and `adm04Api.ts` for the remaining respondent tests (or fold the ported copies into them and update imports); `adm03Api.ts` can go once adm03 originals are deleted.
+
+## P5-5 final state (test side, 2026-11-12, Gate F decisions applied)
+
+Status: test edits done and committed on the test-designer branch; typecheck and lint clean. Playwright was not run: the edited tests expect the redirects and deletions and fail against the current build until the developer's change is merged.
+
+| Change | Final state |
+|---|---|
+| Defect 1 | `adm08Api.ts` imports `analysis`, `uuid`, `Analysis` from `./adm08-ported-adm03Api` (identical builders). `adm03Api.ts` deleted. |
+| Defect 2 / D2 | `app.spec.ts` test "teacher generation is real while admin messages remain explicit previews" (185-200) is **Sup** for its second half: the anonymous demo `/admin/announcements` composer is deleted and the route redirects to `/login` (AC21, Gate F D2). The teacher-generation half is kept; the test is renamed "teacher generation is real". `/admin/responses` and `/admin/announcements` removed from both route lists. The anonymous `/admin/announcements` ends-on-`/login` expectation already exists in the `adm08-redirects.spec.ts` anonymous loop (the redirect map includes `/admin/announcements` and `/admin/announcements/new`), so no new test was needed for it. |
+| D1 | New in `adm08-redirects.spec.ts`: `/admin/responses` ends at `/admin/feedback-hub/forms` (plain, `?x=1`, `?x=1#part`), replaced not pushed, student and teacher go home with zero requests. |
+| Whole files deleted | adm02-review, adm03-select, adm03-result, adm03-history-delete, adm03-response-delete, adm04-messaging specs (ports checked in the deletion list: equal titles and expect counts) and `adm03Api.ts`. |
+| `adm02-feedback.spec.ts` | Admin tests removed (create draft, authoring loop, audience review, close, response snapshot, row links, empty review, responsive admin test, failed draft save). Respondent tests and the wrong-role loop (STUDENT row `/admin/feedback` still ends at the student home, because the role guard runs before the redirect) kept. Unused imports dropped. |
+| `adm04-redesign.spec.ts` | Composer test (12) and the responsive composer-and-inbox loop (149) removed (both ported); the three badge tests kept. |
+| `admin-ui.spec.ts` | ADM-02 tests (editor outlines, selection across search, response dates) removed; `responses` removed from the preview loop; visual rows forms, editor, form, responses, response, analysis and the audience-dialog branch removed (rows users, courses, analytics kept). |
+| `shell-confirmation.spec.ts` | Tip-dismiss test deleted (ported as `adm08-ported-shell.spec.ts`). |
+| `adm08-hub.spec.ts` | AC9 now expects "Feedback forms", "Announcements", "Feedback insights" `toHaveCount(0)` and "Analytics", "Feature Analytics" visible. AC10 "old URL shows no tab bar" removed: the precondition (old pages render) ends with AC21; coverage is `adm08-redirects.spec.ts`. |
+| `adm08-journeys.spec.ts` | Removed AC27 "link is absent on the old route" (no old route renders a screen) and AC29 "same actions on the old routes send no count request" (old routes redirect; the AC29 hub tests remain). `OLD_ADDRESS` guard kept. |
+| Comment references | `adm03_helpers.py:1`, `test_stu05_06_access.py:3`, `adm08-ported-adm03Api.ts:12`, `stu0506Api.ts:8` point to `workflow/specs/ADM-08/retained-criteria.md` (`adm03Api.ts` is deleted). |
+| Kept | `adm02Api.ts`, `adm04Api.ts`, `adm04-inbox.spec.ts`, all `adm08-*`. |
+
+Defect 5 (non-blocking, recorded): `adm08-ported-adm04Api.ts` omits every `followup-counts` request from its request log, and `adm08-ported-hubCounts.ts` omits the first count-shaped forms and analyses GET after each load. The ported specs therefore cannot see a missing or extra count refetch; the adm08 AC26 and AC29 tests in `adm08-hub.spec.ts` and `adm08-journeys.spec.ts` cover that.
+
+Sidebar tip (Gate F D3/D4): the tip text "Explore feedback" linking to `/admin/feedback-hub/forms` has no pinning test (the only test that clicked the old link was deleted; the ported shell test clicks "Feature Analytics"). Not added, to avoid asserting beyond the written criteria; tell the orchestrator if a pin is wanted.

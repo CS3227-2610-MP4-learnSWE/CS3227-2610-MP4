@@ -168,3 +168,44 @@ for (const old of SAMPLE_OLD) {
     expect(ctx.api()).toHaveLength(0);
   });
 }
+
+// Gate F decision D1 (phase 5): the deleted demo "Feedback insights" route redirects to the Forms tab
+// by replace. Decision D2 (anonymous /admin/announcements ends on /login) is covered by the
+// anonymous loop above, which runs over the whole redirect map including both announcements URLs.
+for (const suffix of ["", "?x=1", "?x=1#part"]) {
+  test(`adm08 AC21 D1 /admin/responses${suffix} ends at ${HUB}/forms${suffix} on a fresh load`, async ({
+    page,
+  }) => {
+    await arrange(page);
+    await page.goto(`/admin/responses${suffix}`);
+    await expect.poll(() => here(page)).toBe(`${HUB}/forms${suffix}`);
+    await expect(tablist(page)).toBeVisible();
+  });
+}
+
+test("adm08 AC21 D1 /admin/responses is replaced, not pushed: Back skips the old URL", async ({
+  page,
+}) => {
+  await arrange(page);
+  await page.goto("/admin/overview");
+  const before = await page.evaluate(() => history.length);
+  await pushOld(page, "/admin/responses");
+  await expect.poll(() => here(page)).toBe(`${HUB}/forms`);
+  expect(await page.evaluate(() => history.length)).toBe(before + 1);
+  await page.goBack();
+  await expect(page).toHaveURL(/\/admin\/overview$/);
+});
+
+for (const [user, home] of [
+  [STUDENT, /\/student\/overview$/],
+  [TEACHER, /\/teacher\/overview$/],
+] as const) {
+  test(`adm08 AC21 D1 ${user.role} opening /admin/responses is replaced to their home with zero feedback requests`, async ({
+    page,
+  }) => {
+    const ctx = await setup(page, { user });
+    await page.goto("/admin/responses");
+    await expect(page).toHaveURL(home);
+    expect(ctx.api()).toHaveLength(0);
+  });
+}

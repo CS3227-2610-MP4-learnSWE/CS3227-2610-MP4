@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import { ADMIN, mockAuthApi, STUDENT } from "./authApi";
-import { setup, FORM_ID, RESPONSE_ID, TIME } from "./adm02Api";
+import { setup, FORM_ID } from "./adm02Api";
 import { mkdir } from "node:fs/promises";
 
 async function outlined(page: Page, label: string) {
@@ -50,27 +50,6 @@ async function noOverflow(page: Page) {
 }
 
 for (const mode of ["light", "dark"] as const) {
-  test(`ADM-02 admin baseline editor outlines and question groups at 320px ${mode}`, async ({
-    page,
-  }) => {
-    await page.emulateMedia({ colorScheme: mode, reducedMotion: "reduce" });
-    await page.setViewportSize({ width: 320, height: 850 });
-    await setup(page, ADMIN);
-    await page.goto("/admin/feedback/new");
-    await expect(
-      page.getByRole("heading", { name: "Form details", exact: true }),
-    ).toBeVisible();
-    await expect(
-      page.getByRole("heading", { name: "Association", exact: true }),
-    ).toBeVisible();
-    await outlined(page, "Form title");
-    await page
-      .getByRole("button", { name: "Add question", exact: true })
-      .click();
-    await outlined(page, "Question 1 prompt");
-    await noOverflow(page);
-  });
-
   test(`ADM-05 admin baseline separates account discovery and creation ${mode}`, async ({
     page,
   }) => {
@@ -108,73 +87,7 @@ for (const mode of ["light", "dark"] as const) {
   });
 }
 
-test("ADM-02 admin baseline preserves selection across recipient search and separates review", async ({
-  page,
-}) => {
-  const ctx = await setup(page, ADMIN);
-  ctx.form.state = "draft";
-  await page.goto(`/admin/feedback/${FORM_ID}`);
-  await page
-    .getByRole("button", { name: "Review audience", exact: true })
-    .click();
-  const dialog = page.getByRole("dialog", {
-    name: "Review audience",
-    exact: true,
-  });
-  await expect(
-    dialog.getByRole("heading", { name: "Find recipients", exact: true }),
-  ).toBeVisible();
-  await dialog
-    .getByRole("checkbox", {
-      name: `${STUDENT.display_name} (${STUDENT.id})`,
-      exact: true,
-    })
-    .check();
-  await expect(dialog.getByText("1 selected", { exact: true })).toBeVisible();
-  await dialog.getByLabel("Search recipients", { exact: true }).fill("Sam");
-  await dialog.getByRole("button", { name: "Search", exact: true }).click();
-  await expect.poll(() => ctx.of("GET", "/audience").length).toBe(2);
-  await expect(dialog.getByText("1 selected", { exact: true })).toBeVisible();
-  await dialog
-    .getByRole("button", { name: "Review selected recipients", exact: true })
-    .click();
-  await expect(dialog.getByRole("textbox")).toHaveCount(0);
-  await expect(dialog.getByText("1 recipients", { exact: true })).toBeVisible();
-  expect(ctx.of("POST")).toHaveLength(0);
-});
-
-test("ADM-02 admin baseline response dates remain semantic and names lead long IDs", async ({
-  page,
-}) => {
-  const ctx = await setup(page, ADMIN);
-  ctx.submitted = true;
-  await page.goto(`/admin/feedback/${FORM_ID}/responses`);
-  await expect(
-    page.getByRole("heading", { name: "Submitted responses", exact: true }),
-  ).toBeVisible();
-  await expect(page.locator("time")).toHaveAttribute("datetime", TIME);
-  await expect(page.locator(".feedback-list-entry-title")).toHaveText(
-    STUDENT.display_name,
-  );
-  await page
-    .getByRole("link", {
-      name: `Response ${RESPONSE_ID} · ${STUDENT.display_name} · ${TIME}`,
-      exact: true,
-    })
-    .click();
-  await expect(page.locator("time")).toHaveAttribute("datetime", TIME);
-  await expect(
-    page.getByRole("heading", { name: "Feedback response", exact: true }),
-  ).toBeVisible();
-  await expect(
-    page.getByText(`Response ${RESPONSE_ID}`, { exact: true }),
-  ).toBeVisible();
-  await expect(
-    page.getByRole("link", { name: "Respond to feedback", exact: true }),
-  ).toBeVisible();
-});
-
-for (const path of ["overview", "forms", "responses", "usage"]) {
+for (const path of ["overview", "forms", "usage"]) {
   test(`admin preview ${path} retains sample scope at 320px`, async ({
     page,
   }) => {
@@ -230,13 +143,7 @@ for (const width of [1365, 390]) {
       for (const [name, path] of [
         ["users", "/admin/users"],
         ["courses", "/admin/courses"],
-        ["forms", "/admin/feedback"],
-        ["editor", "/admin/feedback/new"],
-        ["form", `/admin/feedback/${FORM_ID}`],
-        ["responses", `/admin/feedback/${FORM_ID}/responses`],
-        ["response", `/admin/feedback/${FORM_ID}/responses/${RESPONSE_ID}`],
         ["analytics", "/admin/overview"],
-        ["analysis", "/admin/responses"],
       ]) {
         await page.goto(path);
         await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
@@ -246,18 +153,6 @@ for (const width of [1365, 390]) {
           path: `${folder}/${width}-${mode}-${name}.png`,
           fullPage: true,
         });
-        if (name === "form") {
-          await page
-            .getByRole("button", { name: "Review audience", exact: true })
-            .click();
-          await expect(page.getByRole("checkbox")).toBeVisible();
-          await noOverflow(page);
-          await page.screenshot({
-            path: `${folder}/${width}-${mode}-audience.png`,
-            fullPage: true,
-          });
-          await page.keyboard.press("Escape");
-        }
       }
     });
   }

@@ -9,7 +9,7 @@ export const TIME = "2026-11-07T10:30:00Z";
 export const uuid = (n: number) =>
   `a3000000-0000-4000-8000-${(n + 100).toString().padStart(12, "0")}`;
 
-// Exact message texts copied from workflow/specs/ADM-03/spec.md "Failure messages".
+// Exact message texts copied from workflow/specs/ADM-08/retained-criteria.md "Failure messages".
 export const MSG = {
   selection:
     "No responses are selected. Select at least one response, or use Select all, then generate the analysis.",

@@ -1,4 +1,4 @@
-"""ADM-03 independent fixtures. Contract only: workflow/specs/ADM-03/plan.md.
+"""ADM-03 independent fixtures. Contract only: workflow/specs/ADM-08/retained-criteria.md.
 
 The SoC LLM is always the FakeAnalysisLlm below (dependency override of get_llm_client);
 no test makes a live call. The fake tells map from reduce by the first system line.

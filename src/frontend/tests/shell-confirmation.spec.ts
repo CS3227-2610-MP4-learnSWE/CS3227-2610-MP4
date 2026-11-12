@@ -1,34 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { ADMIN, STUDENT, TEACHER, mockAuthApi } from "./authApi";
 
-test("shr01 shell tip dismisses, stays dismissed on navigation and returns after refresh", async ({
-  page,
-}, testInfo) => {
-  await mockAuthApi(page, { user: ADMIN });
-  await page.setViewportSize({ width: 1280, height: 1000 });
-  await page.goto("/admin/overview");
-  await expect(
-    page.getByText("Listen. Learn. Improve.", { exact: true }),
-  ).toBeVisible();
-  await page.screenshot({ path: testInfo.outputPath("dismissible-tip.png") });
-  await page
-    .getByRole("button", { name: "Dismiss sidebar tip", exact: true })
-    .click();
-  await expect(
-    page.getByText("Listen. Learn. Improve.", { exact: true }),
-  ).toHaveCount(0);
-  await page
-    .getByRole("link", { name: "Feedback insights", exact: true })
-    .click();
-  await expect(
-    page.getByText("Listen. Learn. Improve.", { exact: true }),
-  ).toHaveCount(0);
-  await page.reload();
-  await expect(
-    page.getByText("Listen. Learn. Improve.", { exact: true }),
-  ).toBeVisible();
-});
-
 for (const user of [STUDENT, TEACHER, ADMIN]) {
   test(`shr01 ${user.role} logout cancel and Escape preserve session without a POST`, async ({
     page,
