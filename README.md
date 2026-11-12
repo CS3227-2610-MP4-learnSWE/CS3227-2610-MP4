@@ -1,114 +1,219 @@
 # learnSWE
 
-A calmer space to learn, teach and grow in software engineering.
+learnSWE is a web app for learning and teaching software engineering. Teachers turn their course materials into lessons and practice questions with help from AI, students learn and practise at their own pace with an AI study companion, and administrators manage accounts, collect feedback and watch how the service is doing.
 
-This release includes server-backed student practice, the student study companion, private teacher source materials and persisted AI-generated draft notes and MCQ batches. Teacher notes and MCQ batches use the shared SoC LLM client for generation; teachers can explicitly edit/save their drafts without AI calls. Publication remains deferred. Other teacher and admin screens remain demonstrations.
+| Role | What you can do |
+|---|---|
+| **Student** | Read published lessons and track completion. Take multiple-choice practice sets and see scores and explanations after you submit. Follow your progress. Ask the AI study companion for hints and explanations. Answer feedback requests and read replies and announcements. |
+| **Teacher** | Upload course materials (PDF or text). Generate draft study notes and practice questions with AI, edit them, then publish them to your course. See how your students are doing. Answer feedback requests and read messages. |
+| **Admin** | Create accounts and courses and manage who can access what. Build feedback forms, review responses, analyse them with AI, reply to respondents and send announcements. Monitor usage, reliability, response times and AI quality. |
 
-## Run locally
+## Set up
 
-Requirements: Node.js 22+, npm 10+, Python 3.12+, [uv](https://docs.astral.sh/uv/) and Docker Desktop for PostgreSQL 16. Start Docker Desktop first.
+Follow these steps once. Allow about 10 minutes.
 
-From the repository root, start the local database:
+### 1. Prerequisites
+
+Install these first. The check commands should print a version number.
+
+| Tool | Version | Check | Install |
+|---|---|---|---|
+| Git | any | `git --version` | [git-scm.com](https://git-scm.com/downloads) |
+| Docker Desktop (runs the PostgreSQL database) | any | `docker --version` | [docker.com](https://www.docker.com/products/docker-desktop/) |
+| Node.js (includes npm) | 22 or newer | `node --version` | [nodejs.org](https://nodejs.org/) |
+| uv (installs Python and the backend packages) | any | `uv --version` | [docs.astral.sh/uv](https://docs.astral.sh/uv/getting-started/installation/) |
+
+Start Docker Desktop and wait until it says it is running.
+
+### 2. Get the code
+
+Downloads the project into a new `CS3227-2610-MP4` folder and opens it.
+
+```sh
+git clone https://github.com/CS3227-2610-MP4-learnSWE/CS3227-2610-MP4.git
+cd CS3227-2610-MP4
+```
+
+Use this terminal window for the next steps and stay in the project folder.
+
+### 3. Start the database
+
+Starts PostgreSQL in Docker and keeps it running in the background. The first run downloads the image, which takes a minute.
 
 ```sh
 docker compose up -d postgres
-# Once, create a fresh database; keep any previous database unchanged.
-docker compose exec postgres createdb -U learnswe learnswe_db_files
 ```
 
-In the backend terminal:
+### 4. Set up the backend
+
+Open a **new terminal window** for the backend, go to the project folder, then run each block in order.
+
+**Go to the backend folder.**
 
 ```sh
 cd src/backend
-uv sync --frozen
-
-# Only if .env does not already exist:
-cp .env.example .env
 ```
 
-Edit `.env`: point `DATABASE_URL` at the fresh `learnswe_db_files` database on loopback port 5433, as in `.env.example`. Preserve an existing `.env` and change only the needed values. Keep `APP_ENV=development` and configure the session settings for local HTTP testing. Teacher APIs require a real teacher sign-in; demo identity headers are ignored. No permanent file directory is required. Then run:
+**Create your settings file.** `.env` holds your local settings and the sign-in accounts. It is ignored by Git, so your changes are never committed. This creates it from `.env.example` and fills in these **example accounts**, so you can sign in straight away:
+
+| Role | Email | Password |
+|---|---|---|
+| Student | `student@example.com` | `Student-Demo-4821` |
+| Teacher | `teacher@example.com` | `Teacher-Demo-4821` |
+| Admin | `admin@example.com` | `Admin-Demo-4821` |
+
+macOS / Linux:
 
 ```sh
-uv run --env-file .env alembic upgrade head
-uv run --env-file .env python -m teacher_materials.seed
-uv run --env-file .env python -m auth.seed
-uv run --env-file .env python -m study_lessons.seed
-uv run --env-file .env uvicorn main:app --host 127.0.0.1 --port 8000 --reload
+grep -v '^SEED_' .env.example > .env
+cat >> .env <<'EOF'
+SEED_STUDENT_EMAIL=student@example.com
+SEED_STUDENT_PASSWORD=Student-Demo-4821
+SEED_TEACHER_EMAIL=teacher@example.com
+SEED_TEACHER_PASSWORD=Teacher-Demo-4821
+SEED_ADMIN_EMAIL=admin@example.com
+SEED_ADMIN_PASSWORD=Admin-Demo-4821
+EOF
 ```
 
-Before `auth.seed`, set the `SEED_*` email and password variables in `.env` (names in `.env.example`; choose your own passwords, never commit them). `ALLOWED_ORIGINS` (also in `.env.example`) must list the frontend origin, or the browser's login is refused with a 403 and the login page says it could not reach the server. Restart the backend after editing `.env`; `--reload` does not re-read it.
+Windows (PowerShell):
 
-The storage conversion refuses migration when existing materials are present; use a fresh database rather than clearing the previous one. Old uploads and drafts do not appear in the fresh database; upload sources again. Populated downgrade is also refused because originals cannot be reconstructed as old filesystem files. To return to the old version, restore its code, database configuration and original files together.
+```powershell
+Get-Content .env.example | Where-Object { $_ -notmatch '^SEED_' } | Set-Content .env
+@'
+SEED_STUDENT_EMAIL=student@example.com
+SEED_STUDENT_PASSWORD=Student-Demo-4821
+SEED_TEACHER_EMAIL=teacher@example.com
+SEED_TEACHER_PASSWORD=Teacher-Demo-4821
+SEED_ADMIN_EMAIL=admin@example.com
+SEED_ADMIN_PASSWORD=Admin-Demo-4821
+'@ | Add-Content .env
+```
 
-The seed can be rerun; it does not erase uploads. Teacher APIs ignore legacy identity headers and require a signed-in teacher account. The `--env-file` option is important: the API does not automatically load the backend `.env`.
+> **These accounts are public examples, only for trying the app on your own computer.** For anything other people can reach, use your own values instead: copy `.env.example` to `.env` (`cp .env.example .env` or `Copy-Item .env.example .env`) and fill in the six empty `SEED_` lines yourself. Passwords need 10 to 128 characters and cannot be a common password or the same as the email.
 
-In another terminal, from the repository root:
+**Optional: review the other settings in `.env`.** Everything else works as it is, so you can skip this on your first run.
+
+| Setting | Change it when |
+|---|---|
+| `SOCLAAS_BASE_URL`, `SOCLAAS_API_KEY`, `SOCLAAS_MODEL` | You want the AI features (study companion, AI notes and questions, feedback analysis). Paste the values you were given for the SoC LLM service. Leave them empty to run without AI: those features then say they are unavailable and everything else works. |
+| `ALLOWED_ORIGINS` | You open the app at an address other than `http://localhost:5173` or `http://127.0.0.1:5173`. Add that address, or sign-in fails. |
+| `APP_ENV`, `SESSION_COOKIE_SECURE` | You deploy for real users over https: set `APP_ENV=production` and `SESSION_COOKIE_SECURE=true`. Leave them as they are on your own computer. |
+| Everything else | Leave it as it is. |
+
+**Install the backend packages.** Creates a private Python environment in `.venv` and installs the locked packages.
+
+```sh
+uv sync --frozen
+```
+
+**Create the database tables.**
+
+```sh
+uv run --env-file .env python -m alembic upgrade head
+```
+
+**Add the starting data.** Pick one:
+
+- **Sample data (recommended to try the app).** Creates the three accounts, a course with two lessons and a practice set, an example feedback form and a week of example usage figures, so every screen has something to show. It only runs when `APP_ENV=development`.
+
+  ```sh
+  uv run --env-file .env python dev_seed.py
+  ```
+
+  You should see `demo-student: seeded`, `demo-teacher: seeded` and `demo-admin: seeded`. Running it again is safe: it does not duplicate anything or change existing passwords.
+
+- **Accounts only (no sample content).** Creates just the three accounts and two empty courses.
+
+  ```sh
+  uv run --env-file .env python -m teacher_materials.seed
+  uv run --env-file .env python -m auth.seed
+  ```
+
+**Start the backend.** Leave this window open while you use the app. Stop it with Ctrl+C.
+
+```sh
+uv run --env-file .env python -m uvicorn main:app --host 127.0.0.1 --port 8000
+```
+
+Wait for `Application startup complete`. To check it, open <http://127.0.0.1:8000/api/health>: it shows `{"status":"ok"}`.
+
+> If you edit `.env` later, stop the backend with Ctrl+C and start it again. It reads `.env` only at startup.
+
+### 5. Set up the frontend
+
+Open a **second new terminal window**, go to the project folder, then run:
+
+**Go to the frontend folder.**
 
 ```sh
 cd src/frontend
-npm ci
+```
 
-# Only if .env does not already exist:
-cp .env.example .env
+**Create the frontend settings file.** The defaults work as they are.
+
+| macOS / Linux | Windows (PowerShell) |
+|---|---|
+| `cp .env.example .env` | `Copy-Item .env.example .env` |
+
+**Install the packages.**
+
+```sh
+npm ci
+```
+
+**Start the app.** Leave this window open too.
+
+```sh
 npm run dev
 ```
 
-In PowerShell, use `Copy-Item .env.example .env` instead of `cp` if preferred. Preserve any existing `.env` rather than overwriting it; add the values from `.env.example` manually.
+> On Windows, if PowerShell says running scripts is disabled, type `npm.cmd` instead of `npm` in both commands.
 
-Open [the local preview](http://127.0.0.1:5173/login). Sign in using the account configured by `auth.seed`. Public Create account creates students only. Role tabs choose an anonymous sample-data shortcut; they do not assign the signed-in role. Teacher materials and content studio require teacher sign-in.
+### 6. Open the app
 
-Preview screens work without the backend, but Student Practice, the study companion, Teacher Materials and Teacher AI content studio require it. Copy `src/frontend/.env.example` to `src/frontend/.env` for the local proxy settings. `API_PORT` in that file is the backend port the Vite dev server proxies `/api` to. AI calls also require the backend `SOCLAAS_BASE_URL`, `SOCLAAS_API_KEY` and `SOCLAAS_MODEL` settings; keep the key in the ignored backend `.env`.
+Go to <http://127.0.0.1:5173/login> and sign in with one of the accounts above. You land on your role's home page.
 
-## What you can explore
+You can now follow the **[User Guide](docs/UserGuide.md)**: it walks through every feature step by step for students, teachers and admins.
 
-- **Student:** overview and Progress page with real figures, teacher-published lessons with topic/search filtering and saved completion, a practice picker and MCQ-only whole-set practice on teacher-published sets with results, a floating study companion, and an Inbox with targeted feedback forms and Messages. The anonymous demo shows sample data instead.
-- **Teacher:** learning overview (per-course lesson completion, practice results and commonly missed questions for a chosen period), working private materials library with PDF/UTF-8 uploads, topic assignment and download, working AI content studio with saved draft notes, explicit note and three-MCQ batch editing/conflict recovery, confirmed unpublished draft deletion and deletion of unreferenced sources; immutable note/practice-set publication and a Published content catalogue; inbox with targeted feedback forms and admin messages (sample inbox only in the anonymous demo). One reviewed batch publishes all three questions as one set, without assembly.
-- **Admin:** illustrative analytics, feedback-form builder and audience preview, sample feedback and analysis references, announcement preview, role-filtered people table and illustrative AI usage.
-- **Shared:** responsive navigation, role switching, light/dark mode, keyboard focus, reduced-motion support and direct browser routes.
+## If something goes wrong
 
-Remaining preview state is temporary; student practice attempts, lesson completion and the Progress page persist in PostgreSQL. Teacher Materials records and file bytes persist in PostgreSQL across browser/backend restarts and redeploys. Uploads are limited to 10 MiB each and 100 MiB total original bytes; database overhead and other records need additional capacity. The student companion opens from the bottom-right chat icon on any student page. Close/Escape minimises without losing messages or the unsent draft; its refresh icon clears both without refreshing the page. Chat survives student-page navigation, but returning to login or switching demo roles ends that temporary conversation. Unsaved sample-preview form values may reset when leaving; saved teacher drafts persist and their editors protect unsaved changes. The student Overview and Progress figures and the teacher learning overview come from saved records; admin dashboard figures remain illustrative. The student companion and teacher notes/MCQs make real AI calls when configured; message delivery remains unimplemented. Login and student registration use the shared authentication service. Teacher Materials original bytes and metadata persist together in PostgreSQL; uploading never publishes student-facing content. Other preview actions remain in memory.
+| What you see | What to do |
+|---|---|
+| "We could not reach the server" when you sign in | Either the backend is not running (or the frontend `API_PORT` does not match its port, default 8000), or the address in your browser is missing from `ALLOWED_ORIGINS` in the backend `.env`. Start the backend, add the address if needed, restart the backend and try again. |
+| "Email or password is incorrect" | Use the exact emails and passwords from your backend `.env`. After 5 wrong attempts the email is locked for 15 minutes (restarting the backend clears this). If you changed a `SEED_*_PASSWORD` after the accounts already existed, run `uv run --env-file .env python -m auth.seed --reset-passwords` in `src/backend`. |
+| `docker compose` cannot connect or the backend says the database refused the connection | Start Docker Desktop, run `docker compose up -d postgres` again, wait a few seconds and retry. |
+| A port is already in use | Stop the other program, or choose another port: start the backend with `--port 8001` and set `API_PORT=8001` in `src/frontend/.env`, then restart both. |
+| Windows says an "Application Control policy" blocked a file | Run the commands exactly as written above (they use `python -m`); ask your administrator to allow `uv` and Node.js if it persists. |
+| AI features say they are unavailable | Fill in the three `SOCLAAS_*` settings in the backend `.env` and restart the backend. |
 
-**Practice boundary:** complete every question and submit the whole set before scores and solutions are shown. The student companion uses server-selected hint mode before submission and explain mode for eligible submitted attempts. It calls the SoC LLM; its documented deterministic leak check has residual risks (see the user guide). It does not retrieve lesson content yet. Authenticated account-scoped conversation persistence until logout remains future work. Student practice gets questions without keys and reads answers only from the server after submission. Teacher answers are fetched through authorised teacher APIs; no frontend chunk contains the fixture answer explanations. The demo role switcher is not authentication. Teacher source/draft endpoints require a live teacher session, CSRF on mutations and current course membership; identity headers are ignored.
+## Run it again later
 
-## Health API
+1. Start Docker Desktop and run `docker compose up -d postgres` in the project folder.
+2. Backend window: `cd src/backend`, then `uv run --env-file .env python -m uvicorn main:app --host 127.0.0.1 --port 8000`.
+3. Frontend window: `cd src/frontend`, then `npm run dev`.
 
-| Endpoint | Response | Meaning |
-|---|---|---|
-| `GET /api/health` | `200 {"status":"ok"}` | API process can serve a request. |
-| `GET /api/health/ready` | `200 {"status":"ready"}` | Process readiness only; does not check PostgreSQL or AI. |
+Your data stays in the database between runs.
 
-FastAPI's generated API documentation is at `/docs` on the backend (the port in `src/frontend/.env.example`). Teacher Materials endpoints and BYTEA storage are specified in [the shared data contract](docs/SharedDataContract.md).
+## Start over with a clean database
 
-The frontend proxy uses `API_PORT` (default `8000`). Existing `API_PROXY_TARGET` URLs remain supported and take precedence. After changing frontend environment settings, restart `npm run dev`.
-
-## Verify
-
-```sh
-cd src/frontend
-npm run typecheck
-npm run lint
-npm run format:check
-npm run build
-npx playwright install chromium
-npm test
-```
+This **deletes all data** (accounts, lessons, practice results, feedback). In the project folder:
 
 ```sh
-cd src/backend
-uv run pytest -q
+docker compose down -v
+docker compose up -d postgres
 ```
 
-Frontend tests start a local Vite server if port 5173 is free. They cover login preview behaviour, practice submission, completion, inbox, role routes, themes, mobile navigation, focus and backend failure. Teacher browser tests mock authenticated sessions; no teacher identity-header flags are required. PostgreSQL integration tests require `TEA01_TEST_DATABASE_URL` pointing to a dedicated test database; they create/drop only their unique schema. Without that variable, teacher integration tests are explicitly skipped. Never point it at production. Tests intercept health responses; the backend suite separately exercises the real ASGI API. Visual review screenshots are generated under `src/frontend/test-results/visual/` and are not committed.
+Then repeat step 4 from "Create the database tables" onward.
 
-The production build is generated in `src/frontend/dist/`. Hosting it later requires SPA fallback to `index.html` and routing `/api` to FastAPI; deployment is not included in this release.
+## Deploying for real users
 
-## Project layout
+1. In the backend `.env`: set `APP_ENV=production` and `SESSION_COOKIE_SECURE=true`, use your real `https://` address in `ALLOWED_ORIGINS`, and use your own `SEED_*` emails and passwords, not the examples. Do not run the sample data command.
+2. In the frontend `.env`: keep `VITE_ENABLE_DEMO_ACCESS=false`.
+3. Build the frontend with `npm run build` in `src/frontend` and serve the `dist` folder over https, with `/api` forwarded to the backend. Details are in the [Developer Guide](docs/DeveloperGuide.md).
 
-- `src/frontend/`: React + TypeScript, Vite, Material UI, Emotion, Lucide and React Router. Shared components, in-memory state and sample fixtures are separate from role screens.
-- `src/backend/`: FastAPI application and HTTP-boundary tests. Dependencies are locked with uv.
-- `docs/`: proposed feature list, user stories and current release guides.
-- `workflow/`: spec-driven, multi-agent process: coordination pattern, workflow variants, templates, per-feature specs, experiment and security logs, and execution records. Start at `workflow/README.md`.
-- `CLAUDE.md`, `AGENTS.md` and `.claude/agents/`: project rules and agent role definitions for Claude Code and Codex.
-- `logs/`: human-readable development interaction summaries.
+## More documentation
 
-The feature list and user stories describe the intended product, not completion status. See [the user guide](docs/UserGuide.md) and [developer guide](docs/DeveloperGuide.md) for the boundaries of this preview.
+- [User Guide](docs/UserGuide.md): feature summary and a step-by-step walkthrough for each role.
+- [Developer Guide](docs/DeveloperGuide.md): architecture, configuration, tests and contributing.
+- [Feature list](docs/FeatureList.md) and [user stories](docs/UserStories.md).

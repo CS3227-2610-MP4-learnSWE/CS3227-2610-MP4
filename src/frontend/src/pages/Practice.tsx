@@ -270,13 +270,14 @@ export default function Practice({ setId }: { setId: string }) {
             >
               {submitted ? "Reflect on your answers" : "Get a hint"}
             </Button>
-            <small>Scripted demo · No AI request</small>
+            <small>Pre-written prompts · No AI request</small>
           </Panel>
         </aside>
       </div>
       <PreviewNote>
-        Questions, scoring and explanations come from the server. The hint panel
-        is a scripted demo and makes no AI request.
+        Questions, scoring and explanations come from the server. This hint
+        panel shows pre-written prompts and makes no AI request; use the study
+        companion for AI help.
       </PreviewNote>
     </>
   );

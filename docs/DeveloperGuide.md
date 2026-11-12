@@ -1,4 +1,52 @@
-# Developer Guide — Current Preview
+# learnSWE Developer Guide
+
+This guide is for people who build, test and deploy learnSWE. Users should start with the [README](../README.md) (set up and run) and the [User Guide](UserGuide.md) (features and a step-by-step walkthrough). Feature codes such as TEA-02 or ADM-07 below match `docs/FeatureList.md` and the specs under `workflow/specs/`; they are internal and do not appear in the product.
+
+## Setup, configuration, tests and layout
+
+**Documentation map.** `README.md`: prerequisites, setup, running, troubleshooting. `docs/UserGuide.md`: feature tables and the walkthrough with screenshots (`docs/images/guide/`). This guide: architecture, configuration, tests and per-feature implementation notes. `docs/sample-files/testing-basics.txt` is the source file the walkthrough uploads.
+
+**Setup.** Follow the README. In short: `docker compose up -d postgres`; in `src/backend` copy `.env.example` to `.env`, run `uv sync --frozen`, `uv run --env-file .env python -m alembic upgrade head`, a seed (below) and `uv run --env-file .env python -m uvicorn main:app --host 127.0.0.1 --port 8000`; in `src/frontend` copy `.env.example` to `.env`, run `npm ci` and `npm run dev`. The backend does not load `.env` by itself: always use `--env-file .env`, and restart it after editing `.env`. Windows Application Control can block the `alembic.exe` and `uvicorn.exe` launchers; the `python -m ...` forms above avoid them.
+
+**Backend `.env`** (all names are in `src/backend/.env.example`).
+
+| Setting | Meaning |
+|---|---|
+| `DATABASE_URL` | SQLAlchemy URL. The example points at the Compose database `learnswe` on `127.0.0.1:5433`. |
+| `APP_ENV` | `development` (own computer, http) or `production` (https only; requires `SESSION_COOKIE_SECURE=true`). The sample-data commands refuse to run unless it is `development`. |
+| `SESSION_*`, `ALLOWED_ORIGINS`, `TRUST_PROXY_HEADERS`, `AUTH_*` | Cookie and origin policy and the sign-in and sign-up rate limits. `ALLOWED_ORIGINS` must list every browser origin or login returns 403. |
+| `SEED_STUDENT_*`, `SEED_TEACHER_*`, `SEED_ADMIN_*` | Email and password for `auth.seed`. `.env.example` leaves them empty (a test enforces that no password is committed); the README gives public example values for trying the app locally. Use your own for any shared or production environment. |
+| `SOCLAAS_BASE_URL`, `SOCLAAS_API_KEY`, `SOCLAAS_MODEL` | The SoC LLM (OpenAI-compatible). Empty means every AI feature reports itself unavailable. Never commit the key. |
+
+**Frontend `.env`:** `API_PORT` (backend port the dev server proxies `/api` to, default 8000; `API_PROXY_TARGET` overrides it with a full URL) and `VITE_ENABLE_DEMO_ACCESS` (`false` in `.env.example`; `true` shows an "Explore without signing in" shortcut with sample student and teacher screens, and there is no admin demo). Restart `npm run dev` after changing them.
+
+**Seeds.** `python dev_seed.py` (from `src/backend`, development only, idempotent) runs `teacher_materials.seed`, `auth.seed`, `study_lessons.seed`, `teacher_publications.seed`, `feedback_dev_seed` and `feature_analytics.seed_dev`, then turns AI usage collection on; it is the "sample data" option of the README. For accounts only run `python -m teacher_materials.seed` then `python -m auth.seed`. `auth.seed` never changes an existing password; after editing a `SEED_*_PASSWORD` run `python -m auth.seed --reset-passwords` (it applies to every configured seed account). To start from nothing: `docker compose down -v`, `docker compose up -d postgres`, migrate and seed again.
+
+**Tests** (from the repository root; one command per line on PowerShell 5.1).
+
+```sh
+cd src/backend
+uv run pytest -q
+```
+
+```sh
+cd src/frontend
+npm run typecheck
+npm run lint
+npm run format:check
+npm run build
+npx playwright install chromium
+npm test
+```
+
+The browser tests mock the API and start their own Vite server on port 5173 if it is free; stop a manually started dev server first, and note that a running backend can answer requests a test did not mock. Backend integration tests need `TEA01_TEST_DATABASE_URL` pointing at a dedicated PostgreSQL database (they create and drop only their own schema; never point it at real data); without it they are skipped. The production build is written to `src/frontend/dist/` and needs a SPA fallback to `index.html` and `/api` routed to FastAPI.
+
+**Health API.** `GET /api/health` returns `200 {"status":"ok"}` (the process can serve requests). `GET /api/health/ready` returns `200 {"status":"ready"}` (process readiness only; it does not check PostgreSQL or AI). FastAPI's generated API documentation is at `/docs` on the backend.
+
+**Project layout.** `src/frontend/`: React, TypeScript, Vite, Material UI, React Router. `src/backend/`: FastAPI, SQLAlchemy and Alembic, with locked dependencies (`uv.lock`). `docs/`: feature list, user stories, guides, the shared data contract. `workflow/`: the spec-driven, multi-agent process (start at `workflow/README.md`): specs, security and experiment logs, usage reports. `CLAUDE.md`, `AGENTS.md`, `.claude/agents/`: project rules and agent roles. `logs/`: session summaries.
+
+**Keeping the User Guide current.** Every step in the walkthrough was run against a fresh database with the sample data and a configured SoC LLM, and its screenshots were captured from that run (`workflow/tools/guide-screenshots/`, see its README). After UI changes, rerun it and review the images.
+
 
 ## Architecture and boundaries
 
@@ -14,7 +62,7 @@ FastAPI exposes `/api/health` and `/api/health/ready` (process-only semantics) a
 
 ## Teacher Materials (TEA-01)
 
-The exact schema/API are in [SharedDataContract.md](SharedDataContract.md) and [TEA-01-db-storage](../workflow/specs/TEA-01-db-storage/plan.md). Start PostgreSQL 16 with `docker compose up -d postgres` (loopback port 5433, persistent named volume). Once, create a separate empty database with `docker compose exec postgres createdb -U learnswe learnswe_db_files`. Preserve any existing database/files/.env. Set `DATABASE_URL=postgresql+psycopg://learnswe:learnswe-local-only@127.0.0.1:5433/learnswe_db_files` in your local environment. From src/backend run `uv run --env-file .env alembic upgrade head`, then `uv run --env-file .env python -m teacher_materials.seed`. The seed is idempotent; migration/seed never run at request time. No FILE_STORAGE_DIR is required.
+The exact schema/API are in [SharedDataContract.md](SharedDataContract.md) and [TEA-01-db-storage](../workflow/specs/TEA-01-db-storage/plan.md). Set up PostgreSQL, the migrations and the seeds as described under "Setup, configuration, tests and layout" above (database `learnswe` on loopback port 5433, persistent named volume). Migration and seeding never run at request time. No FILE_STORAGE_DIR is required.
 
 The Alembic online engine explicitly uses READ COMMITTED so the locked material check sees concurrent committed uploads even when the database defaults to repeatable read. Revision 20261102_tea01_db_storage refuses conversion if any materials exist, before schema changes; use the fresh database and upload sources again. Old uploads/drafts remain in the old database/files and do not appear in the fresh database. Populated downgrade also refuses: the old filesystem originals cannot be recreated automatically. Empty downgrade/reupgrade is supported; rollback to the old release requires its code, database/configuration and files. Do not drop/reset old data to make migration pass.
 Teacher endpoints use `teacher_access.teacher_session`: the shared cookie/CSRF/Origin/teacher-role checks inside an explicit READ COMMITTED transaction. Seed credentials with `auth.seed` and sign in; legacy demo headers and flags are ignored. Teacher endpoints check role and membership before reading material metadata or bytes. Uploads are bounded to 10 MiB, validated as PDF/UTF-8 text, and stored in material_file.content BYTEA. The 100 MiB global original-byte budget uses transaction advisory lock 32272610 and a fresh byte sum under READ COMMITTED; oversized totals return 413 storage_quota_exceeded. Metadata/content insert and commit together; lists never load BYTEA. Downloads/generation authorise before fetching bytes. Missing content returns 503 service_unavailable. Temporary multipart spooling is closed automatically. Uploads do not create student content. The Materials page uses the shared HTTP client for multipart and blob responses while student practice keeps its existing session behaviour.
@@ -85,7 +133,7 @@ Practice uses single-answer MCQs only, including code-reading questions expresse
 
 Continuous integration (`.github/workflows/ci.yml`) runs on every pull request into `master` and every push to it: backend tests; frontend typecheck, lint, format check, build and Playwright tests; the token tracker's and experiment scripts' unit tests; and a dependency audit that blocks on known vulnerabilities in runtime dependencies and only reports dev-only ones. It uses read-only permissions and no secrets. Plan and decisions: `workflow/specs/CI-01/plan.md`. Deployment is not built yet; options and open decisions are in `workflow/deployment.md`.
 
-Use the startup/check commands in [README.md](../README.md). `package-lock.json` and `uv.lock` pin resolved dependencies. Local PostgreSQL credentials in the Compose file are development-only. Ignore rules exclude local env files, generated output, virtual environments, browser traces and dependency directories. Use `npm run format` to format frontend files and `npm run format:check` to check them.
+Use the setup steps in [README.md](../README.md) and the test commands in "Setup, configuration, tests and layout" above. `package-lock.json` and `uv.lock` pin resolved dependencies. Local PostgreSQL credentials in the Compose file are development-only. Ignore rules exclude local env files, generated output, virtual environments, browser traces and dependency directories. Use `npm run format` to format frontend files and `npm run format:check` to check them.
 
 Playwright exercises real UI behaviour with intercepted health responses. Backend tests independently verify the real API. Visual checks cover desktop/mobile and light/dark modes. Native form validation is used where appropriate; accessible labels, visible focus, a skip link, reduced-motion CSS and a mobile navigation drawer are included. This is not a full accessibility certification.
 
@@ -199,99 +247,11 @@ Account creation success uses a green, dismissible six-second toast; all text/pa
 
 `tests/real-backend.spec.ts` also has opt-in admin-created student/teacher login checks using independent browser contexts, a real API/database and no API mocks. Run only with an isolated test database and administrator: the real-backend project additionally requires `E2E_ALLOW_ADMIN_ACCOUNT_CREATION=1`, `E2E_ADMIN_EMAIL` and `E2E_ADMIN_PASSWORD` for these cases. They create disposable accounts, verify fresh login and reload, and capture overlay screenshots. Normal mocked runs exclude this file; existing real-backend CI does not create accounts unless explicitly opted in. Never point these creation checks at production data.
 
-### Local admin setup and password reset (PowerShell)
+### Sign-in setup and diagnosis
 
-Prerequisites: Git, uv, Node/npm and Docker Desktop as in [README](../README.md). Run commands from inside this checkout. Existing env/database settings must be preserved; no default admin credentials are shipped. Public signup creates students only. No SoC credentials are needed for ADM-05 or mocked tests.
+Setup, seed accounts and password reset are described under "Setup, configuration, tests and layout" above and in the README. Public sign-up creates students only; there is no default admin credential beyond the `SEED_ADMIN_*` values you set. New accounts created in Users sign in with the password entered there, not a `SEED_*` value; password reset and forced first-login changes are not implemented.
 
-**1. Prepare env files and PostgreSQL.** Start Docker Desktop, then run:
-
-```powershell
-Set-Location (git rev-parse --show-toplevel)
-docker compose up -d postgres
-docker compose exec -T postgres pg_isready -U learnswe -d learnswe
-if (-not (Test-Path src\backend\.env)) { Copy-Item src\backend\.env.example src\backend\.env }
-if (-not (Test-Path src\frontend\.env)) { Copy-Item src\frontend\.env.example src\frontend\.env }
-notepad src\backend\.env
-```
-
-The readiness command should report `accepting connections`. If PostgreSQL is still starting, repeat that check before creating a database or running migrations.
-
-**2. Update `src/backend/.env`.** Keep existing database/SoC values and replace existing assignments rather than adding duplicate keys. For a fresh setup, the template uses the database URL below. Credentials here are public **local-test examples**, never shared/production credentials:
-
-```dotenv
-DATABASE_URL=postgresql+psycopg://learnswe:learnswe-local-only@127.0.0.1:5433/learnswe_db_files
-APP_ENV=development
-SESSION_COOKIE_SECURE=false
-SESSION_COOKIE_SAMESITE=lax
-ALLOWED_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
-SEED_ADMIN_EMAIL=adm05-test@example.com
-SEED_ADMIN_PASSWORD='ExampleOnly!7Qm#42vL'
-```
-
-Save the file. Quoting keeps `#` literal; do not enter quotes in the login form. `.env` is ignored; never commit credentials. Optional `SEED_STUDENT_EMAIL`/`SEED_STUDENT_PASSWORD` and `SEED_TEACHER_EMAIL`/`SEED_TEACHER_PASSWORD` pairs configure fixed demo accounts; incomplete pairs are skipped. SOCLAAS settings are required only for actual generation/chat, not login.
-
-**Fresh database only:** when using `learnswe_db_files`, create it only if missing. Skip this block when retaining a different existing `DATABASE_URL`; ensure that database is reachable instead. This block preserves any existing database:
-
-```powershell
-Set-Location (git rev-parse --show-toplevel)
-$adm05DatabaseExists = docker compose exec -T postgres psql -U learnswe -d postgres -tAc "SELECT 1 FROM pg_database WHERE datname = 'learnswe_db_files'"
-if ($LASTEXITCODE -ne 0) { throw 'Cannot inspect PostgreSQL; check Docker Desktop and the postgres service.' }
-if (($adm05DatabaseExists -join '').Trim() -ne '1') {
-    docker compose exec -T postgres createdb -U learnswe learnswe_db_files
-}
-```
-
-**3. Apply migrations and seed, then start the backend.** Apply the additive `20261106_adm05_access` migration before starting the updated backend. Existing users default to enabled; `User.access_status` is enabled/disabled/archived and `archived_at` records irreversible archival. Downgrade refuses while any disabled/archived account exists, rather than silently granting access. Do not edit old migrations. Stop any existing backend with Ctrl+C in its terminal first:
-
-```powershell
-Set-Location (git rev-parse --show-toplevel)
-docker compose up -d postgres
-Set-Location src\backend
-uv sync --frozen
-uv run --env-file .env alembic upgrade head
-uv run --env-file .env python -m teacher_materials.seed
-uv run --env-file .env python -m auth.seed
-uv run --env-file .env uvicorn main:app --host 127.0.0.1 --port 8000 --reload
-```
-
-`demo-admin: seeded` means credentials were saved; `unchanged` keeps the previous hash/email; `skipped` identifies missing or invalid settings. Resolve wrong-role/email-conflict errors rather than ignoring them. Seed email is normalised; passwords are not trimmed or printed. Admin-created accounts are not seed targets. Roles remain fixed; no end-user password reset/change flow exists.
-
-**4. Explicitly reset an existing seed password after editing `.env`.** Run in another terminal, or before starting the backend in step 3:
-
-```powershell
-Set-Location (git rev-parse --show-toplevel)
-Set-Location src\backend
-uv run --env-file .env python -m auth.seed --reset-passwords
-```
-
-Changing `.env`, restarting the API, or rerunning the seed without this flag does not replace an existing hash. The flag applies **every configured seed role**, not just admin, and can update configured emails subject to uniqueness. It does not enable disabled accounts, restore archived accounts or revoke sessions. For a password-change test, keep the email unchanged, sign out, check the old password fails once, then check the new password succeeds. Do not infer success from an already-open authenticated session. Repeated failed attempts trigger the login limiter.
-
-After changing backend settings such as `ALLOWED_ORIGINS`, fully stop and restart the `uv run --env-file .env uvicorn ...` command. Uvicorn `--reload` does not refresh the environment loaded by its parent `uv` process. Seed commands are separate processes and read saved `.env` values each time. Vite proxies with `changeOrigin: true`; explicitly allow the frontend origin instead of disabling Origin/CSRF checks.
-
-**5. Configure/start the frontend in a second terminal.** Edit **`src/frontend/.env`**:
-
-```powershell
-Set-Location (git rev-parse --show-toplevel)
-notepad src\frontend\.env
-```
-
-```dotenv
-API_PORT=8000
-VITE_ENABLE_DEMO_ACCESS=true
-```
-
-If `API_PROXY_TARGET` is present, set it to `http://127.0.0.1:8000` or remove it to use `API_PORT`; the target overrides the port. Never put secrets in `VITE_*` variables. Save, stop any running frontend with Ctrl+C, then run:
-
-```powershell
-Set-Location (git rev-parse --show-toplevel)
-Set-Location src\frontend
-npm.cmd ci
-npm.cmd run dev
-```
-
-`npm.cmd` avoids PowerShell's `npm.ps1` execution-policy error. Restart the frontend after its `.env` changes. Open **http://127.0.0.1:5173/login**, use Sign in with the configured admin email/password without quotes, and follow the [account/course walkthrough](UserGuide.md#try-account-and-course-management-locally). Demo shortcuts and login role tabs do not grant a real admin session. Account creation sends the password once, confirms it on the client, never returns hashes/passwords/session metadata, and clears secret fields on success/unmount.
-
-**6. Diagnose failures using the Network response, not just the Uvicorn status line.**
+**Diagnose failures using the Network response, not just the Uvicorn status line.**
 
 | Request/status | Interpretation and recovery |
 |---|---|
@@ -305,7 +265,7 @@ npm.cmd run dev
 | Login 429 `rate_limited` | Wait for retry time. Defaults are 5 failures/email or 20/IP in 900 seconds. The limiter is process-local, so a local restart clears it. |
 | API 503 or network error | Check configuration, PostgreSQL/migration head, proxy target and running processes; not proof of a wrong password. |
 
-The [UserGuide sign-in walkthrough](UserGuide.md#set-up-local-admin-sign-in-powershell) provides the user-facing steps. These local settings are not a production deployment configuration.
+The [README](../README.md) has the user-facing troubleshooting table. These local settings are not a production deployment configuration.
 
 ### Lifecycle implementation and automated verification
 
@@ -716,4 +676,4 @@ Spec: `workflow/specs/ADM-08/`. A tab shell at `/admin/feedback-hub/...` around 
 - **Tab counts:** loaded once per hub mount by `HubCountsProvider` through `services/hubCountsApi.ts` (forms list `limit=100`, analyses list `limit=50`, `GET /api/admin/messaging/followup-counts`; 15 s timeout, no retry, failures silent, 401 handled by the shared `request`). After a successful count-changing mutation the service emits a topic from `lib/hubCountEvents.ts` (payload-free, in memory) and the provider refetches only that source, latest wins; with no hub mounted an emit does nothing. Emitters: `feedbackApi.feedbackWrite` (create, publish, close: `forms-changed`), `feedbackAnalysisApi` (create and delete analysis: `analyses-changed`; delete response: `forms-changed` and `followup-changed`; a 404 on a delete also emits), `messagingApi.messagingWrite` (send of a `feedback_response` preview: `followup-changed`).
 - **Follow-up count endpoint:** `GET /api/admin/messaging/followup-counts` (`messaging.py`) returns `{"unanswered_responses": n}`; `messaging_store.unanswered_response_count` counts `feedback_responses` whose respondent passes `messaging_store.replyable()` (role student or teacher, enabled, not archived: the same rule `response_recipient` uses) and that have no `admin_messages` row of kind `feedback_response` pointing at them. Admin only, read bucket (20 per minute), query strings rejected (422), read only, no migration.
 - **"Analyse this form":** `Responses` renders the link only when `paths.analysisForForm` is not null (hub); `AdminFeedbackAnalysis` compares `?form=` with its own forms list (case-insensitive, non-draft) and calls the picker's own handler, else shows the "not available" status.
-- **Dev seed:** `uv run --env-file .env python -m feedback_dev_seed` (also a step of `dev_seed.py`; `APP_ENV=development` only, idempotent through the form title "Dev seed: course feedback") creates one open form with the six question types for the enabled seeded students and one response each, through the feedback validators. No AI call, analysis or message.
+- **Dev seed:** `uv run --env-file .env python -m feedback_dev_seed` (also a step of `dev_seed.py`; `APP_ENV=development` only, idempotent through the form title "Sample course feedback") creates one open form with the six question types for the enabled seeded students and one response each, through the feedback validators. No AI call, analysis or message.

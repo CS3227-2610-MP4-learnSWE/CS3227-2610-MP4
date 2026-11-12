@@ -18,7 +18,7 @@ import feedback_validation as valid
 from feedback_models import FeedbackForm, FeedbackRecipient, FeedbackResponse
 from teacher_materials.models import User
 
-TITLE = "Dev seed: course feedback"  # the marker
+TITLE = "Sample course feedback"  # the marker
 ADMIN = "demo-admin"
 
 

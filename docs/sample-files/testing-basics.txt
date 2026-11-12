@@ -1,0 +1,11 @@
+Testing basics
+
+A unit test checks one small piece of code, such as a single function, in isolation. It runs the code with a chosen input and compares the result with the outcome you expect. Because unit tests are small and fast, you can run them after every change.
+
+A good test is simple and repeatable. It sets up its own data, performs one action and checks one behaviour. If a test depends on the order of other tests, on the current time or on the network, it can fail for reasons unrelated to the code and people stop trusting it.
+
+Test-driven development (TDD) is a way of working in short cycles. First write a failing test that describes the behaviour you want. Then write the smallest amount of code that makes the test pass. Finally clean up the code while the tests keep passing.
+
+Automated tests act as a safety net. When you change code later, the tests tell you quickly if you broke something that used to work. This is called catching a regression. Keeping tests in the same repository as the code means they are reviewed, versioned and run together with every change.
+
+Common mistakes include testing implementation details instead of behaviour, writing tests that are too large to explain, and ignoring a failing test instead of fixing it. A short, clear test name that states the behaviour makes failures easier to understand.

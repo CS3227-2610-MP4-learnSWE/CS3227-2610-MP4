@@ -35,7 +35,7 @@ export const ADMIN: User = {
 export const PASSWORD = "correct horse battery staple 42";
 export const NOTICE = "Sign in to use live practice and the study companion";
 export const DEMO_HEADING =
-  "Demo shortcut (development): sample data, not signed in, no real account";
+  "Explore without signing in: sample data, no real account";
 
 export interface Reply {
   status?: number;
