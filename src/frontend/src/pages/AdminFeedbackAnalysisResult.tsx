@@ -120,7 +120,7 @@ export function AdminFeedbackAnalysisResultScreen({
     useAnalysisPolling(analysisId);
   const [deleting, setDeleting] = useState(false);
   return (
-    <div className="feedback-analysis">
+    <div className="admin-surface feedback-analysis">
       <PageHeading title="Feedback analysis result" />
       <p>
         <Link to={paths.analysis()}>Back to Feedback analysis</Link>

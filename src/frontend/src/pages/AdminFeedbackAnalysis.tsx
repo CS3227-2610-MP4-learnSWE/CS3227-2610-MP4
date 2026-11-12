@@ -213,7 +213,7 @@ export default function AdminFeedbackAnalysis() {
   };
 
   return (
-    <div className="feedback-analysis">
+    <div className="admin-surface feedback-analysis">
       <PageHeading
         title="Feedback analysis"
         description="Select feedback responses to see statistics at once and get an AI summary of recurring issues. Analysis is advisory and changes nothing."

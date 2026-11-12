@@ -229,7 +229,11 @@ function Detail({ id, initial }: { id: string; initial?: Form }) {
       />
       <Panel>
         <h2>Form overview</h2>
-        {notice && <p role="status">{notice}</p>}
+        {notice && (
+          <p role="status" className="feedback-notice-chip">
+            {notice}
+          </p>
+        )}
         {error && !closeDialog && (
           <p role="alert">
             {error}

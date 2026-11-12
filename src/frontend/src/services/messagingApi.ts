@@ -39,6 +39,8 @@ export type InboxMessage = {
   body: string;
   sent_at: string;
   read_at: string | null;
+  /** Title of the feedback form a reply answers; absent or null otherwise. */
+  form_title?: string | null;
 };
 export type MessagePage = {
   items: InboxMessage[];
@@ -192,7 +194,10 @@ function validResponse(path: string, value: unknown): boolean {
           string(item.subject) &&
           string(item.body) &&
           string(item.sent_at) &&
-          (item.read_at === null || string(item.read_at)),
+          (item.read_at === null || string(item.read_at)) &&
+          (item.form_title === undefined ||
+            item.form_title === null ||
+            string(item.form_title)),
       ) &&
       (value.next_offset === null || count(value.next_offset)) &&
       count(value.unread_count)

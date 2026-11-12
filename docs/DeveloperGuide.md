@@ -631,6 +631,8 @@ Manual verification: sign in as admin, open a submitted response, compose/review
 
 `useInboxUnread` loads the summary once per authenticated recipient shell, deduplicates StrictMode reads, refreshes each visible minute and on window focus/visibility return (minimum five seconds apart), and stops when hidden/unmounted or signed out. List loads publish section counts; successful mark-read changes the badge locally. First successful survey-detail read requests a summary refresh. Revisions prevent an older summary from overwriting a more recent local count; in-flight invalidations coalesce into one follow-up. Background failures retain known data and recover on the next refresh without interrupting the current page. No message bodies are polled. Session-generation checks prevent previous-account badge data.
 
+Each inbox message item also carries `form_title` (the title of the feedback form a `feedback_response` reply answers, otherwise `null`), joined in `messaging_store.inbox`; the exact-key assertions in `tests/adm04_helpers.py` include it.
+
 The ADM-04 styles scope input outlines and surfaces to messaging/inbox. Do not reset all nested fieldsets: MUI uses a fieldset for outlined inputs. Header/input contrast, semantic dates, recipient search separation and responsive light/dark screenshots are covered by `tests/adm04-redesign.spec.ts`; private summary semantics by `tests/test_adm04_unread.py`.
 
 

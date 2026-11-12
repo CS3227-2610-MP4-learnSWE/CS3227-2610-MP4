@@ -153,11 +153,16 @@ def send(db, actor, row):
 
 
 def inbox(db, actor, offset):
-    base = select(MessageDelivery, AdminMessage).join(AdminMessage).where(MessageDelivery.recipient_id == actor.id)
+    # A reply names the form it answers; the title is the recipient's own form, never other people's data.
+    base = (select(MessageDelivery, AdminMessage, FeedbackForm.title)
+        .join(AdminMessage, AdminMessage.id == MessageDelivery.message_id)
+        .outerjoin(FeedbackResponse, FeedbackResponse.id == AdminMessage.source_feedback_response_id)
+        .outerjoin(FeedbackForm, FeedbackForm.id == FeedbackResponse.form_id)
+        .where(MessageDelivery.recipient_id == actor.id))
     rows = db.execute(base.order_by(AdminMessage.sent_at.desc(), MessageDelivery.id.desc()).offset(offset).limit(21)).all()
     unread = db.scalar(select(func.count()).select_from(MessageDelivery).where(MessageDelivery.recipient_id == actor.id, MessageDelivery.read_at.is_(None)))
     return {"items": [{"id": str(d.id), "kind": m.kind, "subject": m.subject, "body": m.body, "sent_at": utc_timestamp(m.sent_at),
-        "read_at": utc_timestamp(d.read_at) if d.read_at else None} for d, m in rows[:20]], "next_offset": offset + 20 if len(rows) > 20 else None, "unread_count": unread}
+        "read_at": utc_timestamp(d.read_at) if d.read_at else None, "form_title": title} for d, m, title in rows[:20]], "next_offset": offset + 20 if len(rows) > 20 else None, "unread_count": unread}
 
 
 def unread_summary(db, actor):

@@ -55,7 +55,8 @@ def messages(user, query='?limit=20&offset=0'):
     assert set(value) == {'items', 'next_offset', 'unread_count'}
     assert 'no-store' in reply.headers.get('cache-control', '')
     for item in value['items']:
-        assert set(item) == {'id', 'kind', 'subject', 'body', 'sent_at', 'read_at'}
+        # form_title: added by ADM-08 follow-up (user request 2026-11-12); null unless a reply answers a form response.
+        assert set(item) == {'id', 'kind', 'subject', 'body', 'sent_at', 'read_at', 'form_title'}
         UUID(item['id'])
     return value
 

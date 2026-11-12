@@ -133,50 +133,45 @@ function Questions({
       {questions.map((q, i) => (
         <fieldset className="feedback-question" key={q.id}>
           <legend>Question {i + 1}</legend>
-          <TextField
-            select
-            label={`Question ${i + 1} type`}
-            value={q.type}
-            slotProps={{
-              select: { native: true },
-              inputLabel: { shrink: true },
-            }}
-            onChange={(e) => {
-              const type = e.target.value as QuestionType;
-              update(i, {
-                type,
-                options: choice(type)
-                  ? choice(q.type)
-                    ? q.options
-                    : [freshOption(), freshOption()]
-                  : [],
-                scale:
-                  type === "linear_scale"
-                    ? { min: 1, max: 5, min_label: "", max_label: "" }
-                    : null,
-              });
-            }}
-          >
-            {typeLabels.map(([value, label]) => (
-              <option key={value} value={value}>
-                {label}
-              </option>
-            ))}
-          </TextField>
-          <TextField
-            label={`Question ${i + 1} prompt`}
-            value={q.prompt}
-            onChange={(e) => update(i, { prompt: e.target.value })}
-          />
-          <FormControlLabel
-            label={`Question ${i + 1} required`}
-            control={
-              <Checkbox
-                checked={q.required}
-                onChange={(e) => update(i, { required: e.target.checked })}
-              />
-            }
-          />
+          <div className="feedback-question-main">
+            <TextField
+              className="feedback-question-prompt-field"
+              label={`Question ${i + 1} prompt`}
+              value={q.prompt}
+              onChange={(e) => update(i, { prompt: e.target.value })}
+            />
+            <TextField
+              select
+              className="feedback-question-type-field"
+              label={`Question ${i + 1} type`}
+              value={q.type}
+              slotProps={{
+                select: { native: true },
+                inputLabel: { shrink: true },
+              }}
+              onChange={(e) => {
+                const type = e.target.value as QuestionType;
+                update(i, {
+                  type,
+                  options: choice(type)
+                    ? choice(q.type)
+                      ? q.options
+                      : [freshOption(), freshOption()]
+                    : [],
+                  scale:
+                    type === "linear_scale"
+                      ? { min: 1, max: 5, min_label: "", max_label: "" }
+                      : null,
+                });
+              }}
+            >
+              {typeLabels.map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
+            </TextField>
+          </div>
           {choice(q.type) && (
             <>
               {q.options.map((o, j) => (
@@ -242,9 +237,22 @@ function Questions({
               ))}
             </div>
           )}
-          <Button onClick={() => change(questions.filter((_, j) => j !== i))}>
-            Remove question {i + 1}
-          </Button>
+          <div className="feedback-question-foot">
+            <FormControlLabel
+              label={`Question ${i + 1} required`}
+              control={
+                <Checkbox
+                  checked={q.required}
+                  onChange={(e) => update(i, { required: e.target.checked })}
+                />
+              }
+            />
+            <Button
+              onClick={() => change(questions.filter((_, j) => j !== i))}
+            >
+              Remove question {i + 1}
+            </Button>
+          </div>
         </fieldset>
       ))}
       <Button

@@ -68,7 +68,7 @@ export function AdminFeedbackAnalysisEvidenceScreen({
   }, [analysisId, direct]);
   const unavailable = error.startsWith("This response cannot be shown");
   return (
-    <div className="feedback-analysis">
+    <div className="admin-surface feedback-analysis">
       <PageHeading title={`Response ${label}`} />
       <p>
         <Link to={paths.analysisResult(analysisId)}>Back to analysis</Link>

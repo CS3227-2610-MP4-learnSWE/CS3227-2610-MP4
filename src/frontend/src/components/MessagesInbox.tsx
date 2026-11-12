@@ -141,6 +141,11 @@ export default function MessagesInbox() {
               </span>
             </div>
             <h3>{item.subject}</h3>
+            {item.kind === "feedback_response" && item.form_title && (
+              <p className="message-form-ref">
+                In reply to your feedback on “{item.form_title}”
+              </p>
+            )}
             <p className="messaging-text">{item.body}</p>
             <div className="message-card-footer">
               <time dateTime={item.sent_at} title={item.sent_at}>

@@ -32,7 +32,9 @@ export default function ResponsesChooser() {
               No published feedback forms yet. Publish a form on the Forms tab
               to collect responses.
             </p>
-            <Link to={hubPaths.forms()}>Go to Forms</Link>
+            <Button component={Link} to={hubPaths.forms()} variant="contained">
+              Go to Forms
+            </Button>
           </>
         )}
         {forms && forms.length > 0 && (

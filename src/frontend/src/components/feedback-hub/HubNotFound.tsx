@@ -1,4 +1,5 @@
 import { Link } from "react-router";
+import { Button } from "@mui/material";
 import { Panel } from "../ui";
 import { hubPaths } from "../../lib/feedbackPaths";
 
@@ -8,7 +9,9 @@ export default function HubNotFound() {
     <div className="admin-surface admin-feedback">
       <Panel>
         <p role="alert">This Feedback hub page does not exist.</p>
-        <Link to={hubPaths.forms()}>Go to Forms</Link>
+        <Button component={Link} to={hubPaths.forms()} variant="contained">
+          Go to Forms
+        </Button>
       </Panel>
     </div>
   );
