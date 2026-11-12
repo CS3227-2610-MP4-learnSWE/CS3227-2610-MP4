@@ -1,0 +1,32 @@
+# ADM-08 Feedback hub: working-session summary, 2026-11-12
+
+Orchestrated ADM-08 (phase 3 of `workflow/plans/CONSOL-01-migration-plan.md`) on `feat/adm08-feedback-hub`, cut from `master`. Each phase ended at a human gate: B (specs), D (hub in the browser, with review fixes), F (deletion list).
+
+## What was done
+- **Specs (run 2026-11-12-ADM08-01):** spec, plan and tasks for a Feedback hub at `/admin/feedback-hub/{forms|responses|analysis|follow-up}` over the existing ADM-02/03/04 screens, 12 design questions answered by the human, user stories US-ADM-08-01..08. Approved at Gate B; two corrections by the orchestrator after verifier round 1.
+- **Build (run -02):** shared screens used by both the hub and the old pages, event-driven tab counts (load once per hub mount, refetch only the affected source after a change), a Responses form chooser and an "Analyse this form" link, one read-only endpoint `GET /api/admin/messaging/followup-counts` (route inventory frozen at 30), and a dev seed (`feedback_dev_seed.py`, step in `dev_seed.py`). One developer fix round (StrictMode double count GETs, `aria-current`, a repeated `form` parameter); verifier PASS in round 2. One test assertion was corrected directly by the orchestrator.
+- **Review fixes after browser review (outside a gated run, no multi-agent run):** analysis screens got the panel padding of `ui-design.md`; "Go to Forms" became a button; Feature Analytics tile numbers now share the 44px size (a more specific panel rule had been overriding it); the "Form published" notice is a green chip; the question editor shows the type beside the prompt and puts "required" and "Remove" on one row; a student's reply now shows "In reply to your feedback on <form>" (new `form_title` on inbox items, applies to old replies too; the ADM-04 exact-key assertion was extended). Commit 6a48fc5.
+- **Phase 5 (run -03):** retained criteria, assertion mapping with ports and a redirect spec, then a deletion list for Gate F (decisions: `/admin/responses` redirects to the hub; the anonymous demo composer is deleted; Overview "Explore feedback" link removed and the sidebar tip repointed; delete old specs and tests in the same change as the redirects). Executed: old admin feedback and announcements URLs redirect (replace, query and hash kept), demo "Feedback insights" and demo Announcements deleted, three nav items removed, ADM-02/03/04 specs removed with `pr.md` and `retro.md` archived under `docs/archive/`. Verifier PASS in round 1.
+- **Closeout (phase 6):** STATUS rows, security log entry, this summary.
+
+## Checks (as run)
+- Backend, full suite: 3262 passed, 7 errors, all `PermissionError` on the pytest temp folder in tea01/tea02 (environment, not ADM-08).
+- Playwright, mocked, full: 1347 passed, 6 failed on the first run. Four (stu04-overview AC14, stu04-progress AC15 x2, tea05-overview AC13) pass when the dev backend is out of the loop, because unmocked requests reached the real backend and ended the session; one (adm08-hub AC18) flaked and passes alone; one ported test (adm04 AC12) still used the removed "Announcements" link and was fixed in 21d326f. Verifier re-run of ADM-08 specs: 360 passed.
+- Typecheck and lint clean. Speccheck OK for ADM-08.
+- Not run: the non-mocked Playwright project, a real-browser check of the redirects, the dev seed against the real database.
+
+## Not done / human items
+- No push and no PR: this machine has no `gh` CLI and nothing was pushed to `origin`. The PR into `master` needs the human's approval (suggested description below).
+- Human items still open from ADM-07: `ai_usage.cleanup --dry-run`, review, then `--apply --approved-by` (never run by an agent); team review and merge.
+- `workflow/STATUS.md` has no ADM-07 row (not added here; ADM-07 closeout is outside this change).
+- Non-blocking: `workflow/specs/ADM-05/plan.md:85` has historical wording about the removed suites; the redirect strips one trailing slash only; the dev seed copies publish and submit logic because no store functions exist; route params are not normalised, as in the old pages.
+- Deviations: the orchestrator edited two test files directly (`adm08-journeys.spec.ts`, `adm08-ported-adm04-messaging.spec.ts`) and the test-designer run P5-2 was resumed once after an API outage. Usage reports overlap in their orchestrator rows (same session), so they must not be summed; agent times are bounds.
+- Local dev gotcha seen in this session: stale uvicorn workers kept port 8000 and served old code; `alembic.exe` is blocked by Windows Application Control, so run `uv run --env-file .env python -m alembic upgrade head`.
+
+## Usage reports
+`workflow/usage/runs/2026-11-12-ADM08-01/`, `-02`, `-03` (`report.md` in each). Run -03: 7 invocations, 409 requests, about 56.6M tokens.
+
+## Suggested PR description (target `master`)
+Title: `feat(adm08): Feedback hub, retire ADM-02/03/04 admin screens and specs`
+
+Adds the admin Feedback hub (`/admin/feedback-hub/*`) with event-driven tab counts, one read-only count endpoint (`GET /api/admin/messaging/followup-counts`), a reply label naming the answered form (`form_title` on student inbox items), and a dev seed. Old admin feedback and announcements URLs redirect to the hub; the ADM-02/03/04 specs are replaced by `workflow/specs/ADM-08/retained-criteria.md` and their `pr.md`/`retro.md` are archived. No migration. Specs: `workflow/specs/ADM-08/`. Tests: see the checks above; CI will run the rest.
