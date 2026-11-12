@@ -69,6 +69,7 @@ class FakeConnection:
 def test_deploy01_ac4_migration_is_inside_db_lock_and_unlocks_on_failure(monkeypatch):
     import deployment.start as start
     events = []
+    monkeypatch.setenv("DATABASE_URL", "postgresql+psycopg://test:test@localhost/test")
     class Engine:
         def connect(self): return FakeConnection(events)
         def dispose(self): events.append("dispose")
@@ -87,3 +88,13 @@ def test_deploy01_ac4_migration_contract_constants():
     from deployment.start import MIGRATION_LOCK_KEY, LOCK_TIMEOUT_SECONDS
     assert MIGRATION_LOCK_KEY == 3227261001
     assert LOCK_TIMEOUT_SECONDS == 60
+
+
+def test_deploy01_ac4_lock_cannot_target_different_database(monkeypatch):
+    import deployment.start as start
+    monkeypatch.setenv("DATABASE_URL", "postgresql+psycopg://test:test@localhost/configured")
+    calls = []
+    monkeypatch.setattr(start, "create_engine", lambda *a, **kw: calls.append(a))
+    with pytest.raises(Exception):
+        start.migrate("postgresql+psycopg://test:test@localhost/other")
+    assert not calls
