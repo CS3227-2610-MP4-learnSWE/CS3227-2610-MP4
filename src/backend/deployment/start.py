@@ -9,6 +9,7 @@ from alembic import command
 from alembic.config import Config
 from sqlalchemy import create_engine, text
 from sqlalchemy.pool import NullPool
+from sqlalchemy.engine import make_url
 
 from auth.settings import load_settings
 
@@ -20,6 +21,9 @@ BACKEND = Path(__file__).resolve().parents[1]
 def migrate(database_url: str) -> None:
     if database_url != load_settings().database_url:
         raise ValueError('migration database must match configured database')
+    hostname = make_url(database_url).host or ''
+    if hostname.endswith('.neon.tech') and '-pooler.' in hostname:
+        raise ValueError('session migration locking requires a direct database endpoint')
     engine = create_engine(database_url, poolclass=NullPool,
                            connect_args={'connect_timeout': 5})
     try:
