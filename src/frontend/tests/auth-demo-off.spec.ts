@@ -21,6 +21,23 @@ test.beforeEach(async ({ page }) => {
   );
 });
 
+test("shr01 flag off: a 401 in a signed-in visit ends at /login with the session-expired notice", async ({
+  page,
+}) => {
+  await mockAuthApi(page, { user: TEACHER });
+  await page.route("**/api/teacher/overview**", (route) =>
+    route.fulfill({
+      status: 401,
+      json: { detail: { code: "unauthenticated", message: "Sign in" } },
+    }),
+  );
+  await page.goto("/teacher/overview");
+  await expect(page).toHaveURL(/\/login/);
+  await expect(
+    page.getByText("Your session has expired. Sign in again."),
+  ).toBeVisible();
+});
+
 for (const route of [
   "/student/overview",
   "/teacher/overview",

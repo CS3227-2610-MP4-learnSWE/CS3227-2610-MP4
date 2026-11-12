@@ -24,6 +24,8 @@ type Status = "loading" | "anonymous" | "authenticated";
 type Auth = {
   status: Status;
   user: AuthUser | null;
+  /** True after a session expired or was revoked, until the next sign-in. */
+  sessionExpired: boolean;
   login: (email: string, password: string) => Promise<AuthUser>;
   signup: (
     displayName: string,
@@ -46,6 +48,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [signOutRedirect, setSignOutRedirect] = useState<
     "expired" | "logout" | null
   >(null);
+  const [sessionExpired, setSessionExpired] = useState(false);
   const status = useRef<Status>("loading");
   status.current = state.status;
 
@@ -76,6 +79,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUnauthenticatedHandler(() => {
       if (status.current !== "authenticated") return;
       clear();
+      setSessionExpired(true);
       setSignOutRedirect("expired");
     });
     return () => setUnauthenticatedHandler(null);
@@ -93,8 +97,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const value: Auth = {
     ...state,
+    sessionExpired,
     login: async (email, password) => {
       const session = await loginRequest(email, password);
+      setSessionExpired(false);
       setCsrfToken(session.csrf_token);
       setState({ status: "authenticated", user: session.user });
       return session.user;
