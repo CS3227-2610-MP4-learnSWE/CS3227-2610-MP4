@@ -69,3 +69,10 @@ Ported-spec check: for adm02-review, adm03-select, adm03-result, adm03-history-d
 6. `/admin/announcements?review=...` and `/admin/announcements/new?review=...` both land on `/admin/feedback-hub/follow-up?review=...` (the plan maps both to follow-up). Confirm.
 7. Delete old specs and old browser tests in the same P5-5 change after the ports pass (recommended, once defects 1-3 are fixed), or delete pages and routes first and the specs later.
 8. `/admin/feedback/new` keeps its own target `/forms/new` (plan, recommended), or goes to the list.
+
+## Gate F decisions recorded (2026-11-12, human)
+- D1: `/admin/responses` redirects (replace) to `/admin/feedback-hub/forms`.
+- D2: anonymous demo `/admin/announcements` is deleted (demo `Announcements()`, its case, `app.spec.ts:185-200` marked Sup, the two route-list entries); the route redirects per AC21 and an anonymous visitor ends on `/login`.
+- D3 and D4: remove only the Overview "Explore feedback" link and keep the cards and sample data; repoint the sidebar tip to `/admin/feedback-hub/forms` with the text "Explore feedback".
+- D7: delete the old specs and old browser tests in the same P5-5 change as the redirects, after mapping defects 1-3 are fixed and the ported specs pass.
+- D5, D6, D8: defaults used, not asked. D5: unmatched deeper old `feedback/*` paths fall to the admin catch-all (no extra redirect). D6: both `announcements` routes land on `/admin/feedback-hub/follow-up` with the query kept. D8: `/admin/feedback/new` redirects to `/admin/feedback-hub/forms/new`.
