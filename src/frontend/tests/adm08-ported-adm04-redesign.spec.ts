@@ -41,7 +41,6 @@ test("adm04 redesign separates recipient search and outlined message inputs", as
   await expect(page.getByText("1 selected", { exact: true })).toHaveCount(0);
 });
 
-
 for (const [theme, width] of [
   ["light", 1365],
   ["dark", 1365],
@@ -136,4 +135,4 @@ for (const [theme, width] of [
       ).toBeVisible();
     }
   });
-}
+}

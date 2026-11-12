@@ -117,8 +117,12 @@ test("adm08 AC21 /admin/feedback/analysis is not treated as a form id", async ({
   await expect.poll(() => here(page)).toBe(`${HUB}/analysis`);
   await expect(tablist(page)).toBeVisible();
   await expect(page).not.toHaveURL(/forms\/analysis/);
-  expect(ctx.requests.filter((r) => /\/forms\/analysis(\/|$)/.test(r.path))).toEqual([]);
-  expect(ctx.requests.filter((r) => /\/feedback\/analysis$/.test(r.path))).toEqual([]);
+  expect(
+    ctx.requests.filter((r) => /\/forms\/analysis(\/|$)/.test(r.path)),
+  ).toEqual([]);
+  expect(
+    ctx.requests.filter((r) => /\/feedback\/analysis$/.test(r.path)),
+  ).toEqual([]);
   await expect(alertWith(page, MSG.notFound)).toHaveCount(0);
 });
 

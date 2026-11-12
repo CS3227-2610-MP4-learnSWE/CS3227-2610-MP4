@@ -18,15 +18,19 @@ export const todayUtc = () => isoDay(new Date());
 
 /** Range of the hourly charts: the page period, or the last 24 hours, 3 days or 7 days ending now. */
 export type HourlyRange = "period" | "24h" | "3d" | "7d";
-export const HOURLY_RANGES: { id: HourlyRange; label: string; hours: number }[] =
-  [
-    { id: "period", label: "Selected period", hours: 0 },
-    { id: "24h", label: "Last 24 hours", hours: 24 },
-    { id: "3d", label: "Last 3 days", hours: 72 },
-    { id: "7d", label: "Last 7 days", hours: 168 },
-  ];
+export const HOURLY_RANGES: {
+  id: HourlyRange;
+  label: string;
+  hours: number;
+}[] = [
+  { id: "period", label: "Selected period", hours: 0 },
+  { id: "24h", label: "Last 24 hours", hours: 24 },
+  { id: "3d", label: "Last 3 days", hours: 72 },
+  { id: "7d", label: "Last 7 days", hours: 168 },
+];
 const HOUR_MS = 3_600_000;
-const currentHour = (now: Date) => Math.floor(now.getTime() / HOUR_MS) * HOUR_MS;
+const currentHour = (now: Date) =>
+  Math.floor(now.getTime() / HOUR_MS) * HOUR_MS;
 
 /** What to request for the hourly charts: the whole UTC days that cover the range (the server works in days). */
 export function hourlyRequestPeriod(

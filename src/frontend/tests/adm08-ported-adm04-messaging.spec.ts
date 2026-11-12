@@ -59,7 +59,9 @@ test("adm04 AC01-05 feedback entry derives recipient, reviews exact text, sends 
   await page
     .getByRole("link", { name: "Back to feedback", exact: true })
     .click();
-  await expect(page).toHaveURL(new RegExp(`/responses/${FORM_ID}/${RESPONSE_ID}$`));
+  await expect(page).toHaveURL(
+    new RegExp(`/responses/${FORM_ID}/${RESPONSE_ID}$`),
+  );
 });
 
 test("adm04 AC06-08 announcement navigation default audience one load review receipt and explicit new message", async ({

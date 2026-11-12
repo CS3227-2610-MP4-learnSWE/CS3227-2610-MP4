@@ -1,7 +1,14 @@
 // ADM-08 phase 5 port of adm03-select.spec.ts onto hub paths; assertions unchanged (see workflow/specs/ADM-08/phase5-test-mapping.md).
 import { expect, test } from "@playwright/test";
 import { STUDENT, TEACHER } from "./authApi";
-import { MSG, ROOT, TITLE, chooseForm, setup, uuid } from "./adm08-ported-adm03Api";
+import {
+  MSG,
+  ROOT,
+  TITLE,
+  chooseForm,
+  setup,
+  uuid,
+} from "./adm08-ported-adm03Api";
 
 const PAGE = "/admin/feedback-hub/analysis";
 const generate = (page: import("@playwright/test").Page) =>

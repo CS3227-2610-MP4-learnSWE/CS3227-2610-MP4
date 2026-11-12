@@ -7,7 +7,8 @@ for (const user of [STUDENT, TEACHER, ADMIN]) {
   }, testInfo) => {
     const auth = await mockAuthApi(page, { user });
     // The admin home is the data-backed Feature Analytics hub; use a request-free admin page (the "This page isn't here" screen).
-    const start = user.role === "admin" ? "/admin/not-a-page" : `/${user.role}/overview`;
+    const start =
+      user.role === "admin" ? "/admin/not-a-page" : `/${user.role}/overview`;
     await page.goto(start);
     await page.getByRole("button", { name: "Log out", exact: true }).click();
     const dialog = page.getByRole("dialog", {

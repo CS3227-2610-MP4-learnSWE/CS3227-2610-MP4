@@ -88,7 +88,9 @@ test("ADM-02 successful create hands off its response to detail without a follow
     .getByRole("textbox", { name: "Question 1 prompt", exact: true })
     .fill("Your feedback?");
   await page.getByRole("button", { name: "Save draft", exact: true }).click();
-  await expect(page).toHaveURL(new RegExp(`/admin/feedback-hub/forms/${FORM_ID}$`));
+  await expect(page).toHaveURL(
+    new RegExp(`/admin/feedback-hub/forms/${FORM_ID}$`),
+  );
   await expect(status(page, "Draft saved.")).toBeVisible();
   await expect(
     page.getByRole("heading", {

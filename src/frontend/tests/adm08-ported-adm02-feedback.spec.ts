@@ -61,7 +61,9 @@ test("ADM-02 AC01-06 admin creates draft with accessible controls and correct sa
   });
   expect(ctx.of("GET", "/associations")).toHaveLength(1);
   expect(ctx.of("GET", "/forms")).toHaveLength(1); // ADM-08 AC29: create adds exactly one forms-count refetch (was 0)
-  await expect(page).toHaveURL(new RegExp(`/admin/feedback-hub/forms/${FORM_ID}$`));
+  await expect(page).toHaveURL(
+    new RegExp(`/admin/feedback-hub/forms/${FORM_ID}$`),
+  );
 });
 
 for (const [kind, label] of [
@@ -271,7 +273,9 @@ test("ADM-02 admin form and response rows are one-line, full-row links with hove
     )
     .not.toBe(formColor);
   await formLink.getByText("Open · Responses: 1", { exact: true }).click();
-  await expect(page).toHaveURL(new RegExp(`/admin/feedback-hub/forms/${FORM_ID}$`));
+  await expect(page).toHaveURL(
+    new RegExp(`/admin/feedback-hub/forms/${FORM_ID}$`),
+  );
 
   await page
     .getByRole("link", { name: "Review responses", exact: true })
@@ -399,4 +403,4 @@ test("ADM-02 admin failed draft save preserves editor fields and retries explici
   await page.getByRole("button", { name: "Save draft", exact: true }).click();
   await expect(status(page, "Draft saved.")).toBeVisible();
   expect(ctx.of("PUT")).toHaveLength(2);
-});
+});

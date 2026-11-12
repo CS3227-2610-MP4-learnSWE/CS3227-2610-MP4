@@ -346,7 +346,9 @@ export default function DailyActivity({ daily }: { daily: Daily }) {
         large={large}
         series={(["1", "2", "3", "4", "5_plus"] as const).map((k, i) => ({
           name:
-            k === "5_plus" ? "5 or more" : `${k} attempt${k === "1" ? "" : "s"}`,
+            k === "5_plus"
+              ? "5 or more"
+              : `${k} attempt${k === "1" ? "" : "s"}`,
           values: perStudent.per_day.map((d) => d.distribution[k]),
           kind: "bar" as const,
           cls: `analytics-hub-step-${i}`,
@@ -448,9 +450,7 @@ export default function DailyActivity({ daily }: { daily: Daily }) {
       />
       <DailyCard
         title="Attempts started and submitted per day"
-        large={
-          funnel.state === "available" ? funnelChart(true) : undefined
-        }
+        large={funnel.state === "available" ? funnelChart(true) : undefined}
         table={
           funnel.state === "unavailable"
             ? undefined

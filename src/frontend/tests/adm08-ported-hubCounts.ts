@@ -17,9 +17,17 @@ export function hubCountFilter(page: Page) {
   return (method: string, path: string, search: string) => {
     if (method !== "GET") return false;
     if (path === "/api/admin/messaging/followup-counts") return true;
-    if (path === "/api/admin/feedback/forms" && search === "?limit=100&offset=0" && !forms)
+    if (
+      path === "/api/admin/feedback/forms" &&
+      search === "?limit=100&offset=0" &&
+      !forms
+    )
       return (forms = true);
-    if (path === "/api/admin/feedback/analyses" && search === "?limit=50&offset=0" && !analyses)
+    if (
+      path === "/api/admin/feedback/analyses" &&
+      search === "?limit=50&offset=0" &&
+      !analyses
+    )
       return (analyses = true);
     return false;
   };

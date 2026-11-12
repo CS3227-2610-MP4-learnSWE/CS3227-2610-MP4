@@ -1,7 +1,14 @@
 // ADM-08 phase 5 port of adm03-result.spec.ts onto hub paths; assertions unchanged (see workflow/specs/ADM-08/phase5-test-mapping.md).
 import { expect, test, type Page } from "@playwright/test";
 import { STUDENT } from "./authApi";
-import { COMPLETE_RESULT, MSG, ROOT, analysis, setup, uuid } from "./adm08-ported-adm03Api";
+import {
+  COMPLETE_RESULT,
+  MSG,
+  ROOT,
+  analysis,
+  setup,
+  uuid,
+} from "./adm08-ported-adm03Api";
 
 const URL = (n: number) => `/admin/feedback-hub/analysis/${uuid(n)}`;
 const gets = (ctx: Awaited<ReturnType<typeof setup>>, n: number) =>

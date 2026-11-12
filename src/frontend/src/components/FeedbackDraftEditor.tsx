@@ -247,9 +247,7 @@ function Questions({
                 />
               }
             />
-            <Button
-              onClick={() => change(questions.filter((_, j) => j !== i))}
-            >
+            <Button onClick={() => change(questions.filter((_, j) => j !== i))}>
               Remove question {i + 1}
             </Button>
           </div>

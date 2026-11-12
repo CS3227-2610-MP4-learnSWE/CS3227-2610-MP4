@@ -1,9 +1,5 @@
 import { expect, test } from "@playwright/test";
-import {
-  setup,
-  STUDENT,
-  sampleMessage,
-} from "./adm04Api";
+import { setup, STUDENT, sampleMessage } from "./adm04Api";
 
 test("adm04 redesign badge tracks unread messages and requests without extra inbox reads", async ({
   page,

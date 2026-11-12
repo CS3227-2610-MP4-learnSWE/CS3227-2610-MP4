@@ -45,7 +45,11 @@ function trackUrls(page: Page) {
   return urls;
 }
 const expectNoOldAddress = (urls: string[]) =>
-  expect(urls.filter((u) => OLD_ADDRESS.test(new URL(u).pathname + new URL(u).search))).toEqual([]);
+  expect(
+    urls.filter((u) =>
+      OLD_ADDRESS.test(new URL(u).pathname + new URL(u).search),
+    ),
+  ).toEqual([]);
 
 async function arrange(page: Page, over: Parameters<typeof setup>[1] = {}) {
   return setup(page, {
@@ -62,14 +66,21 @@ async function arrange(page: Page, over: Parameters<typeof setup>[1] = {}) {
 const badge = (page: Page, name: string) =>
   tab(page, name).locator("span[aria-hidden='true']");
 const selectAllBox = (page: Page, n: number) =>
-  page.getByRole("checkbox", { name: `Select all ${n} responses`, exact: true });
+  page.getByRole("checkbox", {
+    name: `Select all ${n} responses`,
+    exact: true,
+  });
 async function chooseAnalysisForm(page: Page) {
   await page.getByRole("combobox", { name: "Feedback form" }).click();
   await page.getByRole("option", { name: TITLE }).click();
 }
 async function composeAndReview(page: Page) {
-  await page.getByRole("textbox", { name: "Subject", exact: true }).fill("A subject");
-  await page.getByRole("textbox", { name: "Message", exact: true }).fill("A message.");
+  await page
+    .getByRole("textbox", { name: "Subject", exact: true })
+    .fill("A subject");
+  await page
+    .getByRole("textbox", { name: "Message", exact: true })
+    .fill("A message.");
   await button(page, "Review message").click();
   await expect(heading(page, "Review message")).toBeVisible();
 }
@@ -92,15 +103,21 @@ test("adm08 J1 Forms: list row, Edit draft, New feedback form with first-save re
   await page.getByRole("link", { name: /^Draft form/ }).click();
   await expect(page).toHaveURL(new RegExp(`${HUB}/forms/${DRAFT_FORM_ID}$`));
   await link(page, "Edit draft").click();
-  await expect(page).toHaveURL(new RegExp(`${HUB}/forms/${DRAFT_FORM_ID}/edit$`));
+  await expect(page).toHaveURL(
+    new RegExp(`${HUB}/forms/${DRAFT_FORM_ID}/edit$`),
+  );
   // New feedback form, then the first save replaces /forms/new
   await tab(page, "Forms").click();
   await expect(page).toHaveURL(new RegExp(`${HUB}/forms$`));
   await link(page, "New feedback form").click();
   await expect(page).toHaveURL(new RegExp(`${HUB}/forms/new$`));
-  await page.getByRole("textbox", { name: "Form title", exact: true }).fill("Journey form");
+  await page
+    .getByRole("textbox", { name: "Form title", exact: true })
+    .fill("Journey form");
   await button(page, "Add question").click();
-  await page.getByRole("textbox", { name: "Question 1 prompt", exact: true }).fill("Your feedback?");
+  await page
+    .getByRole("textbox", { name: "Question 1 prompt", exact: true })
+    .fill("Your feedback?");
   const gets = ctx.of("GET").length;
   await button(page, "Save draft").click();
   await expect(page).toHaveURL(new RegExp(`${HUB}/forms/[^/]+$`));
@@ -108,19 +125,32 @@ test("adm08 J1 Forms: list row, Edit draft, New feedback form with first-save re
   await expect(statusWith(page, "Draft saved.")).toBeVisible();
   expect(ctx.of("POST", "/forms")).toHaveLength(1);
   expect(
-    ctx.of("GET").slice(gets).filter((r) => /\/forms\/[^/]+$/.test(r.path)),
+    ctx
+      .of("GET")
+      .slice(gets)
+      .filter((r) => /\/forms\/[^/]+$/.test(r.path)),
   ).toHaveLength(0); // hand-off without a follow-up GET
   await page.goBack(); // replace: Back skips /forms/new
   await expect(page).toHaveURL(new RegExp(`${HUB}/forms$`));
   // audience review and publish on the draft
   await page.goto(`${HUB}/forms/${DRAFT_FORM_ID}`);
   await button(page, "Review audience").click();
-  const dialog = page.getByRole("dialog", { name: "Review audience", exact: true });
+  const dialog = page.getByRole("dialog", {
+    name: "Review audience",
+    exact: true,
+  });
   await dialog
-    .getByRole("checkbox", { name: `${STUDENT.display_name} (${STUDENT.id})`, exact: true })
+    .getByRole("checkbox", {
+      name: `${STUDENT.display_name} (${STUDENT.id})`,
+      exact: true,
+    })
     .check();
-  await dialog.getByRole("button", { name: "Review selected recipients", exact: true }).click();
-  await dialog.getByRole("button", { name: "Publish form", exact: true }).click();
+  await dialog
+    .getByRole("button", { name: "Review selected recipients", exact: true })
+    .click();
+  await dialog
+    .getByRole("button", { name: "Publish form", exact: true })
+    .click();
   await expect.poll(() => ctx.of("POST", "/publish").length).toBe(1);
   // close an open form
   await page.goto(`${HUB}/forms/${FORM_ID}`);
@@ -144,13 +174,19 @@ test("adm08 J2 dirty editor: browser Back shows the dialog; Keep editing stays; 
   await arrange(page);
   await open(page, `${HUB}/forms`);
   await link(page, "New feedback form").click();
-  await page.getByRole("textbox", { name: "Form title", exact: true }).fill("Dirty");
+  await page
+    .getByRole("textbox", { name: "Form title", exact: true })
+    .fill("Dirty");
   await page.goBack();
   const dialog = page.getByRole("dialog", { name: MSG.discard, exact: true });
   await expect(dialog).toBeVisible();
-  await dialog.getByRole("button", { name: "Keep editing", exact: true }).click();
+  await dialog
+    .getByRole("button", { name: "Keep editing", exact: true })
+    .click();
   await expect(page).toHaveURL(new RegExp(`${HUB}/forms/new$`));
-  await expect(page.getByRole("textbox", { name: "Form title", exact: true })).toHaveValue("Dirty");
+  await expect(
+    page.getByRole("textbox", { name: "Form title", exact: true }),
+  ).toHaveValue("Dirty");
 });
 
 // ================================================================ J3 Responses
@@ -166,9 +202,14 @@ test("adm08 J3 Responses: chooser to list to detail, Choose another form, Back s
     .selectOption({ label: `${TITLE} · Open · Responses: 2` });
   await expect(page).toHaveURL(new RegExp(`${HUB}/responses/${FORM_ID}$`));
   await expect(heading(page, "Submitted responses", 2)).toBeVisible();
-  const row = link(page, `Response ${RESPONSE_ID} · ${STUDENT.display_name} · ${TIME}`);
+  const row = link(
+    page,
+    `Response ${RESPONSE_ID} · ${STUDENT.display_name} · ${TIME}`,
+  );
   await row.click();
-  await expect(page).toHaveURL(new RegExp(`${HUB}/responses/${FORM_ID}/${RESPONSE_ID}$`));
+  await expect(page).toHaveURL(
+    new RegExp(`${HUB}/responses/${FORM_ID}/${RESPONSE_ID}$`),
+  );
   await expect(heading(page, "Feedback response")).toBeVisible();
   expect(ctx.of("GET", `/responses/${RESPONSE_ID}`)).toHaveLength(1);
   await expect(link(page, "Respond to feedback")).toHaveAttribute(
@@ -213,21 +254,29 @@ test("adm08 AC27 J3b: Analyse this form sits after Choose another form, pushes /
   expect(b!.x > a!.x || b!.y > a!.y).toBe(true);
   const mark = ctx.mark();
   await analyse.click();
-  await expect(page).toHaveURL(new RegExp(`${HUB}/analysis\\?form=${FORM_ID}$`));
+  await expect(page).toHaveURL(
+    new RegExp(`${HUB}/analysis\\?form=${FORM_ID}$`),
+  );
   await expect(heading(page, "Feedback analysis")).toBeVisible();
   await expect.poll(async () => pickerText(page)).toContain(TITLE);
   await expect(selectAllBox(page, 2)).toBeVisible();
   await expect(page.getByRole("checkbox", { checked: true })).toHaveCount(0);
   await expect(page.getByText(MSG.notAvailableForAnalysis)).toHaveCount(0);
   expect(ctx.of("POST")).toHaveLength(0);
-  expect(ctx.since(mark).filter((r) => r.path.endsWith("/response-count"))).toHaveLength(1);
-  expect(ctx.since(mark).filter((r) => r.path.endsWith(`${FORM_ID}/responses`))).toHaveLength(1);
+  expect(
+    ctx.since(mark).filter((r) => r.path.endsWith("/response-count")),
+  ).toHaveLength(1);
+  expect(
+    ctx.since(mark).filter((r) => r.path.endsWith(`${FORM_ID}/responses`)),
+  ).toHaveLength(1);
   await page.goBack();
   await expect(page).toHaveURL(new RegExp(`${HUB}/responses/${FORM_ID}$`));
   expectNoOldAddress(urls);
 });
 
-test("adm08 AC27 preselection equals the manual choice in requests", async ({ page }) => {
+test("adm08 AC27 preselection equals the manual choice in requests", async ({
+  page,
+}) => {
   const ctx = await arrange(page);
   await open(page, `${HUB}/analysis`);
   await expect(heading(page, "Feedback analysis")).toBeVisible();
@@ -236,7 +285,10 @@ test("adm08 AC27 preselection equals the manual choice in requests", async ({ pa
   await chooseAnalysisForm(page);
   await expect(selectAllBox(page, 2)).toBeVisible();
   await page.waitForTimeout(300);
-  const manual = ctx.since(m0).map((r) => `${r.method} ${r.path}${r.search}`).sort();
+  const manual = ctx
+    .since(m0)
+    .map((r) => `${r.method} ${r.path}${r.search}`)
+    .sort();
   const m1 = ctx.mark();
   await page.goto(`${HUB}/analysis?form=${FORM_ID}`);
   await expect.poll(async () => pickerText(page)).toContain(TITLE);
@@ -247,11 +299,15 @@ test("adm08 AC27 preselection equals the manual choice in requests", async ({ pa
     .filter((r) => r.path.includes(`/forms/${FORM_ID}/`))
     .map((r) => `${r.method} ${r.path}${r.search}`)
     .sort();
-  expect(linked).toEqual(manual.filter((k) => k.includes(`/forms/${FORM_ID}/`)));
+  expect(linked).toEqual(
+    manual.filter((k) => k.includes(`/forms/${FORM_ID}/`)),
+  );
   expect(linked.length).toBeGreaterThan(0);
 });
 
-test("adm08 AC27 uppercase UUID is accepted (case-insensitive canonical compare)", async ({ page }) => {
+test("adm08 AC27 uppercase UUID is accepted (case-insensitive canonical compare)", async ({
+  page,
+}) => {
   await arrange(page);
   await open(page, `${HUB}/analysis?form=${FORM_ID.toUpperCase()}`);
   await expect.poll(async () => pickerText(page)).toContain(TITLE);
@@ -313,7 +369,9 @@ test("adm08 J4 response delete: dialog, one DELETE on double click, replace to t
   ctx.steps.push({ method: "DELETE", hold: true });
   await open(page, `${HUB}/responses/${FORM_ID}/${RESPONSE_ID}`);
   await trigger(page).click();
-  const dialog = page.getByRole("alertdialog", { name: "Delete this response permanently?" });
+  const dialog = page.getByRole("alertdialog", {
+    name: "Delete this response permanently?",
+  });
   await expect(dialog).toBeVisible();
   await expect(button(page, "Cancel")).toBeFocused();
   await confirmDelete(page).dblclick();
@@ -336,7 +394,12 @@ test("adm08 J4 response delete answered 404 closes the dialog and replaces to th
     method: "DELETE",
     status: 404,
     code: "feedback_response_not_found",
-    json: { detail: { code: "feedback_response_not_found", message: NOT_FOUND_RESPONSE } },
+    json: {
+      detail: {
+        code: "feedback_response_not_found",
+        message: NOT_FOUND_RESPONSE,
+      },
+    },
   });
   await open(page, `${HUB}/responses/${FORM_ID}/${RESPONSE_ID}`);
   await trigger(page).click();
@@ -361,12 +424,18 @@ test("adm08 J5 Analysis: select, Select all, Generate replaces to /analysis/{id}
   await page.goBack(); // replace: Back does not return to the selection with the form
   await expect(page).not.toHaveURL(new RegExp(`${HUB}/analysis/[^/?]+$`));
   await open(page, `${HUB}/analysis`);
-  await page.getByRole("link", { name: new RegExp(`^${TITLE}, .+, \\d+ responses, AI complete$`) }).click();
+  await page
+    .getByRole("link", {
+      name: new RegExp(`^${TITLE}, .+, \\d+ responses, AI complete$`),
+    })
+    .click();
   await expect(page).toHaveURL(new RegExp(`${HUB}/analysis/${ANALYSIS_ID}$`));
   const gets = () => ctx.of("GET", `/analyses/${ANALYSIS_ID}`).length;
   await expect.poll(gets).toBe(1);
   await link(page, "Response R3").click();
-  await expect(page).toHaveURL(new RegExp(`${HUB}/analysis/${ANALYSIS_ID}/responses/R3$`));
+  await expect(page).toHaveURL(
+    new RegExp(`${HUB}/analysis/${ANALYSIS_ID}/responses/R3$`),
+  );
   await expect(heading(page, "Response R3")).toBeVisible();
   await link(page, "Back to analysis").click();
   await expect(page).toHaveURL(new RegExp(`${HUB}/analysis/${ANALYSIS_ID}$`));
@@ -383,7 +452,9 @@ test("adm08 J6 analysis delete from the result replaces to /analysis with the st
   page,
 }) => {
   const urls = trackUrls(page);
-  const ctx = await arrange(page, { analyses: [analysisFor(1), analysisFor(2)] });
+  const ctx = await arrange(page, {
+    analyses: [analysisFor(1), analysisFor(2)],
+  });
   await open(page, `${HUB}/analysis/${ANALYSIS_ID}`);
   await button(page, "Delete analysis").click();
   await confirmDelete(page).click();
@@ -393,7 +464,10 @@ test("adm08 J6 analysis delete from the result replaces to /analysis with the st
   await page.goBack();
   await expect(page).not.toHaveURL(new RegExp(ANALYSIS_ID));
   await open(page, `${HUB}/analysis`);
-  await page.getByRole("button", { name: new RegExp(`^Delete analysis, ${TITLE}, `) }).first().click();
+  await page
+    .getByRole("button", { name: new RegExp(`^Delete analysis, ${TITLE}, `) })
+    .first()
+    .click();
   await confirmDelete(page).click();
   await expect(statusWith(page, DONE_ANALYSIS)).toBeVisible();
   expect(ctx.of("DELETE")).toHaveLength(2);
@@ -410,7 +484,9 @@ test("adm08 J7 announcement: compose, review (?review= replace), send, receipt, 
   await expect(heading(page, "New announcement")).toBeVisible();
   await expect(page.getByText(MSG.followUpNote, { exact: true })).toBeVisible();
   await composeAndReview(page);
-  await expect(page).toHaveURL(new RegExp(`${HUB}/follow-up\\?review=${REVIEW_ID}$`));
+  await expect(page).toHaveURL(
+    new RegExp(`${HUB}/follow-up\\?review=${REVIEW_ID}$`),
+  );
   await expect(page.getByText(MSG.followUpNote)).toHaveCount(0); // note only without a review query
   await page.reload();
   await expect(heading(page, "Review message")).toBeVisible();
@@ -421,7 +497,9 @@ test("adm08 J7 announcement: compose, review (?review= replace), send, receipt, 
   expect(ctx.of("POST", "/send")).toHaveLength(1);
   await button(page, "New announcement").click();
   await expect(page).toHaveURL(new RegExp(`${HUB}/follow-up$`));
-  await expect(page.getByRole("textbox", { name: "Subject", exact: true })).toHaveValue("");
+  await expect(
+    page.getByRole("textbox", { name: "Subject", exact: true }),
+  ).toHaveValue("");
   expect(ctx.of("POST", "/send")).toHaveLength(1);
   expectNoOldAddress(urls);
 });
@@ -433,17 +511,27 @@ test("adm08 J8 reply: Respond to feedback pushes the hub reply URL, review, rece
   const ctx = await arrange(page);
   await open(page, `${HUB}/responses/${FORM_ID}/${RESPONSE_ID}`);
   await link(page, "Respond to feedback").click();
-  await expect(page).toHaveURL(new RegExp(`${HUB}/follow-up/reply/${FORM_ID}/${RESPONSE_ID}$`));
+  await expect(page).toHaveURL(
+    new RegExp(`${HUB}/follow-up/reply/${FORM_ID}/${RESPONSE_ID}$`),
+  );
   await expect(tab(page, "Follow-up")).toHaveAttribute("aria-selected", "true");
   await expect(heading(page, "Respond to feedback")).toBeVisible();
-  await expect(page.getByText(`Recipient: ${STUDENT.display_name} (student)`, { exact: true })).toBeVisible();
+  await expect(
+    page.getByText(`Recipient: ${STUDENT.display_name} (student)`, {
+      exact: true,
+    }),
+  ).toBeVisible();
   expect(ctx.of("GET", "/recipient")).toHaveLength(1);
   await composeAndReview(page);
-  await expect(page).toHaveURL(new RegExp(`/reply/${FORM_ID}/${RESPONSE_ID}\\?review=${REVIEW_ID}$`));
+  await expect(page).toHaveURL(
+    new RegExp(`/reply/${FORM_ID}/${RESPONSE_ID}\\?review=${REVIEW_ID}$`),
+  );
   await confirmSend(page).click();
   await expect(heading(page, "Message sent")).toBeVisible();
   await link(page, "Back to feedback").click();
-  await expect(page).toHaveURL(new RegExp(`${HUB}/responses/${FORM_ID}/${RESPONSE_ID}$`));
+  await expect(page).toHaveURL(
+    new RegExp(`${HUB}/responses/${FORM_ID}/${RESPONSE_ID}$`),
+  );
   expectNoOldAddress(urls);
 });
 
@@ -473,14 +561,20 @@ test("adm08 AC29 create form adds exactly one forms-list GET and updates the For
   await open(page, `${HUB}/forms/new`);
   await settle(ctx);
   const before = snap(ctx);
-  await page.getByRole("textbox", { name: "Form title", exact: true }).fill("Counted form");
+  await page
+    .getByRole("textbox", { name: "Form title", exact: true })
+    .fill("Counted form");
   await button(page, "Add question").click();
-  await page.getByRole("textbox", { name: "Question 1 prompt", exact: true }).fill("Q?");
+  await page
+    .getByRole("textbox", { name: "Question 1 prompt", exact: true })
+    .fill("Q?");
   await button(page, "Save draft").click();
   await expect(statusWith(page, "Draft saved.")).toBeVisible();
   await settled(page);
   expect(await deltas(ctx, before)).toEqual({ f: 1, a: 0, u: 0 });
-  await expect(tab(page, "Forms")).toHaveAccessibleDescription("1 open form, 2 drafts");
+  await expect(tab(page, "Forms")).toHaveAccessibleDescription(
+    "1 open form, 2 drafts",
+  );
 });
 
 test("adm08 AC29 Save draft on an existing form, preview creation and announcement send add no count request", async ({
@@ -510,12 +604,22 @@ test("adm08 AC29 publish and close each add exactly one forms-list GET; Forms ba
   await settle(ctx);
   let before = snap(ctx);
   await button(page, "Review audience").click();
-  const dialog = page.getByRole("dialog", { name: "Review audience", exact: true });
+  const dialog = page.getByRole("dialog", {
+    name: "Review audience",
+    exact: true,
+  });
   await dialog
-    .getByRole("checkbox", { name: `${STUDENT.display_name} (${STUDENT.id})`, exact: true })
+    .getByRole("checkbox", {
+      name: `${STUDENT.display_name} (${STUDENT.id})`,
+      exact: true,
+    })
     .check();
-  await dialog.getByRole("button", { name: "Review selected recipients", exact: true }).click();
-  await dialog.getByRole("button", { name: "Publish form", exact: true }).click();
+  await dialog
+    .getByRole("button", { name: "Review selected recipients", exact: true })
+    .click();
+  await dialog
+    .getByRole("button", { name: "Publish form", exact: true })
+    .click();
   await expect(badge(page, "Forms")).toHaveText("2");
   expect(await deltas(ctx, before)).toEqual({ f: 1, a: 0, u: 0 });
   before = snap(ctx);
@@ -549,12 +653,19 @@ test("adm08 AC29 response delete adds one forms GET and one follow-up GET; Respo
   await expect(badge(page, "Responses")).toHaveText("4");
 });
 
-test("adm08 AC29 a response delete answered 404 still refetches both sources", async ({ page }) => {
+test("adm08 AC29 a response delete answered 404 still refetches both sources", async ({
+  page,
+}) => {
   const ctx = await mounted(page);
   ctx.steps.push({
     method: "DELETE",
     status: 404,
-    json: { detail: { code: "feedback_response_not_found", message: NOT_FOUND_RESPONSE } },
+    json: {
+      detail: {
+        code: "feedback_response_not_found",
+        message: NOT_FOUND_RESPONSE,
+      },
+    },
   });
   await open(page, `${HUB}/responses/${FORM_ID}/${RESPONSE_ID}`);
   await settle(ctx);
@@ -591,12 +702,20 @@ test("adm08 AC29 generate analysis and analysis delete each add exactly one anal
   expect(await deltas(ctx, before)).toEqual({ f: 1, a: 1, u: 0 }); // f:1 = the /analysis screen own forms GET after the replace (Q16 shared URL); a:1 = the count refetch
 });
 
-test("adm08 AC29 an analysis delete answered 404 still refetches the analyses count", async ({ page }) => {
+test("adm08 AC29 an analysis delete answered 404 still refetches the analyses count", async ({
+  page,
+}) => {
   const ctx = await mounted(page);
   ctx.steps.push({
     method: "DELETE",
     status: 404,
-    json: { detail: { code: "analysis_not_found", message: "That analysis is not available. It does not exist or is not in your history." } },
+    json: {
+      detail: {
+        code: "analysis_not_found",
+        message:
+          "That analysis is not available. It does not exist or is not in your history.",
+      },
+    },
   });
   await open(page, `${HUB}/analysis/${ANALYSIS_ID}`);
   await settle(ctx);
@@ -621,7 +740,9 @@ test("adm08 AC29 sending a reply adds exactly one follow-up GET and lowers the b
   expect(await deltas(ctx, before)).toEqual({ f: 0, a: 0, u: 1 });
 });
 
-test("adm08 AC29 opening a receipt for an already sent message with ?review= emits nothing", async ({ page }) => {
+test("adm08 AC29 opening a receipt for an already sent message with ?review= emits nothing", async ({
+  page,
+}) => {
   const ctx = await mounted(page);
   await open(page, `${HUB}/follow-up/reply/${FORM_ID}/${RESPONSE_ID}`);
   await composeAndReview(page);
@@ -642,19 +763,31 @@ for (const [name, fail] of [
   ["409", { status: 409, code: "feedback_conflict" }],
   ["network", { abort: true }],
 ] as const) {
-  test(`adm08 AC29 a failed publish (${name}) adds no count request`, async ({ page }) => {
+  test(`adm08 AC29 a failed publish (${name}) adds no count request`, async ({
+    page,
+  }) => {
     const ctx = await mounted(page);
     ctx.steps.push({ method: "POST", suffix: "/publish", ...fail });
     await open(page, `${HUB}/forms/${DRAFT_FORM_ID}`);
     await settle(ctx);
     const before = snap(ctx);
     await button(page, "Review audience").click();
-    const dialog = page.getByRole("dialog", { name: "Review audience", exact: true });
+    const dialog = page.getByRole("dialog", {
+      name: "Review audience",
+      exact: true,
+    });
     await dialog
-      .getByRole("checkbox", { name: `${STUDENT.display_name} (${STUDENT.id})`, exact: true })
+      .getByRole("checkbox", {
+        name: `${STUDENT.display_name} (${STUDENT.id})`,
+        exact: true,
+      })
       .check();
-    await dialog.getByRole("button", { name: "Review selected recipients", exact: true }).click();
-    await dialog.getByRole("button", { name: "Publish form", exact: true }).click();
+    await dialog
+      .getByRole("button", { name: "Review selected recipients", exact: true })
+      .click();
+    await dialog
+      .getByRole("button", { name: "Publish form", exact: true })
+      .click();
     await expect.poll(() => ctx.of("POST", "/publish").length).toBe(1);
     await settled(page);
     expect(await deltas(ctx, before)).toEqual({ f: 0, a: 0, u: 0 });
@@ -671,13 +804,20 @@ test("adm08 AC29 a failed refetch keeps the previous badge and shows no text; a 
   await open(page, `${HUB}/responses/${FORM_ID}/${RESPONSE_ID}`);
   await settle(ctx);
   await expect(badge(page, "Follow-up")).toHaveText("4");
-  ctx.steps.push({ method: "GET", suffix: "/followup-counts", status: 500, code: "MESSAGING_ERROR" });
+  ctx.steps.push({
+    method: "GET",
+    suffix: "/followup-counts",
+    status: 500,
+    code: "MESSAGING_ERROR",
+  });
   await trigger(page).click();
   await confirmDelete(page).click();
   await expect(statusWith(page, DONE_RESPONSE)).toBeVisible();
   await settled(page);
   await expect(badge(page, "Follow-up")).toHaveText("4"); // stale beats blank
-  await expect(tab(page, "Follow-up")).toHaveAccessibleDescription("4 responses without a reply");
+  await expect(tab(page, "Follow-up")).toHaveAccessibleDescription(
+    "4 responses without a reply",
+  );
   await expect(page.getByRole("alert")).toHaveCount(0);
   await expect(button(page, "Retry")).toHaveCount(0);
 });
@@ -686,7 +826,9 @@ for (const [name, fail] of [
   ["429", { status: 429, code: "MESSAGING_RATE_LIMITED" }],
   ["network", { abort: true }],
 ] as const) {
-  test(`adm08 AC29 a refetch failing with ${name} keeps the old value`, async ({ page }) => {
+  test(`adm08 AC29 a refetch failing with ${name} keeps the old value`, async ({
+    page,
+  }) => {
     const ctx = await mounted(page);
     await open(page, `${HUB}/follow-up/reply/${FORM_ID}/${RESPONSE_ID}`);
     await settle(ctx);
@@ -703,7 +845,12 @@ test("adm08 AC29 a 401 on a refetch goes to sign-in", async ({ page }) => {
   const ctx = await mounted(page);
   await open(page, `${HUB}/follow-up/reply/${FORM_ID}/${RESPONSE_ID}`);
   await settle(ctx);
-  ctx.steps.push({ method: "GET", suffix: "/followup-counts", status: 401, code: "unauthenticated" });
+  ctx.steps.push({
+    method: "GET",
+    suffix: "/followup-counts",
+    status: 401,
+    code: "unauthenticated",
+  });
   await composeAndReview(page);
   await confirmSend(page).click();
   await expect(page).toHaveURL(/\/login/);
@@ -758,7 +905,9 @@ test("adm08 AC29 changes by an unseen other admin are not reflected after tab cl
   expect(await noStorage(page)).toBe(0);
 });
 
-test("adm08 AC29 leaving the hub leaves no pending or stray count request", async ({ page }) => {
+test("adm08 AC29 leaving the hub leaves no pending or stray count request", async ({
+  page,
+}) => {
   const ctx = await mounted(page);
   await open(page, `${HUB}/follow-up/reply/${FORM_ID}/${RESPONSE_ID}`);
   await settle(ctx);

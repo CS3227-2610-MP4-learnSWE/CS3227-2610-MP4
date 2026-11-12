@@ -1,6 +1,13 @@
 // ADM-08 phase 5 port of adm03-history-delete.spec.ts onto hub paths; assertions unchanged (see workflow/specs/ADM-08/phase5-test-mapping.md).
 import { expect, test, type Page } from "@playwright/test";
-import { MSG, TITLE, analysis, setup, uuid, type Analysis } from "./adm08-ported-adm03Api";
+import {
+  MSG,
+  TITLE,
+  analysis,
+  setup,
+  uuid,
+  type Analysis,
+} from "./adm08-ported-adm03Api";
 
 const PAGE = "/admin/feedback-hub/analysis";
 const many = (

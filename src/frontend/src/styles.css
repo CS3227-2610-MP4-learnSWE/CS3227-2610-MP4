@@ -2597,9 +2597,9 @@ td .MuiButton-root {
     gap: 23px;
   }
   .studio-controls > .icon-box,
-.studio-controls > .preview-note,
-.studio-controls > h2,
-.studio-controls > p {
+  .studio-controls > .preview-note,
+  .studio-controls > h2,
+  .studio-controls > p {
     grid-column: 1/-1;
   }
   .studio-controls > h2,

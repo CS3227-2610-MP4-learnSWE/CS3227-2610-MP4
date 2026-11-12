@@ -1,7 +1,11 @@
 import { expect, type Page, type Route } from "@playwright/test";
 import { ADMIN, STUDENT, TEACHER, mockAuthApi, type User } from "./authApi";
 import { FORM_ID, RESPONSE_ID, TITLE, TIME, form, questions } from "./adm02Api";
-import { analysis, uuid as analysisUuid, type Analysis } from "./adm08-ported-adm03Api";
+import {
+  analysis,
+  uuid as analysisUuid,
+  type Analysis,
+} from "./adm08-ported-adm03Api";
 import { samplePreview, type Preview } from "./adm04Api";
 
 /**
@@ -26,7 +30,8 @@ export const MSG = {
   forbidden: "You do not have permission to access this feedback page.",
   limited: "Too many feedback requests. Wait before trying again.",
   unexpected: "The feedback service encountered an error. Try again later.",
-  unavailable: "The feedback service is temporarily unavailable. Try again later.",
+  unavailable:
+    "The feedback service is temporarily unavailable. Try again later.",
   network: "Cannot connect to the server. Check your connection and try again.",
   timeout: "The request timed out. Check the current form before trying again.",
   missing: "This feedback form or response is not available.",
@@ -83,7 +88,8 @@ export const analysisFor = (
   n: number,
   state: "running" | "complete" | "failed" = "complete",
   over: Record<string, unknown> = {},
-): Analysis => analysis(n, state, { form_id: FORM_ID, form_title: TITLE, ...over });
+): Analysis =>
+  analysis(n, state, { form_id: FORM_ID, form_title: TITLE, ...over });
 
 export interface Options {
   user?: User | null;
@@ -99,7 +105,9 @@ export async function setup(page: Page, opts: Options = {}) {
   await page.route("**/api/**", (route) =>
     route.fulfill({
       status: 503,
-      json: { detail: { code: "test_unrelated", message: "Unrelated fixture" } },
+      json: {
+        detail: { code: "test_unrelated", message: "Unrelated fixture" },
+      },
     }),
   );
   const auth = await mockAuthApi(page, { user });
@@ -237,7 +245,7 @@ export async function setup(page: Page, opts: Options = {}) {
     }
     const limit = Number(url.searchParams.get("limit") ?? 20);
     const offset = Number(url.searchParams.get("offset") ?? 0);
-    const page_ = <T,>(rows: T[]) => ({
+    const page_ = <T>(rows: T[]) => ({
       items: rows.slice(offset, offset + limit),
       next_offset: offset + limit < rows.length ? offset + limit : null,
     });
@@ -301,18 +309,26 @@ export async function setup(page: Page, opts: Options = {}) {
         Object.assign(f, {
           state: "open",
           version: f.version + 1,
-          recipient_count: (body.recipient_ids as string[] | undefined)?.length ?? 1,
+          recipient_count:
+            (body.recipient_ids as string[] | undefined)?.length ?? 1,
           audience_role: body.audience_role ?? "student",
           published_at: TIME,
         });
         return void (await send(200, f));
       }
       if (sub === "/close") {
-        Object.assign(f, { state: "closed", version: f.version + 1, closed_at: TIME });
+        Object.assign(f, {
+          state: "closed",
+          version: f.version + 1,
+          closed_at: TIME,
+        });
         return void (await send(200, f));
       }
       if (sub === "/response-count") {
-        return void (await send(200, { form_id: f.id, count: f.response_count }));
+        return void (await send(200, {
+          form_id: f.id,
+          count: f.response_count,
+        }));
       }
       if (sub === "/responses" && method === "GET") {
         const rows = ctx.responses.slice(0, f.response_count).map((rid) => ({
@@ -420,7 +436,11 @@ export async function setup(page: Page, opts: Options = {}) {
     if (path === `${MESSAGING}/recipients`) {
       await send(200, {
         items: [
-          { id: STUDENT.id, display_name: STUDENT.display_name, role: "student" },
+          {
+            id: STUDENT.id,
+            display_name: STUDENT.display_name,
+            role: "student",
+          },
         ],
         page: 1,
         page_size: 50,
@@ -441,7 +461,9 @@ export async function setup(page: Page, opts: Options = {}) {
     }
     if (path === `${MESSAGING}/previews` && method === "POST") {
       const value: Preview = {
-        ...samplePreview(`a4000000-0000-4000-8000-${(ctx.previews.size + 1).toString().padStart(12, "0")}`),
+        ...samplePreview(
+          `a4000000-0000-4000-8000-${(ctx.previews.size + 1).toString().padStart(12, "0")}`,
+        ),
         kind: String(body.kind),
         response_id: body.kind === "feedback_response" ? RESPONSE_ID : null,
         audience_mode:
@@ -456,7 +478,9 @@ export async function setup(page: Page, opts: Options = {}) {
     if (/\/previews\/[^/]+\/send$/.test(path)) {
       const value = ctx.previews.get(path.split("/").at(-2)!);
       if (!value) {
-        await send(404, { detail: { code: "PREVIEW_NOT_FOUND", message: "x" } });
+        await send(404, {
+          detail: { code: "PREVIEW_NOT_FOUND", message: "x" },
+        });
         return;
       }
       if (!ctx.receipts.has(value.id)) {
@@ -536,9 +560,15 @@ export async function reloadSettled(page: Page, ctx: Ctx, url: string) {
     u: ctx.followUpGets().length,
   };
   await page.goto(url);
-  await expect.poll(() => ctx.formsCountGets().length).toBeGreaterThanOrEqual(mark.f + 1);
-  await expect.poll(() => ctx.analysesCountGets().length).toBeGreaterThanOrEqual(mark.a + 1);
-  await expect.poll(() => ctx.followUpGets().length).toBeGreaterThanOrEqual(mark.u + 1);
+  await expect
+    .poll(() => ctx.formsCountGets().length)
+    .toBeGreaterThanOrEqual(mark.f + 1);
+  await expect
+    .poll(() => ctx.analysesCountGets().length)
+    .toBeGreaterThanOrEqual(mark.a + 1);
+  await expect
+    .poll(() => ctx.followUpGets().length)
+    .toBeGreaterThanOrEqual(mark.u + 1);
   await page.waitForLoadState("networkidle");
 }
 /** Selected tab name or null. */

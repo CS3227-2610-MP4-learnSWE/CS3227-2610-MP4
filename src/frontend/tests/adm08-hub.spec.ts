@@ -67,7 +67,10 @@ test("adm08 AC4 entry replaces /admin/feedback-hub with /forms, shows label, mut
   expect(await page.evaluate(() => window.history.length)).toBeLessThanOrEqual(
     historyBefore + 1,
   );
-  const region = page.getByRole("region", { name: "Feedback hub", exact: true });
+  const region = page.getByRole("region", {
+    name: "Feedback hub",
+    exact: true,
+  });
   await expect(region).toBeVisible();
   await expect(region.getByText("Feedback hub", { exact: true })).toBeVisible();
   await expect(region.getByText(MSG.muted, { exact: true })).toBeVisible();
@@ -164,7 +167,9 @@ test("adm08 AC5 a known tab with an unmatched rest shows the hub not-found alert
   await expect(page).toHaveURL(new RegExp(`${HUB}/forms$`));
   await expect(alertWith(page, MSG.notFound)).toHaveCount(0);
   await page.goBack(); // "Go to Forms" pushes
-  await expect(page).toHaveURL(new RegExp(`${HUB}/forms/${DRAFT_FORM_ID}/edit/extra$`));
+  await expect(page).toHaveURL(
+    new RegExp(`${HUB}/forms/${DRAFT_FORM_ID}/edit/extra$`),
+  );
 });
 
 for (const bad of [
@@ -278,11 +283,7 @@ test("adm08 AC7 each tab click pushes its landing URL with exactly its own landi
   await settle(ctx);
   const landing: [string, string, string[]][] = [
     ["Responses", "/responses", [`GET ${COUNT_FORMS}`]],
-    [
-      "Analysis",
-      "/analysis",
-      [`GET ${COUNT_FORMS}`, `GET ${COUNT_ANALYSES}`],
-    ],
+    ["Analysis", "/analysis", [`GET ${COUNT_FORMS}`, `GET ${COUNT_ANALYSES}`]],
     ["Follow-up", "/follow-up", [`GET ${MESSAGING}/recipients`]],
     ["Forms", "/forms", [`GET ${COUNT_FORMS}`]],
   ];
@@ -291,9 +292,9 @@ test("adm08 AC7 each tab click pushes its landing URL with exactly its own landi
     await tab(page, name).click();
     await expect(page).toHaveURL(new RegExp(`${HUB}${suffix}$`));
     await expect(tab(page, name)).toHaveAttribute("aria-selected", "true");
-    await expect.poll(() => ctx.since(mark).length).toBeGreaterThanOrEqual(
-      expected.length,
-    );
+    await expect
+      .poll(() => ctx.since(mark).length)
+      .toBeGreaterThanOrEqual(expected.length);
     await page.waitForTimeout(150);
     expect(keys(ctx.since(mark))).toEqual([...expected].sort());
   }
@@ -463,7 +464,9 @@ test("adm08 AC12 leaving a dirty new-form editor by tab, nav link or in-hub link
     await leave();
     const dialog = page.getByRole("dialog", { name: MSG.discard, exact: true });
     await expect(dialog).toBeVisible();
-    await dialog.getByRole("button", { name: "Keep editing", exact: true }).click();
+    await dialog
+      .getByRole("button", { name: "Keep editing", exact: true })
+      .click();
     await expect(dialog).toHaveCount(0);
     await expect(page).toHaveURL(new RegExp(`${HUB}/forms/new$`));
     await expect(tab(page, "Forms")).toHaveAttribute("aria-selected", "true");
@@ -700,16 +703,26 @@ test("adm08 AC18 truncation note when next_offset is not null (101 forms)", asyn
   );
   const ctx = await arrange(page, { forms: many });
   await open(page, `${HUB}/responses`);
-  await expect(page.getByText(MSG.chooserTruncated, { exact: true })).toBeVisible();
+  await expect(
+    page.getByText(MSG.chooserTruncated, { exact: true }),
+  ).toBeVisible();
   await expect(select(page).locator("option")).toHaveCount(101); // placeholder + first 100
   await settle(ctx);
 });
 
-const CHOOSER_FAILURES: [string, { status?: number; code?: string; abort?: boolean }, string][] = [
+const CHOOSER_FAILURES: [
+  string,
+  { status?: number; code?: string; abort?: boolean },
+  string,
+][] = [
   ["403", { status: 403, code: "forbidden" }, MSG.forbidden],
   ["429", { status: 429, code: "feedback_rate_limited" }, MSG.limited],
   ["500", { status: 500, code: "feedback_error" }, MSG.unexpected],
-  ["502 (unknown status)", { status: 502, code: "bad_gateway" }, MSG.unexpected],
+  [
+    "502 (unknown status)",
+    { status: 502, code: "bad_gateway" },
+    MSG.unexpected,
+  ],
   ["503", { status: 503, code: "feedback_unavailable" }, MSG.unavailable],
   ["network", { abort: true }, MSG.network],
 ];
@@ -719,8 +732,18 @@ for (const [name, fail, message] of CHOOSER_FAILURES) {
   }) => {
     const ctx = await arrange(page);
     // fail only the chooser's own request: the second matching GET is the screen's (counts are silent anyway)
-    ctx.steps.push({ method: "GET", suffix: "/forms", query: "limit=100", ...fail });
-    ctx.steps.push({ method: "GET", suffix: "/forms", query: "limit=100", ...fail });
+    ctx.steps.push({
+      method: "GET",
+      suffix: "/forms",
+      query: "limit=100",
+      ...fail,
+    });
+    ctx.steps.push({
+      method: "GET",
+      suffix: "/forms",
+      query: "limit=100",
+      ...fail,
+    });
     await page.goto(`${HUB}/responses`);
     await expect(alertWith(page, message).first()).toBeVisible();
     await expect(tablist(page)).toBeVisible();
@@ -738,8 +761,18 @@ test("adm08 AC18 chooser 15 second timeout shows the ADM-02 timeout message", as
 }) => {
   test.setTimeout(60_000);
   const ctx = await arrange(page);
-  ctx.steps.push({ method: "GET", suffix: "/forms", query: "limit=100", hold: true });
-  ctx.steps.push({ method: "GET", suffix: "/forms", query: "limit=100", hold: true });
+  ctx.steps.push({
+    method: "GET",
+    suffix: "/forms",
+    query: "limit=100",
+    hold: true,
+  });
+  ctx.steps.push({
+    method: "GET",
+    suffix: "/forms",
+    query: "limit=100",
+    hold: true,
+  });
   await page.goto(`${HUB}/responses`);
   await expect(alertWith(page, MSG.timeout).first()).toBeVisible({
     timeout: 25_000,
@@ -759,9 +792,9 @@ test("adm08 AC18 an XSS-style form title renders as literal text in the chooser"
   });
   await arrange(page, { forms: [makeForm(FORM_ID, evil, "open", 1)] });
   await open(page, `${HUB}/responses`);
-  await expect(
-    select(page).locator("option", { hasText: evil }),
-  ).toHaveCount(1);
+  await expect(select(page).locator("option", { hasText: evil })).toHaveCount(
+    1,
+  );
   await expect(page.locator("img[src='x']")).toHaveCount(0);
   expect(fired).toBe(false);
 });
@@ -801,7 +834,8 @@ test("adm08 AC26 badges and descriptions: open and draft mix, response sum exclu
     "3 responses without a reply",
   );
   await expect(badge(page, "Follow-up")).toHaveText("3");
-  for (const name of TABS) await expect(tab(page, name)).toHaveAccessibleName(name);
+  for (const name of TABS)
+    await expect(tab(page, name)).toHaveAccessibleName(name);
   expect(await noStorage(page)).toBe(0);
 });
 
@@ -818,10 +852,18 @@ test("adm08 AC26 singular forms, one draft, one saved analysis and one response 
   });
   await open(page, `${HUB}/forms`);
   await settle(ctx);
-  await expect(tab(page, "Forms")).toHaveAccessibleDescription("1 open form, 1 draft");
-  await expect(tab(page, "Responses")).toHaveAccessibleDescription("1 submitted response");
-  await expect(tab(page, "Analysis")).toHaveAccessibleDescription("1 saved analysis");
-  await expect(tab(page, "Follow-up")).toHaveAccessibleDescription("1 response without a reply");
+  await expect(tab(page, "Forms")).toHaveAccessibleDescription(
+    "1 open form, 1 draft",
+  );
+  await expect(tab(page, "Responses")).toHaveAccessibleDescription(
+    "1 submitted response",
+  );
+  await expect(tab(page, "Analysis")).toHaveAccessibleDescription(
+    "1 saved analysis",
+  );
+  await expect(tab(page, "Follow-up")).toHaveAccessibleDescription(
+    "1 response without a reply",
+  );
 });
 
 test("adm08 AC26 zero hides the badge and the description; nothing shown while loading", async ({
@@ -865,16 +907,27 @@ test("adm08 AC26 truncated lists show {n}+ and 'at least' descriptions; Follow-u
   await open(page, `${HUB}/follow-up`);
   await settle(ctx);
   await expect(badge(page, "Forms")).toHaveText("100+");
-  await expect(tab(page, "Forms")).toHaveAccessibleDescription(/^at least 100 open forms/);
+  await expect(tab(page, "Forms")).toHaveAccessibleDescription(
+    /^at least 100 open forms/,
+  );
   await expect(badge(page, "Responses")).toHaveText("100+");
-  await expect(tab(page, "Responses")).toHaveAccessibleDescription(/^at least 100 submitted responses/);
+  await expect(tab(page, "Responses")).toHaveAccessibleDescription(
+    /^at least 100 submitted responses/,
+  );
   await expect(badge(page, "Analysis")).toHaveText("50+");
-  await expect(tab(page, "Analysis")).toHaveAccessibleDescription("at least 50 saved analyses");
+  await expect(tab(page, "Analysis")).toHaveAccessibleDescription(
+    "at least 50 saved analyses",
+  );
   await expect(badge(page, "Follow-up")).toHaveText("99+");
-  await expect(tab(page, "Follow-up")).toHaveAccessibleDescription("150 responses without a reply");
+  await expect(tab(page, "Follow-up")).toHaveAccessibleDescription(
+    "150 responses without a reply",
+  );
 });
 
-const COUNT_FAILS: [string, { status?: number; code?: string; abort?: boolean }][] = [
+const COUNT_FAILS: [
+  string,
+  { status?: number; code?: string; abort?: boolean },
+][] = [
   ["500", { status: 500, code: "feedback_error" }],
   ["429", { status: 429, code: "feedback_rate_limited" }],
   ["network", { abort: true }],
@@ -885,7 +938,12 @@ for (const [name, fail] of COUNT_FAILS) {
   }) => {
     const ctx = await arrange(page);
     ctx.steps.push({ method: "GET", suffix: "/followup-counts", ...fail });
-    ctx.steps.push({ method: "GET", suffix: "/analyses", query: "limit=50", ...fail });
+    ctx.steps.push({
+      method: "GET",
+      suffix: "/analyses",
+      query: "limit=50",
+      ...fail,
+    });
     await open(page, `${HUB}/follow-up`);
     await settle(ctx);
     await page.waitForTimeout(300);
@@ -904,7 +962,13 @@ test("adm08 AC26 a forms-count failure (500) leaves the Forms and Responses badg
 }) => {
   const ctx = await arrange(page);
   // the count is the request that arrives with limit=100&offset=0; the Forms screen uses its own query
-  ctx.steps.push({ method: "GET", suffix: "/forms", query: "limit=100&offset=0", status: 500, code: "x" });
+  ctx.steps.push({
+    method: "GET",
+    suffix: "/forms",
+    query: "limit=100&offset=0",
+    status: 500,
+    code: "x",
+  });
   await open(page, `${HUB}/follow-up`);
   await settle(ctx);
   await page.waitForTimeout(300);
@@ -991,7 +1055,9 @@ test("adm08 AC28 the Follow-up badge renders the mocked value and description, n
   await open(page, `${HUB}/forms`);
   await settle(ctx);
   await expect(badge(page, "Follow-up")).toHaveText("7");
-  await expect(tab(page, "Follow-up")).toHaveAccessibleDescription("7 responses without a reply");
+  await expect(tab(page, "Follow-up")).toHaveAccessibleDescription(
+    "7 responses without a reply",
+  );
   const bar = await tablist(page).innerText();
   expect(bar).not.toContain(STUDENT.display_name);
   expect(bar).not.toContain(RESPONSE_ID);
@@ -1068,9 +1134,7 @@ test("adm08 AC15 reduced motion removes tab transitions", async ({ page }) => {
     const duration = await tab(page, name).evaluate(
       (el) => getComputedStyle(el).transitionDuration,
     );
-    expect(
-      duration.split(",").every((d) => parseFloat(d) <= 0.01),
-    ).toBe(true);
+    expect(duration.split(",").every((d) => parseFloat(d) <= 0.01)).toBe(true);
   }
 });
 
@@ -1143,4 +1207,3 @@ test("adm08 security: a second admin signing in after logout sees none of the pr
   await expect(page.getByText("4 responses without a reply")).toHaveCount(0);
   expect(await noStorage(page)).toBe(0);
 });
-

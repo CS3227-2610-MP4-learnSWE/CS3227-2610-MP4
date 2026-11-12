@@ -163,9 +163,7 @@ test("mobile navigation works without horizontal overflow", async ({
   ).toBe(true);
 });
 
-test("teacher generation is real", async ({
-  page,
-}) => {
+test("teacher generation is real", async ({ page }) => {
   const teacherApi = await mockTeacherNotesApi(page);
   await page.goto("/teacher/generate");
   await page
@@ -224,11 +222,7 @@ test("desktop and mobile layouts render without overflow in both themes", async 
           `${route} at ${width}px in ${theme}: ${JSON.stringify(overflow)}`,
         ).toBe(true);
         if (
-          [
-            "/login",
-            "/student/overview",
-            "/teacher/generate",
-          ].includes(route)
+          ["/login", "/student/overview", "/teacher/generate"].includes(route)
         ) {
           await page.screenshot({
             path: `test-results/visual/${theme}-${width}-${route.replaceAll("/", "-")}.png`,

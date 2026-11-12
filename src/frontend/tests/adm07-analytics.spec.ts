@@ -923,7 +923,9 @@ test("adm07 daily charts: the data table toggle does not open the overlay, and u
   const daily = region(page, "Daily activity");
   const title = "Attempts per student per day";
   const card = group(daily, title);
-  await card.getByRole("button", { name: "Show data table", exact: true }).click();
+  await card
+    .getByRole("button", { name: "Show data table", exact: true })
+    .click();
   await card.getByRole("table", { name: `${title} data` }).click();
   await expect(modal(page, title)).toHaveCount(0);
   // Logins are unavailable in this fixture: no chart, so no Expand button.
