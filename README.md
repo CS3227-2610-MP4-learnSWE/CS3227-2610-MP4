@@ -118,7 +118,7 @@ uv run --env-file .env python -m alembic upgrade head
 - **Sample data (recommended to try the app).** Creates the three accounts, a course with two lessons and a practice set, an example feedback form and a week of example usage figures, so every screen has something to show. It only runs when `APP_ENV=development`.
 
   ```sh
-  uv run --env-file .env python dev_seed.py
+  uv run --env-file .env python sample_data.py
   ```
 
   You should see `demo-student: seeded`, `demo-teacher: seeded` and `demo-admin: seeded`. Running it again is safe: it does not duplicate anything or change existing passwords.

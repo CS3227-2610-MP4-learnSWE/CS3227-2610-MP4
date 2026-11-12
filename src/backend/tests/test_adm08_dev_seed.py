@@ -77,6 +77,6 @@ def test_adm08_dev_seed_published_form_with_six_question_types_and_responses_vis
 
 
 def test_adm08_dev_seed_is_registered_in_the_shared_dev_seed_after_the_existing_steps():
-    text = (BACKEND / "dev_seed.py").read_text(encoding="utf-8")
+    text = (BACKEND / "sample_data.py").read_text(encoding="utf-8")
     assert "feedback_dev_seed" in text
     assert text.index("teacher_publications") < text.index("feedback_dev_seed")

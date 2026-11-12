@@ -1,6 +1,6 @@
 """One command that fills a fresh development database: run it after `alembic upgrade head`.
 
-    uv run --env-file .env python dev_seed.py
+    uv run --env-file .env python sample_data.py
 
 Runs each seed in dependency order and stops at the first failure. Refuses unless APP_ENV=development.
 Every step is idempotent, so running it again is safe. Never run it against a shared or production database.
@@ -22,14 +22,14 @@ STEPS = (
 
 def main() -> int:
     if os.environ.get("APP_ENV") != "development":
-        print("dev_seed is for development databases only (set APP_ENV=development).")
+        print("sample_data is for development databases only (set APP_ENV=development).")
         return 1
     for step in STEPS:
         module, *args = (step,) if isinstance(step, str) else step
         print(f"== {module}")
         code = subprocess.call([sys.executable, "-m", module, *args])
         if code != 0:
-            print(f"dev_seed stopped: {module} exited with {code}")
+            print(f"sample_data stopped: {module} exited with {code}")
             return code
     return 0
 
