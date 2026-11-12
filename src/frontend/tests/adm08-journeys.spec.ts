@@ -1,6 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
 import {
-  COUNT_FOLLOWUP,
   DRAFT_FORM_ID,
   FORM_ID,
   HUB,
@@ -300,13 +299,6 @@ test("adm08 AC27 tab click goes to /analysis with no query and no preselection; 
   await expect(page).toHaveURL(new RegExp(`${HUB}/analysis$`));
   expect(await pickerText(page)).not.toContain(TITLE);
   await expect(page.getByText(MSG.notAvailableForAnalysis)).toHaveCount(0);
-});
-
-test("adm08 AC27 the link is absent on the old route", async ({ page }) => {
-  await arrange(page);
-  await page.goto(`/admin/feedback/${FORM_ID}/responses`);
-  await expect(heading(page, "Submitted responses", 2)).toBeVisible();
-  await expect(link(page, "Analyse this form")).toHaveCount(0);
 });
 
 // ================================================================ J4 response delete
@@ -747,24 +739,6 @@ test("adm08 AC29 latest wins: a late answer of an older refetch never replaces t
   ctx.release(); // the older answer (50) arrives late
   await settled(page);
   await expect(badge(page, "Follow-up")).toHaveText("2");
-});
-
-test("adm08 AC29 the same actions on the old routes send no count request and behave as before", async ({
-  page,
-}) => {
-  const ctx = await mounted(page);
-  await page.goto(`/admin/feedback/${FORM_ID}/responses/${RESPONSE_ID}/reply`);
-  await composeAndReview(page);
-  await confirmSend(page).click();
-  await expect(heading(page, "Message sent")).toBeVisible();
-  await page.goto(`/admin/feedback/${FORM_ID}/responses/${RESPONSE_ID}`);
-  await trigger(page).click();
-  await confirmDelete(page).click();
-  await expect(statusWith(page, DONE_RESPONSE)).toBeVisible();
-  await settled(page);
-  expect(ctx.followUpGets()).toHaveLength(0);
-  expect(ctx.analysesCountGets()).toHaveLength(0);
-  expect(ctx.requests.filter((r) => r.path === COUNT_FOLLOWUP)).toHaveLength(0);
 });
 
 test("adm08 AC29 changes by an unseen other admin are not reflected after tab clicks, only after reload", async ({

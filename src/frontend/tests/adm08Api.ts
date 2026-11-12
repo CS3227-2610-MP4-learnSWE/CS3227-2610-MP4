@@ -1,7 +1,7 @@
 import { expect, type Page, type Route } from "@playwright/test";
 import { ADMIN, STUDENT, TEACHER, mockAuthApi, type User } from "./authApi";
 import { FORM_ID, RESPONSE_ID, TITLE, TIME, form, questions } from "./adm02Api";
-import { analysis, uuid as analysisUuid, type Analysis } from "./adm03Api";
+import { analysis, uuid as analysisUuid, type Analysis } from "./adm08-ported-adm03Api";
 import { samplePreview, type Preview } from "./adm04Api";
 
 /**

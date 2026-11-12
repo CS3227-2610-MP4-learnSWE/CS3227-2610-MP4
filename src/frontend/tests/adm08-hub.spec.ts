@@ -322,21 +322,21 @@ test("adm08 AC7 clicking the selected tab on its landing sends nothing; from a d
 });
 
 // ---------------------------------------------------------------- AC9 navigation
-test("adm08 AC9 nav link Feedback hub goes to the Forms tab (push), is selected on hub URLs, and the old links remain", async ({
+test("adm08 AC9 nav link Feedback hub goes to the Forms tab (push), is selected on hub URLs, and the old links are gone (AC25)", async ({
   page,
 }) => {
   await arrange(page);
   await page.goto("/admin/overview");
   const nav = link(page, "Feedback hub");
   await expect(nav).toHaveAttribute("href", `${HUB}/forms`);
-  for (const old of [
+  for (const removed of [
     "Feedback forms",
     "Announcements",
     "Feedback insights",
-    "Analytics",
-    "Feature Analytics",
   ])
-    await expect(link(page, old)).toBeVisible();
+    await expect(link(page, removed)).toHaveCount(0);
+  for (const kept of ["Analytics", "Feature Analytics"])
+    await expect(link(page, kept)).toBeVisible();
   await nav.click();
   await expect(page).toHaveURL(new RegExp(`${HUB}/forms$`));
   await page.goBack();
@@ -357,35 +357,6 @@ test("adm08 AC9 nav link Feedback hub goes to the Forms tab (push), is selected 
     "aria-current",
     "page",
   );
-});
-
-// ---------------------------------------------------------------- AC10 old routes
-test("adm08 AC10 an old URL shows no tab bar, keeps old links and sends no count request", async ({
-  page,
-}) => {
-  const ctx = await arrange(page);
-  await page.goto("/admin/feedback");
-  await expect(heading(page, "Feedback forms")).toBeVisible();
-  await expect(tablist(page)).toHaveCount(0);
-  await expect(link(page, "New feedback form")).toHaveAttribute(
-    "href",
-    "/admin/feedback/new",
-  );
-  await expect(
-    page.getByRole("region", { name: "Feedback hub", exact: true }),
-  ).toHaveCount(0);
-  expect(ctx.followUpGets()).toHaveLength(0);
-  expect(ctx.analysesCountGets()).toHaveLength(0);
-  for (const old of [
-    "/admin/feedback/analysis",
-    "/admin/announcements/new",
-    `/admin/feedback/${FORM_ID}/responses`,
-  ]) {
-    await page.goto(old);
-    await expect(tablist(page)).toHaveCount(0);
-    await expect(page).toHaveURL(new RegExp(old + "$"));
-  }
-  expect(ctx.followUpGets()).toHaveLength(0);
 });
 
 // ---------------------------------------------------------------- AC11 access
