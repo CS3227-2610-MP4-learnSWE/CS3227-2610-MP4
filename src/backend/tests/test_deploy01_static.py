@@ -110,3 +110,51 @@ def test_deploy01_ac2_missing_build_does_not_invent_shell(tmp_path):
     attach_frontend(app, tmp_path / "absent")
     with TestClient(app) as client:
         assert client.get("/login", headers={"Accept": "text/html"}).status_code == 404
+
+
+@pytest.mark.parametrize("method", ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"])
+@pytest.mark.parametrize("path", ["/api", "/api/unknown", "/api/unknown/deeper"])
+def test_deploy01_ac2_unknown_api_methods_preserve_framework_behavior(tmp_path, method, path):
+    """Adding static hosting must not change the API-only router's errors."""
+    from deployment.static import attach_frontend
+
+    reference = FastAPI()
+    hosted = FastAPI()
+    attach_frontend(hosted, tmp_path)
+    with TestClient(reference) as before, TestClient(hosted) as after:
+        expected = before.request(method, path, follow_redirects=False)
+        actual = after.request(method, path, follow_redirects=False)
+    assert actual.status_code == expected.status_code
+    assert actual.content == expected.content
+    assert actual.headers.get("content-type") == expected.headers.get("content-type")
+    assert actual.headers.get("allow") == expected.headers.get("allow")
+
+
+@pytest.mark.parametrize("method", ["GET", "HEAD", "POST", "OPTIONS", "DELETE"])
+@pytest.mark.parametrize("path", ["/api/read", "/api/read/", "/api/mutation", "/api/mutation/"])
+def test_deploy01_ac2_existing_api_slash_and_method_behavior_unchanged(tmp_path, method, path):
+    """Framework redirects and 405 responses belong to the existing API."""
+    from deployment.static import attach_frontend
+
+    def api_app():
+        app = FastAPI()
+
+        @app.get("/api/read")
+        def read():
+            return {"status": "read"}
+
+        @app.post("/api/mutation")
+        def mutate():
+            raise HTTPException(403, "CSRF token required")
+
+        return app
+
+    reference, hosted = api_app(), api_app()
+    attach_frontend(hosted, tmp_path)
+    with TestClient(reference) as before, TestClient(hosted) as after:
+        expected = before.request(method, path, follow_redirects=False)
+        actual = after.request(method, path, follow_redirects=False)
+    assert actual.status_code == expected.status_code
+    assert actual.content == expected.content
+    for header in ("content-type", "location", "allow"):
+        assert actual.headers.get(header) == expected.headers.get(header)
