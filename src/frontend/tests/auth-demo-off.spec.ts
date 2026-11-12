@@ -24,7 +24,7 @@ test.beforeEach(async ({ page }) => {
 for (const route of [
   "/student/overview",
   "/teacher/overview",
-  "/admin/overview",
+  "/admin/analytics",
   "/teacher/materials",
 ]) {
   test(`shr01 AC22 flag off: anonymous ${route} redirects to /login`, async ({
@@ -72,7 +72,7 @@ test("shr01 AC22 flag off: the loading status shows while pending and never redi
 for (const [user, own] of [
   [STUDENT, "/student/overview"],
   [TEACHER, "/teacher/overview"],
-  [ADMIN, "/admin/overview"],
+  [ADMIN, "/admin/analytics"],
 ] as const) {
   test(`shr01 AC22 flag off: a signed-in ${user.role} still reaches their area and no demo switcher shows`, async ({
     page,
@@ -91,7 +91,7 @@ test("shr01 AC22 flag off: a signed-in user of the wrong role is still sent to t
   page,
 }) => {
   await mockAuthApi(page, { user: STUDENT });
-  await page.goto("/admin/overview");
+  await page.goto("/admin/analytics");
   await expect(page).toHaveURL(/\/student\/overview$/);
 });
 

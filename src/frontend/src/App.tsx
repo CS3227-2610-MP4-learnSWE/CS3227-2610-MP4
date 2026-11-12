@@ -213,7 +213,11 @@ export default function App() {
                 </RequireRole>
               }
             >
-              <Route index element={<Navigate to="overview" replace />} />
+              <Route index element={<Navigate to="analytics" replace />} />
+              <Route
+                path="overview"
+                element={<Navigate to="/admin/analytics" replace />}
+              />
               <Route
                 path="feedback-hub/*"
                 element={

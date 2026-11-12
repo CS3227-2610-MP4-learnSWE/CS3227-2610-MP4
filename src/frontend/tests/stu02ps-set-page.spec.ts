@@ -432,7 +432,7 @@ test("stu02ps AC16 opening a different set id resets the state and loads the new
 // ------------------------------------------------------------------ wrong role, companion, layout
 for (const [label, user, home] of [
   ["teacher", TEACHER, "/teacher/overview"],
-  ["admin", ADMIN, "/admin/overview"],
+  ["admin", ADMIN, "/admin/analytics"],
 ] as const) {
   test(`stu02ps AC16 wrong role: a ${label} opening a set is redirected before any request`, async ({
     page,

@@ -17,7 +17,6 @@ import {
   ArrowRight,
   BarChart3,
   FileText,
-  MessageSquare,
   Plus,
   Sparkles,
 } from "lucide-react";
@@ -26,154 +25,10 @@ import {
   PageHeading,
   Panel,
   PreviewNote,
-  PrimaryLink,
-  SectionHeading,
   Stat,
   Tag,
 } from "../components/ui";
-import { feedback, weeklyActivity } from "../data";
 
-function Overview() {
-  const [period, setPeriod] = useState("This week");
-  return (
-    <>
-      <PageHeading
-        eyebrow="LISTEN. UNDERSTAND. MAKE IT BETTER."
-        title="A clearer picture of learning."
-        description="Welcome back, Morgan. Here’s what’s happening across learnSWE."
-        action={
-          <TextField
-            select
-            label="Reporting period"
-            value={period}
-            onChange={(e) => setPeriod(e.target.value)}
-            sx={{ width: 160 }}
-          >
-            {["This week", "Last week"].map((p) => (
-              <MenuItem key={p} value={p}>
-                {p}
-              </MenuItem>
-            ))}
-          </TextField>
-        }
-      />
-      <div className="stats-grid four">
-        <Stat
-          label="Active learners"
-          value={period === "This week" ? "128" : "116"}
-          detail="Illustrative active accounts"
-          icon="people"
-        />
-        <Stat
-          label="Practice sets completed"
-          value={period === "This week" ? "246" : "212"}
-          detail="Sample whole-set submissions"
-          icon="code"
-          tone="purple"
-        />
-        <Stat
-          label="AI generation success"
-          value="98.2%"
-          detail="Successful / attempted · Sample"
-          icon="sparkles"
-          tone="green"
-        />
-        <Stat
-          label="Feedback responses"
-          value="32"
-          detail="Across 3 sample forms"
-          icon="forms"
-          tone="amber"
-        />
-      </div>
-      <div className="dashboard-columns">
-        <Panel className="analytics-chart">
-          <div className="section-heading">
-            <div>
-              <h2>A community showing up</h2>
-              <p className="muted">
-                Sample feature interactions · {period.toLowerCase()}
-              </p>
-            </div>
-            <Tag>Illustrative data</Tag>
-          </div>
-          <div
-            className="analytics-bars"
-            role="img"
-            aria-label={`Illustrative feature interaction chart for ${period.toLowerCase()}`}
-          >
-            {weeklyActivity.map((value, i) => (
-              <div key={i}>
-                <div className="bar-pair">
-                  <i
-                    style={{
-                      height: `${value * (period === "This week" ? 1 : 0.8)}%`,
-                    }}
-                  />
-                  <i style={{ height: `${value * 0.6}%` }} />
-                </div>
-                <span>
-                  {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"][i]}
-                </span>
-              </div>
-            ))}
-          </div>
-          <div className="chart-legend">
-            <span>
-              <i />
-              Practice
-            </span>
-            <span>
-              <i />
-              AI companion
-            </span>
-          </div>
-        </Panel>
-        <Panel className="feedback-pulse">
-          <span className="icon-box purple">
-            <MessageSquare size={22} />
-          </span>
-          <h2>
-            A small question.
-            <br />A meaningful insight.
-          </h2>
-          <p>
-            Make space for the voices behind the numbers. Invite your community
-            to share what matters.
-          </p>
-          <PrimaryLink to="/admin/forms">Create feedback form</PrimaryLink>
-          <div className="pulse-bottom">
-            <span className="avatar-stack">
-              <b>A</b>
-              <b>J</b>
-              <b>M</b>
-            </span>
-            <span>32 sample voices. Plenty to learn.</span>
-          </div>
-        </Panel>
-      </div>
-      <SectionHeading title="What your community is saying" />
-      <div className="feedback-cards">
-        {feedback.map((item) => (
-          <Panel key={item.id} className="feedback-card">
-            <div>
-              <Tag tone={item.sentiment === "Positive" ? "green" : "purple"}>
-                {item.tag}
-              </Tag>
-              <span>“</span>
-            </div>
-            <blockquote>{item.quote}</blockquote>
-            <small>{item.author} · Sample response</small>
-          </Panel>
-        ))}
-      </div>
-      <PreviewNote>
-        All metrics are illustrative. No analytics events are collected in this
-        preview.
-      </PreviewNote>
-    </>
-  );
-}
 function Forms() {
   const [title, setTitle] = useState("A better learning experience");
   const [audience, setAudience] = useState("Students");
@@ -433,8 +288,6 @@ function Usage() {
 function AdminContent() {
   const section = useLocation().pathname.split("/")[2];
   switch (section) {
-    case "overview":
-      return <Overview />;
     case "forms":
       return <Forms />;
     case "users":
@@ -446,7 +299,7 @@ function AdminContent() {
     default:
       return (
         <EmptyState title="This page isn’t here">
-          <Link to="/admin/overview">Back to analytics</Link>
+          <Link to="/admin/analytics">Back to analytics</Link>
         </EmptyState>
       );
   }
@@ -454,7 +307,7 @@ function AdminContent() {
 
 export default function Admin() {
   const section = useLocation().pathname.split("/")[2];
-  const preview = ["overview", "forms", "usage"].includes(section);
+  const preview = ["forms", "usage"].includes(section);
   return (
     <div className={`admin-surface${preview ? " admin-preview" : ""}`}>
       <AdminContent />

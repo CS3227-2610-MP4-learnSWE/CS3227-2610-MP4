@@ -684,7 +684,7 @@ test("stu04 AC16 logout then Back shows no progress data", async ({ page }) => {
 
 for (const [label, user, home] of [
   ["teacher", TEACHER, "/teacher/overview"],
-  ["admin", ADMIN, "/admin/overview"],
+  ["admin", ADMIN, "/admin/analytics"],
 ] as const) {
   test(`stu04 AC5 wrong role: a ${label} opening /student/progress is redirected before any progress request`, async ({
     page,

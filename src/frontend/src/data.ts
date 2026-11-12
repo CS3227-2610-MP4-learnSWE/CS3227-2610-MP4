@@ -24,7 +24,6 @@ export const navigation: Record<
     { path: "inbox", label: "Inbox", icon: "inbox" },
   ],
   admin: [
-    { path: "overview", label: "Analytics", icon: "overview" },
     { path: "analytics", label: "Feature Analytics", icon: "usage" },
     {
       path: "feedback-hub",
@@ -69,30 +68,3 @@ export const initialMessages = [
   },
 ];
 export type DemoMessage = (typeof initialMessages)[number];
-export const feedback = [
-  {
-    id: "FB-024",
-    author: "Student 024",
-    tag: "AI companion",
-    quote:
-      "The hints help me think it through instead of just copying an answer.",
-    sentiment: "Positive",
-  },
-  {
-    id: "FB-025",
-    author: "Teacher 008",
-    tag: "Content studio",
-    quote:
-      "I would like to see the original material next to the generated notes.",
-    sentiment: "Suggestion",
-  },
-  {
-    id: "FB-026",
-    author: "Student 031",
-    tag: "Practice",
-    quote:
-      "It would help to have a clearer explanation after submitting the set.",
-    sentiment: "Suggestion",
-  },
-];
-export const weeklyActivity = [42, 68, 51, 85, 62, 95, 74];

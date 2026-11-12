@@ -6,7 +6,9 @@ for (const user of [STUDENT, TEACHER, ADMIN]) {
     page,
   }, testInfo) => {
     const auth = await mockAuthApi(page, { user });
-    await page.goto(`/${user.role}/overview`);
+    // The admin home is the data-backed Feature Analytics hub; use the request-free admin demo page.
+    const start = user.role === "admin" ? "/admin/usage" : `/${user.role}/overview`;
+    await page.goto(start);
     await page.getByRole("button", { name: "Log out", exact: true }).click();
     const dialog = page.getByRole("dialog", {
       name: "Confirm logout",
@@ -25,7 +27,7 @@ for (const user of [STUDENT, TEACHER, ADMIN]) {
     expect(auth.count("logout")).toBe(0);
     await dialog.getByRole("button", { name: "Cancel", exact: true }).click();
     await expect(dialog).toHaveCount(0);
-    await expect(page).toHaveURL(new RegExp(`/${user.role}/overview$`));
+    await expect(page).toHaveURL(new RegExp(`${start}$`));
     await page.getByRole("button", { name: "Log out", exact: true }).click();
     await page.keyboard.press("Escape");
     await expect(dialog).toHaveCount(0);
@@ -39,7 +41,7 @@ test("shr01 logout confirmation submits once and cannot dismiss during pending l
 }) => {
   const auth = await mockAuthApi(page, { user: ADMIN });
   auth.script("logout", { hold: true });
-  await page.goto("/admin/overview");
+  await page.goto("/admin/usage");
   await page.getByRole("button", { name: "Log out", exact: true }).click();
   const dialog = page.getByRole("dialog", {
     name: "Confirm logout",

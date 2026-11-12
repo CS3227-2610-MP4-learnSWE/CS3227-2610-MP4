@@ -437,7 +437,7 @@ test("ADM-02 logout clears draft UI, cancels autosave and late responses cannot 
 
 for (const [user, url, destination] of [
   [STUDENT, "/admin/feedback", "/student/overview"],
-  [ADMIN, path, "/admin/overview"],
+  [ADMIN, path, "/admin/analytics"],
   [TEACHER, path, "/teacher/overview"],
 ] as const) {
   test(`ADM-02 wrong role ${user.role} ${url} replaces and sends zero feature reads`, async ({

@@ -66,7 +66,7 @@ test("adm04 AC06-08 announcement navigation default audience one load review rec
   page,
 }) => {
   const ctx = await setup(page);
-  await page.goto("/admin/overview");
+  await page.goto("/admin/usage");
   // hub equivalent of the old Announcements nav link: the Feedback hub link, then the Follow-up tab
   await page.getByRole("link", { name: "Feedback hub", exact: true }).click();
   await page.getByRole("tab", { name: "Follow-up", exact: true }).click();
@@ -289,7 +289,7 @@ test("adm04 AC12 browser Back Forward and refresh recover review with no duplica
   page,
 }) => {
   const ctx = await setup(page);
-  await page.goto("/admin/overview");
+  await page.goto("/admin/usage");
   // hub equivalent of the old Announcements nav link: the Feedback hub link, then the Follow-up tab.
   // Review replaces the Follow-up entry (as it replaced the old announcements entry), so Back
   // returns to the entry before it, which is now the hub's Forms tab instead of the Overview.

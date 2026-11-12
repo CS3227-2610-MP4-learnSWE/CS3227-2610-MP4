@@ -87,7 +87,7 @@ for (const mode of ["light", "dark"] as const) {
   });
 }
 
-for (const path of ["overview", "forms", "usage"]) {
+for (const path of ["forms", "usage"]) {
   test(`admin preview ${path} retains sample scope at 320px`, async ({
     page,
   }) => {
@@ -143,7 +143,6 @@ for (const width of [1365, 390]) {
       for (const [name, path] of [
         ["users", "/admin/users"],
         ["courses", "/admin/courses"],
-        ["analytics", "/admin/overview"],
       ]) {
         await page.goto(path);
         await expect(page.getByRole("heading", { level: 1 })).toBeVisible();

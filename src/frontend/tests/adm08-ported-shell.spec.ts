@@ -8,7 +8,7 @@ test("shr01 shell tip dismisses, stays dismissed on navigation and returns after
 }, testInfo) => {
   await mockAuthApi(page, { user: ADMIN });
   await page.setViewportSize({ width: 1280, height: 1000 });
-  await page.goto("/admin/overview");
+  await page.goto("/admin/usage");
   await expect(
     page.getByText("Listen. Learn. Improve.", { exact: true }),
   ).toBeVisible();

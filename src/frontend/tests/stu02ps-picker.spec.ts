@@ -445,7 +445,7 @@ test("stu02ps AC15 a failed retry replaces the message and shows no list from an
 // ------------------------------------------------------------------ wrong role, history, refresh
 for (const [label, user, home] of [
   ["teacher", TEACHER, "/teacher/overview"],
-  ["admin", ADMIN, "/admin/overview"],
+  ["admin", ADMIN, "/admin/analytics"],
 ] as const) {
   for (const path of ["/student/practice", `/student/practice/${SET_ID}`]) {
     test(`stu02ps AC15 wrong role: a ${label} opening ${path === "/student/practice" ? "the picker" : "a set"} is redirected before any request`, async ({

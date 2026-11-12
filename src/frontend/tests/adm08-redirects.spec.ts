@@ -83,13 +83,13 @@ for (const [old, hub] of MAP) {
     page,
   }) => {
     await arrange(page);
-    await page.goto("/admin/overview");
+    await page.goto("/admin/usage");
     const before = await page.evaluate(() => history.length);
     await pushOld(page, old);
     await expect.poll(() => here(page)).toBe(hub);
     expect(await page.evaluate(() => history.length)).toBe(before + 1);
     await page.goBack();
-    await expect(page).toHaveURL(/\/admin\/overview$/);
+    await expect(page).toHaveURL(/\/admin\/usage$/);
   });
 }
 
@@ -187,13 +187,13 @@ test("adm08 AC21 D1 /admin/responses is replaced, not pushed: Back skips the old
   page,
 }) => {
   await arrange(page);
-  await page.goto("/admin/overview");
+  await page.goto("/admin/usage");
   const before = await page.evaluate(() => history.length);
   await pushOld(page, "/admin/responses");
   await expect.poll(() => here(page)).toBe(`${HUB}/forms`);
   expect(await page.evaluate(() => history.length)).toBe(before + 1);
   await page.goBack();
-  await expect(page).toHaveURL(/\/admin\/overview$/);
+  await expect(page).toHaveURL(/\/admin\/usage$/);
 });
 
 for (const [user, home] of [

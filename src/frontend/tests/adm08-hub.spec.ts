@@ -60,7 +60,7 @@ test("adm08 AC4 entry replaces /admin/feedback-hub with /forms, shows label, mut
   page,
 }) => {
   const ctx = await arrange(page);
-  await page.goto("/admin/overview");
+  await page.goto("/admin/usage");
   const historyBefore = await page.evaluate(() => window.history.length);
   await page.goto(HUB);
   await expect(page).toHaveURL(new RegExp(`${HUB}/forms$`));
@@ -96,11 +96,11 @@ test("adm08 AC4 a trailing slash entry and the Back button do not trap the user 
   page,
 }) => {
   await arrange(page);
-  await page.goto("/admin/overview");
+  await page.goto("/admin/usage");
   await page.goto(`${HUB}/`);
   await expect(page).toHaveURL(new RegExp(`${HUB}/forms$`));
   await page.goBack();
-  await expect(page).toHaveURL(/\/admin\/overview$/);
+  await expect(page).toHaveURL(/\/admin\/usage$/);
 });
 
 // ---------------------------------------------------------------- AC5 deep links
@@ -141,7 +141,7 @@ test("adm08 AC5 unknown first segment is replaced with /forms (case-sensitive ma
   page,
 }) => {
   await arrange(page);
-  await page.goto("/admin/overview");
+  await page.goto("/admin/usage");
   for (const bad of ["nonsense", "Forms", "FORMS", "follow_up", "analyses"]) {
     await page.goto(`${HUB}/${bad}`);
     await expect(page).toHaveURL(new RegExp(`${HUB}/forms$`));
@@ -326,21 +326,22 @@ test("adm08 AC9 nav link Feedback hub goes to the Forms tab (push), is selected 
   page,
 }) => {
   await arrange(page);
-  await page.goto("/admin/overview");
+  await page.goto("/admin/usage");
   const nav = link(page, "Feedback hub");
   await expect(nav).toHaveAttribute("href", `${HUB}/forms`);
   for (const removed of [
     "Feedback forms",
     "Announcements",
     "Feedback insights",
+    "Analytics",
   ])
     await expect(link(page, removed)).toHaveCount(0);
-  for (const kept of ["Analytics", "Feature Analytics"])
+  for (const kept of ["Feature Analytics"])
     await expect(link(page, kept)).toBeVisible();
   await nav.click();
   await expect(page).toHaveURL(new RegExp(`${HUB}/forms$`));
   await page.goBack();
-  await expect(page).toHaveURL(/\/admin\/overview$/);
+  await expect(page).toHaveURL(/\/admin\/usage$/);
   for (const suffix of [
     "/responses",
     `/analysis/${ANALYSIS_ID}`,
@@ -352,7 +353,7 @@ test("adm08 AC9 nav link Feedback hub goes to the Forms tab (push), is selected 
       "page",
     );
   }
-  await page.goto("/admin/overview");
+  await page.goto("/admin/usage");
   await expect(link(page, "Feedback hub")).not.toHaveAttribute(
     "aria-current",
     "page",

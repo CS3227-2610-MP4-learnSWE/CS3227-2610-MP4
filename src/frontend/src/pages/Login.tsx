@@ -283,7 +283,6 @@ export default function Login({
                 >
                   <Tab value="student" label="Student" />
                   <Tab value="teacher" label="Teacher" />
-                  <Tab value="admin" label="Admin" />
                 </Tabs>
                 <Button
                   component={Link}

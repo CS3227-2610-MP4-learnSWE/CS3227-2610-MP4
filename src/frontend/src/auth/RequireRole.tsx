@@ -4,7 +4,9 @@ import type { Role } from "../data";
 import { useAuth } from "./AuthContext";
 import { demoAccessEnabled } from "./demoAccess";
 
-export const homePath = (role: Role) => `/${role}/overview`;
+/** Admins land on Feature Analytics; students and teachers on their Overview. */
+export const homePath = (role: Role) =>
+  role === "admin" ? "/admin/analytics" : `/${role}/overview`;
 
 /** UX guard only: the server enforces access on every API call. */
 export function RequireRole({

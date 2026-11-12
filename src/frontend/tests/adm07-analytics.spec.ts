@@ -139,16 +139,17 @@ test("adm07 header, muted line, sections, period options and controls", async ({
   await expect(page.getByText(/^Last updated /)).toBeVisible();
 });
 
-test("adm07 nav link Feature Analytics is distinct from the demo Analytics link", async ({
+test("adm07 nav has Feature Analytics and no separate Analytics link", async ({
   page,
 }) => {
   await ready(page);
   await expect(
     page.getByRole("link", { name: "Feature Analytics", exact: true }),
   ).toHaveAttribute("href", HUB);
+  // The separate sample "Analytics" overview was merged into Feature Analytics (2026-11-12).
   await expect(
     page.getByRole("link", { name: "Analytics", exact: true }),
-  ).toHaveAttribute("href", "/admin/overview");
+  ).toHaveCount(0);
 });
 
 test("adm07 AC29 load sends exactly seven parallel requests with the exact URLs", async ({

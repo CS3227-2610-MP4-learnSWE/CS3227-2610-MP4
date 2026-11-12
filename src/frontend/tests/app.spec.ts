@@ -108,13 +108,6 @@ const routesByRole: Record<string, string[]> = {
     "/teacher/inbox",
     "/teacher/feedback",
   ],
-  admin: [
-    "/admin/overview",
-    "/admin/forms",
-    "/admin/users",
-    "/admin/courses",
-    "/admin/usage",
-  ],
 };
 for (const [role, routes] of Object.entries(routesByRole)) {
   test(`${role} routes render on direct navigation and reload`, async ({
@@ -137,12 +130,6 @@ for (const [role, routes] of Object.entries(routesByRole)) {
       } else {
         await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
       }
-    }
-    if (role === "admin") {
-      await page.reload();
-      await expect(
-        page.getByRole("heading", { name: "AI usage" }),
-      ).toBeVisible();
     }
   });
 }
@@ -215,10 +202,6 @@ test("desktop and mobile layouts render without overflow in both themes", async 
         "/teacher/review",
         "/teacher/practice",
         "/teacher/inbox",
-        "/admin/overview",
-        "/admin/forms",
-        "/admin/users",
-        "/admin/usage",
       ]) {
         await mockAuthApi(page, {
           user: route.startsWith("/teacher/") ? TEACHER : null,
@@ -245,7 +228,6 @@ test("desktop and mobile layouts render without overflow in both themes", async 
             "/login",
             "/student/overview",
             "/teacher/generate",
-            "/admin/overview",
           ].includes(route)
         ) {
           await page.screenshot({

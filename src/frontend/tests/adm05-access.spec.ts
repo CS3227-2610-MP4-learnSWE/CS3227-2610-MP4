@@ -73,7 +73,7 @@ for (const width of [1100, 390]) {
       },
     });
     await page.setViewportSize({ width, height: 500 });
-    await page.goto("/admin/overview");
+    await page.goto("/admin/usage");
     if (width < 760)
       await page
         .getByRole("button", { name: "Open navigation", exact: true })
@@ -628,7 +628,7 @@ test("adm05 late old-session 401 cannot sign out a newly authenticated admin", a
   await page.getByLabel(/^email/i).fill(second.email!);
   await page.getByLabel(/^password/i).fill("second-admin-password-7391");
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
-  await expect(page).toHaveURL(/\/admin\/overview$/);
+  await expect(page).toHaveURL(/\/admin\/analytics(\?.*)?$/);
   await expect(page.getByText("Second Admin", { exact: true })).toBeVisible();
   const response = page.waitForResponse(
     (r) =>
@@ -643,7 +643,7 @@ test("adm05 late old-session 401 cannot sign out a newly authenticated admin", a
         requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
       ),
   );
-  await expect(page).toHaveURL(/\/admin\/overview$/);
+  await expect(page).toHaveURL(/\/admin\/analytics(\?.*)?$/);
   await expect(page.getByText("Second Admin", { exact: true })).toBeVisible();
   await expect(
     page.getByRole("heading", { name: "Account details", exact: true }),
