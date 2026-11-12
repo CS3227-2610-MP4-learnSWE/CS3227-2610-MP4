@@ -880,6 +880,56 @@ test("adm07 AC41 five daily cards; drafts started and published are two cards", 
     await expect(group(daily, name)).toBeVisible();
 });
 
+test("adm07 daily charts expand on hover and open an overlay with the data table, CSV and Close, like the Health charts", async ({
+  page,
+}) => {
+  await ready(page);
+  const daily = region(page, "Daily activity");
+  const title = "Attempts started and submitted per day";
+  const card = group(daily, title);
+  // Hover enlarges the card slightly.
+  await card.hover();
+  await expect(card).toHaveCSS("transform", /^matrix\(1\.0/);
+  // The Expand button opens the overlay with the large chart, its data table and the actions.
+  await expand(page, title).click();
+  const dialog = modal(page, title);
+  await expect(dialog).toBeVisible();
+  await expect(
+    dialog.getByRole("img", { name: `${title} chart` }),
+  ).toBeVisible();
+  await expect(
+    dialog.getByRole("table", { name: `${title} data` }),
+  ).toBeVisible();
+  const [download] = await Promise.all([
+    page.waitForEvent("download"),
+    dialog.getByRole("button", { name: "Download CSV", exact: true }).click(),
+  ]);
+  expect(download.suggestedFilename()).toMatch(
+    /^attempts-started-and-submitted-per-day_\d{4}-\d{2}-\d{2}_\d{4}-\d{2}-\d{2}\.csv$/,
+  );
+  await dialog.getByRole("button", { name: "Close", exact: true }).click();
+  await expect(dialog).toHaveCount(0);
+  // Clicking the chart itself opens it too.
+  await card.getByRole("img", { name: `${title} chart` }).click();
+  await expect(dialog).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(dialog).toHaveCount(0);
+});
+
+test("adm07 daily charts: the data table toggle does not open the overlay, and unavailable cards cannot expand", async ({
+  page,
+}) => {
+  await ready(page);
+  const daily = region(page, "Daily activity");
+  const title = "Attempts per student per day";
+  const card = group(daily, title);
+  await card.getByRole("button", { name: "Show data table", exact: true }).click();
+  await card.getByRole("table", { name: `${title} data` }).click();
+  await expect(modal(page, title)).toHaveCount(0);
+  // Logins are unavailable in this fixture: no chart, so no Expand button.
+  await expect(expand(page, "Logins per day")).toHaveCount(0);
+});
+
 test("adm07 AC23 phase 2: logins, drafts and published are unavailable, not zero", async ({
   page,
 }) => {
