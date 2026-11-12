@@ -290,10 +290,14 @@ test("adm04 AC12 browser Back Forward and refresh recover review with no duplica
 }) => {
   const ctx = await setup(page);
   await page.goto("/admin/overview");
-  await page.getByRole("link", { name: "Announcements", exact: true }).click();
+  // hub equivalent of the old Announcements nav link: the Feedback hub link, then the Follow-up tab.
+  // Review replaces the Follow-up entry (as it replaced the old announcements entry), so Back
+  // returns to the entry before it, which is now the hub's Forms tab instead of the Overview.
+  await page.getByRole("link", { name: "Feedback hub", exact: true }).click();
+  await page.getByRole("tab", { name: "Follow-up", exact: true }).click();
   await review(page);
   await page.goBack();
-  await expect(page).toHaveURL(/\/admin\/overview$/);
+  await expect(page).toHaveURL(/\/admin\/feedback-hub\/forms$/);
   await page.goForward();
   await expect(heading(page, "Review message")).toBeVisible();
   expect(ctx.of("GET", uuid(1))).toHaveLength(1);
