@@ -4,9 +4,9 @@ on:
   push:
     branches: [master]
     paths:
-      - 'website/**'
-      - 'scripts/build_product_site.py'
-      - '.github/workflows/pages.yml'
+      - "website/**"
+      - "scripts/build_product_site.py"
+      - ".github/workflows/pages.yml"
   workflow_dispatch:
 
 permissions:
@@ -28,7 +28,7 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: "3.12"
       - name: Build website with validated application URL
         env:
           PRODUCT_APP_URL: ${{ vars.PRODUCT_APP_URL }}
