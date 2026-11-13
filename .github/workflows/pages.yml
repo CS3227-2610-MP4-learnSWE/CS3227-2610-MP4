@@ -31,6 +31,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - name: Install documentation renderer
+        run: python -m pip install -r scripts/requirements-site.txt
       - name: Build website with validated application URL
         env:
           PRODUCT_APP_URL: ${{ vars.PRODUCT_APP_URL }}

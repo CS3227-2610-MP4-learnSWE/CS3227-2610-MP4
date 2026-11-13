@@ -1,5 +1,6 @@
 """Build the public site without exposing application secrets."""
 import argparse
+from render_guides import render_guides
 import html
 import os
 from pathlib import Path
@@ -30,6 +31,7 @@ def build(output: Path) -> None:
     (output / 'index.html').write_text(template.replace('__APP_LOGIN_URL__',
         html.escape(origin.rstrip('/') + '/login', quote=True)), encoding='utf-8')
     shutil.copyfile(ROOT / 'website/styles.css', output / 'styles.css')
+    render_guides(ROOT, output)
     (output / '.nojekyll').touch()
 
 

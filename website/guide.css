@@ -1,0 +1,41 @@
+
+.guide-page { background: var(--paper); }
+.guide-page .wrap { width: min(1280px, calc(100% - 80px)); }
+.guide-page header { border-bottom: 0; padding-block: 28px 20px; }
+.header-note { color: var(--muted); font-size: 13px; letter-spacing: .02em; }
+.guide-layout { display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 64px; align-items: start; padding-top: 48px; padding-bottom: 64px; }
+.guide-sidebar { position: sticky; top: 24px; max-height: calc(100vh - 48px); overflow: auto; padding: 0 16px 16px 0; scrollbar-width: thin; }
+.guide-sidebar summary { color: var(--ink); font-size: 13px; font-weight: 700; padding-bottom: 16px; cursor: pointer; }
+.guide-sidebar nav { display: grid; gap: 4px; border-left: 1px solid var(--line); }
+.guide-sidebar nav a { display: block; padding: 7px 14px; color: var(--muted); font-size: 12px; line-height: 1.55; text-decoration: none; overflow-wrap: anywhere; }
+.guide-sidebar nav a:hover, .guide-sidebar nav a:focus-visible { color: var(--blue); background: var(--blue-soft); }
+.guide-main { min-width: 0; max-width: 880px; }
+.guide-intro { padding: 0 0 32px; margin-bottom: 32px; border-bottom: 1px solid var(--line); }
+.guide-intro .eyebrow { margin-top: 0; }
+.guide-intro h1 { font-size: clamp(36px, 4vw, 52px); margin: 16px 0; letter-spacing: -.035em; }
+.guide-intro .lead { font-size: 18px; margin: 0 0 24px; }
+.guide-meta { display: flex; gap: 12px 24px; flex-wrap: wrap; color: var(--muted); font-size: 12px; }
+article.guide-content { padding: 0; border: 0; border-radius: 0; background: transparent; }
+.guide-content { font-size: 15px; line-height: 1.8; overflow-wrap: anywhere; }
+.guide-content p { color: var(--ink); margin: 16px 0; }
+.guide-content h2 { margin: 56px 0 20px; padding-top: 24px; border-top: 1px solid var(--line); font-size: 26px; line-height: 1.35; letter-spacing: -.025em; }
+.guide-content h3 { margin: 36px 0 16px; font-size: 20px; line-height: 1.4; }
+.guide-content h4 { font-size: 17px; margin: 28px 0 12px; }
+.guide-content :is(h2,h3,h4) { scroll-margin-top: 24px; }
+.guide-content ul, .guide-content ol { padding-left: 24px; }
+.guide-content li { margin-block: 8px; }
+.guide-content strong { font-weight: 650; }
+.guide-content code { font-family: Consolas, 'SFMono-Regular', monospace; font-size: .85em; background: var(--bg); border: 1px solid var(--line); border-radius: 5px; padding: 2px 5px; overflow-wrap: anywhere; }
+.guide-content pre { padding: 24px; background: var(--bg); border: 1px solid var(--line); border-radius: 12px; overflow-x: auto; line-height: 1.65; font-size: 13px; }
+.guide-content pre code { padding: 0; border: 0; border-radius: 0; font-size: inherit; white-space: pre; overflow-wrap: normal; }
+.guide-content blockquote { margin: 24px 0; padding: 4px 24px; background: var(--blue-soft); border-left: 3px solid var(--blue); border-radius: 0 10px 10px 0; }
+.table-scroll { overflow-x: auto; margin: 24px 0; border: 1px solid var(--line); border-radius: 12px; }
+.table-scroll:focus-visible { outline: 3px solid var(--blue); outline-offset: 3px; }
+.guide-content table { border-collapse: collapse; width: 100%; font-size: 13px; line-height: 1.65; text-align: left; }
+.guide-content th { padding: 14px 16px; background: var(--bg); font-weight: 650; color: var(--ink); vertical-align: top; }
+.guide-content td { padding: 14px 16px; border-top: 1px solid var(--line); min-width: 110px; vertical-align: top; }
+.guide-content img { display: block; max-width: 100%; height: auto; border: 1px solid var(--line); border-radius: 10px; margin: 24px 0; box-shadow: 0 8px 24px #17233a08; }
+.guide-content hr { border: 0; border-top: 1px solid var(--line); margin-block: 40px; }
+.guide-end { margin-top: 56px; padding-top: 24px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; gap: 16px; font-size: 13px; color: var(--muted); }
+@media (max-width: 960px) { .guide-page .wrap { width: calc(100% - 48px); } .guide-layout { grid-template-columns: 200px minmax(0,1fr); gap: 32px; } }
+@media (max-width: 680px) { .guide-page .wrap { width: calc(100% - 32px); } .guide-layout { display: block; padding-top: 24px; } .guide-sidebar { position: static; max-height: 220px; padding: 16px; margin-bottom: 32px; border: 1px solid var(--line); border-radius: 12px; background: var(--bg); } .guide-intro h1 { font-size: 36px; } .guide-content { font-size: 14px; } .guide-content h2 { font-size: 24px; } .guide-content pre { padding: 16px; } .guide-end { flex-direction: column; } }

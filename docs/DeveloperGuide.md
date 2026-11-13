@@ -351,7 +351,7 @@ Prerequisites:
 - Git, uv, Node/npm and Docker installed.
 - Existing `src/backend/.env` and an enabled admin account.
 - Keep your existing database and credentials.
-- First-time account? See [local admin setup](#local-admin-setup-and-password-reset-powershell).
+- First-time account? See [local admin setup](../README.md#4-set-up-the-backend).
 - Local HTTP: `SESSION_COOKIE_SECURE=false`; allow the frontend origin in `.env`.
 - Frontend `.env`: `API_PORT=8000`. If `API_PROXY_TARGET` exists, use `http://127.0.0.1:8000`.
 - SoC credentials are needed only for real chat/generation, not mocked tests.
@@ -525,7 +525,7 @@ uv run --env-file .env alembic upgrade head
 uv run --env-file .env uvicorn main:app --host 127.0.0.1 --port 8000 --reload
 ```
 
-Start the frontend with the existing setup instructions. Sign in as an enabled admin and open `/admin/feedback-hub/forms`; use separate student/teacher browser profiles to check targeted `/student/inbox` and `/teacher/inbox` delivery. Follow the [ADM-02 user walkthrough](UserGuide.md#adm-02-targeted-feedback-forms). No LLM configuration or calls are needed for this feature.
+Start the frontend with the existing setup instructions. Sign in as an enabled admin and open `/admin/feedback-hub/forms`; use separate student/teacher browser profiles to check targeted `/student/inbox` and `/teacher/inbox` delivery. Follow the [ADM-02 user walkthrough](UserGuide.md#step-18-create-a-feedback-form). No LLM configuration or calls are needed for this feature.
 
 ### Storage, access and concurrency
 
@@ -677,3 +677,10 @@ Spec: `workflow/specs/ADM-08/`. A tab shell at `/admin/feedback-hub/...` around 
 - **Follow-up count endpoint:** `GET /api/admin/messaging/followup-counts` (`messaging.py`) returns `{"unanswered_responses": n}`; `messaging_store.unanswered_response_count` counts `feedback_responses` whose respondent passes `messaging_store.replyable()` (role student or teacher, enabled, not archived: the same rule `response_recipient` uses) and that have no `admin_messages` row of kind `feedback_response` pointing at them. Admin only, read bucket (20 per minute), query strings rejected (422), read only, no migration.
 - **"Analyse this form":** `Responses` renders the link only when `paths.analysisForForm` is not null (hub); `AdminFeedbackAnalysis` compares `?form=` with its own forms list (case-insensitive, non-draft) and calls the picker's own handler, else shows the "not available" status.
 - **Dev seed:** `uv run --env-file .env python -m feedback_dev_seed` (also a step of `sample_data.py`; `APP_ENV=development` only, idempotent through the form title "Sample course feedback") creates one open form with the six question types for the enabled seeded students and one response each, through the feedback validators. No AI call, analysis or message.
+
+
+## Product website documentation
+
+The GitHub Pages product site has Overview, User guide and Developer guide navigation tabs. The guides are rendered from `docs/UserGuide.md` and `docs/DeveloperGuide.md` during the static build; screenshots are copied from `docs/images/guide/`. Getting-started and shared-data reference links are also rendered locally. Other source/specification links continue to open the repository.
+
+Install `scripts/requirements-site.txt`, set `PRODUCT_APP_URL` to the production HTTPS origin, then run `python scripts/build_product_site.py --output build/product-site`. Preview with `python -m http.server 8093 --directory build` and open `/product-site/`. Run `python -m pytest -q tests/test_deploy01_product_site.py` to validate navigation, local assets and heading anchors. Pages publishes after successful master push CI and a successful HTML login availability check. No runtime Markdown service or third-party document embed is used.

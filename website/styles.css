@@ -250,3 +250,11 @@ footer {
     scroll-behavior: auto !important;
   }
 }
+
+/* Page navigation is made of real links: deep links and browser history work. */
+.site-tabs { display: flex; gap: 32px; border-bottom: 1px solid var(--line); }
+.site-tabs a { padding: 20px 0 17px; font-size: 14px; font-weight: 650; color: var(--muted); text-decoration: none; border-bottom: 3px solid transparent; }
+.site-tabs a:hover { color: var(--blue); }
+.site-tabs a[aria-current="page"] { color: var(--blue); border-bottom-color: var(--blue); }
+a.brand { color: var(--ink); text-decoration: none; }
+@media (max-width: 480px) { .site-tabs { gap: 24px; } .site-tabs a { font-size: 13px; } }

@@ -630,3 +630,8 @@ D1 (StrictMode double count GETs, deferred-abort shared guard in HubCountsProvid
 
 ## 2026-11-13: developer, product website guide links
 - Added a Guides section linking to the complete UserGuide and DeveloperGuide on master; GitHub preserves their tables, screenshots and cross-links. Reused the existing responsive workflow layout. User-authorised direct master push continues. Documentation-only maintenance; no feature workflow or delegated agents.
+
+## 2026-11-13: developer, embedded product website guides
+- Replaced repository guide destinations with local user-guide.html and developer-guide.html pages, alongside the Overview navigation tab. Build renders the maintained Markdown sources, local screenshots, setup and data-contract references. Styled sticky contents, keyboard-focusable scrollable tables, code blocks, light/dark themes and mobile layout. Raw Markdown HTML is disabled.
+- Fixed two stale DeveloperGuide anchors. Added pinned site renderer dependencies and a CI job. Tests written before implementation; 14 pass including every generated local link and fragment. Chromium desktop/mobile 320/390px and light/dark checks show no horizontal page overflow; screenshots reviewed. No application code or private files changed. User-authorised direct master push continues.
+- Small single-session site/documentation update, no explicit feature workflow or delegated roles; token usage unavailable. Publication remains gated by exact master CI.

@@ -69,3 +69,55 @@ def test_deploy01_ac7_8_build_links_copy_and_subpath_assets(tmp_path, value):
     assert 'href="/styles.css"' not in html
     assert "SOCLAAS_API_KEY" not in html
     assert "DATABASE_URL" not in html
+
+
+def test_embedded_guides_have_local_navigation_content_and_assets(tmp_path):
+    result, out = build(tmp_path, "https://learnswe.example")
+    assert result.returncode == 0, result.stderr
+    home = (out / "index.html").read_text(encoding="utf-8")
+    assert 'href="./user-guide.html"' in home
+    assert 'href="./developer-guide.html"' in home
+    for name, phrase in [("user-guide", "Step 1"), ("developer-guide", "Setup, configuration, tests and layout")]:
+        page = (out / (name + ".html")).read_text(encoding="utf-8")
+        assert phrase in page
+        assert '<nav class="site-tabs" aria-label="Main navigation">' in page
+        assert 'aria-current="page"' in page
+        assert 'aria-label="On this page"' in page
+        assert '<iframe' not in page
+        assert '<table>' in page
+    assert (out / "images/guide/01-login.png").is_file()
+    assert (out / "guide.css").is_file()
+
+
+def test_generated_documentation_links_and_anchors_resolve(tmp_path):
+    from urllib.parse import urlsplit, unquote
+
+    class References(HTMLParser):
+        def __init__(self):
+            super().__init__()
+            self.references, self.ids = [], set()
+
+        def handle_starttag(self, tag, attrs):
+            attrs = dict(attrs)
+            if "id" in attrs:
+                self.ids.add(attrs["id"])
+            for key in ("href", "src"):
+                if key in attrs:
+                    self.references.append(attrs[key])
+
+    result, out = build(tmp_path, "https://learnswe.example")
+    assert result.returncode == 0, result.stderr
+    pages = {}
+    for path in out.glob("*.html"):
+        doc = References()
+        doc.feed(path.read_text(encoding="utf-8"))
+        pages[path] = doc
+    for path, doc in pages.items():
+        for reference in doc.references:
+            url = urlsplit(reference)
+            if url.scheme or url.netloc:
+                continue
+            target = path.parent / unquote(url.path) if url.path else path
+            assert target.exists(), (path.name, reference)
+            if url.fragment and target in pages:
+                assert unquote(url.fragment) in pages[target].ids, (path.name, reference)
