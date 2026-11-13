@@ -365,7 +365,7 @@ The analysis changes nothing and stays under **Previous analyses** until you del
 
 ## Hosted access
 
-**Production smoke tests.** Open <https://learnswe-prod.onrender.com/login>. Use the student or teacher account below; ask the deployment owner for its current password privately.
+**Production smoke tests.** Open <https://learnswe-prod.onrender.com/login>. Use the student or teacher account below. For production test passwords, contact [@itzxitzx on Telegram](https://t.me/itzxitzx). Administrator credentials are not shared with public reviewers.
 
 | Role | Email | Password location (deployment owner's computer) |
 |---|---|---|

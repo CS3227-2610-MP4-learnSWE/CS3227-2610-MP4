@@ -1,5 +1,9 @@
 # Handoff notes
 
+## 2026-11-13: reviewer password contact
+- At the user's request, added @itzxitzx (https://t.me/itzxitzx) to UserGuide hosted access as the contact for production student/teacher test passwords. No password values added and no Telegram message sent. Documentation-only maintenance; diff check passed.
+
+
 ## 2026-11-13: smoke-test credential documentation maintenance
 - Updated UserGuide local-example wording and hosted-access tables, production URL, current local student/teacher emails and ignored password-file/key locations. DeveloperGuide distinguishes local, hosted development and production credential files. Production administrator values and all real passwords omitted.
 - Checked local configured student/teacher emails against the ignored backend environment file; production role logins were verified during password rotation. Documentation-only change; git diff --check passed. No new application tests or live AI calls. Role: developer (documentation maintenance); model gpt-6.1-sol; token usage unavailable.
