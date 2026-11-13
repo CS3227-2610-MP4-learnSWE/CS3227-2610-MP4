@@ -622,3 +622,8 @@ D1 (StrictMode double count GETs, deferred-abort shared guard in HubCountsProvid
 - Files touched: this handoff and logs/isaac/2026-11-12-frontend-install-lock.md.
 - Resource use: small maintenance outside an explicitly invoked workflow; tracker not run, tokens/cost unavailable; no retries.
 
+
+## 2026-11-13: developer, product website on master
+- User explicitly authorised direct push to master, superseding the usual PR rule for this change. Copied the existing published product site and builder to master; Pages follows successful exact-commit master push CI. Login HTML remains a publication gate. Application deployment remains on its dedicated branch.
+- Live product website HTTP 200, correct production link. Production /login currently returns 404 while process/database health pass; no claim that login works. Existing publication retained.
+- Single-session hosting maintenance, no workflow invocation or delegated agents; measured tokens unavailable.
