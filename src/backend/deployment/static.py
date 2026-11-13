@@ -3,23 +3,28 @@ from pathlib import Path
 from urllib.parse import unquote
 
 from fastapi import FastAPI, HTTPException, Request
+from fastapi.routing import APIRoute
 from starlette.responses import FileResponse
 from starlette.routing import Match
+
+
+class FrontendRoute(APIRoute):
+    """Leave API matching and slash redirects entirely to the existing router."""
+
+    def matches(self, scope):
+        path = unquote(scope.get('path', '')).replace('\\', '/').lstrip('/')
+        if path == 'api' or path.startswith('api/'):
+            return Match.NONE, {}
+        return super().matches(scope)
 
 
 def attach_frontend(app: FastAPI, directory: Path) -> None:
     root = directory.resolve()
 
-    @app.api_route('/{path:path}', methods=['GET', 'HEAD'], include_in_schema=False)
     def frontend(request: Request, path: str):
         decoded = unquote(path)
         parts = decoded.replace('\\', '/').split('/')
         if parts[0] == 'api':
-            for route in app.router.routes:
-                match, _ = route.matches(request.scope)
-                if match == Match.PARTIAL:
-                    methods = getattr(route, 'methods', None) or set()
-                    raise HTTPException(405, 'Method Not Allowed', headers={'Allow': ', '.join(sorted(methods))})
             raise HTTPException(404, 'Not Found')
         if any(part in ('.', '..') for part in parts):
             raise HTTPException(404, 'Not Found')
@@ -34,3 +39,6 @@ def attach_frontend(app: FastAPI, directory: Path) -> None:
                 or not html or not (root / 'index.html').is_file()):
             raise HTTPException(404, 'Not Found')
         return FileResponse(root / 'index.html', headers={'Cache-Control': 'no-cache'})
+
+    app.router.add_api_route('/{path:path}', frontend, methods=['GET', 'HEAD'],
+                             include_in_schema=False, route_class_override=FrontendRoute)

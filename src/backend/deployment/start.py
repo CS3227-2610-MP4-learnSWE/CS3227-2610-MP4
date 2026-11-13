@@ -4,6 +4,7 @@ import os
 from pathlib import Path
 import sys
 import time
+import threading
 
 from alembic import command
 from alembic.config import Config
@@ -25,21 +26,60 @@ def migrate(database_url: str) -> None:
     if hostname.endswith('.neon.tech') and '-pooler.' in hostname:
         raise ValueError('session migration locking requires a direct database endpoint')
     engine = create_engine(database_url, poolclass=NullPool,
-                           connect_args={'connect_timeout': 5})
+                           connect_args={'connect_timeout': 5, 'tcp_user_timeout': 5000,
+                                         'options': '-cstatement_timeout=5000'})
+    ready = threading.Event()
+    permit_migration = threading.Event()
+    cancelled = threading.Event()
+    finished = threading.Event()
+    errors = []
+    acquired = []
+    deadline = time.monotonic() + LOCK_TIMEOUT_SECONDS
+
+    def release():
+        """The daemon owns the DB connection; the caller enforces the wall-clock bound."""
+        try:
+            with engine.connect().execution_options(isolation_level='AUTOCOMMIT') as connection:
+                while not cancelled.is_set():
+                    locked = connection.execute(text('SELECT pg_try_advisory_lock(:key)'),
+                                                {'key': MIGRATION_LOCK_KEY}).scalar()
+                    if locked:
+                        try:
+                            acquired.append(True)
+                            ready.set()
+                            permit_migration.wait(max(0, deadline - time.monotonic()))
+                            if cancelled.is_set() or time.monotonic() >= deadline:
+                                raise RuntimeError('migration lock timeout')
+                            config = Config(str(BACKEND / 'alembic.ini'))
+                            config.set_main_option('script_location', str(BACKEND / 'alembic'))
+                            command.upgrade(config, 'head')
+                        finally:
+                            connection.execute(text('SELECT pg_advisory_unlock(:key)'),
+                                               {'key': MIGRATION_LOCK_KEY})
+                        return
+                    if time.monotonic() >= deadline:
+                        raise RuntimeError('migration lock timeout')
+                    cancelled.wait(0.25)
+        except Exception as exc:
+            errors.append(exc)
+        finally:
+            ready.set()
+            finished.set()
+
+    threading.Thread(target=release, daemon=True, name='release-migration').start()
     try:
-        with engine.connect().execution_options(isolation_level='AUTOCOMMIT') as connection:
-            deadline = time.monotonic() + LOCK_TIMEOUT_SECONDS
-            while not connection.execute(text('SELECT pg_try_advisory_lock(:key)'),
-                                         {'key': MIGRATION_LOCK_KEY}).scalar():
-                if time.monotonic() >= deadline:
-                    raise RuntimeError('migration lock timeout')
-                time.sleep(0.25)
-            try:
-                config = Config(str(BACKEND / 'alembic.ini'))
-                config.set_main_option('script_location', str(BACKEND / 'alembic'))
-                command.upgrade(config, 'head')
-            finally:
-                connection.execute(text('SELECT pg_advisory_unlock(:key)'), {'key': MIGRATION_LOCK_KEY})
+        signalled = ready.wait(max(0, deadline - time.monotonic()))
+        if not signalled or time.monotonic() >= deadline:
+            cancelled.set()
+            permit_migration.set()
+            raise RuntimeError('migration lock timeout')
+        if not acquired:
+            raise errors[0] if errors else RuntimeError('migration lock acquisition failed')
+        permit_migration.set()
+        # Once acquired, migrations may take longer than the lock acquisition deadline.
+        finished.wait()
+        if errors:
+            raise errors[0]
     finally:
         engine.dispose()
 
