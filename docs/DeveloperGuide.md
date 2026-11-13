@@ -62,6 +62,138 @@ The React Router data router enables direct URLs and history. For future product
 
 FastAPI exposes `/api/health` and `/api/health/ready` (process-only semantics) and the STU-02 practice attempt API: `GET /api/practice-sets/{set_id}`, `POST /api/practice-sets/{set_id}/attempts`, `GET /api/attempts/{attempt_id}`, `PUT /api/attempts/{attempt_id}/answers`, `POST /api/attempts/{attempt_id}/submit` and `GET /api/attempts/{attempt_id}/results`. The routes require a signed-in `student` session (SHR-01, see "Authentication and authorisation"); the attempt owner is the session user id, and other students' attempts return 404. Attempts live in PostgreSQL (table `practice_attempt`, STU-04) behind the `AttemptStore` interface; `store.lock(id)` is a context manager that opens a transaction, reads the row with `SELECT ... FOR UPDATE`, yields a fresh `Attempt`, writes the changed fields and commits on a clean exit, and rolls back on an exception, so a save cannot land after a concurrent submit, in any server process. Modules in `src/backend/`: `practice_data` (the `PracticeSet` and `Question` types and the answer key; no fixture), `set_provider` (published sets, see "Practice on published sets (STU-02-published-sets)"), `practice_schemas`, `practice_logic` (validation and scoring), `practice_routes` (HTTP), `student_identity` (the shared `require_student` check: the signed-in student's session user id, SHR-01) and `attempt_store`; `main.py` only wires the router. The key and explanations are released only in results of a submitted attempt. OpenAPI/docs are framework-generated; explicit documentation of the 401/403/404/409/422 application errors is still a follow-up. The planned check order is not guaranteed for malformed bodies: FastAPI can return 422 before handler-level checks (see the fair comparison record and security test log). Student attempts are owned by the session user and persisted; teacher features use PostgreSQL and the shared authenticated session. Backend tests use HTTPX ASGI transport against the real application.
 
+## Architecture and sequence diagrams
+
+The diagrams below are Mermaid and render on GitHub. They summarise the prose in this guide; if they disagree with the code, the code and the exact contracts in `workflow/specs/` win.
+
+### System architecture
+
+```mermaid
+flowchart LR
+    Browser["Browser<br/>React + TypeScript SPA<br/>(Vite, React Router, MUI)"]
+    subgraph Backend["FastAPI backend (src/backend)"]
+        Auth["auth/<br/>sessions, CSRF, rate limits"]
+        Routes["Feature routers<br/>practice, companion, study,<br/>teacher_*, admin, feedback,<br/>messaging, analytics"]
+        Access["Access checks<br/>current_user, require_course_member,<br/>student_identity, teacher_access"]
+        LLM["llm_client.SoclaasClient<br/>limits, caps, retry"]
+        Store["Stores and providers<br/>attempt_store, set_provider,<br/>lesson_provider"]
+    end
+    DB[("PostgreSQL<br/>Alembic migrations")]
+    SoC["SoC LLM service<br/>(chat/completions)"]
+
+    Browser -- "/api, session cookie + X-CSRF-Token<br/>(services/client.ts)" --> Auth
+    Auth --> Routes
+    Routes --> Access
+    Routes --> Store
+    Routes --> LLM
+    Access --> DB
+    Store --> DB
+    LLM --> SoC
+```
+
+Every request passes authentication first. Role, course and record access is enforced in the backend, and the browser route guard (`RequireRole`) is only a UX aid. The SoC LLM is reached only through `llm_client.py`.
+
+### Sign-in and authenticated request (SHR-01)
+
+```mermaid
+sequenceDiagram
+    actor U as User
+    participant FE as Frontend (client.ts)
+    participant API as auth/routes
+    participant DB as PostgreSQL
+
+    U->>FE: Submit email and password
+    FE->>API: POST /api/auth/login
+    API->>API: Rate-limit check (per email and IP)
+    API->>DB: Load user, verify scrypt hash
+    API->>DB: Insert auth_session (SHA-256 of token only)
+    API-->>FE: 200 + HttpOnly session cookie
+    FE->>API: GET /api/auth/me
+    API-->>FE: user, role, CSRF token (kept in memory)
+
+    Note over FE,API: Later state-changing request
+    FE->>API: POST/PUT/DELETE + cookie + X-CSRF-Token
+    API->>DB: Read session, re-read role from database
+    alt no valid session
+        API-->>FE: 401 unauthenticated (client returns to /login)
+    else CSRF token or Origin mismatch
+        API-->>FE: 403 csrf_failed
+    else role not allowed
+        API-->>FE: 403 forbidden
+    else allowed
+        API-->>FE: Result
+    end
+```
+
+### Practice set: attempt, submit and answer release (STU-02)
+
+```mermaid
+sequenceDiagram
+    actor S as Student
+    participant FE as Frontend (PracticeContext)
+    participant R as practice_routes
+    participant SP as set_provider
+    participant AS as attempt_store
+    participant DB as PostgreSQL
+
+    S->>FE: Open a practice set
+    FE->>R: POST /api/practice-sets/{id}/attempts
+    R->>SP: get_for_student(student, set)
+    SP->>DB: Published set joined to course_membership
+    SP-->>R: Set without answer key (or 404 set_not_found)
+    R->>AS: Create attempt owned by session user
+    R-->>FE: Attempt
+
+    loop Answering
+        FE->>R: PUT /api/attempts/{id}/answers
+        R->>AS: lock(id) - SELECT ... FOR UPDATE
+        AS->>DB: Save answers, commit
+    end
+
+    S->>FE: Submit whole set
+    FE->>R: POST /api/attempts/{id}/submit
+    R->>AS: lock(id), mark submitted, score
+    AS->>DB: Commit
+    R-->>FE: Submitted
+    FE->>R: GET /api/attempts/{id}/results
+    R-->>FE: Score, correct answers, explanations
+    Note over R,FE: Key and explanations appear only for a submitted attempt owned by the caller
+```
+
+### Study companion message (STU-03)
+
+```mermaid
+sequenceDiagram
+    actor S as Student
+    participant FE as StudyCompanion widget
+    participant R as companion_routes
+    participant SVC as companion_service
+    participant LP as lesson_provider / set_provider
+    participant L as llm_client
+    participant M as SoC LLM
+    participant LC as leak_check
+
+    S->>FE: Type a question
+    FE->>R: POST /api/companion/messages (message, history, context)
+    R->>R: Authenticate student, validate context and size
+    R->>LP: Load authorised lesson, set or attempt (404 if not accessible)
+    R->>SVC: select_mode (lesson, hint, explain or help)
+    SVC->>L: complete(messages, max_tokens, caller_id)
+    L->>L: Per-caller rate limit and input cap
+    L->>M: POST chat/completions (one retry on timeout or 5xx)
+    M-->>L: Reply
+    L-->>SVC: Reply text (capped)
+    R->>R: Recheck access after model call
+    R->>LC: find_leak(reply, accessible questions)
+    alt reply leaks an answer
+        R-->>FE: Canned reply, withheld = true
+    else clean
+        R-->>FE: reply, mode, withheld = false, sources
+    end
+```
+
+The mode is chosen by the server, never by the client. Hint context contains question text and code only, so the key is never sent to the model before submission.
+
 ## Teacher Materials (TEA-01)
 
 The exact schema/API are in [SharedDataContract.md](SharedDataContract.md) and [TEA-01-db-storage](../workflow/specs/TEA-01-db-storage/plan.md). Set up PostgreSQL, the migrations and the seeds as described under "Setup, configuration, tests and layout" above (database `learnswe` on loopback port 5433, persistent named volume). Migration and seeding never run at request time. No FILE_STORAGE_DIR is required.
