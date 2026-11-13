@@ -2,15 +2,17 @@ name: Publish product website
 
 on:
   push:
-    branches: [master]
+    branches: [deploy/production-pages]
+    tags: [publish-site-*]
     paths:
       - "website/**"
       - "scripts/build_product_site.py"
+      - "scripts/deploy_render.py"
       - ".github/workflows/pages.yml"
-  workflow_dispatch:
 
 permissions:
   contents: read
+  actions: read
   pages: write
   id-token: write
 
@@ -20,11 +22,16 @@ concurrency:
 
 jobs:
   build:
-    if: github.ref == 'refs/heads/master'
+    if: >-
+      github.ref == 'refs/heads/deploy/production-pages' ||
+      startsWith(github.ref, 'refs/tags/publish-site-')
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
           persist-credentials: false
       - uses: actions/setup-python@v5
         with:
@@ -33,6 +40,18 @@ jobs:
         env:
           PRODUCT_APP_URL: ${{ vars.PRODUCT_APP_URL }}
         run: python scripts/build_product_site.py --output build/product-site
+      - name: Verify exact deployment-branch CI before publication
+        env:
+          DEPLOY_COMMIT: ${{ github.sha }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          python - <<'PY'
+          import os
+          from scripts.deploy_render import wait_for_ci, verify_commit
+          sha = os.environ['DEPLOY_COMMIT']
+          wait_for_ci(sha)
+          verify_commit(sha)
+          PY
       - name: Verify application login before publication
         env:
           PRODUCT_APP_URL: ${{ vars.PRODUCT_APP_URL }}

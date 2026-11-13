@@ -3,7 +3,7 @@ services:
     name: learnswe-dev
     runtime: docker
     plan: free
-    branch: master
+    branch: deploy/production-pages
     autoDeployTrigger: off
     healthCheckPath: /api/health
     envVars:
@@ -21,7 +21,7 @@ services:
     name: learnswe-prod
     runtime: docker
     plan: free
-    branch: master
+    branch: deploy/production-pages
     autoDeployTrigger: off
     healthCheckPath: /api/health
     envVars:

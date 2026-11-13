@@ -1,21 +1,9 @@
 name: Deploy application
 
 on:
-  workflow_run:
-    workflows: [CI]
-    types: [completed]
-    branches: [master]
-  workflow_dispatch:
-    inputs:
-      environment:
-        description: Target environment
-        required: true
-        type: choice
-        options: [dev, production]
-      commit:
-        description: Full master commit SHA with successful CI
-        required: true
-        type: string
+  push:
+    branches: [deploy/production-pages]
+    tags: [deploy-development-*, deploy-production-*]
 
 permissions:
   contents: read
@@ -24,22 +12,19 @@ permissions:
 jobs:
   deploy:
     if: >-
-      github.ref == 'refs/heads/master' &&
-      (github.event_name == 'workflow_dispatch' ||
-       (github.event.workflow_run.conclusion == 'success' &&
-        github.event.workflow_run.event == 'push' &&
-        github.event.workflow_run.head_branch == 'master' &&
-        github.event.workflow_run.head_repository.full_name == github.repository))
+      github.ref == 'refs/heads/deploy/production-pages' ||
+      startsWith(github.ref, 'refs/tags/deploy-development-') ||
+      startsWith(github.ref, 'refs/tags/deploy-production-')
     runs-on: ubuntu-latest
-    timeout-minutes: 25
-    environment: ${{ inputs.environment == 'production' && 'production' || 'development' }}
+    timeout-minutes: 35
+    environment: ${{ startsWith(github.ref, 'refs/tags/deploy-production-') && 'production' || 'development' }}
     concurrency:
-      group: deploy-${{ inputs.environment == 'production' && 'production' || 'development' }}
+      group: deploy-${{ startsWith(github.ref, 'refs/tags/deploy-production-') && 'production' || 'development' }}
       cancel-in-progress: false
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: master
+          ref: ${{ github.sha }}
           fetch-depth: 0
           persist-credentials: false
       - uses: actions/setup-python@v5
@@ -47,7 +32,8 @@ jobs:
           python-version: "3.12"
       - name: Verify CI, deploy exact commit, and smoke test
         env:
-          DEPLOY_COMMIT: ${{ github.event.workflow_run.head_sha || inputs.commit }}
+          DEPLOY_COMMIT: ${{ github.sha }}
+          WAIT_FOR_CI: "true"
           GITHUB_TOKEN: ${{ github.token }}
           RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
           RENDER_SERVICE_ID: ${{ secrets.RENDER_SERVICE_ID }}
