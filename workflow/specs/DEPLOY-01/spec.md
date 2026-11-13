@@ -47,9 +47,9 @@ Keep auth/access/CSRF checks and answer-release boundaries server-side. Static f
 - Normalisation: PRODUCT_APP_URL is trimmed and must be an HTTPS origin without credentials, path, query or fragment; a trailing slash is removed and /login appended. Static request paths are resolved beneath the configured frontend directory and traversal is rejected. Existing identifier normalization is unchanged.
 
 ## Open questions
-1. Human approval of this Draft spec and plan is required before feature code/tests begin.
-2. Free tiers only is confirmed; no Render/Neon accounts exist yet. User account creation/authentication is needed; no billable resources are authorized.
-3. Public GitHub repository and admin access are confirmed. Actual production/development HTTPS origins and provider service access remain pending. Pages settings must be configured. Do not request credentials in chat.
+1. Resolved: Isaac approved spec and plan on 2026-11-13 before implementation and independent test design.
+2. Resolved: free Render/Neon accounts exist; separate Neon databases and private direct TLS URLs are verified. Free tiers only; no billable resources are authorized.
+3. Public GitHub repository and admin access are confirmed. Actual production/development HTTPS origins and provider service access remain pending. Pages Actions source and master-only GitHub deployment environments are configured. Do not request credentials in chat.
 4. Confirm SoC endpoint public reachability from Render and approve a bounded live SoC smoke request if required. Existing docs record reachability as unresolved.
 5. Hosting discovery must confirm the pinned-commit deployment API and available migration execution mechanism for the chosen Render tier before the build phase. If unavailable, amend the plan rather than deploy a moving branch.
 6. Existing implementation inventory must establish actual background jobs, production restrictions and proxy trust requirements. Escalate incompatible contracts before implementation; do not bypass restrictions by labelling production development.
