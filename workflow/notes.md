@@ -1,5 +1,20 @@
 # Handoff notes
 
+## 2026-11-13: smoke-test credential documentation maintenance
+- Updated UserGuide local-example wording and hosted-access tables, production URL, current local student/teacher emails and ignored password-file/key locations. DeveloperGuide distinguishes local, hosted development and production credential files. Production administrator values and all real passwords omitted.
+- Checked local configured student/teacher emails against the ignored backend environment file; production role logins were verified during password rotation. Documentation-only change; git diff --check passed. No new application tests or live AI calls. Role: developer (documentation maintenance); model gpt-6.1-sol; token usage unavailable.
+
+
+## 2026-11-13: production password maintenance
+- User requested passwords at most 12 characters. Rotated all three seeded production accounts to distinct randomly generated 12-character passwords satisfying existing rules; updated the ignored production credentials file. Revoked their prior sessions.
+- Verified live sign-in and identity for admin, teacher and student; each former password returned 401. No secrets printed, application code or deployment changes, or live AI calls. Model gpt-6.1-sol; token usage unavailable.
+
+
+## 2026-11-13: production admin account maintenance
+- User requested a generic production admin email. Updated the existing demo-admin account to admin-production@example.com, preserving its identity, permissions, password and data; updated the ignored local production credentials file.
+- Verified live sign-in and /api/auth/me with the generic email; the former email now returns 401. No application code, deployment or master change. Personal email and password omitted from this record.
+
+
 ## 2026-11-13: orchestrator, DEPLOY-01 code PASS; hosting configuration in progress
 - Done: Isaac approved spec/plan; separate branch deploy/production-pages, review-ready [PR 46](https://github.com/CS3227-2610-MP4-learnSWE/CS3227-2610-MP4/pull/46), no master push/merge. Implemented same-origin Docker hosting, fail-closed locked migrations, bounded database health, exact-commit Actions deploy, static Pages product site/runbook. Independent tests merged. Strongest read-only verifier code PASS at 164f763 after one revision round; live deployment acceptance pending.
 - Checks: 108 independent cases PASS including API routing parity and blocked driver deadline. Latest Docker/isolated PostgreSQL 18 startup and routing smoke PASS, about 199 MiB idle (no workload guarantee). Prior configured CI 43308029098 at 6c77aa8: backend 3313 PASS, frontend 1369 PASS, real backend E2E/spec/tools/audits PASS; two product literal-copy checks failed and are fixed in 164f763. New CI 43358710922 pending. Four product screenshots inspected mobile/desktop light/dark. Real concurrent startup on one new empty isolated PG18 database passed: both containers healthy, one Alembic head, 38 tables and zero invalid indexes.

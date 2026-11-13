@@ -21,3 +21,14 @@ Read-only review overlapped regression runs, with release gates retained. Option
 User saved both Neon URLs privately. Verified valid separate direct TLS hosts/passwords and read-only connectivity (zero public tables in each); no Neon migrations/data changes. DATABASE_URL values normalized to psycopg scheme in memory and encrypted in matching GitHub environments. Render key also encrypted earlier; no secret values logged/committed. Real concurrent migration startup on new isolated PG18 test DB passed both containers, one head,38tables,zero invalidindexes; temporary containers8092/8093 left. Strongest verifier codePASS164f763; latestCI43358710922 deploymentcontracts/E2E/spec/audits/tools green, fullbackend/frontend still pending at last check. Render provisioning/live URLs and teammate review/merge remain pending.
 
 PR46 marked ready for teammate review after code PASS and all local checks; latest branch CI remains required before merge. No master merge, Render service or application/Pages publication performed. Awaiting teammate review/merge per AGENTS.md before deployment continuation.
+
+## Production admin email maintenance
+User requested admin-production@example.com in place of the personal login email. Updated the existing production account and ignored credentials file, preserving password and account ID. Live generic-email login and identity check passed; former-email login returned 401. No application code or deployment change. No live AI requests. Model: gpt-6.1-sol; token usage unavailable.
+
+## 2026-11-13: production password maintenance
+- User requested passwords at most 12 characters. Rotated all three seeded production accounts to distinct randomly generated 12-character passwords satisfying existing rules; updated the ignored production credentials file. Revoked their prior sessions.
+- Verified live sign-in and identity for admin, teacher and student; each former password returned 401. No secrets printed, application code or deployment changes, or live AI calls. Model gpt-6.1-sol; token usage unavailable.
+
+## 2026-11-13: smoke-test credential documentation maintenance
+- Updated UserGuide local-example wording and hosted-access tables, production URL, current local student/teacher emails and ignored password-file/key locations. DeveloperGuide distinguishes local, hosted development and production credential files. Production administrator values and all real passwords omitted.
+- Checked local configured student/teacher emails against the ignored backend environment file; production role logins were verified during password rotation. Documentation-only change; git diff --check passed. No new application tests or live AI calls. Role: developer (documentation maintenance); model gpt-6.1-sol; token usage unavailable.

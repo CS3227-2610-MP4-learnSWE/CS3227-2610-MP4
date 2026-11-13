@@ -18,7 +18,7 @@ This guide lists what each role can do, then walks you through every feature ste
 
 ## Before you start
 
-**Sign-in accounts.** These come from your backend `.env` file (the values below are the examples that ship with it).
+**Local sign-in accounts.** The table below contains the README's public examples for a fresh local setup. The actual accounts on your computer come from `src/backend/.env`; `.env.example` leaves these values empty. If you configured different values, use those instead throughout the walkthrough.
 
 | Role | Email | Password |
 |---|---|---|
@@ -365,4 +365,15 @@ The analysis changes nothing and stays under **Previous analyses** until you del
 
 ## Hosted access
 
-A hosted application address has not yet been verified. Use the local setup in the README until the team publishes the application link. The separate product website will explain learnSWE and link to the sign-in page; it does not host accounts or learning records.
+**Production smoke tests.** Open <https://learnswe-prod.onrender.com/login>. Use the student or teacher account below; ask the deployment owner for its current password privately.
+
+| Role | Email | Password location (deployment owner's computer) |
+|---|---|---|
+| Student | `student-production@example.com` | Repository root `.env.production.accounts.local`: `SEED_STUDENT_PASSWORD` |
+| Teacher | `teacher-production@example.com` | Repository root `.env.production.accounts.local`: `SEED_TEACHER_PASSWORD` |
+
+Both production test passwords are 12 characters. They differ from the public local examples. These ignored files are not included in a clone of the repository. Share only the relevant student and teacher values through a private channel; do not share the whole file, which also contains administrator credentials. Production administrator credentials are not part of the reviewer handoff.
+
+**Local smoke tests.** Open <http://127.0.0.1:5173/login> after starting the app. On the deployment owner's current local setup, the student email is `user1@example.com` and the teacher email is `teacher1@example.com`. Their passwords are in `src/backend/.env`, under `SEED_STUDENT_PASSWORD` and `SEED_TEACHER_PASSWORD`. Teammates using a fresh setup should use their own seeded values or the local examples in [Before you start](#before-you-start).
+
+**Shared test data.** Use synthetic course content and feedback. Reviewers using the same account share its saved records, so coordinate uploads, publications and practice attempts. AI features use the team's SoC quota. The local sample-data walkthrough does not guarantee that the same lessons, forms or practice sets exist in production. The separate product website links to the application; it does not host accounts or learning records.
