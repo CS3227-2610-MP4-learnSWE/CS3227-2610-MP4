@@ -627,3 +627,6 @@ D1 (StrictMode double count GETs, deferred-abort shared guard in HubCountsProvid
 - User explicitly authorised direct push to master, superseding the usual PR rule for this change. Copied the existing published product site and builder to master; Pages follows successful exact-commit master push CI. Login HTML remains a publication gate. Application deployment remains on its dedicated branch.
 - Live product website HTTP 200, correct production link. Production /login currently returns 404 while process/database health pass; no claim that login works. Existing publication retained.
 - Single-session hosting maintenance, no workflow invocation or delegated agents; measured tokens unavailable.
+
+## 2026-11-13: developer, product website guide links
+- Added a Guides section linking to the complete UserGuide and DeveloperGuide on master; GitHub preserves their tables, screenshots and cross-links. Reused the existing responsive workflow layout. User-authorised direct master push continues. Documentation-only maintenance; no feature workflow or delegated agents.
