@@ -8,6 +8,10 @@ import time
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
+DEPLOYMENT_BRANCH = 'deploy/production-pages'
+CI_WAIT_TIMEOUT_SECONDS = 900
+CI_POLL_INTERVAL_SECONDS = 10
+
 
 def request_json(url: str, token: str, data: dict | None = None) -> dict:
     request = Request(url, data=json.dumps(data).encode() if data is not None else None,
@@ -17,24 +21,69 @@ def request_json(url: str, token: str, data: dict | None = None) -> dict:
         return json.load(response)
 
 
-def verify_commit(sha: str) -> None:
+def _validate_branch_sha(sha: str) -> str:
     if not re.fullmatch(r'[0-9a-fA-F]{40}', sha):
         raise ValueError('A full commit SHA is required.')
     sha = sha.lower()
-    subprocess.run(['git', 'fetch', 'origin', 'master'], check=True, capture_output=True)
-    subprocess.run(['git', 'merge-base', '--is-ancestor', sha, 'origin/master'],
+    subprocess.run(['git', 'fetch', 'origin', DEPLOYMENT_BRANCH], check=True, capture_output=True)
+    subprocess.run(['git', 'merge-base', '--is-ancestor', sha, 'origin/' + DEPLOYMENT_BRANCH],
                    check=True, capture_output=True)
+    return sha
+
+
+def _latest_ci(sha: str) -> dict | None:
     repo = os.environ['GITHUB_REPOSITORY']
-    runs = request_json(f'https://api.github.com/repos/{repo}/actions/workflows/ci.yml/runs'
-                        f'?head_sha={sha}&event=push&branch=master&per_page=100',
-                        os.environ['GITHUB_TOKEN'])['workflow_runs']
-    if not any(run['head_sha'] == sha and run['head_branch'] == 'master'
-               and run['event'] == 'push' and run['conclusion'] == 'success' for run in runs):
-        raise ValueError('The selected master commit has no successful push CI run.')
+    data = request_json(f'https://api.github.com/repos/{repo}/actions/workflows/ci.yml/runs'
+                        f'?head_sha={sha}&event=push&branch={DEPLOYMENT_BRANCH}&per_page=100',
+                        os.environ['GITHUB_TOKEN'])
+    if not isinstance(data, dict) or not isinstance(data.get('workflow_runs'), list):
+        raise ValueError('Invalid CI response.')
+    eligible = []
+    for run in data['workflow_runs']:
+        if not isinstance(run, dict):
+            raise ValueError('Invalid CI response.')
+        if (run.get('head_sha') == sha and run.get('head_branch') == DEPLOYMENT_BRANCH
+                and run.get('event') == 'push'):
+            if not isinstance(run.get('id'), int) or isinstance(run['id'], bool):
+                raise ValueError('Invalid CI run identifier.')
+            eligible.append(run)
+    return max(eligible, key=lambda run: run['id']) if eligible else None
+
+
+def verify_commit(sha: str) -> None:
+    sha = _validate_branch_sha(sha)
+    run = _latest_ci(sha)
+    if run is None or run.get('status') != 'completed' or run.get('conclusion') != 'success':
+        raise ValueError('The selected deployment commit has no successful push CI run.')
+
+
+def wait_for_ci(sha: str) -> None:
+    sha = _validate_branch_sha(sha)
+    deadline = time.monotonic() + CI_WAIT_TIMEOUT_SECONDS
+    while True:
+        if time.monotonic() >= deadline:
+            raise ValueError('CI did not pass within 15 minutes.')
+        run = _latest_ci(sha)
+        if time.monotonic() >= deadline:
+            raise ValueError('CI did not pass within 15 minutes.')
+        if run is not None:
+            status = run.get('status')
+            if status == 'completed':
+                if run.get('conclusion') == 'success':
+                    return
+                raise ValueError('CI failed for the selected deployment commit.')
+            if status not in {'queued', 'requested', 'waiting', 'pending', 'in_progress'}:
+                raise ValueError('Invalid CI run status.')
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            raise ValueError('CI did not pass within 15 minutes.')
+        time.sleep(min(CI_POLL_INTERVAL_SECONDS, remaining))
 
 
 def main() -> None:
     sha = os.environ['DEPLOY_COMMIT'].lower()
+    if os.environ.get('WAIT_FOR_CI') == 'true':
+        wait_for_ci(sha)
     verify_commit(sha)
     token, service = os.environ['RENDER_API_KEY'], os.environ['RENDER_SERVICE_ID']
     if not re.fullmatch(r'srv-[a-zA-Z0-9]+', service):
