@@ -1,5 +1,7 @@
 # learnSWE Developer Guide
 
+[Visit the learnSWE product website](https://cs3227-2610-mp4-learnswe.github.io/CS3227-2610-MP4/) for the application and guides.
+
 This guide is for people who build, test and deploy learnSWE. Users should start with the [README](../README.md) (set up and run) and the [User Guide](UserGuide.md) (features and a step-by-step walkthrough). Feature codes such as TEA-02 or ADM-07 below match `docs/FeatureList.md` and the specs under `workflow/specs/`; they are internal and do not appear in the product.
 
 ## Setup, configuration, tests and layout

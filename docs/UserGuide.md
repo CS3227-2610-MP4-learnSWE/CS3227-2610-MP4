@@ -1,5 +1,7 @@
 # learnSWE User Guide
 
+[Visit the learnSWE product website](https://cs3227-2610-mp4-learnswe.github.io/CS3227-2610-MP4/) for the application and guides.
+
 This guide lists what each role can do, then walks you through every feature step by step with text you can copy and paste.
 
 **Not set up yet?** Follow the [README](../README.md) first (about 10 minutes). Use the **sample data** option in step 4 so every screen has something to show.

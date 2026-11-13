@@ -1,5 +1,7 @@
 # learnSWE
 
+[Visit the learnSWE product website](https://cs3227-2610-mp4-learnswe.github.io/CS3227-2610-MP4/) for the application and guides.
+
 learnSWE is a web app for learning and teaching software engineering. Teachers turn their course materials into lessons and practice questions with help from AI, students learn and practise at their own pace with an AI study companion, and administrators manage accounts, collect feedback and watch how the service is doing.
 
 | Role | What you can do |
