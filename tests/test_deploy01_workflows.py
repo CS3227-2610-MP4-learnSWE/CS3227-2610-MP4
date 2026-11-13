@@ -30,7 +30,7 @@ def run_record(**overrides):
     return result
 
 
-@pytest.mark.parametrize("runs", [[], [run_record(conclusion="failure")], [run_record(status="in_progress", conclusion=None)], [run_record(event="pull_request")], [run_record(head_sha="b" * 40)], [run_record(head_branch="feature/unreviewed")], [run_record(head_branch="master")]])
+@pytest.mark.parametrize("runs", [[], [run_record(conclusion="failure")], [run_record(status="in_progress", conclusion=None)], [run_record(status="in_progress", conclusion="success")], [run_record(event="pull_request")], [run_record(head_sha="b" * 40)], [run_record(head_branch="feature/unreviewed")], [run_record(head_branch="master")]])
 def test_deploy01_ac3_missing_exact_green_deployment_branch_ci_blocks_promotion(deploy, monkeypatch, runs):
     monkeypatch.setattr(deploy, "request_json", lambda *a, **kw: {"total_count": len(runs), "workflow_runs": runs})
     with pytest.raises((RuntimeError, ValueError, SystemExit)):
