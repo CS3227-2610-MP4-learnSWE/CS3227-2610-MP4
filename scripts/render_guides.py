@@ -79,8 +79,8 @@ def render_guides(root: Path, output: Path):
 <aside class="guide-sidebar"><details open><summary>On this page</summary><nav aria-label="On this page">{''.join(headings)}</nav></details></aside>
 <div class="guide-main"><div class="guide-intro"><p class="eyebrow">{audience}</p><h1>{title}</h1><p class="lead">{description}</p><div class="guide-meta"><span>learnSWE documentation</span><span>Always in step with the project</span></div></div>
 <article class="guide-content">{body}</article>
-<div class="guide-end"><span>You're at the end of the guide.</span><a href="#main">Back to top ?</a></div></div></main>
-<footer class="wrap"><p>learnSWE ? A CS3227 software engineering project.</p><a href="./index.html">Back to overview</a></footer></body></html>'''
+<div class="guide-end"><span>You're at the end of the guide.</span><a href="#main">Back to top &uarr;</a></div></div></main>
+<footer class="wrap"><p>learnSWE &middot; A CS3227 software engineering project.</p><a href="./index.html">Back to overview</a></footer></body></html>'''
         (output / filename).write_text(page, encoding="utf-8")
     shutil.copytree(root / "docs/images/guide", output / "images/guide", dirs_exist_ok=True)
     shutil.copytree(root / "docs/sample-files", output / "sample-files", dirs_exist_ok=True)
